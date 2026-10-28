@@ -55,6 +55,9 @@ type Settings struct {
 	Repeat bool `json:"repeat"`
 	// InstantMode enables the experimental instant mode.
 	InstantMode bool `json:"instant_mode"`
+	// Fzf uses the fzf fuzzy finder for the confirmation prompt when fzf is
+	// available. It is ignored when the executable cannot be found.
+	Fzf bool `json:"fzf"`
 	// NumCloseMatches is the maximum number of suggestions for misspelled
 	// commands.
 	NumCloseMatches int `json:"num_close_matches"`
@@ -88,6 +91,7 @@ func Default() *Settings {
 		SlowCommands:               []string{"lein", "react-native", "gradle", "./gradlew", "vagrant"},
 		Repeat:                     false,
 		InstantMode:                false,
+		Fzf:                        false,
 		NumCloseMatches:            3,
 		Env:                        map[string]string{"LC_ALL": "C", "LANG": "C", "GIT_TRACE": "1"},
 		ExcludedSearchPathPrefixes: []string{},
@@ -201,6 +205,7 @@ type fileSchema struct {
 	SlowCommands               *[]string          `json:"slow_commands"`
 	Repeat                     *bool              `json:"repeat"`
 	InstantMode                *bool              `json:"instant_mode"`
+	Fzf                        *bool              `json:"fzf"`
 	NumCloseMatches            *int               `json:"num_close_matches"`
 	Env                        *map[string]string `json:"env"`
 	ExcludedSearchPathPrefixes *[]string          `json:"excluded_search_path_prefixes"`
@@ -252,6 +257,7 @@ func (s *Settings) writeDefaultFile(path string) error {
 		"slow_commands":                 s.SlowCommands,
 		"repeat":                        s.Repeat,
 		"instant_mode":                  s.InstantMode,
+		"fzf":                           s.Fzf,
 		"num_close_matches":             s.NumCloseMatches,
 		"env":                           s.Env,
 		"excluded_search_path_prefixes": s.ExcludedSearchPathPrefixes,
@@ -309,6 +315,9 @@ func (s *Settings) applyFile(f *fileSchema) {
 	if f.InstantMode != nil {
 		s.InstantMode = *f.InstantMode
 	}
+	if f.Fzf != nil {
+		s.Fzf = *f.Fzf
+	}
 	if f.NumCloseMatches != nil {
 		s.NumCloseMatches = *f.NumCloseMatches
 	}
@@ -345,6 +354,7 @@ func (s *Settings) loadEnv() {
 		s.sliceFromEnv(prefix, "SLOW_COMMANDS", &s.SlowCommands)
 		s.boolFromEnv(prefix, "REPEAT", &s.Repeat)
 		s.boolFromEnv(prefix, "INSTANT_MODE", &s.InstantMode)
+		s.boolFromEnv(prefix, "FZF", &s.Fzf)
 		s.intFromEnv(prefix, "NUM_CLOSE_MATCHES", &s.NumCloseMatches)
 		s.sliceFromEnv(prefix, "EXCLUDED_SEARCH_PATH_PREFIXES", &s.ExcludedSearchPathPrefixes)
 	}

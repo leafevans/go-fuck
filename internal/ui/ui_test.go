@@ -204,3 +204,96 @@ func TestReadActionsKeyError(t *testing.T) {
 		t.Fatalf("action = %q, want abort", action)
 	}
 }
+
+// withFzfRunner replaces the fzf runner for one test.
+func withFzfRunner(t *testing.T, runner func([]string) (string, error)) {
+	t.Helper()
+	original := FzfRunner
+	FzfRunner = runner
+	t.Cleanup(func() { FzfRunner = original })
+}
+
+func TestSelectCommandUsesFzf(t *testing.T) {
+	resetUIState(t)
+	conf.Current().Fzf = true
+	commands := []*types.CorrectedCommand{
+		{Script: "ls", Priority: 100},
+		{Script: "cd", Priority: 200},
+	}
+	withFzfRunner(t, func(candidates []string) (string, error) {
+		if len(candidates) != 2 || candidates[0] != "ls" || candidates[1] != "cd" {
+			t.Fatalf("unexpected fzf candidates: %q", candidates)
+		}
+		return candidates[1], nil
+	})
+
+	selected := SelectCommand(commands)
+	if selected == nil || selected.Script != "cd" {
+		t.Fatalf("SelectCommand() = %v, want cd", selected)
+	}
+	if got := logOutput(); got != "" {
+		t.Fatalf("unexpected log output: %q", got)
+	}
+}
+
+func TestSelectCommandFzfAbort(t *testing.T) {
+	resetUIState(t)
+	conf.Current().Fzf = true
+	withFzfRunner(t, func([]string) (string, error) {
+		return "", errFzfAborted
+	})
+
+	if selected := SelectCommand([]*types.CorrectedCommand{{Script: "ls"}}); selected != nil {
+		t.Fatalf("SelectCommand() = %v, want nil", selected)
+	}
+	if got, want := logOutput(), newline+"Aborted"+newline; got != want {
+		t.Fatalf("unexpected log output: %q, want %q", got, want)
+	}
+}
+
+func TestSelectCommandFallsBackWhenFzfIsUnavailable(t *testing.T) {
+	resetUIState(t)
+	conf.Current().Fzf = true
+	setKeys(t, "\n")
+	withFzfRunner(t, func([]string) (string, error) {
+		return "", errFzfUnavailable
+	})
+
+	selected := SelectCommand([]*types.CorrectedCommand{{Script: "ls", Priority: 100}})
+	if selected == nil || selected.Script != "ls" {
+		t.Fatalf("SelectCommand() = %v, want ls", selected)
+	}
+	want := consts.UserCommandMark + "\x1b[1K\rls [enter/↑/↓/ctrl+c]" + newline
+	if got := logOutput(); got != want {
+		t.Fatalf("unexpected log output: %q, want %q", got, want)
+	}
+}
+
+func TestSelectCommandFallsBackWhenFzfReturnsUnknownCommand(t *testing.T) {
+	resetUIState(t)
+	conf.Current().Fzf = true
+	setKeys(t, "\n")
+	withFzfRunner(t, func([]string) (string, error) {
+		return "not-a-suggestion", nil
+	})
+
+	selected := SelectCommand([]*types.CorrectedCommand{{Script: "ls", Priority: 100}})
+	if selected == nil || selected.Script != "ls" {
+		t.Fatalf("SelectCommand() = %v, want ls", selected)
+	}
+}
+
+func TestSelectCommandIgnoresFzfWithoutConfirmation(t *testing.T) {
+	resetUIState(t)
+	conf.Current().Fzf = true
+	conf.Current().RequireConfirmation = false
+	withFzfRunner(t, func([]string) (string, error) {
+		t.Fatal("fzf must not be called when confirmation is disabled")
+		return "", nil
+	})
+
+	selected := SelectCommand([]*types.CorrectedCommand{{Script: "ls", Priority: 100}})
+	if selected == nil || selected.Script != "ls" {
+		t.Fatalf("SelectCommand() = %v, want ls", selected)
+	}
+}

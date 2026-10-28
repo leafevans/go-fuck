@@ -46,6 +46,9 @@ func TestDefault(t *testing.T) {
 	if !settings.AlterHistory {
 		t.Fatal("AlterHistory should be enabled by default")
 	}
+	if settings.Fzf {
+		t.Fatal("Fzf should be disabled by default")
+	}
 	if settings.Env["GIT_TRACE"] != "1" {
 		t.Fatalf("unexpected env: %q", settings.Env)
 	}
@@ -78,7 +81,8 @@ func TestLoadFromFile(t *testing.T) {
 		"history_limit": 5,
 		"slow_commands": ["lein"],
 		"priority": {"git_push": 42},
-		"settings": {"fixlinecmd": "{editor} {file} +{line}"}
+		"settings": {"fixlinecmd": "{editor} {file} +{line}"},
+		"fzf": true
 	}`
 	if err := os.WriteFile(settingsFilePath(t), []byte(content), 0o644); err != nil {
 		t.Fatal(err)
@@ -94,7 +98,7 @@ func TestLoadFromFile(t *testing.T) {
 	if len(settings.ExcludeRules) != 1 || settings.ExcludeRules[0] != "cd_mkdir" {
 		t.Fatalf("ExcludeRules = %q", settings.ExcludeRules)
 	}
-	if settings.WaitCommand != 7 || settings.RequireConfirmation || settings.HistoryLimit != 5 {
+	if settings.WaitCommand != 7 || settings.RequireConfirmation || settings.HistoryLimit != 5 || !settings.Fzf {
 		t.Fatalf("unexpected settings: %+v", settings)
 	}
 	if settings.Priority["git_push"] != 42 {
@@ -156,6 +160,7 @@ func TestLoadEnv(t *testing.T) {
 	t.Setenv("GOFUCK_SLOW_COMMANDS", "lein:gradle")
 	t.Setenv("GOFUCK_REPEAT", "true")
 	t.Setenv("GOFUCK_INSTANT_MODE", "true")
+	t.Setenv("GOFUCK_FZF", "true")
 	t.Setenv("GOFUCK_NUM_CLOSE_MATCHES", "5")
 	t.Setenv("GOFUCK_EXCLUDED_SEARCH_PATH_PREFIXES", "/mnt")
 	t.Setenv("GOFUCK_PRIORITY", "git_push=1:other=2:invalid")
@@ -176,7 +181,7 @@ func TestLoadEnv(t *testing.T) {
 	if settings.RequireConfirmation {
 		t.Fatal("RequireConfirmation = true, want false")
 	}
-	if !settings.NoColors || !settings.Debug || !settings.Repeat || !settings.InstantMode {
+	if !settings.NoColors || !settings.Debug || !settings.Repeat || !settings.InstantMode || !settings.Fzf {
 		t.Fatalf("unexpected flags: %+v", settings)
 	}
 	if settings.HistoryLimit != 10 || settings.WaitSlowCommand != 20 || settings.NumCloseMatches != 5 {

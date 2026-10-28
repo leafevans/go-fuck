@@ -319,6 +319,7 @@ All fields:
 | `exclude_rules` | array of strings | `[]` | Rules that are never loaded, even when enabled. |
 | `wait_command` | integer | `3` | Seconds to wait for the output of the re-run command. |
 | `require_confirmation` | boolean | `true` | Ask before executing a corrected command. |
+| `fzf` | boolean | `false` | Use [fzf](https://github.com/junegunn/fzf) as the selection prompt when it is installed. Falls back to the built-in prompt automatically. |
 | `no_colors` | boolean | `false` | Disable colored output. |
 | `debug` | boolean | `false` | Print debug information to stderr. |
 | `priority` | object of integer | `{}` | Per-rule priority overrides. Lower values are tried first; the built-in default is `1000`. |
@@ -347,6 +348,7 @@ legacy `THEFUCK_*` variable is applied last and wins.
 | `EXCLUDE_RULES` | colon separated list | `GOFUCK_EXCLUDE_RULES='git_push'` | `exclude_rules` |
 | `WAIT_COMMAND` | integer seconds | `GOFUCK_WAIT_COMMAND=10` | `wait_command` |
 | `REQUIRE_CONFIRMATION` | boolean | `GOFUCK_REQUIRE_CONFIRMATION=false` | `require_confirmation` |
+| `FZF` | boolean | `GOFUCK_FZF=true` | `fzf` |
 | `NO_COLORS` | boolean | `GOFUCK_NO_COLORS=true` | `no_colors` |
 | `DEBUG` | boolean | `GOFUCK_DEBUG=true` | `debug` |
 | `PRIORITY` | `rule=priority` list separated by colons | `GOFUCK_PRIORITY='cd_mkdir=100:git_push=900'` | `priority` |
@@ -382,6 +384,22 @@ available actions:
 | `Ctrl+C`, `q` | abort without running anything |
 
 Disable the prompt with `require_confirmation: false` in `settings.json` or by passing `-y`.
+
+### fzf integration
+
+If [fzf](https://github.com/junegunn/fzf) is installed, go-fuck can use it as the selection prompt.
+Enable it once in `settings.json`:
+
+```json
+{
+  "fzf": true
+}
+```
+
+or per shell with `export GOFUCK_FZF=true`. When fzf runs, the suggestions are listed with a
+`fuck>` prompt (`Enter` selects, `Esc` aborts); go-fuck falls back to its built-in prompt
+automatically when fzf is not installed or fails. `-y`/`require_confirmation: false` still skips
+the selection entirely.
 
 ## Rules
 
@@ -587,8 +605,8 @@ This keeps the binary self-contained and deterministic. Contributions to the por
 
 go-fuck is a reimplementation, not a drop-in replacement for every thefuck feature:
 
-- **Rule coverage.** The rule set is being ported rule by rule. The list above is authoritative; the
-  full thefuck rule list is larger. See [PORTING.md](PORTING.md) for the porting status.
+- **Complete rule port.** All 169 rules of the reference implementation are ported; the list above
+  is authoritative. The porting conventions are documented in [PORTING.md](PORTING.md).
 - **Instant mode is not supported.** The experimental instant mode of thefuck reads the previous
   output from a terminal log. go-fuck always re-runs the command, using `wait_command` and
   `wait_slow_command` as timeouts. `--enable-experimental-instant-mode` is accepted for
@@ -605,6 +623,8 @@ go-fuck is a reimplementation, not a drop-in replacement for every thefuck featu
   database.
 - **Settings use JSON.** Settings live in `settings.json` instead of `settings.py`, and the
   legacy `THEFUCK_*` environment variables are still understood alongside the new `GOFUCK_*` ones.
+- **fzf integration is an extra.** thefuck has no fuzzy finder integration; `GOFUCK_FZF=true` /
+  `"fzf": true` opts in to using fzf as the selection prompt.
 
 ## Contributing
 
