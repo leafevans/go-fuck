@@ -15,6 +15,17 @@ func nodeMissingModuleOutput() string {
 		"  code: 'MODULE_NOT_FOUND'\n"
 }
 
+// nodeMissingPackageESMOutput is the ESM output of Node.js for a missing
+// package.
+func nodeMissingPackageESMOutput() string {
+	return "node:internal/modules/package_json_reader:301\n" +
+		"  throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);\n" +
+		"        ^\n" +
+		"\n" +
+		"Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'expresss' imported from C:\\repo\\app.mjs\n" +
+		"    at Object.getPackageJSONURL (node:internal/modules/package_json_reader:301:9)\n"
+}
+
 // nodeMissingFileOutput is the output of Node.js for a missing relative file.
 func nodeMissingFileOutput() string {
 	return "Error: Cannot find module './missing.js'\n" +
@@ -35,5 +46,7 @@ func TestRuleNodeMissingModule(t *testing.T) {
 
 	assertNewCommands(t, rule, "node app.js", nodeMissingModuleOutput(),
 		[]string{"npm install expresss && node app.js"})
+	assertNewCommands(t, rule, "node app.mjs", nodeMissingPackageESMOutput(),
+		[]string{"npm install expresss && node app.mjs"})
 	assertNewCommands(t, rule, "node app.js", nodeMissingFileOutput(), nil)
 }

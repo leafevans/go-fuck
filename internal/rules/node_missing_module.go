@@ -9,15 +9,23 @@ import (
 	"github.com/leafevans/go-fuck/internal/utils"
 )
 
-// nodeMissingModule matches the module name in the Node.js error.
-var nodeMissingModule = regexp.MustCompile(`Cannot find module '([^']*)'`)
+// nodeMissingModule matches the module or package name in the Node.js error.
+//
+// CommonJS reports "Cannot find module" while ESM reports
+// "Cannot find package" together with the ERR_MODULE_NOT_FOUND code.
+var nodeMissingModule = regexp.MustCompile(`Cannot find (?:module|package) '([^']*)'`)
 
 // nodeMissingModuleMatch matches the error that Node.js prints when a module
 // cannot be resolved.
 func nodeMissingModuleMatch(command *types.Command) bool {
 	output := command.Output
-	return strings.Contains(output, "Cannot find module '") &&
-		strings.Contains(output, "Require stack:")
+	missingModule := strings.Contains(output, "Cannot find module '")
+	missingPackage := strings.Contains(output, "Cannot find package '")
+	if !missingModule && !missingPackage {
+		return false
+	}
+	return strings.Contains(output, "Require stack:") ||
+		strings.Contains(output, "ERR_MODULE_NOT_FOUND")
 }
 
 // nodeMissingModuleNewCommand installs the missing npm package and reruns the

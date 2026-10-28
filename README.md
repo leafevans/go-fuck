@@ -500,9 +500,11 @@ Helm, pnpm, the Go toolchain and Node.js. The list below is generated from the c
 - `git_stash_pop`
 - `git_tag_force`
 - `git_two_dashes`
+- `go_install_version`
 - `go_missing_module`
 - `go_run`
 - `go_unknown_command`
+- `go_unknown_flag`
 - `gradle_no_task`
 - `gradle_wrapper`
 - `grep_arguments_order`
