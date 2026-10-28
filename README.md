@@ -405,9 +405,8 @@ the selection entirely.
 
 Rules are compiled into the binary. Each rule decides whether it applies to a failed command and
 returns one or more corrected commands. 169 rules are ported from the reference implementation;
-`gh_unknown_command`, `kubectl_unknown_command` and `uv_unknown_subcommand` are go-fuck
-extensions for tools that thefuck does not handle. The list below is generated from the compiled
-rules:
+go-fuck also adds rules for tools that thefuck does not handle: the GitHub CLI, kubectl, uv, cargo,
+Helm and pnpm. The list below is generated from the compiled rules:
 
 <!-- RULES_LIST_START -->
 - `adb_unknown_command`
@@ -428,6 +427,8 @@ rules:
 - `brew_update_formula`
 - `cargo`
 - `cargo_no_command`
+- `cargo_unknown_argument`
+- `cargo_unknown_command`
 - `cat_dir`
 - `cd_correction`
 - `cd_cs`
@@ -507,6 +508,7 @@ rules:
 - `grunt_task_not_found`
 - `gulp_not_task`
 - `has_exists_script`
+- `helm_unknown_command`
 - `heroku_multiple_apps`
 - `heroku_not_command`
 - `history`
@@ -543,6 +545,7 @@ rules:
 - `php_s`
 - `pip_install`
 - `pip_unknown_command`
+- `pnpm_command_not_found`
 - `port_already_in_use`
 - `prove_recursively`
 - `python_command`
@@ -612,8 +615,8 @@ This keeps the binary self-contained and deterministic. Contributions to the por
 go-fuck is a reimplementation, not a drop-in replacement for every thefuck feature:
 
 - **Complete rule port plus extras.** All 169 rules of the reference implementation are ported,
-  plus go-fuck specific rules for the GitHub CLI, kubectl and uv; the list above is authoritative.
-  The porting conventions are documented in [PORTING.md](PORTING.md).
+  plus go-fuck specific rules for the GitHub CLI, kubectl, uv, cargo, Helm and pnpm; the list above
+  is authoritative. The porting conventions are documented in [PORTING.md](PORTING.md).
 - **Instant mode is not supported.** The experimental instant mode of thefuck reads the previous
   output from a terminal log. go-fuck always re-runs the command, using `wait_command` and
   `wait_slow_command` as timeouts. `--enable-experimental-instant-mode` is accepted for

@@ -193,8 +193,12 @@ var expectedRuleNames = []string{
 // implementation. They are tested and documented like the ported rules, but
 // they are not part of the thefuck rule set.
 var expectedExtraRuleNames = []string{
+	"cargo_unknown_argument",
+	"cargo_unknown_command",
 	"gh_unknown_command",
+	"helm_unknown_command",
 	"kubectl_unknown_command",
+	"pnpm_command_not_found",
 	"uv_unknown_subcommand",
 }
 
