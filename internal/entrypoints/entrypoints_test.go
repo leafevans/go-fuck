@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"github.com/leafevans/go-fuck/internal/conf"
+	"github.com/leafevans/go-fuck/internal/consts"
+	"github.com/leafevans/go-fuck/internal/instant"
 	"github.com/leafevans/go-fuck/internal/logs"
 	"github.com/leafevans/go-fuck/internal/types"
 )
@@ -147,17 +149,47 @@ func TestMainUsage(t *testing.T) {
 	}
 }
 
-func TestMainShellLoggerNotSupported(t *testing.T) {
+func TestMainShellLoggerUnsupported(t *testing.T) {
 	resetEntrypointsState(t)
+	if instant.Supported() {
+		t.Skip("the shell logger starts an interactive shell on this platform")
+	}
 	buffer := &bytes.Buffer{}
 	logs.SetOutput(buffer)
 
 	code, _, stderr := runMain(t, "go-fuck", "-l", "log")
+	if code != 1 {
+		t.Fatalf("Main() = %d, want 1", code)
+	}
+	if !strings.Contains(buffer.String()+stderr, "Shell logger doesn't support your platform") {
+		t.Fatalf("unexpected output: %q %q", buffer.String(), stderr)
+	}
+}
+
+func TestMainInstantModeAlias(t *testing.T) {
+	resetEntrypointsState(t)
+
+	code, stdout, _ := runMain(t, "go-fuck", "--alias", "--enable-experimental-instant-mode")
 	if code != 0 {
 		t.Fatalf("Main() = %d, want 0", code)
 	}
-	if !strings.Contains(buffer.String()+stderr, "Shell logger is not supported") {
-		t.Fatalf("unexpected output: %q %q", buffer.String(), stderr)
+	if !strings.Contains(stdout, "--shell-logger") {
+		t.Fatalf("instant mode alias does not start the shell logger: %q", stdout)
+	}
+	if !strings.Contains(stdout, "GOFUCK_INSTANT_MODE=True") {
+		t.Fatalf("instant mode alias does not export the mode: %q", stdout)
+	}
+	if strings.Contains(stdout, "function fuck") {
+		t.Fatalf("instant mode initialization should not define the alias: %q", stdout)
+	}
+
+	t.Setenv(consts.InstantModeEnv, "true")
+	code, stdout, _ = runMain(t, "go-fuck", "--alias", "--enable-experimental-instant-mode")
+	if code != 0 {
+		t.Fatalf("Main() = %d, want 0", code)
+	}
+	if !strings.Contains(stdout, consts.UserCommandMark) || !strings.Contains(stdout, "function fuck") {
+		t.Fatalf("logged shell alias is missing the prompt marker or the alias: %q", stdout)
 	}
 }
 

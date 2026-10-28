@@ -1,9 +1,9 @@
 // Package output obtains the output of a command that failed.
 //
 // Like the original implementation, go-fuck re-runs the failed command with a
-// short timeout to capture its output. The experimental instant mode of the
-// reference implementation is not supported yet: there the output is read from
-// a terminal log instead of re-running the command.
+// short timeout to capture its output. In the experimental instant mode the
+// output is read from the terminal log written by the shell logger instead, so
+// the command is not executed a second time.
 package output
 
 import (
@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/leafevans/go-fuck/internal/conf"
+	"github.com/leafevans/go-fuck/internal/instant"
 	"github.com/leafevans/go-fuck/internal/logs"
 )
 
@@ -23,7 +24,15 @@ import (
 // false when the command did not finish within the configured timeout.
 func GetOutput(script, expanded string) (string, bool) {
 	if conf.Current().InstantMode {
-		logs.Debug("Instant mode is not supported by go-fuck, re-running the command instead")
+		if logPath := instant.LogPath(); logPath != "" {
+			if logOutput, ok := instant.LastOutput(logPath, script); ok {
+				logs.Debug("Read output from the instant mode log: %s", logOutput)
+				return logOutput, true
+			}
+			logs.Debug("Command not found in the instant mode log, re-running it")
+		} else {
+			logs.Debug("No instant mode log path is set, re-running the command")
+		}
 	}
 	return rerun(expanded)
 }

@@ -16,7 +16,8 @@ func printAlias(args *argumentparser.Args) int {
 	}
 
 	if args.EnableExperimentalInstantMode {
-		logs.Warn("Instant mode is not supported by go-fuck, using the regular alias")
+		fmt.Println(shells.Current().InstantModeAlias(args.Alias))
+		return 0
 	}
 
 	fmt.Println(shells.Current().AppAlias(args.Alias))

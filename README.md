@@ -282,6 +282,36 @@ Common options:
 The re-run is why go-fuck works with any shell and any command: it does not need a terminal logger or
 shell plugin, at the cost of running the failed command a second time.
 
+## Instant mode
+
+The experimental instant mode reads the output of the previous command from a terminal log instead
+of re-running the command. This is useful for slow, interactive or side effecting commands. It is
+currently implemented for **bash and zsh on Linux**; other shells and platforms warn and fall back
+to the regular alias.
+
+Enable it by adding the experimental flag to the alias initialization in your shell configuration:
+
+```bash
+# ~/.bashrc (or ~/.zshrc for zsh)
+eval "$(go-fuck --alias --enable-experimental-instant-mode)"
+```
+
+Restart the shell. The alias then starts a logged subshell: commands keep working as usual, but
+go-fuck reads their output from the terminal log, so `fuck` does not execute the failed command a
+second time. The log is a temporary file that is removed when the logged shell exits.
+
+Limitations:
+
+- Changing `PS1` after the alias initialization breaks the command detection in the log.
+- Full screen programs such as `vim` or `tmux` can confuse the log; fall back to the regular
+  mode if a suggestion looks wrong.
+- The log keeps the newest 1 MiB of terminal output, matching the reference ring buffer.
+- The reference implementation renders the log with pyte; go-fuck strips ANSI escape sequences and
+  applies carriage return overwrites, which is a documented deviation.
+
+The `instant_mode` setting and `GOFUCK_INSTANT_MODE=true` are read automatically inside the
+logged shell; there is no need to set them manually.
+
 ## Settings
 
 Settings are stored in `settings.json` inside the go-fuck directory of the user configuration
@@ -328,7 +358,7 @@ All fields:
 | `wait_slow_command` | integer | `15` | Seconds to wait for the output of commands listed in `slow_commands`. |
 | `slow_commands` | array of strings | `["lein", "react-native", "gradle", "./gradlew", "vagrant"]` | Commands that are expected to be slow to re-run. |
 | `repeat` | boolean | `false` | If the corrected command fails, run go-fuck again. |
-| `instant_mode` | boolean | `false` | Reserved for the experimental instant mode. go-fuck does not support it and re-runs the command instead. |
+| `instant_mode` | boolean | `false` | Read the previous command output from the shell logger terminal log instead of re-running the command. See [Instant mode](#instant-mode). |
 | `num_close_matches` | integer | `3` | Maximum number of close matches suggested for misspelled commands. |
 | `env` | object of string | `{"LC_ALL": "C", "LANG": "C", "GIT_TRACE": "1"}` | Environment variables added when the failed command is re-run. |
 | `excluded_search_path_prefixes` | array of strings | `[]` | `PATH` prefixes that are skipped when searching for executables. |
@@ -624,12 +654,13 @@ go-fuck is a reimplementation, not a drop-in replacement for every thefuck featu
   plus go-fuck specific rules for the GitHub CLI, kubectl, uv, cargo, Helm, pnpm, the Go toolchain
   and Node.js; the list above is authoritative. The porting conventions are documented in
   [PORTING.md](PORTING.md).
-- **Instant mode is not supported.** The experimental instant mode of thefuck reads the previous
-  output from a terminal log. go-fuck always re-runs the command, using `wait_command` and
-  `wait_slow_command` as timeouts. `--enable-experimental-instant-mode` is accepted for
-  compatibility but prints a warning and uses the regular alias.
-- **No shell logger.** thefuck's `-l`/`--shell-logger` option logs shell output through a socket;
-  go-fuck does not implement it and warns when the option is used.
+- **Instant mode is Linux only.** The experimental instant mode reads the previous command output
+  from a terminal log instead of re-running the command. It is implemented for bash and zsh on
+  Linux; other platforms and shells warn and fall back to the regular alias. The reference
+  implementation emulates the terminal with pyte to render the log; go-fuck strips escape
+  sequences instead, which can differ for full screen programs.
+- **Shell logger.** `-l`/`--shell-logger` starts a shell under a pseudo terminal and logs its
+  output on Linux. Other platforms report that the shell logger is not supported.
 - **In-memory memoization instead of an on-disk cache.** go-fuck is a short-lived process, so
   rule results are memoized only for the duration of one invocation. Thefuck's `@cache` persisted
   values between runs.

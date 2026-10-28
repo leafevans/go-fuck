@@ -32,13 +32,12 @@ func Main() int {
 	case args.Version:
 		logs.Version(version(), runtime.Version(), shells.Current().Info())
 		return 0
+	case args.ShellLogger != "":
+		return shellLogger(args.ShellLogger)
 	case args.AliasRequested:
 		return printAlias(args)
 	case len(args.Command) > 0 || args.ForceCommand != "" || os.Getenv("TF_HISTORY") != "":
 		return fixCommand(args)
-	case args.ShellLogger != "":
-		logs.Warn("Shell logger is not supported by go-fuck")
-		return 0
 	default:
 		fmt.Fprintln(os.Stderr, argumentparser.Usage())
 		return 0

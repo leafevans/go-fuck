@@ -69,6 +69,24 @@ const (
 // path.
 const ShellLoggerSocketEnv = "SHELL_LOGGER_SOCKET"
 
+// Environment variables of the experimental instant mode.
+const (
+	// InstantModeEnv is set by the instant mode alias inside the logged shell.
+	InstantModeEnv = "GOFUCK_INSTANT_MODE"
+
+	// LegacyInstantModeEnv is the instant mode flag of the original
+	// implementation.
+	LegacyInstantModeEnv = "THEFUCK_INSTANT_MODE"
+
+	// OutputLogEnv is the path of the terminal log written by the shell
+	// logger.
+	OutputLogEnv = "GOFUCK_OUTPUT_LOG"
+
+	// LegacyOutputLogEnv is the log path variable of the original
+	// implementation.
+	LegacyOutputLogEnv = "THEFUCK_OUTPUT_LOG"
+)
+
 // Key is a semantic key press returned by the platform key reader.
 type Key string
 

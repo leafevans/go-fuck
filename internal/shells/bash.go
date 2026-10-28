@@ -6,7 +6,6 @@ import (
 
 	"github.com/leafevans/go-fuck/internal/conf"
 	"github.com/leafevans/go-fuck/internal/consts"
-	"github.com/leafevans/go-fuck/internal/logs"
 )
 
 // bashAliasTemplate defines the alias function for bash.
@@ -45,11 +44,16 @@ func (b *Bash) AppAlias(aliasName string) string {
 		consts.ArgumentPlaceholder, alterHistory)
 }
 
-// InstantModeAlias falls back to the regular alias because instant mode is not
-// supported.
+// InstantModeAlias returns the alias of the experimental instant mode.
+//
+// In a normal shell it returns the code that starts the logged shell. Inside
+// the logged shell it returns the regular alias with a prompt marker so that
+// go-fuck can find the command output in the terminal log.
 func (b *Bash) InstantModeAlias(aliasName string) string {
-	logs.Warn("Instant mode not supported by go-fuck")
-	return b.AppAlias(aliasName)
+	if instantModeEnabled() {
+		return instantModeMarkedAlias(b.AppAlias(aliasName))
+	}
+	return instantModeInitAlias()
 }
 
 // FromShell expands the aliases exported by the bash alias.
