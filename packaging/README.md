@@ -73,13 +73,15 @@ After the manifest is merged, users install it with
 When publishing a new release `vX.Y.Z`:
 
 1. Push the tag and wait for the Release workflow to finish.
-2. Download `checksums.txt` from the release and update:
-   - `Formula/go-fuck.rb`: `version` and the four `sha256` values
-     (darwin/linux × amd64/arm64).
-   - `bucket/go-fuck.json`: `version`, the two zip URLs and their `hash`
-     values (Windows amd64/arm64).
-   - `packaging/winget/*.yaml`: `PackageVersion`, `InstallerUrl`,
-     `InstallerSha256` and `ReleaseNotesUrl`.
+2. Download `checksums.txt` from the release and regenerate the manifests:
+   ```bash
+   go run ./tools/update-packaging -version X.Y.Z -checksums checksums.txt
+   ```
+   The tool checks that the checksums are for the requested version and that
+   all six release assets are present, then rewrites the Homebrew formula, the
+   Scoop manifest and the winget manifests in one step. Review the diff and
+   commit it (also possible through `make packaging VERSION=X.Y.Z
+   CHECKSUMS=checksums.txt`).
 3. Submit the updated winget manifests to `microsoft/winget-pkgs`.
 4. Run `go run ./tools/gen-rule-list -check` and the full test suite before
    tagging the follow-up commit.

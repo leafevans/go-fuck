@@ -11,6 +11,11 @@ GO            ?= go
 BINARY        ?= go-fuck
 GOLANGCI_LINT ?= golangci-lint
 
+# Inputs for "make packaging": the release version (without the leading v) and
+# the path of the checksums.txt asset of that release.
+VERSION   ?=
+CHECKSUMS ?= dist/checksums.txt
+
 # Add an .exe suffix on Windows so that "make build" produces a file the
 # system can start directly.
 ifeq ($(OS),Windows_NT)
@@ -22,7 +27,7 @@ endif
 #	make build LDFLAGS="-X github.com/leafevans/go-fuck/internal/consts.Version=1.2.3"
 LDFLAGS ?=
 
-.PHONY: help build test test-race cover vet fmt fmt-check lint install clean rules-list rules-list-check
+.PHONY: help build test test-race cover vet fmt fmt-check lint install clean packaging rules-list rules-list-check
 
 .DEFAULT_GOAL := help
 
@@ -59,6 +64,9 @@ install: ## Install the go-fuck command with go install
 
 clean: ## Remove the built binary and the GoReleaser output
 	@$(GO) run ./tools/clean $(BINARY) $(BINARY).exe dist coverage.out
+
+packaging: ## Regenerate the distribution manifests for VERSION from CHECKSUMS
+	@$(GO) run ./tools/update-packaging -version $(VERSION) -checksums $(CHECKSUMS)
 
 rules-list: ## Regenerate the rule list in README.md
 	@$(GO) run ./tools/gen-rule-list
