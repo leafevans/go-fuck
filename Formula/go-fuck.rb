@@ -3,6 +3,7 @@
 # This repository doubles as a Homebrew tap, so users can install the tool with:
 #
 #   brew tap leafevans/go-fuck https://github.com/leafevans/go-fuck
+#   brew trust leafevans/go-fuck
 #   brew install go-fuck
 #
 # The formula installs the prebuilt release archive for the current platform.

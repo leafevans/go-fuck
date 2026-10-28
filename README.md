@@ -80,6 +80,7 @@ The repository doubles as a Homebrew tap:
 
 ```bash
 brew tap leafevans/go-fuck https://github.com/leafevans/go-fuck
+brew trust leafevans/go-fuck
 brew install go-fuck
 ```
 

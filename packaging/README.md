@@ -5,7 +5,7 @@ multi-channel distribution for go-fuck.
 
 | Channel | File | Install |
 | --- | --- | --- |
-| Homebrew (macOS/Linux) | `Formula/go-fuck.rb` | `brew tap leafevans/go-fuck https://github.com/leafevans/go-fuck && brew install go-fuck` |
+| Homebrew (macOS/Linux) | `Formula/go-fuck.rb` | `brew tap leafevans/go-fuck https://github.com/leafevans/go-fuck && brew trust leafevans/go-fuck && brew install go-fuck` |
 | Scoop (Windows) | `bucket/go-fuck.json` | `scoop bucket add go-fuck https://github.com/leafevans/go-fuck` then `scoop install go-fuck` |
 | winget (Windows) | `packaging/winget/` | `winget install leafevans.go-fuck` (after the manifest is accepted upstream) |
 | Prebuilt binaries | GitHub releases | download and put `go-fuck` on `PATH` |
@@ -17,6 +17,7 @@ The repository itself is a Homebrew tap: users run
 
 ```bash
 brew tap leafevans/go-fuck https://github.com/leafevans/go-fuck
+brew trust leafevans/go-fuck
 brew install go-fuck
 ```
 
