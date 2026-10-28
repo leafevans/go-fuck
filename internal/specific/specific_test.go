@@ -381,7 +381,9 @@ func TestNpmGetScriptsParsesOutput(t *testing.T) {
 		"    eslint .\n" +
 		"EOF\n"
 	writeSpecificScript(t, filepath.Join(dir, "npm"), script)
-	t.Setenv("PATH", dir)
+	// The fake npm script uses "cat", which the shell has to find in the
+	// standard directories: the PATH below only contains the stub first.
+	t.Setenv("PATH", dir+string(os.PathListSeparator)+"/bin"+string(os.PathListSeparator)+"/usr/bin")
 
 	scripts := NpmGetScripts()
 	if len(scripts) != 2 || scripts[0] != "build" || scripts[1] != "lint" {
