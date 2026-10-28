@@ -262,7 +262,7 @@ Common options:
 | `-r`, `--repeat` | if the corrected command fails, run go-fuck again |
 | `--force-command CMD` | fix `CMD` instead of the previous command |
 | `-d`, `--debug` | print debug information to stderr |
-| `-v`, `--version` | print the go-fuck, Go and shell versions |
+| `-v`, `--version` | print build and environment details (a colored banner in a terminal, a single line when piped) |
 | `-h`, `--help` | print the full option list |
 | `--enable-experimental-instant-mode` | accepted for compatibility; instant mode is not supported and go-fuck falls back to re-running the command |
 

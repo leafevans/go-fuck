@@ -4,10 +4,8 @@ package entrypoints
 import (
 	"fmt"
 	"os"
-	"runtime"
 
 	"github.com/leafevans/go-fuck/internal/argumentparser"
-	"github.com/leafevans/go-fuck/internal/consts"
 	"github.com/leafevans/go-fuck/internal/logs"
 	"github.com/leafevans/go-fuck/internal/shells"
 	"github.com/leafevans/go-fuck/internal/system"
@@ -30,7 +28,7 @@ func Main() int {
 		fmt.Fprintln(os.Stderr, argumentparser.Help())
 		return 0
 	case args.Version:
-		logs.Version(version(), runtime.Version(), shells.Current().Info())
+		logs.PrintVersion(versionInfo())
 		return 0
 	case args.ShellLogger != "":
 		return shellLogger(args.ShellLogger)
@@ -42,9 +40,4 @@ func Main() int {
 		fmt.Fprintln(os.Stderr, argumentparser.Usage())
 		return 0
 	}
-}
-
-// version returns the reported go-fuck version.
-func version() string {
-	return consts.Version
 }

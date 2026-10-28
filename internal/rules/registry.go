@@ -43,6 +43,11 @@ func register(rule *types.Rule) {
 	byName[rule.Name] = rule
 }
 
+// Count returns the number of registered rules.
+func Count() int {
+	return len(All())
+}
+
 // All returns the registered rules ordered by priority and name.
 //
 // Rules are registered in file name order, which reproduces the stable sorting

@@ -175,6 +175,11 @@ func Load(args *Args) (*Settings, error) {
 	return s, fileErr
 }
 
+// UserDir returns the go-fuck configuration directory.
+func UserDir() string {
+	return userDir()
+}
+
 // userDir returns the go-fuck configuration directory, creating it when
 // necessary.
 func userDir() string {
