@@ -6,31 +6,31 @@
 #   brew install go-fuck
 #
 # The formula installs the prebuilt release archive for the current platform.
-# Update the version and the four checksums when a new release is published
-# (see packaging/README.md).
+# Update it with "go run ./tools/update-packaging" when a new release is
+# published (see packaging/README.md).
 class GoFuck < Formula
   desc "Blazingly fast reimplementation of thefuck in Go"
   homepage "https://github.com/leafevans/go-fuck"
-  version "0.1.0"
+  version "0.2.0"
   license "MIT"
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/leafevans/go-fuck/releases/download/v#{version}/go-fuck_#{version}_darwin_arm64.tar.gz"
-      sha256 "6ae4601d94a7c1434bd00bbc3cc7a1150b844c60f693da45d62a1f515de584ee"
+      url "https://github.com/leafevans/go-fuck/releases/download/v0.2.0/go-fuck_0.2.0_darwin_arm64.tar.gz"
+      sha256 "fedbb570ca6523202ae7ecd69135502ea6b8dac5dccca5fb66a51fe0c705d2b9"
     else
-      url "https://github.com/leafevans/go-fuck/releases/download/v#{version}/go-fuck_#{version}_darwin_amd64.tar.gz"
-      sha256 "1c2d4c29fa1efebec51c0953231c998d2b1493d1bab665a6b00ebcea6c44da96"
+      url "https://github.com/leafevans/go-fuck/releases/download/v0.2.0/go-fuck_0.2.0_darwin_amd64.tar.gz"
+      sha256 "af048defdeff5d38c77aa6a177c3a9ca5bd9db1666c7d69f5c3bb718160bafd0"
     end
   end
 
   on_linux do
     if Hardware::CPU.arm?
-      url "https://github.com/leafevans/go-fuck/releases/download/v#{version}/go-fuck_#{version}_linux_arm64.tar.gz"
-      sha256 "c819e389196cfb34b7fba3937099b2ced6b70b5388953c1092536d58e3e7e4df"
+      url "https://github.com/leafevans/go-fuck/releases/download/v0.2.0/go-fuck_0.2.0_linux_arm64.tar.gz"
+      sha256 "b78e09b6eb27897dcd3ada05120c4c187069fc33b52065988eed602e45d462b6"
     else
-      url "https://github.com/leafevans/go-fuck/releases/download/v#{version}/go-fuck_#{version}_linux_amd64.tar.gz"
-      sha256 "8f3065a5c9852ba2aa52cc072c48597d37b042bdb46852579675213d12ff0799"
+      url "https://github.com/leafevans/go-fuck/releases/download/v0.2.0/go-fuck_0.2.0_linux_amd64.tar.gz"
+      sha256 "29b14098ce7d886f78531ab4a61f534dd2d1c205347b0b68f6815e449a153776"
     end
   end
 
