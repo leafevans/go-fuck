@@ -1,0 +1,16 @@
+# Normalize all text files to LF in the repository and in working trees.
+* text=auto eol=lf
+
+# Windows command and PowerShell scripts are checked out with CRLF so that
+# cmd.exe and Windows PowerShell interpret them correctly.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary files must never be converted.
+*.exe binary
+*.gif binary
+*.png binary
+*.jpg binary
+*.zip binary
+*.gz binary

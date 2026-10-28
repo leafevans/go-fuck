@@ -174,8 +174,10 @@ Use the helpers from `internal/rules/testhelpers_test.go`:
   `match`.
 * `assertNewCommands(t, rule, script, output, want)` – checks the corrected
   commands returned by `get_new_command`.
-* `fakeExecutables(t, "git", "brew")` – creates stubs in a temporary directory
-  and prepends it to `PATH`.
+* Executable stubs: create them with `t.TempDir()` and `os.WriteFile`, then point
+  `PATH` at the directory with `t.Setenv("PATH", dir)` and call
+  `utils.ResetCaches()`. On Windows the `.exe` suffix is required by
+  `exec.LookPath`, so create both names when the test needs to find the tool.
 
 Do not redefine those helper names. Rule specific helpers must be prefixed with
 the rule name, for example `gitPushBitbucketOutput()`.

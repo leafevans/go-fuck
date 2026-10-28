@@ -1,0 +1,83 @@
+# golangci-lint configuration for go-fuck.
+#
+# go-fuck only uses the Go standard library, so a compact, strict set of
+# linters is enough: correctness (errcheck, govet, ineffassign, staticcheck,
+# unused), spelling (misspell) and a focused part of revive for the conventions
+# documented in CONTRIBUTING.md.
+
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: none
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - misspell
+    - revive
+    - staticcheck
+    - unused
+  settings:
+    govet:
+      disable:
+        - shadow
+    misspell:
+      locale: US
+      # "recognised" is part of a Windows error message reproduced by the
+      # git_clone_missing rule, not a prose typo.
+      ignore-rules:
+        - recognised
+    staticcheck:
+      # ST1018 is disabled because consts.UserCommandMark is an intentionally
+      # invisible Unicode marker.
+      checks:
+        - all
+        - -ST1018
+    revive:
+      rules:
+        - name: blank-imports
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: dot-imports
+        - name: error-naming
+        - name: error-return
+        - name: error-strings
+        - name: increment-decrement
+        - name: indent-error-flow
+        - name: range
+        - name: receiver-naming
+        - name: redefines-builtin-id
+        - name: superfluous-else
+        - name: time-naming
+        - name: unexported-return
+        - name: unreachable-code
+        - name: var-declaration
+        - name: var-naming
+  exclusions:
+    generated: lax
+    presets:
+      - common-false-positives
+      - std-error-handling
+    rules:
+      # Ported test fixtures reproduce the exact typo strings of the original
+      # test suite, so misspell must not be applied to test files.
+      - path: _test\.go
+        linters:
+          - misspell
+    paths:
+      - thefuck
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    gofmt:
+      simplify: true
+  exclusions:
+    generated: lax
+    paths:
+      - thefuck
