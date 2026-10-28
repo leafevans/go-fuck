@@ -1,7 +1,6 @@
 package shells
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
@@ -180,23 +179,22 @@ func (g *Generic) readHistory() []string {
 }
 
 // readHistoryFile parses a history file, applying the history_limit setting.
+//
+// The file is read in one go and split into lines. This avoids one string
+// allocation per history line, which matters because the history based rules
+// are matched for every command, not only for history related ones.
 func readHistoryFile(path string, parse func(string) string) []string {
-	file, err := os.Open(homePath(path))
+	data, err := os.ReadFile(homePath(path))
 	if err != nil {
 		return nil
 	}
-	defer file.Close()
 
-	var lines []string
-	scanner := bufio.NewScanner(file)
-	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
-	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
+	lines := strings.Split(string(data), string(rune(charNewline)))
+	// A trailing newline produces an empty last element; drop it so that the
+	// history_limit slice selection matches the previous line based reader.
+	if last := len(lines) - 1; last >= 0 && lines[last] == "" {
+		lines = lines[:last]
 	}
-	if err := scanner.Err(); err != nil {
-		return nil
-	}
-
 	if limit := conf.Current().HistoryLimit; limit > 0 && len(lines) > limit {
 		lines = lines[len(lines)-limit:]
 	}

@@ -174,8 +174,10 @@ func (r *Rule) IsMatch(command *Command) (matched bool) {
 		return false
 	}
 
-	stopTimer := logs.DebugTime("Trying rule: " + r.Name + ";")
-	defer stopTimer()
+	if conf.Current().Debug {
+		stopTimer := logs.DebugTime("Trying rule: " + r.Name + ";")
+		defer stopTimer()
+	}
 	defer func() {
 		if recovered := recover(); recovered != nil {
 			logs.RuleFailed(r.Name, fmt.Errorf("%v", recovered))
