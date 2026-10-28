@@ -26,6 +26,9 @@ var (
 	registryMu sync.Mutex
 	registry   []*types.Rule
 	byName     = map[string]*types.Rule{}
+
+	allOnce  sync.Once
+	allRules []*types.Rule
 )
 
 // register adds a rule to the registry. It is called from the init function of
@@ -40,24 +43,30 @@ func register(rule *types.Rule) {
 	byName[rule.Name] = rule
 }
 
-// All returns a copy of all registered rules ordered by name and priority.
+// All returns the registered rules ordered by priority and name.
 //
 // Rules are registered in file name order, which reproduces the stable sorting
 // of the original implementation: rules are tried in priority order and
 // alphabetically within the same priority.
+//
+// The list is computed once because the registry is immutable after the init
+// phase. The returned slice is shared and must not be modified by callers.
 func All() []*types.Rule {
-	registryMu.Lock()
-	defer registryMu.Unlock()
+	allOnce.Do(func() {
+		registryMu.Lock()
+		all := make([]*types.Rule, len(registry))
+		copy(all, registry)
+		registryMu.Unlock()
 
-	all := make([]*types.Rule, len(registry))
-	copy(all, registry)
-	sort.SliceStable(all, func(left, right int) bool {
-		return all[left].Name < all[right].Name
+		sort.SliceStable(all, func(left, right int) bool {
+			return all[left].Name < all[right].Name
+		})
+		sort.SliceStable(all, func(left, right int) bool {
+			return all[left].Priority < all[right].Priority
+		})
+		allRules = all
 	})
-	sort.SliceStable(all, func(left, right int) bool {
-		return all[left].Priority < all[right].Priority
-	})
-	return all
+	return allRules
 }
 
 // Get returns the rule with the given name.

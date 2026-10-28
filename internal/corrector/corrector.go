@@ -23,8 +23,9 @@ func GetRules() []*types.Rule {
 		excluded[name] = true
 	}
 
-	enabled := []*types.Rule{}
-	for _, rule := range rules.All() {
+	all := rules.All()
+	enabled := make([]*types.Rule, 0, len(all))
+	for _, rule := range all {
 		if excluded[rule.Name] {
 			logs.Debug("Ignoring excluded rule: %s", rule.Name)
 			continue
@@ -32,12 +33,15 @@ func GetRules() []*types.Rule {
 		if !rule.IsEnabled() {
 			continue
 		}
-		// The rule is copied so that a priority override from the settings does
-		// not mutate the registered rule and leak into later calls.
-		configured := *rule
-		if priority, ok := settings.Priority[rule.Name]; ok {
-			configured.Priority = priority
+		priority, overridden := settings.Priority[rule.Name]
+		if !overridden {
+			enabled = append(enabled, rule)
+			continue
 		}
+		// The rule is copied only when the settings override its priority, so
+		// the registered rule is never mutated.
+		configured := *rule
+		configured.Priority = priority
 		enabled = append(enabled, &configured)
 	}
 

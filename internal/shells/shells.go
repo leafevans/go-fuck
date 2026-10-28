@@ -4,7 +4,7 @@ package shells
 
 import (
 	"path/filepath"
-	"sync"
+	"sync/atomic"
 )
 
 // Configuration describes how to install the alias in a shell configuration
@@ -70,24 +70,23 @@ var registry = map[string]func() Shell{
 	"pwsh":       func() Shell { return NewPowershell() },
 }
 
-var (
-	currentMu sync.RWMutex
-	current   Shell = NewGeneric()
-)
+var current atomic.Pointer[Shell]
+
+func init() {
+	shell := Shell(NewGeneric())
+	current.Store(&shell)
+}
 
 // Current returns the shell that invoked go-fuck.
 func Current() Shell {
-	currentMu.RLock()
-	defer currentMu.RUnlock()
-	return current
+	return *current.Load()
 }
 
 // Set replaces the current shell. It is intended for tests and for the
 // detector.
 func Set(s Shell) {
-	currentMu.Lock()
-	defer currentMu.Unlock()
-	current = s
+	shell := s
+	current.Store(&shell)
 }
 
 // FromEnv returns the shell declared in TF_SHELL, or nil.

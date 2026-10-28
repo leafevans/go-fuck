@@ -116,9 +116,18 @@ func Debug(format string, args ...any) {
 	}
 }
 
+// noopStop is returned by DebugTime when debug output is disabled.
+var noopStop = func() {}
+
 // DebugTime measures the duration of an operation and reports it in debug
 // mode. The returned function stops the timer.
+//
+// A shared no-op is returned when debug output is disabled so that the hot
+// rule matching path does not pay for a clock read or a closure allocation.
 func DebugTime(message string) func() {
+	if !conf.Current().Debug {
+		return noopStop
+	}
 	started := time.Now()
 	return func() {
 		Debug("%s took: %s", message, time.Since(started))

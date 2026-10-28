@@ -64,10 +64,10 @@ func TestCommandScriptParts(t *testing.T) {
 		t.Fatalf("ScriptParts() = %q, want %q", parts, want)
 	}
 
-	// The parts are cached, so mutating the result does not invalidate them.
-	parts[0] = "mutated"
-	if command.ScriptParts()[0] != "git" {
-		t.Fatal("ScriptParts() returned a cached but mutated slice")
+	// The parts are cached between calls; callers that need to mutate the
+	// result have to copy it first.
+	if second := command.ScriptParts(); len(second) != len(want) || second[0] != "git" {
+		t.Fatalf("ScriptParts() is not cached correctly: %q", second)
 	}
 }
 

@@ -2,6 +2,7 @@ package utils
 
 import (
 	"sort"
+	"unicode/utf8"
 
 	"github.com/leafevans/go-fuck/internal/conf"
 )
@@ -10,7 +11,11 @@ import (
 // SequenceMatcher.ratio of the Python standard library. The result is between
 // 0 and 1.
 func SequenceRatio(a, b string) float64 {
-	left, right := []rune(a), []rune(b)
+	return ratioRunes([]rune(a), []rune(b))
+}
+
+// ratioRunes returns the similarity of two rune slices.
+func ratioRunes(left, right []rune) float64 {
 	length := len(left) + len(right)
 	if length == 0 {
 		return 1
@@ -23,55 +28,118 @@ func matchingBlockSize(a, b []rune) int {
 	type block struct {
 		alo, ahi, blo, bhi int
 	}
-	type match struct {
-		i, j, size int
-	}
 
 	queue := []block{{0, len(a), 0, len(b)}}
-	blocks := []match{}
+	// Two rows of the dynamic programming table are reused for every
+	// findLongestMatch call, so the hot path does not allocate per row.
+	previous := make([]int, len(b)+1)
+	current := make([]int, len(b)+1)
+
+	total := 0
 	for len(queue) > 0 {
-		current := queue[len(queue)-1]
+		currentBlock := queue[len(queue)-1]
 		queue = queue[:len(queue)-1]
 
-		i, j, size := findLongestMatch(a, b, current.alo, current.ahi, current.blo, current.bhi)
+		i, j, size := findLongestMatch(a, b, currentBlock.alo, currentBlock.ahi,
+			currentBlock.blo, currentBlock.bhi, previous, current)
 		if size == 0 {
 			continue
 		}
-		blocks = append(blocks, match{i, j, size})
-		if current.alo < i && current.blo < j {
-			queue = append(queue, block{current.alo, i, current.blo, j})
+		total += size
+		if currentBlock.alo < i && currentBlock.blo < j {
+			queue = append(queue, block{currentBlock.alo, i, currentBlock.blo, j})
 		}
-		if i+size < current.ahi && j+size < current.bhi {
-			queue = append(queue, block{i + size, current.ahi, j + size, current.bhi})
+		if i+size < currentBlock.ahi && j+size < currentBlock.bhi {
+			queue = append(queue, block{i + size, currentBlock.ahi, j + size, currentBlock.bhi})
 		}
-	}
-
-	total := 0
-	for _, block := range blocks {
-		total += block.size
 	}
 	return total
 }
 
 // findLongestMatch returns the longest matching block inside the given ranges.
-func findLongestMatch(a, b []rune, alo, ahi, blo, bhi int) (int, int, int) {
+//
+// The previous and current rows of the dynamic programming table are passed in
+// by the caller so that they can be reused across calls.
+func findLongestMatch(a, b []rune, alo, ahi, blo, bhi int, previous, current []int) (int, int, int) {
 	bestI, bestJ, bestSize := alo, blo, 0
-	previous := map[int]int{}
+	width := bhi - blo
+	for cell := 0; cell <= width; cell++ {
+		previous[cell] = 0
+		current[cell] = 0
+	}
+
 	for i := alo; i < ahi; i++ {
-		current := map[int]int{}
+		current[0] = 0
 		for j := blo; j < bhi; j++ {
+			cell := j - blo + 1
 			if a[i] != b[j] {
+				current[cell] = 0
 				continue
 			}
-			size := previous[j-1] + 1
-			current[j] = size
+			size := previous[cell-1] + 1
+			current[cell] = size
 			if size > bestSize {
-				bestI, bestJ, bestSize = i-size+1, j-size+1, size
+				bestI = i - size + 1
+				bestJ = j - size + 1
+				bestSize = size
 			}
 		}
-		previous = current
+		previous, current = current, previous
 	}
 	return bestI, bestJ, bestSize
+}
+
+// realQuickRatio returns a cheap upper bound of the similarity of two strings,
+// mirroring SequenceMatcher.real_quick_ratio.
+func realQuickRatio(leftLen, rightLen int) float64 {
+	length := leftLen + rightLen
+	if length == 0 {
+		return 1
+	}
+	if leftLen < rightLen {
+		return 2 * float64(leftLen) / float64(length)
+	}
+	return 2 * float64(rightLen) / float64(length)
+}
+
+// quickRatioUpperBound returns a cheap upper bound of the similarity of a
+// candidate and the word, mirroring SequenceMatcher.quick_ratio.
+//
+// The upper bound never underestimates the real ratio, so candidates below the
+// cutoff can be skipped without changing the result.
+func quickRatioUpperBound(candidate string, wordCounts map[rune]int, scratch map[rune]int, wordLen, candidateLen int) float64 {
+	length := wordLen + candidateLen
+	if length == 0 {
+		return 1
+	}
+
+	for key := range scratch {
+		scratch[key] = 0
+	}
+	for _, char := range candidate {
+		if _, ok := wordCounts[char]; ok {
+			scratch[char]++
+		}
+	}
+
+	matching := 0
+	for char, count := range wordCounts {
+		found := scratch[char]
+		if found > count {
+			found = count
+		}
+		matching += found
+	}
+	return 2 * float64(matching) / float64(length)
+}
+
+// runeCounts returns the character frequencies of a rune slice.
+func runeCounts(runes []rune) map[rune]int {
+	counts := make(map[rune]int, len(runes))
+	for _, char := range runes {
+		counts[char]++
+	}
+	return counts
 }
 
 // GetCloseMatches returns at most n entries of possibilities that are similar
@@ -86,13 +154,33 @@ func GetCloseMatches(word string, possibilities []string, n int, cutoff float64)
 		return nil
 	}
 
+	wordRunes := []rune(word)
+	wordLen := len(wordRunes)
+	var wordCounts map[rune]int
+	var scratch map[rune]int
+
 	type scored struct {
 		ratio float64
 		value string
 	}
-	matches := []scored{}
+	matches := make([]scored, 0, n)
+
 	for _, possible := range possibilities {
-		if ratio := SequenceRatio(possible, word); ratio >= cutoff {
+		possibleLen := utf8.RuneCountInString(possible)
+		// Both bounds are upper bounds of the real ratio, so skipping a
+		// candidate that cannot reach the cutoff preserves the result.
+		if realQuickRatio(wordLen, possibleLen) < cutoff {
+			continue
+		}
+		if wordCounts == nil {
+			wordCounts = runeCounts(wordRunes)
+			scratch = make(map[rune]int, len(wordCounts))
+		}
+		if quickRatioUpperBound(possible, wordCounts, scratch, wordLen, possibleLen) < cutoff {
+			continue
+		}
+
+		if ratio := ratioRunes([]rune(possible), wordRunes); ratio >= cutoff {
 			matches = append(matches, scored{ratio, possible})
 		}
 	}

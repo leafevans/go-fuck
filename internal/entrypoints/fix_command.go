@@ -68,15 +68,11 @@ func getRawCommand(args *argumentparser.Args) []string {
 
 	lines := strings.Split(history, string(rune(10)))
 	alias := conf.Alias()
-	executables := map[string]bool{}
-	for _, executable := range utils.GetAllExecutables() {
-		executables[executable] = true
-	}
 
 	for i := len(lines) - 1; i >= 0; i-- {
 		command := lines[i]
 		diff := utils.SequenceRatio(alias, command)
-		if diff < consts.DiffWithAlias || executables[command] {
+		if diff < consts.DiffWithAlias || utils.IsExecutable(command) {
 			return []string{command}
 		}
 	}

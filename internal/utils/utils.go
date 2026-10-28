@@ -5,9 +5,8 @@ package utils
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
-	"sort"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -17,10 +16,32 @@ import (
 	"github.com/leafevans/go-fuck/internal/types"
 )
 
+// whichCacheEntry is a memoized executable lookup. The entry is only valid
+// while PATH is unchanged, so tests that modify PATH keep working.
+type whichCacheEntry struct {
+	path    string
+	pathEnv string
+}
+
+var whichCache sync.Map
+
 // Which returns the absolute path of an executable, or an empty string when it
 // is not available.
+//
+// The lookup is memoized because rule matching asks for the same programs many
+// times and every miss costs a number of file system probes on Windows.
 func Which(program string) string {
-	return system.Which(program)
+	pathEnv := os.Getenv("PATH")
+	if cached, ok := whichCache.Load(program); ok {
+		entry := cached.(whichCacheEntry)
+		if entry.pathEnv == pathEnv {
+			return entry.path
+		}
+	}
+
+	resolved := system.Which(program)
+	whichCache.Store(program, whichCacheEntry{path: resolved, pathEnv: pathEnv})
+	return resolved
 }
 
 // GetAlias returns the alias name that invoked go-fuck.
@@ -32,11 +53,14 @@ func GetAlias() string {
 func ResetCaches() {
 	executablesOnce = sync.Once{}
 	executables = nil
+	executableSet = nil
+	whichCache = sync.Map{}
 }
 
 var (
 	executablesOnce sync.Once
 	executables     []string
+	executableSet   map[string]bool
 )
 
 // GetAllExecutables returns the names of all executables that are available in
@@ -44,35 +68,71 @@ var (
 func GetAllExecutables() []string {
 	executablesOnce.Do(func() {
 		executables = loadAllExecutables()
+		executableSet = make(map[string]bool, len(executables))
+		for _, name := range executables {
+			executableSet[name] = true
+		}
 	})
 	return executables
 }
 
+// IsExecutable reports whether name is available in PATH or as a shell alias.
+func IsExecutable(name string) bool {
+	GetAllExecutables()
+	return executableSet[name]
+}
+
+// executableEntryPoints are the go-fuck binaries that must not be suggested as
+// corrected commands.
+var executableEntryPoints = map[string]bool{
+	"go-fuck": true,
+	"thefuck": true,
+	"fuck":    true,
+}
+
 // loadAllExecutables scans PATH and the shell aliases.
+//
+// The PATH directories are scanned in parallel because a typical Windows PATH
+// contains many directories and the scan is latency bound.
 func loadAllExecutables() []string {
 	alias := GetAlias()
-	entryPoints := map[string]bool{"go-fuck": true, "thefuck": true, "fuck": true}
+	aliasLower := strings.ToLower(alias)
+
+	paths := filepath.SplitList(os.Getenv("PATH"))
+	dirs := make([]string, 0, len(paths))
+	for _, path := range paths {
+		if includePathInSearch(path) {
+			dirs = append(dirs, path)
+		}
+	}
+
+	perDir := make([][]string, len(dirs))
+	if len(dirs) > 0 {
+		workers := runtime.NumCPU()
+		if workers > len(dirs) {
+			workers = len(dirs)
+		}
+		jobs := make(chan int)
+		var waitGroup sync.WaitGroup
+		waitGroup.Add(workers)
+		for worker := 0; worker < workers; worker++ {
+			go func() {
+				defer waitGroup.Done()
+				for index := range jobs {
+					perDir[index] = readExecutableDir(dirs[index], aliasLower)
+				}
+			}()
+		}
+		for index := range dirs {
+			jobs <- index
+		}
+		close(jobs)
+		waitGroup.Wait()
+	}
 
 	found := []string{}
-	for _, path := range filepath.SplitList(os.Getenv("PATH")) {
-		if !includePathInSearch(path) {
-			continue
-		}
-		entries, err := os.ReadDir(path)
-		if err != nil {
-			continue
-		}
-		for _, entry := range entries {
-			if entry.IsDir() {
-				continue
-			}
-			name := entry.Name()
-			base := strings.ToLower(trimExecutableSuffix(name))
-			if entryPoints[base] || base == strings.ToLower(alias) {
-				continue
-			}
-			found = append(found, name)
-		}
+	for _, names := range perDir {
+		found = append(found, names...)
 	}
 
 	for name := range shells.Current().GetAliases() {
@@ -81,6 +141,29 @@ func loadAllExecutables() []string {
 		}
 	}
 	return found
+}
+
+// readExecutableDir returns the names of the executable files of a PATH
+// directory. The result order matches os.ReadDir, so the flattened list is
+// deterministic and follows PATH order.
+func readExecutableDir(dir, aliasLower string) []string {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil
+	}
+	names := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		base := strings.ToLower(trimExecutableSuffix(name))
+		if executableEntryPoints[base] || base == aliasLower {
+			continue
+		}
+		names = append(names, name)
+	}
+	return names
 }
 
 // trimExecutableSuffix removes a Windows executable suffix.
@@ -122,12 +205,11 @@ func GetValidHistoryWithoutCurrent(command *types.Command) []string {
 	}
 
 	shell := shells.Current()
-	known := map[string]bool{}
-	for _, name := range GetAllExecutables() {
-		known[name] = true
-	}
+	// GetAllExecutables populates the cached executable set as a side effect.
+	GetAllExecutables()
+	builtins := make(map[string]bool, len(shell.BuiltinCommands()))
 	for _, name := range shell.BuiltinCommands() {
-		known[name] = true
+		builtins[name] = true
 	}
 
 	valid := make([]string, 0, len(filtered))
@@ -136,7 +218,7 @@ func GetValidHistoryWithoutCurrent(command *types.Command) []string {
 			continue
 		}
 		executable := strings.SplitN(line, " ", 2)[0]
-		if known[executable] {
+		if executableSet[executable] || builtins[executable] {
 			valid = append(valid, line)
 		}
 	}
@@ -245,21 +327,6 @@ func Memoize1[K comparable, V any](fn func(K) V) func(K) V {
 		cache.Store(key, value)
 		return value
 	}
-}
-
-// SortedKeys returns the sorted keys of a string set.
-func SortedKeys(set map[string]bool) []string {
-	keys := make([]string, 0, len(set))
-	for key := range set {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	return keys
-}
-
-// Itoa is a shorthand for strconv.Itoa.
-func Itoa(value int) string {
-	return strconv.Itoa(value)
 }
 
 // Contains reports whether values contains value.

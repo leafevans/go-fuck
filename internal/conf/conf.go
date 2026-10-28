@@ -18,7 +18,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
+	"sync/atomic"
 
 	"github.com/leafevans/go-fuck/internal/consts"
 )
@@ -95,30 +95,28 @@ func Default() *Settings {
 	}
 }
 
-var (
-	currentMu sync.RWMutex
-	current   = Default()
-)
+var current atomic.Pointer[Settings]
+
+func init() {
+	current.Store(Default())
+}
 
 // Current returns the process wide settings.
+//
+// Settings are read very often during rule matching, so they are stored behind
+// an atomic pointer instead of a mutex protected field.
 func Current() *Settings {
-	currentMu.RLock()
-	defer currentMu.RUnlock()
-	return current
+	return current.Load()
 }
 
 // Reset restores the default settings. It is intended for tests.
 func Reset() {
-	currentMu.Lock()
-	defer currentMu.Unlock()
-	current = Default()
+	current.Store(Default())
 }
 
 // Set replaces the process wide settings. It is intended for tests.
 func Set(s *Settings) {
-	currentMu.Lock()
-	defer currentMu.Unlock()
-	current = s
+	current.Store(s)
 }
 
 // Args lists the command line flags that influence settings.
@@ -168,9 +166,7 @@ func Load(args *Args) (*Settings, error) {
 	s.loadEnv()
 	s.loadArgs(args)
 
-	currentMu.Lock()
-	current = s
-	currentMu.Unlock()
+	current.Store(s)
 
 	return s, fileErr
 }

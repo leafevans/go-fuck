@@ -88,12 +88,14 @@ func (c *Command) HasOutput() bool {
 
 // ScriptParts returns the command split into arguments using shell rules.
 // Unparsable commands are split on whitespace.
+//
+// The slice is cached and shared between calls; callers that need to modify it
+// must copy it first.
 func (c *Command) ScriptParts() []string {
 	c.partsOnce.Do(func() {
 		c.parts = shells.Current().SplitCommand(c.Script)
 	})
-	// A copy is returned so that callers cannot corrupt the cache.
-	return append([]string{}, c.parts...)
+	return c.parts
 }
 
 // Update returns a copy of the command with the script and output replaced.
