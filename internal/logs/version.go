@@ -35,13 +35,14 @@ type VersionInfo struct {
 //
 // A plain one line version is printed when the output is not a terminal, so
 // scripts, pipes and tests keep the previous behavior. Interactive terminals
-// get a colored banner with the build and environment details.
-func PrintVersion(info VersionInfo) {
+// get a compact colored banner; verbose adds the config, instant mode, fzf and
+// alias details.
+func PrintVersion(info VersionInfo, verbose bool) {
 	if !isTerminal(out) {
 		Version(info.Version, info.GoVersion, info.Shell)
 		return
 	}
-	fmt.Fprint(out, renderBanner(info))
+	fmt.Fprint(out, renderBanner(info, verbose))
 }
 
 // isTerminal reports whether w is a character device such as a terminal.
@@ -58,7 +59,7 @@ func isTerminal(w io.Writer) bool {
 }
 
 // renderBanner renders the colored version banner.
-func renderBanner(info VersionInfo) string {
+func renderBanner(info VersionInfo, verbose bool) string {
 	logo := []string{
 		"   ██████╗  ██████╗     ███████╗██╗   ██╗ ██████╗██╗  ██╗",
 		"  ██╔════╝ ██╔═══██╗    ██╔════╝██║   ██║██╔════╝██║ ██╔╝",
@@ -71,48 +72,53 @@ func renderBanner(info VersionInfo) string {
 	var b strings.Builder
 	logoColor := color(styleBright + foreGreen)
 	reset := color(styleReset)
+	dim := color(foreBlue)
 	for _, line := range logo {
 		b.WriteString(logoColor)
 		b.WriteString(line)
 		b.WriteString(reset)
 		b.WriteString(newline)
 	}
-
 	b.WriteString(newline)
+
 	b.WriteString(color(styleBright))
 	b.WriteString(consts.AppName)
 	b.WriteString(" ")
 	b.WriteString(info.Version)
 	b.WriteString(reset)
-	b.WriteString("  blazingly fast reimplementation of thefuck in Go")
-	b.WriteString(newline)
-	b.WriteString(color(foreBlue))
-	b.WriteString(strings.Repeat("-", 54))
-	b.WriteString(reset)
+	b.WriteString("  thefuck in Go")
 	b.WriteString(newline)
 
-	field := func(label, value string) {
-		b.WriteString("  ")
-		b.WriteString(color(foreBlue))
-		fmt.Fprintf(&b, "%-10s", label)
+	line := func(left, right string) {
+		b.WriteString(left)
+		b.WriteString(dim)
+		b.WriteString("  ·  ")
 		b.WriteString(reset)
-		b.WriteString(value)
+		b.WriteString(right)
 		b.WriteString(newline)
 	}
+	line("Go "+info.GoVersion, info.Platform)
+	line("Shell "+info.Shell, fmt.Sprintf("%d rules", info.Rules))
+	line("Home", "https://github.com/leafevans/go-fuck")
 
-	field("Go", info.GoVersion)
-	field("Platform", info.Platform)
-	field("Shell", info.Shell)
-	field("Rules", fmt.Sprintf("%d", info.Rules))
-	field("Config", info.ConfigPath)
-	field("Instant", info.InstantMode)
-	if info.Fzf {
-		field("fzf", "installed")
-	} else {
-		field("fzf", "not installed")
+	if verbose {
+		b.WriteString(newline)
+		field := func(label, value string) {
+			b.WriteString(dim)
+			fmt.Fprintf(&b, "%-10s", label)
+			b.WriteString(reset)
+			b.WriteString(value)
+			b.WriteString(newline)
+		}
+		field("Config", info.ConfigPath)
+		field("Instant", info.InstantMode)
+		if info.Fzf {
+			field("fzf", "installed")
+		} else {
+			field("fzf", "not installed")
+		}
+		field("Alias", info.Alias)
 	}
-	field("Alias", info.Alias)
-	field("Source", "https://github.com/leafevans/go-fuck")
-	b.WriteString(newline)
+
 	return b.String()
 }
