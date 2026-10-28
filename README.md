@@ -406,7 +406,7 @@ the selection entirely.
 Rules are compiled into the binary. Each rule decides whether it applies to a failed command and
 returns one or more corrected commands. 169 rules are ported from the reference implementation;
 go-fuck also adds rules for tools that thefuck does not handle: the GitHub CLI, kubectl, uv, cargo,
-Helm and pnpm. The list below is generated from the compiled rules:
+Helm, pnpm, the Go toolchain and Node.js. The list below is generated from the compiled rules:
 
 <!-- RULES_LIST_START -->
 - `adb_unknown_command`
@@ -455,6 +455,7 @@ Helm and pnpm. The list below is generated from the compiled rules:
 - `fix_file`
 - `gem_unknown_command`
 - `gh_unknown_command`
+- `gh_unknown_flag`
 - `git_add`
 - `git_add_force`
 - `git_bisect_usage`
@@ -499,6 +500,7 @@ Helm and pnpm. The list below is generated from the compiled rules:
 - `git_stash_pop`
 - `git_tag_force`
 - `git_two_dashes`
+- `go_missing_module`
 - `go_run`
 - `go_unknown_command`
 - `gradle_no_task`
@@ -533,6 +535,7 @@ Helm and pnpm. The list below is generated from the compiled rules:
 - `nixos_cmd_not_found`
 - `no_command`
 - `no_such_file`
+- `node_missing_module`
 - `npm_missing_script`
 - `npm_run_script`
 - `npm_wrong_command`
@@ -575,6 +578,7 @@ Helm and pnpm. The list below is generated from the compiled rules:
 - `tsuru_not_command`
 - `unknown_command`
 - `unsudo`
+- `uv_unknown_argument`
 - `uv_unknown_subcommand`
 - `vagrant_up`
 - `whois`
@@ -615,8 +619,9 @@ This keeps the binary self-contained and deterministic. Contributions to the por
 go-fuck is a reimplementation, not a drop-in replacement for every thefuck feature:
 
 - **Complete rule port plus extras.** All 169 rules of the reference implementation are ported,
-  plus go-fuck specific rules for the GitHub CLI, kubectl, uv, cargo, Helm and pnpm; the list above
-  is authoritative. The porting conventions are documented in [PORTING.md](PORTING.md).
+  plus go-fuck specific rules for the GitHub CLI, kubectl, uv, cargo, Helm, pnpm, the Go toolchain
+  and Node.js; the list above is authoritative. The porting conventions are documented in
+  [PORTING.md](PORTING.md).
 - **Instant mode is not supported.** The experimental instant mode of thefuck reads the previous
   output from a terminal log. go-fuck always re-runs the command, using `wait_command` and
   `wait_slow_command` as timeouts. `--enable-experimental-instant-mode` is accepted for

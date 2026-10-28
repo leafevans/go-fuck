@@ -196,9 +196,13 @@ var expectedExtraRuleNames = []string{
 	"cargo_unknown_argument",
 	"cargo_unknown_command",
 	"gh_unknown_command",
+	"gh_unknown_flag",
+	"go_missing_module",
 	"helm_unknown_command",
 	"kubectl_unknown_command",
+	"node_missing_module",
 	"pnpm_command_not_found",
+	"uv_unknown_argument",
 	"uv_unknown_subcommand",
 }
 
