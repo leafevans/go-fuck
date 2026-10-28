@@ -79,7 +79,7 @@ git push --set-upstream origin main [enter/↑/↓/ctrl+c]
 The repository doubles as a Homebrew tap:
 
 ```bash
-brew tap leafevans/go-fuck
+brew tap leafevans/go-fuck https://github.com/leafevans/go-fuck
 brew install go-fuck
 ```
 
