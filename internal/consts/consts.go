@@ -13,7 +13,7 @@ const (
 // It is a variable so that release builds can override it at link time:
 //
 //	go build -ldflags "-X github.com/leafevans/go-fuck/internal/consts.Version=v1.2.3"
-var Version = "0.2.1"
+var Version = "0.2.2"
 
 // Rule defaults.
 const (
