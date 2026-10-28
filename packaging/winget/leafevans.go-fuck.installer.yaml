@@ -1,0 +1,18 @@
+# winget installer manifest for go-fuck.
+# The release archives are plain zip files containing the portable binary.
+PackageIdentifier: leafevans.go-fuck
+PackageVersion: 0.1.0
+InstallerType: zip
+NestedInstallerType: portable
+NestedInstallerFiles:
+  - RelativeFilePath: go-fuck.exe
+    PortableCommandAlias: go-fuck
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://github.com/leafevans/go-fuck/releases/download/v0.1.0/go-fuck_0.1.0_windows_amd64.zip
+    InstallerSha256: 5370c72c69ad8e62ae818e608073b80ccead3420c4cec60802352013d7ecfb28
+  - Architecture: arm64
+    InstallerUrl: https://github.com/leafevans/go-fuck/releases/download/v0.1.0/go-fuck_0.1.0_windows_arm64.zip
+    InstallerSha256: ce4cfa92a49800e6ce191a5d61e497f75fbbbf9bafae3d7d05850a3f913734f6
+ManifestType: installer
+ManifestVersion: 1.10.0

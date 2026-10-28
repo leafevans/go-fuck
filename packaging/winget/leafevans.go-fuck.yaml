@@ -1,0 +1,8 @@
+# winget version manifest for go-fuck.
+# Submit this directory (leafevans.go-fuck/<version>/) to
+# https://github.com/microsoft/winget-pkgs after running "winget validate".
+PackageIdentifier: leafevans.go-fuck
+PackageVersion: 0.1.0
+DefaultLocale: en-US
+ManifestType: version
+ManifestVersion: 1.10.0

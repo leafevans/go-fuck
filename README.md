@@ -74,6 +74,37 @@ git push --set-upstream origin main [enter/↑/↓/ctrl+c]
 
 ## Installation
 
+### With Homebrew (macOS and Linux)
+
+The repository doubles as a Homebrew tap:
+
+```bash
+brew tap leafevans/go-fuck
+brew install go-fuck
+```
+
+The formula installs the prebuilt binary for your platform, so no Go toolchain is
+needed. Upgrade with `brew upgrade go-fuck`.
+
+### With Scoop (Windows)
+
+```powershell
+scoop bucket add go-fuck https://github.com/leafevans/go-fuck
+scoop install go-fuck
+```
+
+Upgrade with `scoop update go-fuck`.
+
+### With winget (Windows)
+
+The winget manifest in `packaging/winget/` is submitted to
+[microsoft/winget-pkgs](https://github.com/microsoft/winget-pkgs). Once it is
+accepted, install with:
+
+```powershell
+winget install leafevans.go-fuck
+```
+
 ### With `go install`
 
 ```bash
