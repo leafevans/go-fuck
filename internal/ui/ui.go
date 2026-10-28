@@ -176,6 +176,9 @@ func SelectCommand(commands []*types.CorrectedCommand) *types.CorrectedCommand {
 		}
 	}
 
+	// The Windows key reader switches the console out of line input mode; make
+	// sure the parent shell gets its normal input handling back.
+	defer system.RestoreInput()
 	confirmSelection(selector)
 	nextAction := ReadActions()
 	for {

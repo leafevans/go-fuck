@@ -12,6 +12,9 @@ import (
 const (
 	stdinHandle                     = ^uintptr(9)  // -10
 	stdoutHandle                    = ^uintptr(11) // -11
+	enableProcessedInput            = 0x0001
+	enableLineInput                 = 0x0002
+	enableEchoInput                 = 0x0004
 	enableProcessedOutput           = 0x0001
 	enableVirtualTerminalProcessing = 0x0004
 	enableVirtualTerminalInput      = 0x0200
@@ -25,6 +28,9 @@ var (
 
 	initOutputOnce sync.Once
 	initInputOnce  sync.Once
+
+	inputModeSaved bool
+	savedInputMode uint32
 )
 
 // getConsoleMode returns the mode of the given standard handle.
@@ -60,13 +66,34 @@ func InitOutput() {
 	})
 }
 
-// initInput enables virtual terminal input so that cursor keys arrive as ANSI
-// escape sequences instead of Windows virtual key codes.
+// initInput switches the console input into a mode that delivers single key
+// presses: line input and echo are disabled and virtual terminal input is
+// enabled, so that cursor keys arrive as ANSI escape sequences (the same
+// behavior as msvcrt.getch in the original implementation).
 func initInput() {
 	initInputOnce.Do(func() {
 		handle := stdHandle(stdinHandle)
-		if mode, ok := getConsoleMode(handle); ok {
-			setConsoleMode(handle, uintptr(mode|enableVirtualTerminalInput))
+		mode, ok := getConsoleMode(handle)
+		if !ok {
+			return
 		}
+		inputModeSaved = true
+		savedInputMode = mode
+		raw := mode &^ uint32(enableProcessedInput|enableLineInput|enableEchoInput)
+		raw |= uint32(enableVirtualTerminalInput)
+		setConsoleMode(handle, uintptr(raw))
 	})
+}
+
+// RestoreInput restores the console input mode saved by initInput.
+//
+// It must be called after the interactive prompt is done, otherwise the parent
+// shell keeps running without line input and echo.
+func RestoreInput() {
+	if !inputModeSaved {
+		return
+	}
+	setConsoleMode(stdHandle(stdinHandle), uintptr(savedInputMode))
+	inputModeSaved = false
+	initInputOnce = sync.Once{}
 }
