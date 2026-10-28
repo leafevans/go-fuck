@@ -8,10 +8,12 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"slices"
 	"strings"
 	"sync"
 
 	"github.com/leafevans/go-fuck/internal/conf"
+	"github.com/leafevans/go-fuck/internal/consts"
 	"github.com/leafevans/go-fuck/internal/logs"
 	"github.com/leafevans/go-fuck/internal/output"
 	"github.com/leafevans/go-fuck/internal/shells"
@@ -156,20 +158,11 @@ func NewRule(name string, match MatchFunc, getNewCommand NewCommandFunc) *Rule {
 
 // IsEnabled reports whether the rule is enabled by the settings.
 func (r *Rule) IsEnabled() bool {
-	for _, name := range conf.Current().Rules {
-		if name == r.Name {
-			return true
-		}
+	rules := conf.Current().Rules
+	if slices.Contains(rules, r.Name) {
+		return true
 	}
-	if !r.EnabledByDefault {
-		return false
-	}
-	for _, name := range conf.Current().Rules {
-		if name == "All rules enabled" {
-			return true
-		}
-	}
-	return false
+	return r.EnabledByDefault && slices.Contains(rules, consts.AllEnabled)
 }
 
 // IsMatch reports whether the rule matches the command. A panicking or

@@ -5,6 +5,7 @@ package utils
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -263,22 +264,12 @@ func Itoa(value int) string {
 
 // Contains reports whether values contains value.
 func Contains[T comparable](values []T, value T) bool {
-	for _, item := range values {
-		if item == value {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(values, value)
 }
 
 // Index returns the index of the first occurrence of value in values, or -1.
 func Index[T comparable](values []T, value T) int {
-	for index, item := range values {
-		if item == value {
-			return index
-		}
-	}
-	return -1
+	return slices.Index(values, value)
 }
 
 // ForAppNew wraps a correction function so that it is only called for the

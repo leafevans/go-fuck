@@ -15,6 +15,9 @@ import (
 func resetTypesState(t *testing.T) {
 	t.Helper()
 	conf.Reset()
+	// Command fixtures are executed by the output reader, so give it a generous
+	// timeout to keep the test stable on a heavily loaded machine.
+	conf.Current().WaitCommand = 30
 	shells.Set(shells.NewGeneric())
 	logs.SetOutput(io.Discard)
 	t.Cleanup(func() {
