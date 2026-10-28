@@ -31,3 +31,13 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+# Reference implementation used while porting; it is a separate repository and
+# must not be committed.
+/thefuck/
+
+# Build output
+/go-fuck
+/go-fuck.exe
+/dist/
+/bin/
+
