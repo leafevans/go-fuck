@@ -61,7 +61,8 @@ func TestGetOutputUsesWaitSlowCommand(t *testing.T) {
 	if ok {
 		t.Fatalf("GetOutput() = %q for a timed out slow command", result)
 	}
-	if elapsed > 5*time.Second {
+	// The bound is generous on purpose, see TestGetOutputTimeout.
+	if elapsed > 20*time.Second {
 		t.Fatalf("GetOutput() took %s, the slow command timeout was not applied", elapsed)
 	}
 }

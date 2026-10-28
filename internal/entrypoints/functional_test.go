@@ -51,6 +51,10 @@ func functionalIsolateEnvironment(t *testing.T) string {
 		})
 	}
 
+	// The commands are executed for real; a generous timeout keeps the flow
+	// reliable when the whole suite runs in parallel on a loaded machine.
+	t.Setenv("GOFUCK_WAIT_COMMAND", "60")
+
 	utils.ResetCaches()
 	return configDir
 }

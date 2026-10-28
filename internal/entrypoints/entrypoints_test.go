@@ -173,6 +173,9 @@ func TestMainUnknownFlag(t *testing.T) {
 }
 func TestMainForceCommand(t *testing.T) {
 	resetEntrypointsState(t)
+	// Main re-reads the settings, so a generous wait time has to be provided
+	// through the environment instead of the current settings.
+	t.Setenv("GOFUCK_WAIT_COMMAND", "60")
 	code, stdout, _ := runMain(t, "go-fuck", "-y", "--force-command", "echo 'hello"+string(rune(34))+"")
 	if code != 0 {
 		t.Fatalf("Main() = %d, want 0", code)

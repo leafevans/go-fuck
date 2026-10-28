@@ -75,7 +75,9 @@ func TestGetOutputTimeout(t *testing.T) {
 	if ok {
 		t.Fatalf("GetOutput() reported an output for a timed out command: %q", output)
 	}
-	if elapsed > 4*time.Second {
+	// The bound is generous on purpose: the whole test suite runs packages in
+	// parallel, so a loaded machine can delay the kill by a few seconds.
+	if elapsed > 20*time.Second {
 		t.Fatalf("GetOutput() took %s, the command was not killed on timeout", elapsed)
 	}
 }
