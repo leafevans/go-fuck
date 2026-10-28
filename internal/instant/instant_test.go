@@ -52,6 +52,18 @@ func TestLastOutputStripsEscapeSequences(t *testing.T) {
 	}
 }
 
+func TestLastOutputStripsOSC(t *testing.T) {
+	osc := string([]byte{27}) + "]0;window title" + string([]byte{7})
+	log := prompt("$ ls") + "\r\n" + osc + "file one" + "\r\n"
+	got, ok := LastOutput(writeLog(t, log), "ls")
+	if !ok {
+		t.Fatal("LastOutput() did not find the command")
+	}
+	if want := "file one"; got != want {
+		t.Fatalf("LastOutput() = %q, want %q", got, want)
+	}
+}
+
 func TestLastOutputUsesLastCall(t *testing.T) {
 	log := prompt("$ echo old") + "\r\nold\r\n" +
 		prompt("$ echo new") + "\r\nnew\r\n" +
@@ -73,6 +85,21 @@ func TestLastOutputHandlesCarriageReturn(t *testing.T) {
 	got, ok := LastOutput(writeLog(t, log), "make")
 	if !ok || got != "progress 100" {
 		t.Fatalf("LastOutput() = %q, %t, want progress 100, true", got, ok)
+	}
+}
+
+func TestLastOutputMultilinePrompt(t *testing.T) {
+	log := prompt("╭─ user@host ~") + "\r\n" +
+		"╰─$ g\bgit brnch" + "\r\n" +
+		"\r\n" +
+		"git: 'brnch' is not a git command." + "\r\n" +
+		prompt("╰─$ ")
+	got, ok := LastOutput(writeLog(t, log), "git brnch")
+	if !ok {
+		t.Fatal("LastOutput() did not find the command in a multi line prompt")
+	}
+	if want := "git: 'brnch' is not a git command."; got != want {
+		t.Fatalf("LastOutput() = %q, want %q", got, want)
 	}
 }
 

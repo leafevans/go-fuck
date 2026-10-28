@@ -47,10 +47,11 @@ func LastOutput(logPath, script string) (string, bool) {
 	calls := groupCalls(data)
 	for index := len(calls) - 1; index >= 0; index-- {
 		call := calls[index]
-		if !call.contains(script, parts) {
+		echo := call.echoIndex(script, parts)
+		if echo < 0 {
 			continue
 		}
-		return call.output(), true
+		return call.output(echo), true
 	}
 	return "", false
 }
@@ -62,21 +63,35 @@ type logCall struct {
 	lines  []string
 }
 
-// contains reports whether the prompt line is the echoed invocation of script.
-func (c logCall) contains(script string, parts []string) bool {
-	cleaned := sanitize(c.prompt)
-	if trimmed := strings.TrimSpace(script); trimmed != "" && strings.Contains(cleaned, trimmed) {
-		return true
-	}
-	if len(parts) == 0 {
-		return false
-	}
-	for _, part := range parts {
-		if !strings.Contains(cleaned, part) {
-			return false
+// echoIndex returns the index of the prompt block line that contains the
+// echoed invocation of script, or -1 when this call is a different command.
+//
+// Multi line prompts (for example the oh-my-zsh bira theme) put the marker on
+// the first prompt line and the typed command on a later one, so the whole
+// prompt block has to be searched instead of only the marker line.
+func (c logCall) echoIndex(script string, parts []string) int {
+	trimmed := strings.TrimSpace(script)
+	lines := append([]string{c.prompt}, c.lines...)
+	for index, line := range lines {
+		cleaned := sanitize(line)
+		if trimmed != "" && strings.Contains(cleaned, trimmed) {
+			return index
+		}
+		if len(parts) == 0 {
+			continue
+		}
+		matches := true
+		for _, part := range parts {
+			if !strings.Contains(cleaned, part) {
+				matches = false
+				break
+			}
+		}
+		if matches {
+			return index
 		}
 	}
-	return true
+	return -1
 }
 
 // output renders the terminal screen of the command output.
@@ -84,15 +99,21 @@ func (c logCall) contains(script string, parts []string) bool {
 // The reference implementation emulates a terminal with pyte; this simplified
 // renderer strips escape sequences and applies carriage return overwrites. It
 // is a documented deviation in README.md.
-func (c logCall) output() string {
+//
+// from is the index of the echoed command line inside the prompt block; the
+// output starts after it.
+func (c logCall) output(from int) string {
 	lines := make([]string, 0, len(c.lines))
-	for _, line := range c.lines {
+	for _, line := range c.lines[from:] {
 		line = strings.TrimRight(line, "\r")
 		if position := strings.LastIndexByte(line, '\r'); position >= 0 {
 			line = line[position+1:]
 		}
 		line = sanitize(line)
 		lines = append(lines, strings.TrimRight(line, " \t"))
+	}
+	for len(lines) > 0 && lines[0] == "" {
+		lines = lines[1:]
 	}
 	for len(lines) > 0 && lines[len(lines)-1] == "" {
 		lines = lines[:len(lines)-1]
@@ -148,8 +169,32 @@ var (
 // from a terminal log line.
 func sanitize(line string) string {
 	line = strings.ReplaceAll(line, consts.UserCommandMark, "")
+	line = stripOSC(line)
 	line = ansiCSI.ReplaceAllString(line, "")
 	return ansiControl.ReplaceAllString(line, "")
+}
+
+// stripOSC removes operating system command sequences (window titles and
+// similar), which are terminated by BEL.
+func stripOSC(line string) string {
+	var b strings.Builder
+	inOSC := false
+	for index := 0; index < len(line); index++ {
+		character := line[index]
+		if inOSC {
+			if character == 7 {
+				inOSC = false
+			}
+			continue
+		}
+		if character == 27 && index+1 < len(line) && line[index+1] == ']' {
+			inOSC = true
+			index++
+			continue
+		}
+		b.WriteByte(character)
+	}
+	return b.String()
 }
 
 // RingWriter writes the terminal log while keeping it below the configured
