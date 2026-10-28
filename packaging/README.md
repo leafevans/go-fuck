@@ -23,7 +23,8 @@ brew install go-fuck
 The formula installs the prebuilt release archive for the current platform and
 architecture and links the `go-fuck` binary. It does not need the Go toolchain.
 
-To check the formula on a machine with Homebrew:
+CI installs the formula on macOS with `brew tap` + `brew install` and runs
+`go-fuck --version` as a smoke test. To check it locally:
 
 ```bash
 brew style Formula/go-fuck.rb

@@ -27,7 +27,7 @@ endif
 #	make build LDFLAGS="-X github.com/leafevans/go-fuck/internal/consts.Version=1.2.3"
 LDFLAGS ?=
 
-.PHONY: help build test test-race cover vet fmt fmt-check lint install clean packaging rules-list rules-list-check
+.PHONY: help build test test-race cover vet fmt fmt-check lint install clean packaging packaging-check rules-list rules-list-check
 
 .DEFAULT_GOAL := help
 
@@ -67,6 +67,9 @@ clean: ## Remove the built binary and the GoReleaser output
 
 packaging: ## Regenerate the distribution manifests for VERSION from CHECKSUMS
 	@$(GO) run ./tools/update-packaging -version $(VERSION) -checksums $(CHECKSUMS)
+
+packaging-check: ## Validate the distribution manifests
+	@$(GO) test ./packaging -count=1
 
 rules-list: ## Regenerate the rule list in README.md
 	@$(GO) run ./tools/gen-rule-list
