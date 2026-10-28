@@ -22,7 +22,7 @@ endif
 #	make build LDFLAGS="-X github.com/leafevans/go-fuck/internal/consts.Version=1.2.3"
 LDFLAGS ?=
 
-.PHONY: help build test test-race vet fmt fmt-check lint install clean rules-list rules-list-check
+.PHONY: help build test test-race cover vet fmt fmt-check lint install clean rules-list rules-list-check
 
 .DEFAULT_GOAL := help
 
@@ -37,6 +37,10 @@ test: ## Run the test suite
 
 test-race: ## Run the test suite with the race detector enabled
 	$(GO) test -race ./... -count=1
+
+cover: ## Run the test suite with coverage and print the total
+	$(GO) test ./... -count=1 -coverprofile=coverage.out
+	@$(GO) run ./tools/coveragecheck -profile coverage.out
 
 vet: ## Run go vet on all packages
 	$(GO) vet ./...
@@ -54,7 +58,7 @@ install: ## Install the go-fuck command with go install
 	$(GO) install ./cmd/go-fuck
 
 clean: ## Remove the built binary and the GoReleaser output
-	@$(GO) run ./tools/clean $(BINARY) $(BINARY).exe dist
+	@$(GO) run ./tools/clean $(BINARY) $(BINARY).exe dist coverage.out
 
 rules-list: ## Regenerate the rule list in README.md
 	@$(GO) run ./tools/gen-rule-list

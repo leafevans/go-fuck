@@ -30,6 +30,7 @@ go test ./... -count=1
 | `make build` | build `go-fuck` (`go-fuck.exe` on Windows) |
 | `make test` | run the test suite |
 | `make test-race` | run the test suite with the race detector (needs a C compiler) |
+| `make cover` | run the test suite with coverage and print the total |
 | `make vet` | run `go vet` |
 | `make fmt` | format all Go files with `gofmt -s -w` |
 | `make fmt-check` | fail when a Go file is not formatted |

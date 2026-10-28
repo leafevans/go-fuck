@@ -38,6 +38,41 @@ jobs:
       - name: Test
         run: go test ./... -count=1
 
+  race:
+    name: Race detector
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: stable
+          cache: true
+      - name: Test with the race detector
+        run: go test -race ./... -count=1
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: stable
+          cache: true
+      - name: Measure coverage
+        run: go test ./... -count=1 -coverprofile=coverage.out
+      - name: Enforce the coverage minimum
+        run: go run ./tools/coveragecheck -profile coverage.out -min 78
+      - name: Upload the coverage profile
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-profile
+          path: coverage.out
+
   gofmt:
     name: gofmt
     runs-on: ubuntu-latest
