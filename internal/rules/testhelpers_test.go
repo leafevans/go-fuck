@@ -1,9 +1,6 @@
 package rules
 
 import (
-	"os"
-	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/leafevans/go-fuck/internal/conf"
@@ -57,22 +54,4 @@ func assertNewCommands(t *testing.T, rule *types.Rule, script, output string, wa
 			t.Fatalf("rule %q returned %q, want %q", rule.Name, got, want)
 		}
 	}
-}
-
-// fakeExecutables creates executable stubs in a temporary directory and
-// prepends the directory to PATH, so that utils.Which finds them.
-func fakeExecutables(t *testing.T, names ...string) string {
-	t.Helper()
-	dir := t.TempDir()
-	for _, name := range names {
-		path := filepath.Join(dir, name)
-		if runtime.GOOS == "windows" {
-			path += ".exe"
-		}
-		if err := os.WriteFile(path, []byte{}, 0o755); err != nil {
-			t.Fatalf("create fake executable %q: %v", name, err)
-		}
-	}
-	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
-	return dir
 }
