@@ -286,8 +286,8 @@ shell plugin, at the cost of running the failed command a second time.
 
 The experimental instant mode reads the output of the previous command from a terminal log instead
 of re-running the command. This is useful for slow, interactive or side effecting commands. It is
-currently implemented for **bash and zsh on Linux**; other shells and platforms warn and fall back
-to the regular alias.
+currently implemented for **bash and zsh on Linux and macOS**; other shells and platforms warn and
+fall back to the regular alias.
 
 Enable it by adding the experimental flag to the alias initialization in your shell configuration:
 
@@ -654,13 +654,13 @@ go-fuck is a reimplementation, not a drop-in replacement for every thefuck featu
   plus go-fuck specific rules for the GitHub CLI, kubectl, uv, cargo, Helm, pnpm, the Go toolchain
   and Node.js; the list above is authoritative. The porting conventions are documented in
   [PORTING.md](PORTING.md).
-- **Instant mode is Linux only.** The experimental instant mode reads the previous command output
+- **Instant mode is Unix only.** The experimental instant mode reads the previous command output
   from a terminal log instead of re-running the command. It is implemented for bash and zsh on
-  Linux; other platforms and shells warn and fall back to the regular alias. The reference
-  implementation emulates the terminal with pyte to render the log; go-fuck strips escape
-  sequences instead, which can differ for full screen programs.
+  Linux and macOS; other platforms and shells warn and fall back to the regular alias. The
+  reference implementation emulates the terminal with pyte to render the log; go-fuck strips
+  escape sequences instead, which can differ for full screen programs.
 - **Shell logger.** `-l`/`--shell-logger` starts a shell under a pseudo terminal and logs its
-  output on Linux. Other platforms report that the shell logger is not supported.
+  output on Linux and macOS. Other platforms report that the shell logger is not supported.
 - **In-memory memoization instead of an on-disk cache.** go-fuck is a short-lived process, so
   rule results are memoized only for the duration of one invocation. Thefuck's `@cache` persisted
   values between runs.
