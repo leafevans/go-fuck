@@ -189,6 +189,24 @@ var expectedRuleNames = []string{
 	"yum_invalid_operation",
 }
 
+// expectedExtraRuleNames lists rules that go-fuck adds on top of the reference
+// implementation. They are tested and documented like the ported rules, but
+// they are not part of the thefuck rule set.
+var expectedExtraRuleNames = []string{
+	"gh_unknown_command",
+	"kubectl_unknown_command",
+	"uv_unknown_subcommand",
+}
+
+// allExpectedRuleNames returns the reference rules plus the go-fuck specific
+// extra rules.
+func allExpectedRuleNames() []string {
+	names := make([]string, 0, len(expectedRuleNames)+len(expectedExtraRuleNames))
+	names = append(names, expectedRuleNames...)
+	names = append(names, expectedExtraRuleNames...)
+	return names
+}
+
 // registryGuardHelperFiles lists the files of this package that do not
 // implement or test a single rule. They are skipped by the file guards.
 var registryGuardHelperFiles = map[string]bool{
@@ -197,6 +215,7 @@ var registryGuardHelperFiles = map[string]bool{
 	"readme_test.go":         true,
 	"registry_guard_test.go": true,
 	"benchmark_test.go":      true,
+	"cobra_suggestions.go":   true,
 }
 
 // ruleNamePattern matches the characters that a rule name may contain. Rule
@@ -222,9 +241,10 @@ func TestRuleRegistryCompleteness(t *testing.T) {
 		registered[name] = true
 	}
 
+	expectedNames := allExpectedRuleNames()
 	expected := map[string]bool{}
 	missing := []string{}
-	for _, name := range expectedRuleNames {
+	for _, name := range expectedNames {
 		expected[name] = true
 		if !registered[name] {
 			missing = append(missing, name)
@@ -241,8 +261,8 @@ func TestRuleRegistryCompleteness(t *testing.T) {
 	sort.Strings(unexpected)
 
 	if len(missing) > 0 || len(unexpected) > 0 {
-		t.Fatalf("rule registry mismatch: %d of %d reference rules registered; missing: [%s]; unexpected: [%s]",
-			len(expectedRuleNames)-len(missing), len(expectedRuleNames),
+		t.Fatalf("rule registry mismatch: %d of %d reference and extra rules registered; missing: [%s]; unexpected: [%s]",
+			len(expectedNames)-len(missing), len(expectedNames),
 			strings.Join(missing, ", "), strings.Join(unexpected, ", "))
 	}
 }
@@ -252,7 +272,7 @@ func TestRuleRegistryUniqueNames(t *testing.T) {
 	resetTestState(t)
 
 	expectedSeen := map[string]bool{}
-	for _, name := range expectedRuleNames {
+	for _, name := range allExpectedRuleNames() {
 		if expectedSeen[name] {
 			t.Fatalf("expectedRuleNames contains a duplicate: %q", name)
 		}
@@ -312,7 +332,7 @@ func TestRuleRegistryFiles(t *testing.T) {
 
 	missing := []string{}
 	expectedFiles := map[string]bool{}
-	for _, name := range expectedRuleNames {
+	for _, name := range allExpectedRuleNames() {
 		// A rule name maps to <name>.go and <name>_test.go, so the unusual
 		// "test.py" rule maps to "test.py.go" and "test.py_test.go".
 		ruleFile := name + ".go"

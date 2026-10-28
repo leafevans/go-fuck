@@ -404,7 +404,10 @@ the selection entirely.
 ## Rules
 
 Rules are compiled into the binary. Each rule decides whether it applies to a failed command and
-returns one or more corrected commands. The list below is generated from the compiled rules:
+returns one or more corrected commands. 169 rules are ported from the reference implementation;
+`gh_unknown_command`, `kubectl_unknown_command` and `uv_unknown_subcommand` are go-fuck
+extensions for tools that thefuck does not handle. The list below is generated from the compiled
+rules:
 
 <!-- RULES_LIST_START -->
 - `adb_unknown_command`
@@ -450,6 +453,7 @@ returns one or more corrected commands. The list below is generated from the com
 - `fix_alt_space`
 - `fix_file`
 - `gem_unknown_command`
+- `gh_unknown_command`
 - `git_add`
 - `git_add_force`
 - `git_bisect_usage`
@@ -510,6 +514,7 @@ returns one or more corrected commands. The list below is generated from the com
 - `ifconfig_device_not_found`
 - `java`
 - `javac`
+- `kubectl_unknown_command`
 - `lein_not_task`
 - `ln_no_hard_link`
 - `ln_s_order`
@@ -567,6 +572,7 @@ returns one or more corrected commands. The list below is generated from the com
 - `tsuru_not_command`
 - `unknown_command`
 - `unsudo`
+- `uv_unknown_subcommand`
 - `vagrant_up`
 - `whois`
 - `workon_doesnt_exists`
@@ -605,8 +611,9 @@ This keeps the binary self-contained and deterministic. Contributions to the por
 
 go-fuck is a reimplementation, not a drop-in replacement for every thefuck feature:
 
-- **Complete rule port.** All 169 rules of the reference implementation are ported; the list above
-  is authoritative. The porting conventions are documented in [PORTING.md](PORTING.md).
+- **Complete rule port plus extras.** All 169 rules of the reference implementation are ported,
+  plus go-fuck specific rules for the GitHub CLI, kubectl and uv; the list above is authoritative.
+  The porting conventions are documented in [PORTING.md](PORTING.md).
 - **Instant mode is not supported.** The experimental instant mode of thefuck reads the previous
   output from a terminal log. go-fuck always re-runs the command, using `wait_command` and
   `wait_slow_command` as timeouts. `--enable-experimental-instant-mode` is accepted for
