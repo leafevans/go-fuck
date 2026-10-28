@@ -13,7 +13,7 @@ import (
 
 // gitAliasExpansion matches the alias expansion line printed by git when
 // GIT_TRACE is enabled.
-var gitAliasExpansion = regexp.MustCompile("trace: alias expansion: ([^ ]*) => ([^\n]*)")
+var gitAliasExpansion = regexp.MustCompile(`trace: alias expansion: ([^ ]*) => ([^\n]*)`)
 
 // GitSupportMatch wraps a match function so that it only runs for git (or hub)
 // commands and with git aliases expanded.
@@ -53,6 +53,6 @@ func expandGitAliases(command *types.Command) *types.Command {
 	for i, part := range parts {
 		quoted[i] = shells.Current().Quote(part)
 	}
-	pattern := regexp.MustCompile("\\b" + regexp.QuoteMeta(alias) + "\\b")
+	pattern := regexp.MustCompile(`\b` + regexp.QuoteMeta(alias) + `\b`)
 	return command.WithScript(pattern.ReplaceAllString(command.Script, strings.Join(quoted, " ")))
 }

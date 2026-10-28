@@ -3,29 +3,45 @@ package shells
 import (
 	"errors"
 	"strings"
-	"unicode"
 )
 
 // Characters used by the POSIX shell parser. Numeric constants are used for
 // characters that are awkward to spell in Go string literals.
 const (
-	charDoubleQuote = 34
-	charSingleQuote = 39
-	charDollar      = 36
-	charBackslash   = 92
-	charBacktick    = 96
-	charNewline     = 10
+	charTab            = 9
+	charNewline        = 10
+	charCarriageReturn = 13
+	charSpace          = 32
+	charDoubleQuote    = 34
+	charSingleQuote    = 39
+	charDollar         = 36
+	charBackslash      = 92
+	charBacktick       = 96
 )
 
-// ErrUnterminatedQuote is returned when a command contains an unterminated
-// quote.
-var ErrUnterminatedQuote = errors.New("unterminated quote")
+var (
+	// ErrUnterminatedQuote is returned when a command contains an unterminated
+	// quote.
+	ErrUnterminatedQuote = errors.New("unterminated quote")
 
-// Split splits a command line into arguments using POSIX shell rules.
+	// ErrNoEscapedCharacter is returned when a command ends with a backslash.
+	ErrNoEscapedCharacter = errors.New("no escaped character")
+)
+
+// isArgumentSpace reports whether ch separates arguments.
 //
-// Single quotes preserve everything literally. Double quotes preserve
-// everything except backslash escapes, and unquoted backslashes escape the next
-// character.
+// Only ASCII spaces are separators to stay compatible with Python's shlex,
+// which does not treat Unicode whitespace as a separator.
+func isArgumentSpace(ch rune) bool {
+	return ch == charSpace || ch == charTab || ch == charCarriageReturn || ch == charNewline
+}
+
+// Split splits a command line into arguments using the same rules as Python's
+// shlex module in POSIX mode.
+//
+// Single quotes preserve everything literally. Inside double quotes only a
+// backslash before a double quote or another backslash is removed; every other
+// backslash sequence is kept. A trailing backslash is an error.
 func Split(command string) ([]string, error) {
 	var (
 		args    []string
@@ -37,7 +53,7 @@ func Split(command string) ([]string, error) {
 	for i := 0; i < len(runes); i++ {
 		ch := runes[i]
 		switch {
-		case unicode.IsSpace(ch):
+		case isArgumentSpace(ch):
 			if inWord {
 				args = append(args, current.String())
 				current.Reset()
@@ -65,14 +81,19 @@ func Split(command string) ([]string, error) {
 					closed = true
 					break
 				}
-				if next == charBackslash && i+1 < len(runes) {
-					escaped := runes[i+1]
-					switch escaped {
-					case charDoubleQuote, charBackslash, charDollar, charBacktick, charNewline:
-						current.WriteRune(escaped)
-						i++
-						continue
+				if next == charBackslash {
+					if i+1 >= len(runes) {
+						return nil, ErrUnterminatedQuote
 					}
+					escaped := runes[i+1]
+					if escaped == charDoubleQuote || escaped == charBackslash {
+						current.WriteRune(escaped)
+					} else {
+						current.WriteRune(charBackslash)
+						current.WriteRune(escaped)
+					}
+					i++
+					continue
 				}
 				current.WriteRune(next)
 			}
@@ -80,11 +101,12 @@ func Split(command string) ([]string, error) {
 				return nil, ErrUnterminatedQuote
 			}
 		case ch == charBackslash:
-			if i+1 < len(runes) {
-				current.WriteRune(runes[i+1])
-				inWord = true
-				i++
+			if i+1 >= len(runes) {
+				return nil, ErrNoEscapedCharacter
 			}
+			current.WriteRune(runes[i+1])
+			inWord = true
+			i++
 		default:
 			current.WriteRune(ch)
 			inWord = true

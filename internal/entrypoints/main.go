@@ -34,7 +34,7 @@ func Main() int {
 		return 0
 	case args.AliasRequested:
 		return printAlias(args)
-	case len(args.Command) > 0 || os.Getenv("TF_HISTORY") != "":
+	case len(args.Command) > 0 || args.ForceCommand != "" || os.Getenv("TF_HISTORY") != "":
 		return fixCommand(args)
 	case args.ShellLogger != "":
 		logs.Warn("Shell logger is not supported by go-fuck")

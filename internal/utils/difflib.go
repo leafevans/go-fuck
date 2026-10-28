@@ -97,8 +97,13 @@ func GetCloseMatches(word string, possibilities []string, n int, cutoff float64)
 		}
 	}
 
+	// Python uses heapq.nlargest over (ratio, candidate) tuples, so equal
+	// ratios are ordered by the candidate string, descending.
 	sort.SliceStable(matches, func(left, right int) bool {
-		return matches[left].ratio > matches[right].ratio
+		if matches[left].ratio != matches[right].ratio {
+			return matches[left].ratio > matches[right].ratio
+		}
+		return matches[left].value > matches[right].value
 	})
 
 	if len(matches) > n {

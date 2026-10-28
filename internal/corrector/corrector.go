@@ -29,12 +29,16 @@ func GetRules() []*types.Rule {
 			logs.Debug("Ignoring excluded rule: %s", rule.Name)
 			continue
 		}
+		if !rule.IsEnabled() {
+			continue
+		}
+		// The rule is copied so that a priority override from the settings does
+		// not mutate the registered rule and leak into later calls.
+		configured := *rule
 		if priority, ok := settings.Priority[rule.Name]; ok {
-			rule.Priority = priority
+			configured.Priority = priority
 		}
-		if rule.IsEnabled() {
-			enabled = append(enabled, rule)
-		}
+		enabled = append(enabled, &configured)
 	}
 
 	sort.SliceStable(enabled, func(left, right int) bool {

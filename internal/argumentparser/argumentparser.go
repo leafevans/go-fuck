@@ -100,6 +100,9 @@ func Parse(argv []string) (*Args, error) {
 			args.Command = append(args.Command, arg)
 		}
 	}
+	if args.Yes && args.Repeat {
+		return nil, fmt.Errorf("argument -r/--repeat: not allowed with argument -y/--yes/--yeah/--hard")
+	}
 	return args, nil
 }
 

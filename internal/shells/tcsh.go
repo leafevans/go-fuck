@@ -42,6 +42,11 @@ func (t *Tcsh) InstantModeAlias(aliasName string) string {
 	return t.AppAlias(aliasName)
 }
 
+// FromShell expands the tcsh aliases.
+func (t *Tcsh) FromShell(script string) string {
+	return t.expandAliases(script, t.GetAliases())
+}
+
 // GetAliases returns the tcsh aliases.
 func (t *Tcsh) GetAliases() map[string]string {
 	t.aliasesOnce.Do(func() {

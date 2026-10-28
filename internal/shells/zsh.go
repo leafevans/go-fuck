@@ -55,6 +55,11 @@ func (z *Zsh) InstantModeAlias(aliasName string) string {
 	return z.AppAlias(aliasName)
 }
 
+// FromShell expands the aliases exported by the zsh alias.
+func (z *Zsh) FromShell(script string) string {
+	return z.expandAliases(script, z.GetAliases())
+}
+
 // GetAliases returns the aliases that were exported by the zsh alias.
 func (z *Zsh) GetAliases() map[string]string {
 	aliases := map[string]string{}

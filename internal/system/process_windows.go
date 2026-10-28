@@ -35,7 +35,9 @@ func processSnapshot() map[uint32]processEntry32 {
 	if snapshot == uintptr(syscall.InvalidHandle) {
 		return entries
 	}
-	defer syscall.CloseHandle(syscall.Handle(snapshot))
+	defer func() {
+		_ = syscall.CloseHandle(syscall.Handle(snapshot))
+	}()
 
 	var entry processEntry32
 	entry.Size = uint32(unsafe.Sizeof(entry))

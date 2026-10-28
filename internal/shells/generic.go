@@ -96,8 +96,10 @@ func (g *Generic) GetAliases() map[string]string {
 }
 
 // expandAliases replaces a leading alias with its value.
-func (g *Generic) expandAliases(script string) string {
-	aliases := g.GetAliases()
+//
+// The aliases are passed explicitly because Go embedding does not dispatch to
+// the overridden GetAliases of the concrete shell.
+func (g *Generic) expandAliases(script string, aliases map[string]string) string {
 	if len(aliases) == 0 {
 		return script
 	}
@@ -110,7 +112,7 @@ func (g *Generic) expandAliases(script string) string {
 
 // FromShell prepares a command before it is fixed.
 func (g *Generic) FromShell(script string) string {
-	return g.expandAliases(script)
+	return g.expandAliases(script, g.GetAliases())
 }
 
 // ToShell prepares a corrected command for execution.

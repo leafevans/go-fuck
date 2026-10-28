@@ -1,8 +1,6 @@
 package specific
 
 import (
-	"strings"
-
 	"github.com/leafevans/go-fuck/internal/utils"
 )
 
@@ -39,9 +37,4 @@ func NpmAvailable() bool {
 // ChocoAvailable reports whether Chocolatey is available.
 func ChocoAvailable() bool {
 	return utils.Which("choco") != "" || utils.Which("cinst") != ""
-}
-
-// trimCommandName returns the executable name of a command line.
-func trimCommandName(command string) string {
-	return strings.Fields(command)[0]
 }

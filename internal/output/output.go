@@ -80,7 +80,8 @@ func rerun(expanded string) (string, bool) {
 		return result, true
 	case <-ctx.Done():
 		killTree(cmd)
-		<-done
+		err := <-done
+		logs.Debug("Command killed after the timeout: %v", err)
 		logs.Debug("Execution timed out!")
 		return "", false
 	}

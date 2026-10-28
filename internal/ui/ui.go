@@ -2,9 +2,6 @@
 package ui
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/leafevans/go-fuck/internal/conf"
 	"github.com/leafevans/go-fuck/internal/consts"
 	"github.com/leafevans/go-fuck/internal/logs"
@@ -103,7 +100,7 @@ func SelectCommand(commands []*types.CorrectedCommand) *types.CorrectedCommand {
 	for {
 		switch nextAction() {
 		case consts.ActionSelect:
-			fmt.Fprint(os.Stderr, newline)
+			logs.NewLine()
 			return selector.Value()
 		case consts.ActionAbort:
 			logs.Failed(newline + "Aborted")

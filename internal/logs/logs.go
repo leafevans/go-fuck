@@ -28,6 +28,9 @@ const (
 // out is the writer used by all log helpers. It is replaceable in tests.
 var out io.Writer = os.Stderr
 
+// newline is the line separator.
+var newline = string(rune(10))
+
 // SetOutput redirects log output. It is intended for tests.
 func SetOutput(w io.Writer) {
 	out = w
@@ -70,6 +73,11 @@ func RuleFailed(ruleName string, err error) {
 // Failed writes a plain error message.
 func Failed(msg string) {
 	fmt.Fprintf(out, "%s%s%s\n", color(foreRed), msg, color(styleReset))
+}
+
+// NewLine writes a line separator to the log output.
+func NewLine() {
+	fmt.Fprint(out, newline)
 }
 
 // ShowCorrectedCommand prints the selected command without the confirmation
@@ -115,46 +123,6 @@ func DebugTime(message string) func() {
 	return func() {
 		Debug("%s took: %s", message, time.Since(started))
 	}
-}
-
-// HowToConfigureAlias explains how to install the shell alias.
-func HowToConfigureAlias(content, path, reload string, canConfigureAutomatically bool) {
-	fmt.Fprintf(os.Stdout, "Seems like %sfuck%s alias isn't configured!\n",
-		color(styleBright), color(styleReset))
-
-	if content != "" {
-		fmt.Fprintf(os.Stdout,
-			"Please put %s%s%s in your %s%s%s and apply changes with %s%s%s or restart your shell.\n",
-			color(styleBright), content, color(styleReset),
-			color(styleBright), path, color(styleReset),
-			color(styleBright), reload, color(styleReset))
-
-		if canConfigureAutomatically {
-			fmt.Fprintf(os.Stdout,
-				"Or run %sfuck%s a second time to configure it automatically.\n",
-				color(styleBright), color(styleReset))
-		}
-	}
-
-	fmt.Fprintln(os.Stdout, "More details - https://github.com/leafevans/go-fuck#manual-installation")
-}
-
-// AlreadyConfigured reports that the alias is already present in the shell
-// configuration.
-func AlreadyConfigured(reload string) {
-	fmt.Fprintf(os.Stdout,
-		"Seems like %sfuck%s alias already configured!\nFor applying changes run %s%s%s or restart your shell.\n",
-		color(styleBright), color(styleReset),
-		color(styleBright), reload, color(styleReset))
-}
-
-// ConfiguredSuccessfully reports that the alias was added to the shell
-// configuration.
-func ConfiguredSuccessfully(reload string) {
-	fmt.Fprintf(os.Stdout,
-		"%sfuck%s alias configured successfully!\nFor applying changes run %s%s%s or restart your shell.\n",
-		color(styleBright), color(styleReset),
-		color(styleBright), reload, color(styleReset))
 }
 
 // Version reports the go-fuck, Go and shell versions.

@@ -5,6 +5,7 @@ package types
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"reflect"
 	"strings"
@@ -18,6 +19,22 @@ import (
 
 // ErrEmptyCommand is returned when an empty command is passed to go-fuck.
 var ErrEmptyCommand = errors.New("empty command")
+
+// stdout is the writer used by CorrectedCommand.Run. It is replaceable in
+// tests.
+var stdout io.Writer = os.Stdout
+
+// SetStdout replaces the writer used for corrected commands. It is intended for
+// tests.
+func SetStdout(writer io.Writer) {
+	stdout = writer
+}
+
+// Stdout returns the writer used for corrected commands. It is intended for
+// tests.
+func Stdout() io.Writer {
+	return stdout
+}
 
 // Command is a command that should be fixed.
 type Command struct {
@@ -73,7 +90,8 @@ func (c *Command) ScriptParts() []string {
 	c.partsOnce.Do(func() {
 		c.parts = shells.Current().SplitCommand(c.Script)
 	})
-	return c.parts
+	// A copy is returned so that callers cannot corrupt the cache.
+	return append([]string{}, c.parts...)
 }
 
 // Update returns a copy of the command with the script and output replaced.
@@ -271,5 +289,5 @@ func (c *CorrectedCommand) Run(oldCommand *Command) {
 			logs.Exception("Can't update history", err)
 		}
 	}
-	fmt.Fprint(os.Stdout, c.runnableScript())
+	fmt.Fprint(stdout, c.runnableScript())
 }

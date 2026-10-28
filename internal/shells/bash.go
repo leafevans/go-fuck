@@ -52,6 +52,11 @@ func (b *Bash) InstantModeAlias(aliasName string) string {
 	return b.AppAlias(aliasName)
 }
 
+// FromShell expands the aliases exported by the bash alias.
+func (b *Bash) FromShell(script string) string {
+	return b.expandAliases(script, b.GetAliases())
+}
+
 // GetAliases returns the aliases that were exported by the bash alias.
 func (b *Bash) GetAliases() map[string]string {
 	aliases := map[string]string{}

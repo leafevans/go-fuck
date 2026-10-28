@@ -6,13 +6,14 @@ const (
 	// AppName is the executable name used in generated shell aliases and
 	// user-facing messages.
 	AppName = "go-fuck"
-
-	// Version is the semantic version reported by `--version`. Release builds
-	// override it at link time with:
-	//
-	//	go build -ldflags "-X github.com/leafevans/go-fuck/internal/consts.Version=v1.2.3"
-	Version = "0.1.0"
 )
+
+// Version is the semantic version reported by --version.
+//
+// It is a variable so that release builds can override it at link time:
+//
+//	go build -ldflags "-X github.com/leafevans/go-fuck/internal/consts.Version=v1.2.3"
+var Version = "0.1.0"
 
 // Rule defaults.
 const (
@@ -64,7 +65,8 @@ const (
 	ShellLoggerLimit = 5
 )
 
-// Shell logger socket environment variable name.
+// ShellLoggerSocketEnv is the environment variable with the shell logger socket
+// path.
 const ShellLoggerSocketEnv = "SHELL_LOGGER_SOCKET"
 
 // Key is a semantic key press returned by the platform key reader.
