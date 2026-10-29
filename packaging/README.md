@@ -7,7 +7,7 @@ multi-channel distribution for go-fuck.
 | --- | --- | --- |
 | Homebrew (macOS/Linux) | `Formula/go-fuck.rb` | `brew tap leafevans/go-fuck https://github.com/leafevans/go-fuck && brew trust leafevans/go-fuck && brew install go-fuck` |
 | Scoop (Windows) | `bucket/go-fuck.json` | `scoop bucket add go-fuck https://github.com/leafevans/go-fuck` then `scoop install go-fuck` |
-| winget (Windows) | `packaging/winget/` | `winget install leafevans.go-fuck` (after the manifest is accepted upstream) |
+| winget (Windows) | `packaging/winget/` | `winget install leafevans.gof` (after the manifest is accepted upstream; installs the `gof` command) |
 | Prebuilt binaries | GitHub releases | download and put `go-fuck` on `PATH` |
 | Go toolchain | `go install github.com/leafevans/go-fuck/cmd/go-fuck@latest` | |
 
@@ -51,15 +51,18 @@ as `go-fuck`. `checkver`/`autoupdate` point at the GitHub releases and the
 
 The manifests in `packaging/winget/` follow the multi-file manifest layout:
 
-- `leafevans.go-fuck.yaml` – version manifest
-- `leafevans.go-fuck.installer.yaml` – zip installers for `x64` and `arm64`
-- `leafevans.go-fuck.locale.en-US.yaml` – metadata
+- `leafevans.gof.yaml` – version manifest
+- `leafevans.gof.installer.yaml` – zip installers for `x64` and `arm64`
+- `leafevans.gof.locale.en-US.yaml` – metadata
+
+winget-pkgs requires professional command names, so the package identifier is
+`leafevans.gof` and the portable alias is `gof`, even though the project and
+the executable in the release archive are called `go-fuck`.
 
 To publish them once a release exists:
 
 1. Fork `microsoft/winget-pkgs`.
-2. Copy the three files into `manifests/l/leafevans/go-fuck/<version>/`
-   (rename them to `leafevans.go-fuck.yaml` etc. as they already are).
+2. Copy the three files into `manifests/l/leafevans/gof/<version>/`.
 3. Validate and test locally:
    ```powershell
    winget validate --manifest packaging/winget
@@ -68,7 +71,7 @@ To publish them once a release exists:
 4. Open a pull request against `microsoft/winget-pkgs`.
 
 After the manifest is merged, users install it with
-`winget install leafevans.go-fuck`.
+`winget install leafevans.gof` and configure the alias with `gof --alias`.
 
 ## Release checklist
 

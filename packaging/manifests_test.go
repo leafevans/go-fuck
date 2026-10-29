@@ -14,9 +14,9 @@ import (
 var manifestFiles = []string{
 	"Formula/go-fuck.rb",
 	"bucket/go-fuck.json",
-	"packaging/winget/leafevans.go-fuck.yaml",
-	"packaging/winget/leafevans.go-fuck.installer.yaml",
-	"packaging/winget/leafevans.go-fuck.locale.en-US.yaml",
+	"packaging/winget/leafevans.gof.yaml",
+	"packaging/winget/leafevans.gof.installer.yaml",
+	"packaging/winget/leafevans.gof.locale.en-US.yaml",
 }
 
 // expectedAssets maps the six release assets to their archive extension.
@@ -179,9 +179,9 @@ func check(root string) error {
 
 	wingetDir := filepath.Join(root, "packaging", "winget")
 	wingetFiles := map[string]string{
-		"version":   "leafevans.go-fuck.yaml",
-		"installer": "leafevans.go-fuck.installer.yaml",
-		"locale":    "leafevans.go-fuck.locale.en-US.yaml",
+		"version":   "leafevans.gof.yaml",
+		"installer": "leafevans.gof.installer.yaml",
+		"locale":    "leafevans.gof.locale.en-US.yaml",
 	}
 	winget := map[string]string{}
 	for name, file := range wingetFiles {
@@ -227,6 +227,20 @@ func check(root string) error {
 
 	if notes := fieldValues(winget["locale"], "ReleaseNotesUrl: "); len(notes) != 1 || !strings.HasSuffix(notes[0], "/v"+version) {
 		add("winget release notes URL %q does not point at v%s", notes, version)
+	}
+
+	// winget-pkgs requires a professional command name, so the package is
+	// published as leafevans.gof and installs the gof command.
+	for name, content := range winget {
+		if ids := fieldValues(content, "PackageIdentifier: "); len(ids) != 1 || ids[0] != "leafevans.gof" {
+			add("winget %s PackageIdentifier = %q, want leafevans.gof", name, ids)
+		}
+	}
+	if aliases := fieldValues(winget["installer"], "PortableCommandAlias: "); len(aliases) != 1 || aliases[0] != "gof" {
+		add("winget PortableCommandAlias = %q, want gof", aliases)
+	}
+	if monikers := fieldValues(winget["locale"], "Moniker: "); len(monikers) != 1 || monikers[0] != "gof" {
+		add("winget Moniker = %q, want gof", monikers)
 	}
 
 	missingAssets := []string{}
