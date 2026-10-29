@@ -14,7 +14,7 @@ func TestVersionInfo(t *testing.T) {
 	resetEntrypointsState(t)
 	shells.Set(shells.NewBash())
 
-	info := versionInfo()
+	info := versionInfo(true)
 	if info.Version != consts.Version {
 		t.Fatalf("version = %q, want %q", info.Version, consts.Version)
 	}
@@ -38,5 +38,18 @@ func TestVersionInfo(t *testing.T) {
 	}
 	if info.Alias != "fuck" {
 		t.Fatalf("alias = %q, want fuck", info.Alias)
+	}
+}
+
+// TestVersionInfoCompactShellName checks that the plain one line printed to a
+// pipe does not need to detect the shell version.
+func TestVersionInfoCompactShellName(t *testing.T) {
+	resetEntrypointsState(t)
+	shell := shells.NewBash()
+	shells.Set(shell)
+
+	info := versionInfo(false)
+	if want := shell.FriendlyName(); info.Shell != want {
+		t.Fatalf("shell = %q, want %q", info.Shell, want)
 	}
 }

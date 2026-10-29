@@ -13,7 +13,12 @@ import (
 )
 
 // versionInfo collects the details printed by --version.
-func versionInfo() logs.VersionInfo {
+//
+// Detecting the shell version can cost a process launch: PowerShell, for
+// example, is queried by running "pwsh --version". The plain one line printed
+// to a pipe or a script only needs the shell name, so the version is detected
+// only when detailed is true.
+func versionInfo(detailed bool) logs.VersionInfo {
 	instantState := "not supported on this platform"
 	if instant.Supported() {
 		instantState = "available (bash/zsh on Linux and macOS)"
@@ -21,10 +26,14 @@ func versionInfo() logs.VersionInfo {
 			instantState = "enabled (logged shell)"
 		}
 	}
+	shell := shells.Current().FriendlyName()
+	if detailed {
+		shell = shells.Current().Info()
+	}
 	return logs.VersionInfo{
 		Version:     consts.Version,
 		GoVersion:   runtime.Version(),
-		Shell:       shells.Current().Info(),
+		Shell:       shell,
 		Platform:    runtime.GOOS + "/" + runtime.GOARCH,
 		Rules:       rules.Count(),
 		ConfigPath:  conf.UserDir(),

@@ -45,6 +45,14 @@ func PrintVersion(info VersionInfo, verbose bool) {
 	fmt.Fprint(out, renderBanner(info, verbose))
 }
 
+// OutputIsTerminal reports whether the standard output is a terminal.
+//
+// Callers can use it to skip work that is only needed for the interactive
+// version banner, for example detecting the shell version.
+func OutputIsTerminal() bool {
+	return isTerminal(out)
+}
+
 // isTerminal reports whether w is a character device such as a terminal.
 func isTerminal(w io.Writer) bool {
 	file, ok := w.(*os.File)

@@ -61,3 +61,12 @@ func TestPrintVersionFallsBackToPlainLine(t *testing.T) {
 		t.Fatalf("PrintVersion() = %q, want %q", got, want)
 	}
 }
+
+// TestOutputIsTerminal checks that a test buffer is not reported as a
+// terminal, which lets callers skip the interactive version banner work.
+func TestOutputIsTerminal(t *testing.T) {
+	_ = resetLogsState(t)
+	if OutputIsTerminal() {
+		t.Fatal("OutputIsTerminal() = true for a buffer, want false")
+	}
+}

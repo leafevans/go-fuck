@@ -28,7 +28,7 @@ func Main() int {
 		fmt.Fprintln(os.Stderr, argumentparser.Help())
 		return 0
 	case args.Version:
-		logs.PrintVersion(versionInfo(), args.Debug)
+		logs.PrintVersion(versionInfo(logs.OutputIsTerminal() || args.Debug), args.Debug)
 		return 0
 	case args.ShellLogger != "":
 		return shellLogger(args.ShellLogger)
