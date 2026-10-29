@@ -32,6 +32,21 @@ func aliasSyntaxCommand(t *testing.T, program string, args ...string) {
 	}
 }
 
+// aliasSyntaxRequireShell skips the test when the shell executable cannot
+// actually be started.
+//
+// On Windows, C:\Windows\System32\bash.exe resolves even when WSL is not
+// installed or has no distribution; starting it then fails with
+// E_ACCESSDENIED instead of running bash. Such an environment cannot check the
+// generated alias syntax, so the test has to be skipped rather than failed.
+func aliasSyntaxRequireShell(t *testing.T, program string, args ...string) {
+	t.Helper()
+	output, err := exec.Command(program, args...).CombinedOutput()
+	if err != nil {
+		t.Skipf("%s cannot be started: %v\n%s", program, err, output)
+	}
+}
+
 func TestAliasSyntaxBash(t *testing.T) {
 	resetShellsState(t)
 
@@ -39,6 +54,7 @@ func TestAliasSyntaxBash(t *testing.T) {
 	if err != nil {
 		t.Skip("bash is not available")
 	}
+	aliasSyntaxRequireShell(t, bash, "-c", "exit 0")
 
 	bashAlias := NewBash().AppAlias("fuck")
 	aliasSyntaxContains(t, "bash", bashAlias)
@@ -59,6 +75,7 @@ func TestAliasSyntaxZsh(t *testing.T) {
 	if err != nil {
 		t.Skip("zsh is not available")
 	}
+	aliasSyntaxRequireShell(t, zsh, "-c", "exit 0")
 
 	alias := NewZsh().AppAlias("fuck")
 	aliasSyntaxContains(t, "zsh", alias)
@@ -75,6 +92,7 @@ func TestAliasSyntaxFish(t *testing.T) {
 	if err != nil {
 		t.Skip("fish is not available")
 	}
+	aliasSyntaxRequireShell(t, fish, "-c", "exit 0")
 
 	help, err := exec.Command(fish, "--help").CombinedOutput()
 	if err != nil || !strings.Contains(string(help), "--no-execute") {
@@ -119,6 +137,7 @@ func TestAliasSyntaxPowerShell(t *testing.T) {
 	if powershell == "" {
 		t.Skip("PowerShell is not available")
 	}
+	aliasSyntaxRequireShell(t, powershell, "-NoProfile", "-Command", "exit 0")
 
 	alias := NewPowershell().AppAlias("fuck")
 	if !strings.Contains(alias, "fuck") {
