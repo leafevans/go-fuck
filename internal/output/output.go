@@ -9,6 +9,7 @@ package output
 import (
 	"bytes"
 	"context"
+	"maps"
 	"os"
 	"slices"
 	"strings"
@@ -97,9 +98,7 @@ func mergedEnv(overrides map[string]string) []string {
 			environment[key] = value
 		}
 	}
-	for key, value := range overrides {
-		environment[key] = value
-	}
+	maps.Copy(environment, overrides)
 	merged := make([]string, 0, len(environment))
 	for key, value := range environment {
 		merged = append(merged, key+"="+value)
