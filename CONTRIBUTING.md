@@ -5,7 +5,7 @@ the project, which checks CI runs and the conventions used in the repository.
 
 ## Prerequisites
 
-- [Go](https://go.dev/dl/) 1.22 or newer.
+- [Go](https://go.dev/dl/) 1.23 or newer.
 - [GNU make](https://www.gnu.org/software/make/) for the convenience targets. It is optional; every
   target documents the equivalent Go command below.
 - [golangci-lint](https://golangci-lint.run/) v2 for `make lint` (CI installs it automatically).
@@ -159,7 +159,7 @@ fix(shells): keep TF_SHELL when the parent process is a wrapper
 
 docs: document the GOFUCK_* environment variables
 
-chore(ci): test on Go 1.22 and stable
+chore(ci): test on Go 1.23 and stable
 ```
 
 ## Pull request checklist

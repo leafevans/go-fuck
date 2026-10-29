@@ -21,7 +21,7 @@ jobs:
           - macos-latest
           - windows-latest
         go:
-          - "1.22.x"
+          - "1.23.x"
           - "stable"
     steps:
       - name: Checkout

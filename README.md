@@ -88,7 +88,8 @@ rule runs, which a native binary does not need.
 
 ## Requirements
 
-- **Go 1.22 or newer** to build from source.
+- **Go 1.23 or newer** to build from source. Go 1.22 and older produce macOS binaries without the
+  LC_UUID Mach-O load command, which macOS 26 refuses to start.
 - **No runtime dependencies.** The compiled binary is self-contained.
 - A supported shell for the alias: bash, zsh, fish, tcsh or PowerShell. On Windows, PowerShell is
   recommended; a `cmd.exe` shim is provided as well.
