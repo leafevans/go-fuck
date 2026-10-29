@@ -10,8 +10,10 @@ import (
 
 // jsonTestResult mirrors the machine readable output of --json.
 type jsonTestResult struct {
-	Command     string               `json:"command"`
-	Suggestions []jsonTestSuggestion `json:"suggestions"`
+	Command         string               `json:"command"`
+	Output          string               `json:"output"`
+	OutputTruncated bool                 `json:"output_truncated"`
+	Suggestions     []jsonTestSuggestion `json:"suggestions"`
 }
 
 // jsonTestSuggestion mirrors one suggestion of the machine readable output.
@@ -85,5 +87,57 @@ func TestPrintJSONIncludesSuggestionDetails(t *testing.T) {
 	got := result.Suggestions[0]
 	if got.Command != "git commit --amend" || got.Priority != 2000 || !got.SideEffect {
 		t.Fatalf("unexpected suggestion JSON: %+v", got)
+	}
+}
+func TestPrintJSONIncludesCommandOutput(t *testing.T) {
+	command := types.NewCommand("git psu", "fatal: not a git repository\n")
+	code, stdout, _ := captureOutput(t, func() int { return printJSON(command, nil) })
+	if code != 0 {
+		t.Fatalf("printJSON() = %d, want 0", code)
+	}
+
+	var result jsonTestResult
+	if err := json.Unmarshal([]byte(stdout), &result); err != nil {
+		t.Fatalf("stdout is not valid JSON: %v%s", err, stdout)
+	}
+	if result.Output != "fatal: not a git repository\n" {
+		t.Fatalf("Output = %q, want the command output", result.Output)
+	}
+	if result.OutputTruncated {
+		t.Fatalf("OutputTruncated = true, want false")
+	}
+}
+
+func TestPrintJSONTruncatesLongOutput(t *testing.T) {
+	output := strings.Repeat("a", jsonOutputLimit+128)
+	command := types.NewCommand("noisy", output)
+	code, stdout, _ := captureOutput(t, func() int { return printJSON(command, nil) })
+	if code != 0 {
+		t.Fatalf("printJSON() = %d, want 0", code)
+	}
+
+	var result jsonTestResult
+	if err := json.Unmarshal([]byte(stdout), &result); err != nil {
+		t.Fatalf("stdout is not valid JSON: %v%s", err, stdout)
+	}
+	if !result.OutputTruncated {
+		t.Fatal("OutputTruncated = false, want true")
+	}
+	if len(result.Output) != jsonOutputLimit {
+		t.Fatalf("len(Output) = %d, want %d", len(result.Output), jsonOutputLimit)
+	}
+	if len(stdout) > jsonOutputLimit+1024 {
+		t.Fatalf("JSON output is not capped: %d bytes", len(stdout))
+	}
+}
+
+func TestPrintJSONOmitsUnavailableOutput(t *testing.T) {
+	command := types.NewCommandWithoutOutput("git psu")
+	code, stdout, _ := captureOutput(t, func() int { return printJSON(command, nil) })
+	if code != 0 {
+		t.Fatalf("printJSON() = %d, want 0", code)
+	}
+	if strings.Contains(stdout, "\"output\"") {
+		t.Fatalf("stdout = %q, want the output field to be omitted", stdout)
 	}
 }

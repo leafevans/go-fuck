@@ -406,6 +406,10 @@ run a side effect, for example `git add`, before the corrected command. The hist
 the original command as a fallback suggestion; consumers that only want real corrections can skip
 suggestions equal to `command`.
 
+`output` is the captured standard output and standard error of the failed command; it is omitted
+when the output could not be captured. Output larger than 32 KiB is cut at a UTF-8 boundary and
+`output_truncated` is set to `true`. The example above omits the `output` field for brevity.
+
 In JSON mode go-fuck does not execute the corrected command, does not apply side effects and does
 not update the shell history; the caller decides what to do with the suggestions. The exit code is
 0 once the JSON was written, even when no rule matched and `suggestions` is empty.
