@@ -22,6 +22,9 @@ func versionInfo(detailed bool) logs.VersionInfo {
 	instantState := "not supported on this platform"
 	if instant.Supported() {
 		instantState = "available (bash/zsh on Linux and macOS)"
+		if runtime.GOOS == "windows" {
+			instantState = "available (PowerShell on Windows)"
+		}
 		if instant.LogPath() != "" {
 			instantState = "enabled (logged shell)"
 		}

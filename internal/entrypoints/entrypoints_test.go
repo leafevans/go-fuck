@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"os"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -192,6 +193,35 @@ func TestMainInstantModeAlias(t *testing.T) {
 	}
 	if !strings.Contains(stdout, consts.UserCommandMark) || !strings.Contains(stdout, "function fuck") {
 		t.Fatalf("logged shell alias is missing the prompt marker or the alias: %q", stdout)
+	}
+}
+
+func TestMainPowershellInstantModeAlias(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("PowerShell instant mode is only available on Windows")
+	}
+	resetEntrypointsState(t)
+	t.Setenv("TF_SHELL", "powershell")
+
+	code, stdout, _ := runMain(t, "go-fuck", "--alias", "--enable-experimental-instant-mode")
+	if code != 0 {
+		t.Fatalf("Main() = %d, want 0", code)
+	}
+	for _, want := range []string{"$env:GOFUCK_INSTANT_MODE", "$env:GOFUCK_OUTPUT_LOG", "$env:GOFUCK_SHELL", "--shell-logger"} {
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("instant mode initializer does not contain %q: %q", want, stdout)
+		}
+	}
+
+	t.Setenv(consts.InstantModeEnv, "true")
+	code, stdout, _ = runMain(t, "go-fuck", "--alias", "--enable-experimental-instant-mode")
+	if code != 0 {
+		t.Fatalf("Main() = %d, want 0", code)
+	}
+	for _, want := range []string{"global:prompt", "function fuck", "[char]0x200B"} {
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("logged shell alias does not contain %q: %q", want, stdout)
+		}
 	}
 }
 

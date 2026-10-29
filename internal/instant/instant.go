@@ -6,7 +6,9 @@
 //
 // The log reader and the ring buffer writer are platform independent. Spawning
 // the logged shell needs a pseudo terminal and is implemented per platform
-// (currently Linux and macOS).
+// (POSIX pseudo terminals on Linux and macOS, ConPTY on Windows). The ConPTY
+// stream encodes line breaks and redraws with cursor positions, so it is
+// rendered with a small screen model before the log is parsed.
 package instant
 
 import (
@@ -44,7 +46,7 @@ func LastOutput(logPath, script string) (string, bool) {
 	}
 
 	parts := strings.Fields(script)
-	calls := groupCalls(data)
+	calls := groupCalls(logLines(data))
 	for index := len(calls) - 1; index >= 0; index-- {
 		call := calls[index]
 		echo := call.echoIndex(script, parts)
@@ -121,10 +123,11 @@ func (c logCall) output(from int) string {
 	return strings.Join(lines, "\n")
 }
 
-// groupCalls splits the log into command calls at the prompt marker lines.
-func groupCalls(data string) []logCall {
+// groupCalls splits the rendered log lines into command calls at the prompt
+// marker lines.
+func groupCalls(lines []string) []logCall {
 	calls := []logCall{}
-	for _, line := range strings.Split(data, "\n") {
+	for _, line := range lines {
 		line = strings.TrimSuffix(line, "\\r")
 		if strings.Contains(line, consts.UserCommandMark) {
 			calls = append(calls, logCall{prompt: line})

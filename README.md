@@ -300,7 +300,7 @@ Common options:
 | `-v`, `--version` | print build and environment details (a colored banner in a terminal, a single line when piped) |
 | `-h`, `--help` | print the full option list |
 | `--setup` | add the alias to the detected shell's configuration file (bash, zsh, fish, tcsh) |
-| `--enable-experimental-instant-mode` | accepted for compatibility; instant mode is not supported and go-fuck falls back to re-running the command |
+| `--enable-experimental-instant-mode` | print the initialization code of the experimental instant mode (bash/zsh on Linux and macOS, PowerShell on Windows) |
 
 ## How it works
 
@@ -323,28 +323,50 @@ shell plugin, at the cost of running the failed command a second time.
 
 The experimental instant mode reads the output of the previous command from a terminal log instead
 of re-running the command. This is useful for slow, interactive or side effecting commands. It is
-currently implemented for **bash and zsh on Linux and macOS**; other shells and platforms warn and
-fall back to the regular alias.
+implemented for **bash and zsh on Linux and macOS** and for **PowerShell on Windows**; other shells
+and platforms warn and fall back to the regular alias.
 
-Enable it by adding the experimental flag to the alias initialization in your shell configuration:
+Enable it by adding the experimental flag to the alias initialization in your shell configuration.
+
+Linux and macOS:
 
 ```bash
 # ~/.bashrc (or ~/.zshrc for zsh)
 eval "$(go-fuck --alias --enable-experimental-instant-mode)"
 ```
 
-Restart the shell. The alias then starts a logged subshell: commands keep working as usual, but
-go-fuck reads their output from the terminal log, so `fuck` does not execute the failed command a
-second time. The log is a temporary file that is removed when the logged shell exits.
+Windows (Windows PowerShell 5.1 and PowerShell 7):
+
+```powershell
+# $PROFILE
+iex "$(gof --alias --enable-experimental-instant-mode)"
+```
+
+Restart the shell. The initialization replaces the terminal shell with a logged subshell: commands
+keep working as usual, but go-fuck reads their output from the terminal log, so `fuck` does not
+execute the failed command a second time. The log is a temporary file that is removed when the
+logged shell exits.
+
+On Windows the logged shell runs on a pseudo console (ConPTY), which requires Windows 10 version
+1809 or newer. When ConPTY is not available, the regular alias is installed instead of closing the
+terminal.
 
 Limitations:
 
-- Changing `PS1` after the alias initialization breaks the command detection in the log.
+- The shell profile runs twice per terminal start: once in the terminal shell and once in the
+  logged subshell. Slow profiles delay the first prompt twice.
+- Changing `PS1` after the alias initialization breaks the command detection in the log. On
+  Windows the alias wraps the `prompt` function, so the instant mode line has to be the last
+  prompt definition in the profile.
 - Full screen programs such as `vim` or `tmux` can confuse the log; fall back to the regular
   mode if a suggestion looks wrong.
+- On Windows the terminal size is polled, so a resized window reaches the logged shell with a
+  short delay.
 - The log keeps the newest 1 MiB of terminal output, matching the reference ring buffer.
-- The reference implementation renders the log with pyte; go-fuck strips ANSI escape sequences and
-  applies carriage return overwrites, which is a documented deviation.
+- The reference implementation renders the log with pyte. On Linux and macOS go-fuck strips ANSI
+  escape sequences and applies carriage return overwrites; on Windows the ConPTY stream is rendered
+  with a small screen model that supports cursor addressing, erase sequences and scrolling. Full
+  screen programs can still differ from a real terminal.
 
 The `instant_mode` setting and `GOFUCK_INSTANT_MODE=true` are read automatically inside the
 logged shell; there is no need to set them manually.
@@ -773,13 +795,16 @@ go-fuck is a reimplementation, not a drop-in replacement for every thefuck featu
   plus go-fuck specific rules for the GitHub CLI, kubectl, uv, cargo, Helm, pnpm, the Go toolchain
   and Node.js; the list above is authoritative. The porting conventions are documented in
   [PORTING.md](PORTING.md).
-- **Instant mode is Unix only.** The experimental instant mode reads the previous command output
-  from a terminal log instead of re-running the command. It is implemented for bash and zsh on
-  Linux and macOS; other platforms and shells warn and fall back to the regular alias. The
-  reference implementation emulates the terminal with pyte to render the log; go-fuck strips
-  escape sequences instead, which can differ for full screen programs.
+- **Instant mode covers Linux, macOS and Windows.** The experimental instant mode reads the
+  previous command output from a terminal log instead of re-running the command. It is implemented
+  for bash and zsh on Linux and macOS and for PowerShell on Windows (hosted on ConPTY); other
+  platforms and shells warn and fall back to the regular alias. The reference implementation
+  emulates the terminal with pyte to render the log; go-fuck uses a simplified renderer (ANSI
+  stripping on Linux and macOS, a small screen model for the ConPTY stream on Windows), which can
+  differ for full screen programs.
 - **Shell logger.** `-l`/`--shell-logger` starts a shell under a pseudo terminal and logs its
-  output on Linux and macOS. Other platforms report that the shell logger is not supported.
+  output. It is available on Linux and macOS (POSIX pseudo terminals) and on Windows (ConPTY);
+  other platforms report that the shell logger is not supported.
 - **In-memory memoization instead of an on-disk cache.** go-fuck is a short-lived process, so
   rule results are memoized only for the duration of one invocation. Thefuck's `@cache` persisted
   values between runs.

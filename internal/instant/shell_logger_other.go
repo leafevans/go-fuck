@@ -1,4 +1,4 @@
-//go:build !linux && !darwin
+//go:build !linux && !darwin && !windows
 
 package instant
 
@@ -7,7 +7,8 @@ func Supported() bool {
 	return false
 }
 
-// RunShellLogger reports that instant mode is only supported on Linux and macOS.
+// RunShellLogger reports that instant mode is only supported on Linux, macOS
+// and Windows.
 func RunShellLogger(string) (int, error) {
 	return 1, ErrUnsupported
 }

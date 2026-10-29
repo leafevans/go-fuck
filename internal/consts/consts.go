@@ -113,6 +113,11 @@ const (
 	// LegacyOutputLogEnv is the log path variable of the original
 	// implementation.
 	LegacyOutputLogEnv = "THEFUCK_OUTPUT_LOG"
+
+	// ShellPathEnv is set by the instant mode alias to the absolute path of the
+	// shell that the shell logger has to start. It is only used on Windows,
+	// where the logged shell is PowerShell.
+	ShellPathEnv = "GOFUCK_SHELL"
 )
 
 // Key is a semantic key press returned by the platform key reader.
