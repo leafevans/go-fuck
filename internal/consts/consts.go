@@ -1,19 +1,47 @@
 // Package consts defines constants that are shared across go-fuck packages.
 package consts
 
+import (
+	"path"
+	"strings"
+)
+
 // Application metadata.
 const (
-	// AppName is the executable name used in generated shell aliases and
-	// user-facing messages.
+	// AppName is the project name used in user-facing messages and in the
+	// default executable name.
 	AppName = "go-fuck"
 )
+
+// executableName is the name the command was started as. It differs from
+// AppName when the binary is installed under another name, for example "gof"
+// from winget, and is used whenever generated code has to call go-fuck again.
+var executableName = AppName
+
+// ExecutableName returns the name the command was started as, without a
+// directory or an .exe suffix.
+func ExecutableName() string {
+	return executableName
+}
+
+// SetExecutableName records the executable name from os.Args[0].
+func SetExecutableName(raw string) {
+	name := path.Base(strings.ReplaceAll(raw, string(rune(92)), "/"))
+	if len(name) > 4 && strings.EqualFold(name[len(name)-4:], ".exe") {
+		name = name[:len(name)-4]
+	}
+	if name == "" || name == "." || name == "/" {
+		name = AppName
+	}
+	executableName = name
+}
 
 // Version is the semantic version reported by --version.
 //
 // It is a variable so that release builds can override it at link time:
 //
 //	go build -ldflags "-X github.com/leafevans/go-fuck/internal/consts.Version=v1.2.3"
-var Version = "0.3.0"
+var Version = "0.3.1"
 
 // Rule defaults.
 const (

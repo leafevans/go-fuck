@@ -122,7 +122,7 @@ func (g *Generic) ToShell(script string) string {
 // AppAlias returns the alias definition for a POSIX compatible shell.
 func (g *Generic) AppAlias(aliasName string) string {
 	return "alias " + aliasName + "='eval " + dquote + "$(TF_ALIAS=" + aliasName +
-		" " + consts.AppName + " " + dquote + "$(fc -ln -1)" + dquote + ")" + dquote + "'"
+		" " + consts.ExecutableName() + " " + dquote + "$(fc -ln -1)" + dquote + ")" + dquote + "'"
 }
 
 // InstantModeAlias returns the instant mode alias. The generic shell does not

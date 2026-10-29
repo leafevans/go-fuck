@@ -76,9 +76,11 @@ func resetEntrypointsState(t *testing.T) string {
 	t.Setenv("TF_HISTORY", "")
 	t.Setenv("TF_SHELL", "bash")
 	conf.Reset()
+	consts.SetExecutableName(consts.AppName)
 	logs.SetOutput(io.Discard)
 	t.Cleanup(func() {
 		conf.Reset()
+		consts.SetExecutableName(consts.AppName)
 		logs.SetOutput(io.Discard)
 	})
 	return configDir

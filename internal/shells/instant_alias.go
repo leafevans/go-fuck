@@ -31,7 +31,7 @@ func instantModeInitAlias() string {
 	logPath := quoteShellPath(instantModeLogPath())
 	return fmt.Sprintf("export %s=True;\nexport %s=%s;\n%s --shell-logger %s;\nrm -f %s;\nexit",
 		consts.InstantModeEnv, consts.OutputLogEnv, logPath,
-		consts.AppName, logPath, logPath)
+		consts.ExecutableName(), logPath, logPath)
 }
 
 // instantModeMarkedAlias prefixes PS1 with the invisible prompt marker so that

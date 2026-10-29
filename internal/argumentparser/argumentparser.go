@@ -128,7 +128,7 @@ func prepareArguments(argv []string) []string {
 
 // Usage returns the one line usage message.
 func Usage() string {
-	return "usage: go-fuck [-v] [-a [ALIAS]] [-l SHELL_LOGGER] [--setup] " +
+	return "usage: " + consts.ExecutableName() + " [-v] [-a [ALIAS]] [-l SHELL_LOGGER] [--setup] " +
 		"[--enable-experimental-instant-mode] [-h] [-d] " +
 		"[--force-command FORCE_COMMAND] [-y | -r] [command ...]"
 }

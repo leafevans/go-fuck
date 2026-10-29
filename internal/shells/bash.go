@@ -40,7 +40,7 @@ func (b *Bash) AppAlias(aliasName string) string {
 	if conf.Current().AlterHistory {
 		alterHistory = "    history -s $TF_CMD;"
 	}
-	return fmt.Sprintf(bashAliasTemplate, aliasName, consts.AppName,
+	return fmt.Sprintf(bashAliasTemplate, aliasName, consts.ExecutableName(),
 		consts.ArgumentPlaceholder, alterHistory)
 }
 
@@ -84,7 +84,7 @@ func (b *Bash) HowToConfigure() *Configuration {
 	} else if _, err := statHome("~/.bash_profile"); err == nil {
 		config = "~/.bash_profile"
 	}
-	return createConfiguration("eval "+dquote+"$("+consts.AppName+" --alias)"+dquote,
+	return createConfiguration("eval "+dquote+"$("+consts.ExecutableName()+" --alias)"+dquote,
 		config, "source "+config)
 }
 

@@ -43,7 +43,7 @@ func (z *Zsh) AppAlias(aliasName string) string {
 	if conf.Current().AlterHistory {
 		alterHistory = "    test -n " + dquote + "$TF_CMD" + dquote + " && print -s $TF_CMD"
 	}
-	return fmt.Sprintf(zshAliasTemplate, aliasName, consts.AppName,
+	return fmt.Sprintf(zshAliasTemplate, aliasName, consts.ExecutableName(),
 		consts.ArgumentPlaceholder, alterHistory)
 }
 
@@ -80,7 +80,7 @@ func (z *Zsh) GetAliases() map[string]string {
 
 // HowToConfigure describes how to configure the alias for zsh.
 func (z *Zsh) HowToConfigure() *Configuration {
-	return createConfiguration("eval $("+consts.AppName+" --alias)",
+	return createConfiguration("eval $("+consts.ExecutableName()+" --alias)",
 		"~/.zshrc", "source ~/.zshrc")
 }
 

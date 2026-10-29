@@ -49,7 +49,7 @@ func (f *Fish) AppAlias(aliasName string) string {
 	if conf.Current().AlterHistory {
 		alterHistory = fishAlterHistory
 	}
-	return fmt.Sprintf(fishAliasTemplate, aliasName, consts.AppName,
+	return fmt.Sprintf(fishAliasTemplate, aliasName, consts.ExecutableName(),
 		consts.ArgumentPlaceholder, alterHistory)
 }
 
@@ -167,7 +167,7 @@ func (f *Fish) PutToHistory(command string) error {
 
 // HowToConfigure describes how to configure the alias for fish.
 func (f *Fish) HowToConfigure() *Configuration {
-	return createConfiguration(consts.AppName+" --alias | source",
+	return createConfiguration(consts.ExecutableName()+" --alias | source",
 		"~/.config/fish/config.fish", "fish")
 }
 

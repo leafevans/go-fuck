@@ -32,7 +32,7 @@ func (t *Tcsh) AppAlias(aliasName string) string {
 		"alias %[1]s 'setenv TF_SHELL tcsh && setenv TF_ALIAS %[1]s && "+
 			"set fucked_cmd=%[3]shistory -h 2 | head -n 1%[3]s && "+
 			"eval %[3]s%[2]s $fucked_cmd%[3]s'",
-		aliasName, consts.AppName, backtick)
+		aliasName, consts.ExecutableName(), backtick)
 }
 
 // InstantModeAlias falls back to the regular alias because instant mode is not
@@ -66,7 +66,7 @@ func (t *Tcsh) GetAliases() map[string]string {
 
 // HowToConfigure describes how to configure the alias for tcsh.
 func (t *Tcsh) HowToConfigure() *Configuration {
-	return createConfiguration("eval "+backtick+consts.AppName+" --alias"+backtick,
+	return createConfiguration("eval "+backtick+consts.ExecutableName()+" --alias"+backtick,
 		"~/.tcshrc", "tcsh")
 }
 

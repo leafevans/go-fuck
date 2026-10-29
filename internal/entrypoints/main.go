@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/leafevans/go-fuck/internal/argumentparser"
+	"github.com/leafevans/go-fuck/internal/consts"
 	"github.com/leafevans/go-fuck/internal/logs"
 	"github.com/leafevans/go-fuck/internal/shells"
 	"github.com/leafevans/go-fuck/internal/system"
@@ -14,6 +15,7 @@ import (
 // Main is the entry point of the go-fuck command. It returns the process exit
 // code.
 func Main() int {
+	consts.SetExecutableName(os.Args[0])
 	system.InitOutput()
 	shells.Set(shells.Detect())
 

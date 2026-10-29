@@ -43,7 +43,7 @@ func NewPowershell() *Powershell {
 
 // AppAlias returns the PowerShell alias function.
 func (p *Powershell) AppAlias(aliasName string) string {
-	return fmt.Sprintf(powershellAliasTemplate, aliasName, consts.AppName)
+	return fmt.Sprintf(powershellAliasTemplate, aliasName, consts.ExecutableName())
 }
 
 // InstantModeAlias falls back to the regular alias because instant mode is not
@@ -64,7 +64,7 @@ func (p *Powershell) And(commands ...string) string {
 
 // HowToConfigure describes how to configure the alias for PowerShell.
 func (p *Powershell) HowToConfigure() *Configuration {
-	content := "iex " + dquote + "$(" + consts.AppName + " --alias)" + dquote
+	content := "iex " + dquote + "$(" + consts.ExecutableName() + " --alias)" + dquote
 	return &Configuration{
 		Content:                   content,
 		Path:                      "$profile",
