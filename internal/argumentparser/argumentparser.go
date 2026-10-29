@@ -38,6 +38,9 @@ type Args struct {
 	ShellLogger string
 	// ForceCommand is the command to fix when --force-command is given.
 	ForceCommand string
+	// JSON prints the suggestions as JSON instead of running the interactive
+	// selection and the corrected command.
+	JSON bool
 	// Command is the command to fix, as passed by the shell alias.
 	Command []string
 }
@@ -98,6 +101,8 @@ func Parse(argv []string) (*Args, error) {
 			i++
 		case strings.HasPrefix(arg, "--force-command="):
 			args.ForceCommand = strings.TrimPrefix(arg, "--force-command=")
+		case arg == "--json":
+			args.JSON = true
 		case strings.HasPrefix(arg, "-"):
 			return nil, fmt.Errorf("unrecognized arguments: %s", arg)
 		default:
@@ -130,7 +135,7 @@ func prepareArguments(argv []string) []string {
 func Usage() string {
 	return "usage: " + consts.ExecutableName() + " [-v] [-a [ALIAS]] [-l SHELL_LOGGER] [--setup] " +
 		"[--enable-experimental-instant-mode] [-h] [-d] " +
-		"[--force-command FORCE_COMMAND] [-y | -r] [command ...]"
+		"[--force-command FORCE_COMMAND] [--json] [-y | -r] [command ...]"
 }
 
 // Help returns the full help message.
@@ -149,6 +154,7 @@ func Help() string {
 		"  -h, --help                           show this help message and exit",
 		"  -d, --debug                          enable debug output",
 		"  --force-command FORCE_COMMAND        fix this command instead of the previous one",
+		"  --json                               print the suggestions as JSON and exit",
 		"  -y, --yes, --yeah, --hard            execute fixed command without confirmation",
 		"  -r, --repeat                         repeat on failure",
 		"  command                              command that should be fixed",

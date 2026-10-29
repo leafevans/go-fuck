@@ -71,6 +71,19 @@ func TestParseHelpAndVersion(t *testing.T) {
 	}
 }
 
+func TestParseJSON(t *testing.T) {
+	args, err := Parse([]string{"go-fuck", "--json", "--force-command", "git brnch"})
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+	if !args.JSON {
+		t.Fatalf("JSON = false, want true: %+v", args)
+	}
+	if args.ForceCommand != "git brnch" {
+		t.Fatalf("ForceCommand = %q", args.ForceCommand)
+	}
+}
+
 func TestParseSetup(t *testing.T) {
 	args, err := Parse([]string{"go-fuck", "--setup"})
 	if err != nil || !args.Setup {

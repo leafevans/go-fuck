@@ -31,15 +31,17 @@ git push --set-upstream origin main [enter/↑/↓/ctrl+c]
 5. [Shell setup](#shell-setup)
 6. [First steps](#first-steps)
 7. [How it works](#how-it-works)
-8. [Settings](#settings)
-9. [Confirmation keys](#confirmation-keys)
-10. [Rules](#rules)
-11. [AI fallback](#ai-fallback-optional)
-12. [Creating custom rules](#creating-custom-rules)
-13. [Differences from thefuck](#differences-from-thefuck)
-14. [Contributing](#contributing)
-15. [License](#license)
-16. [Acknowledgements](#acknowledgements)
+8. [Instant mode](#instant-mode)
+9. [Machine readable output](#machine-readable-output)
+10. [Settings](#settings)
+11. [Confirmation keys](#confirmation-keys)
+12. [Rules](#rules)
+13. [AI fallback](#ai-fallback-optional)
+14. [Creating custom rules](#creating-custom-rules)
+15. [Differences from thefuck](#differences-from-thefuck)
+16. [Contributing](#contributing)
+17. [License](#license)
+18. [Acknowledgements](#acknowledgements)
 
 ## Why Go
 
@@ -76,6 +78,7 @@ rule runs, which a native binary does not need.
 
 - Corrects the previous console command by matching its output against a set of rules.
 - Shell integration for **bash**, **zsh**, **fish**, **tcsh** and **PowerShell**.
+- Machine readable JSON output for editor plugins, scripts and AI agents with `--json`.
 - Interactive confirmation prompt with keyboard navigation, or skip it with `-y`/`--yes`.
 - Repeats automatically on failure with `-r`/`--repeat`, and can fix an arbitrary command with
   `--force-command`.
@@ -296,6 +299,7 @@ Common options:
 | `-y`, `--yes`, `--yeah`, `--hard` | execute the first suggestion without asking |
 | `-r`, `--repeat` | if the corrected command fails, run go-fuck again |
 | `--force-command CMD` | fix `CMD` instead of the previous command |
+| `--json` | print the suggestions as JSON and exit (useful for scripts and editors; call go-fuck directly rather than through the alias) |
 | `-d`, `--debug` | print debug information to stderr |
 | `-v`, `--version` | print build and environment details (a colored banner in a terminal, a single line when piped) |
 | `-h`, `--help` | print the full option list |
@@ -371,6 +375,40 @@ Limitations:
 The `instant_mode` setting and `GOFUCK_INSTANT_MODE=true` are read automatically inside the
 logged shell; there is no need to set them manually.
 
+## Machine readable output
+
+`--json` prints the correction result as JSON instead of opening the interactive prompt. It is
+intended for editor plugins, scripts and AI agents; call go-fuck directly rather than through the
+shell alias, because the alias evaluates whatever go-fuck prints.
+
+```console
+$ go-fuck --json --force-command "git brnch"
+{
+  "command": "git brnch",
+  "suggestions": [
+    {
+      "command": "git branch",
+      "priority": 1000,
+      "side_effect": false
+    },
+    {
+      "command": "git brnch",
+      "priority": 5000,
+      "side_effect": false
+    }
+  ]
+}
+```
+
+The suggestions are ordered as they would be offered interactively. `priority` is the rule
+priority (lower values are tried first). `side_effect` reports whether the interactive mode would
+run a side effect, for example `git add`, before the corrected command. The history rule can repeat
+the original command as a fallback suggestion; consumers that only want real corrections can skip
+suggestions equal to `command`.
+
+In JSON mode go-fuck does not execute the corrected command, does not apply side effects and does
+not update the shell history; the caller decides what to do with the suggestions. The exit code is
+0 once the JSON was written, even when no rule matched and `suggestions` is empty.
 ## Settings
 
 Settings are stored in `settings.json` inside the go-fuck directory of the user configuration

@@ -30,12 +30,18 @@ func fixCommand(args *argumentparser.Args) int {
 	rawCommand := getRawCommand(args)
 	if len(rawCommand) == 0 {
 		logs.Debug("Empty command, nothing to do")
+		if args.JSON {
+			return printJSON(nil, nil)
+		}
 		return 0
 	}
 
 	command, err := types.FromRawScript(rawCommand)
 	if errors.Is(err, types.ErrEmptyCommand) {
 		logs.Debug("Empty command, nothing to do")
+		if args.JSON {
+			return printJSON(nil, nil)
+		}
 		return 0
 	}
 	if err != nil {
@@ -46,6 +52,10 @@ func fixCommand(args *argumentparser.Args) int {
 	corrected := corrector.GetCorrectedCommands(command)
 	if len(corrected) == 0 {
 		corrected = aiFallback(command)
+	}
+
+	if args.JSON {
+		return printJSON(command, corrected)
 	}
 
 	selected := ui.SelectCommand(corrected)
