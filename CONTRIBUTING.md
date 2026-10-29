@@ -31,6 +31,7 @@ go test ./... -count=1
 | `make test` | run the test suite |
 | `make test-race` | run the test suite with the race detector (needs a C compiler) |
 | `make cover` | run the test suite with coverage and print the total |
+| `make bench` | run the benchmarks (`go test ./internal/... -run '^$' -bench . -benchmem`) |
 | `make vet` | run `go vet` |
 | `make fmt` | format all Go files with `gofmt -s -w` |
 | `make fmt-check` | fail when a Go file is not formatted |
@@ -49,6 +50,7 @@ available, run the underlying commands:
 ```bash
 go build ./...
 go test ./... -count=1
+go test ./internal/... -run '^$' -bench . -benchmem
 go vet ./...
 gofmt -s -w .
 go run ./tools/checkfmt

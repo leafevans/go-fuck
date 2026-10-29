@@ -53,6 +53,24 @@ git push --set-upstream origin main [enter/↑/↓/ctrl+c]
 - **Simple to contribute.** The code is standard library only, formatted with `gofmt` and tested on
   three operating systems in CI.
 
+### Benchmarks
+
+The correction hot path and the shell history parser have Go benchmarks
+(`make bench`); they run on every supported platform and do not depend on the
+installed tools. Measured on an AMD Ryzen 7 7730U (16 logical CPUs) with Go 1.26:
+
+| Benchmark | Result |
+| --- | --- |
+| Full correction path (select rules, match them, order suggestions) | ~76 µs/op |
+| Matching every rule against a captured output | ~65 µs/op |
+| Matching rules when the command output could not be captured | ~0.5 µs/op |
+| Parsing a 20,000 line shell history file | ~0.67 ms/op |
+
+The rule engine adds tens of microseconds; the wall clock time of a correction
+is dominated by deliberately re-running the failed command. An interpreter based
+implementation pays for interpreter and module import startup before the first
+rule runs, which a native binary does not need.
+
 ## Features
 
 - Corrects the previous console command by matching its output against a set of rules.

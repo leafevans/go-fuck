@@ -27,7 +27,7 @@ endif
 #	make build LDFLAGS="-X github.com/leafevans/go-fuck/internal/consts.Version=1.2.3"
 LDFLAGS ?=
 
-.PHONY: help build test test-race cover vet fmt fmt-check lint install clean packaging packaging-check rules-list rules-list-check
+.PHONY: help build test test-race cover bench vet fmt fmt-check lint install clean packaging packaging-check rules-list rules-list-check
 
 .DEFAULT_GOAL := help
 
@@ -46,6 +46,9 @@ test-race: ## Run the test suite with the race detector enabled
 cover: ## Run the test suite with coverage and print the total
 	$(GO) test ./... -count=1 -coverprofile=coverage.out
 	@$(GO) run ./tools/coveragecheck -profile coverage.out
+
+bench: ## Run the benchmarks
+	$(GO) test ./internal/... -run '^$$' -bench . -benchmem
 
 vet: ## Run go vet on all packages
 	$(GO) vet ./...
