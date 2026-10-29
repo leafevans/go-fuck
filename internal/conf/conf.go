@@ -66,6 +66,16 @@ type Settings struct {
 	// ExcludedSearchPathPrefixes lists PATH prefixes that are not searched for
 	// executables.
 	ExcludedSearchPathPrefixes []string `json:"excluded_search_path_prefixes"`
+	// AIEnabled enables the optional AI fallback that asks an OpenAI
+	// compatible endpoint for a correction when no rule matched.
+	AIEnabled bool `json:"ai"`
+	// AIEndpoint is the OpenAI compatible API base URL, for example
+	// "https://api.openai.com/v1".
+	AIEndpoint string `json:"ai_endpoint"`
+	// AIModel is the model used by the AI fallback.
+	AIModel string `json:"ai_model"`
+	// AITimeout is the number of seconds to wait for the AI endpoint.
+	AITimeout int `json:"ai_timeout"`
 
 	// UserDir is the directory that stores the user settings file.
 	UserDir string `json:"-"`
@@ -95,6 +105,10 @@ func Default() *Settings {
 		NumCloseMatches:            3,
 		Env:                        map[string]string{"LC_ALL": "C", "LANG": "C", "GIT_TRACE": "1"},
 		ExcludedSearchPathPrefixes: []string{},
+		AIEnabled:                  false,
+		AIEndpoint:                 "",
+		AIModel:                    "",
+		AITimeout:                  10,
 		extra:                      map[string]string{},
 	}
 }
@@ -214,6 +228,10 @@ type fileSchema struct {
 	NumCloseMatches            *int               `json:"num_close_matches"`
 	Env                        *map[string]string `json:"env"`
 	ExcludedSearchPathPrefixes *[]string          `json:"excluded_search_path_prefixes"`
+	AIEnabled                  *bool              `json:"ai"`
+	AIEndpoint                 *string            `json:"ai_endpoint"`
+	AIModel                    *string            `json:"ai_model"`
+	AITimeout                  *int               `json:"ai_timeout"`
 	Extra                      map[string]any     `json:"settings"`
 	Comment                    string             `json:"_comment"`
 }
@@ -266,6 +284,10 @@ func (s *Settings) writeDefaultFile(path string) error {
 		"num_close_matches":             s.NumCloseMatches,
 		"env":                           s.Env,
 		"excluded_search_path_prefixes": s.ExcludedSearchPathPrefixes,
+		"ai":                            s.AIEnabled,
+		"ai_endpoint":                   s.AIEndpoint,
+		"ai_model":                      s.AIModel,
+		"ai_timeout":                    s.AITimeout,
 		"settings":                      map[string]any{},
 	}
 	data, err := json.MarshalIndent(schema, "", "  ")
@@ -332,6 +354,18 @@ func (s *Settings) applyFile(f *fileSchema) {
 	if f.ExcludedSearchPathPrefixes != nil {
 		s.ExcludedSearchPathPrefixes = *f.ExcludedSearchPathPrefixes
 	}
+	if f.AIEnabled != nil {
+		s.AIEnabled = *f.AIEnabled
+	}
+	if f.AIEndpoint != nil {
+		s.AIEndpoint = *f.AIEndpoint
+	}
+	if f.AIModel != nil {
+		s.AIModel = *f.AIModel
+	}
+	if f.AITimeout != nil {
+		s.AITimeout = *f.AITimeout
+	}
 	for key, value := range f.Extra {
 		if str, ok := value.(string); ok {
 			s.SetExtra(key, str)
@@ -362,6 +396,10 @@ func (s *Settings) loadEnv() {
 		s.boolFromEnv(prefix, "FZF", &s.Fzf)
 		s.intFromEnv(prefix, "NUM_CLOSE_MATCHES", &s.NumCloseMatches)
 		s.sliceFromEnv(prefix, "EXCLUDED_SEARCH_PATH_PREFIXES", &s.ExcludedSearchPathPrefixes)
+		s.boolFromEnv(prefix, "AI", &s.AIEnabled)
+		s.stringFromEnv(prefix, "AI_ENDPOINT", &s.AIEndpoint)
+		s.stringFromEnv(prefix, "AI_MODEL", &s.AIModel)
+		s.intFromEnv(prefix, "AI_TIMEOUT", &s.AITimeout)
 	}
 }
 
@@ -375,6 +413,13 @@ func envValue(prefix, suffix string) (string, bool) {
 func (s *Settings) boolFromEnv(prefix, suffix string, dst *bool) {
 	if value, ok := envValue(prefix, suffix); ok {
 		*dst = strings.EqualFold(value, "true")
+	}
+}
+
+// stringFromEnv applies a string environment variable.
+func (s *Settings) stringFromEnv(prefix, suffix string, dst *string) {
+	if value, ok := envValue(prefix, suffix); ok {
+		*dst = value
 	}
 }
 

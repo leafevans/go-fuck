@@ -43,7 +43,12 @@ func fixCommand(args *argumentparser.Args) int {
 		return 1
 	}
 
-	selected := ui.SelectCommand(corrector.GetCorrectedCommands(command))
+	corrected := corrector.GetCorrectedCommands(command)
+	if len(corrected) == 0 {
+		corrected = aiFallback(command)
+	}
+
+	selected := ui.SelectCommand(corrected)
 	if selected == nil {
 		return 1
 	}
