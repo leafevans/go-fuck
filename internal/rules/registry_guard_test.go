@@ -226,6 +226,8 @@ var registryGuardHelperFiles = map[string]bool{
 	"registry_guard_test.go": true,
 	"benchmark_test.go":      true,
 	"cobra_suggestions.go":   true,
+	"custom.go":              true,
+	"custom_test.go":         true,
 }
 
 // ruleNamePattern matches the characters that a rule name may contain. Rule

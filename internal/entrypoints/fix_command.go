@@ -21,6 +21,7 @@ func fixCommand(args *argumentparser.Args) int {
 	if _, err := conf.Load(&conf.Args{Yes: args.Yes, Debug: args.Debug, Repeat: args.Repeat}); err != nil {
 		logs.Exception("Can't load settings", err)
 	}
+	loadCustomRules()
 
 	stopTimer := logs.DebugTime("Total")
 	defer stopTimer()
