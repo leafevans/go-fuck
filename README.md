@@ -34,11 +34,12 @@ git push --set-upstream origin main [enter/↑/↓/ctrl+c]
 8. [Settings](#settings)
 9. [Confirmation keys](#confirmation-keys)
 10. [Rules](#rules)
-11. [Creating custom rules](#creating-custom-rules)
-12. [Differences from thefuck](#differences-from-thefuck)
-13. [Contributing](#contributing)
-14. [License](#license)
-15. [Acknowledgements](#acknowledgements)
+11. [AI fallback](#ai-fallback-optional)
+12. [Creating custom rules](#creating-custom-rules)
+13. [Differences from thefuck](#differences-from-thefuck)
+14. [Contributing](#contributing)
+15. [License](#license)
+16. [Acknowledgements](#acknowledgements)
 
 ## Why Go
 
@@ -81,6 +82,8 @@ rule runs, which a native binary does not need.
 - A JSON settings file with defaults for every option, plus environment variable overrides using the
   `GOFUCK_*` prefix and the legacy `THEFUCK_*` prefix.
 - Rule priorities, disabled rules and per-rule settings.
+- An optional AI fallback for commands that no rule matches (disabled by default; see
+  [AI fallback](#ai-fallback-optional)).
 - No third-party Go dependencies: the whole project uses the standard library.
 
 ## Requirements
@@ -381,6 +384,10 @@ All fields:
 | `num_close_matches` | integer | `3` | Maximum number of close matches suggested for misspelled commands. |
 | `env` | object of string | `{"LC_ALL": "C", "LANG": "C", "GIT_TRACE": "1"}` | Environment variables added when the failed command is re-run. |
 | `excluded_search_path_prefixes` | array of strings | `[]` | `PATH` prefixes that are skipped when searching for executables. |
+| `ai` | boolean | `false` | Enable the optional AI fallback when no rule matched. See [AI fallback](#ai-fallback-optional). |
+| `ai_endpoint` | string | `""` | OpenAI compatible API base URL, for example `https://api.openai.com/v1`. |
+| `ai_model` | string | `""` | Chat completion model used by the AI fallback. |
+| `ai_timeout` | integer | `10` | Seconds to wait for the AI endpoint. |
 | `settings` | object | `{} in the default file` | Rule-specific string settings, read by rules with `conf.Current().String(key, default)`. |
 
 ### Environment variables
@@ -409,6 +416,10 @@ legacy `THEFUCK_*` variable is applied last and wins.
 | `INSTANT_MODE` | boolean | `GOFUCK_INSTANT_MODE=false` | `instant_mode` |
 | `NUM_CLOSE_MATCHES` | integer | `GOFUCK_NUM_CLOSE_MATCHES=5` | `num_close_matches` |
 | `EXCLUDED_SEARCH_PATH_PREFIXES` | colon separated list | `GOFUCK_EXCLUDED_SEARCH_PATH_PREFIXES='/snap'` | `excluded_search_path_prefixes` |
+| `AI` | boolean | `GOFUCK_AI=true` | `ai` |
+| `AI_ENDPOINT` | string | `GOFUCK_AI_ENDPOINT=https://api.openai.com/v1` | `ai_endpoint` |
+| `AI_MODEL` | string | `GOFUCK_AI_MODEL=gpt-4o-mini` | `ai_model` |
+| `AI_TIMEOUT` | integer seconds | `GOFUCK_AI_TIMEOUT=20` | `ai_timeout` |
 
 The `env` map can only be set in `settings.json`. Booleans accept `true` and `false`
 (case-insensitive).
@@ -653,6 +664,33 @@ make rules-list-check          # fail when README.md is out of date
 
 The same names can be used in the `rules`, `exclude_rules` and `priority` settings.
 
+## AI fallback (optional)
+
+When no built-in or custom rule matches, go-fuck can ask an OpenAI compatible chat completion
+endpoint for a correction. The fallback is disabled by default and sends the failed command and the
+tail of its output (up to 4,000 bytes) to the configured endpoint:
+
+```json
+{
+  "ai": true,
+  "ai_endpoint": "https://api.openai.com/v1",
+  "ai_model": "gpt-4o-mini",
+  "ai_timeout": 10
+}
+```
+
+The API key is read from the `GOFUCK_AI_API_KEY` environment variable (or `OPENAI_API_KEY` when it
+is not set) and is never stored in `settings.json`. The same values can be set with `GOFUCK_AI`,
+`GOFUCK_AI_ENDPOINT`, `GOFUCK_AI_MODEL` and `GOFUCK_AI_TIMEOUT`.
+
+A returned command is offered exactly like a rule suggestion, so the normal confirmation prompt
+applies (`-y` skips it). Request failures and timeouts are reported as a warning and go-fuck falls
+back to "No fucks given". The fallback runs only when no rule matched, so the common path is not
+affected.
+
+> **Privacy:** only enable the fallback if you are fine with sending failed commands and their
+> output to the configured endpoint.
+
 ## Creating custom rules
 
 There are two ways to add a rule.
@@ -741,6 +779,9 @@ go-fuck is a reimplementation, not a drop-in replacement for every thefuck featu
   legacy `THEFUCK_*` environment variables are still understood alongside the new `GOFUCK_*` ones.
 - **fzf integration is an extra.** thefuck has no fuzzy finder integration; `GOFUCK_FZF=true` /
   `"fzf": true` opts in to using fzf as the selection prompt.
+- **Optional AI fallback.** thefuck has no model based fallback. go-fuck can ask an OpenAI
+  compatible endpoint for a correction when no rule matched; it is opt-in, disabled by default and
+  only sends the failed command and its output tail.
 
 ## Contributing
 
