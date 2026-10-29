@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"context"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
@@ -42,15 +43,7 @@ func rerun(expanded string) (string, bool) {
 	settings := conf.Current()
 
 	parts := strings.Fields(expanded)
-	isSlow := false
-	if len(parts) > 0 {
-		for _, slow := range settings.SlowCommands {
-			if parts[0] == slow {
-				isSlow = true
-				break
-			}
-		}
-	}
+	isSlow := len(parts) > 0 && slices.Contains(settings.SlowCommands, parts[0])
 
 	timeout := settings.WaitCommand
 	if isSlow {
