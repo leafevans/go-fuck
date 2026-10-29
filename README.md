@@ -169,6 +169,14 @@ go-fuck detects the shell from the `TF_SHELL` environment variable and otherwise
 tree. If detection is unreliable (for example when generating the alias from a setup script), set
 `TF_SHELL` explicitly: `TF_SHELL=fish go-fuck --alias`.
 
+### Automatic setup
+
+`go-fuck --setup` appends the line below to the detected shell's configuration file when that file
+exists (bash, zsh, fish and tcsh) and prints the command that reloads it. Shells that cannot be
+configured automatically, such as PowerShell, and shells whose configuration file does not exist yet
+print the line to add instead. The command is idempotent: when the line is already present go-fuck
+reports that the shell is already configured and leaves the file untouched.
+
 ### bash
 
 Add to `~/.bashrc` (or `~/.bash_profile` on macOS):
@@ -286,6 +294,7 @@ Common options:
 | `-d`, `--debug` | print debug information to stderr |
 | `-v`, `--version` | print build and environment details (a colored banner in a terminal, a single line when piped) |
 | `-h`, `--help` | print the full option list |
+| `--setup` | add the alias to the detected shell's configuration file (bash, zsh, fish, tcsh) |
 | `--enable-experimental-instant-mode` | accepted for compatibility; instant mode is not supported and go-fuck falls back to re-running the command |
 
 ## How it works
