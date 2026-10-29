@@ -87,8 +87,8 @@ func fieldValues(content, prefix string) []string {
 	values := []string{}
 	for _, line := range splitLines(content) {
 		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, prefix) {
-			values = append(values, strings.TrimSpace(strings.TrimPrefix(line, prefix)))
+		if after, ok := strings.CutPrefix(line, prefix); ok {
+			values = append(values, strings.TrimSpace(after))
 		}
 	}
 	return values
@@ -110,8 +110,8 @@ func check(root string) error {
 	version := ""
 	for _, line := range splitLines(formula) {
 		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "version ") {
-			version = unquote(strings.TrimSpace(strings.TrimPrefix(line, "version ")))
+		if after, ok := strings.CutPrefix(line, "version "); ok {
+			version = unquote(strings.TrimSpace(after))
 			break
 		}
 	}
@@ -342,8 +342,8 @@ func TestCheckDetectsInvalidChecksum(t *testing.T) {
 	lines := splitLines(string(data))
 	for index, line := range lines {
 		trimmed := strings.TrimSpace(line)
-		if strings.HasPrefix(trimmed, "sha256 ") {
-			lines[index] = strings.Replace(line, unquote(strings.TrimSpace(strings.TrimPrefix(trimmed, "sha256 "))), "not-a-checksum", 1)
+		if after, ok := strings.CutPrefix(trimmed, "sha256 "); ok {
+			lines[index] = strings.Replace(line, unquote(strings.TrimSpace(after)), "not-a-checksum", 1)
 			break
 		}
 	}

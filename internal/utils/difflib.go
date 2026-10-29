@@ -124,10 +124,7 @@ func quickRatioUpperBound(candidate string, wordCounts map[rune]int, scratch map
 
 	matching := 0
 	for char, count := range wordCounts {
-		found := scratch[char]
-		if found > count {
-			found = count
-		}
+		found := min(scratch[char], count)
 		matching += found
 	}
 	return 2 * float64(matching) / float64(length)

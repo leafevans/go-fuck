@@ -3,6 +3,7 @@
 package corrector
 
 import (
+	"slices"
 	"sort"
 	"strings"
 
@@ -70,13 +71,7 @@ func OrganizeCommands(commands []*types.CorrectedCommand) []*types.CorrectedComm
 	seen := []*types.CorrectedCommand{first}
 	organized := []*types.CorrectedCommand{first}
 	for _, command := range rest {
-		duplicate := false
-		for _, existing := range seen {
-			if command.Equal(existing) {
-				duplicate = true
-				break
-			}
-		}
+		duplicate := slices.ContainsFunc(seen, command.Equal)
 		if duplicate {
 			continue
 		}

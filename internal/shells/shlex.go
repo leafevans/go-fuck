@@ -14,7 +14,6 @@ const (
 	charSpace          = 32
 	charDoubleQuote    = 34
 	charSingleQuote    = 39
-	charDollar         = 36
 	charBackslash      = 92
 	charBacktick       = 96
 )

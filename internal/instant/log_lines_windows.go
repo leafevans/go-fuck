@@ -376,10 +376,7 @@ func (t *terminal) deleteCharacters(count int) {
 	if t.cursorX >= len(line) {
 		return
 	}
-	end := t.cursorX + count
-	if end > len(line) {
-		end = len(line)
-	}
+	end := min(t.cursorX+count, len(line))
 	t.screen[t.cursorY] = append(line[:t.cursorX], line[end:]...)
 }
 
@@ -428,7 +425,7 @@ func (t *terminal) deleteLines(count int) {
 
 // scrollUp moves count lines of the viewport into the scrollback.
 func (t *terminal) scrollUp(count int) {
-	for index := 0; index < count; index++ {
+	for range count {
 		t.scroll()
 	}
 }

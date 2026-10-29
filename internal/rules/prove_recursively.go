@@ -2,6 +2,7 @@ package rules
 
 import (
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/leafevans/go-fuck/internal/types"
@@ -34,10 +35,8 @@ func proveRecursivelyMatch(command *types.Command) bool {
 	}
 
 	parts := command.ScriptParts()[1:]
-	for _, part := range parts {
-		if proveRecursivelyIsRecursive(part) {
-			return false
-		}
+	if slices.ContainsFunc(parts, proveRecursivelyIsRecursive) {
+		return false
 	}
 	for _, part := range parts {
 		if !strings.HasPrefix(part, "-") && proveRecursivelyIsDir(part) {

@@ -1,16 +1,20 @@
 package rules
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 // tsuruNotCommandOutput builds the tsuru error output with the given
 // suggestions.
 func tsuruNotCommandOutput(suggestions ...string) string {
-	output := "tsuru: \"tchururu\" is not a tsuru command. See \"tsuru help\"." +
-		"\n\nDid you mean?\n"
+	var output strings.Builder
+	output.WriteString("tsuru: \"tchururu\" is not a tsuru command. See \"tsuru help\"." +
+		"\n\nDid you mean?\n")
 	for _, suggestion := range suggestions {
-		output += "\t" + suggestion + "\n"
+		output.WriteString("\t" + suggestion + "\n")
 	}
-	return output
+	return output.String()
 }
 
 func TestRuleTsuruNotCommand(t *testing.T) {
@@ -37,12 +41,13 @@ func TestRuleTsuruNotCommand(t *testing.T) {
 
 	t.Run("get new command", func(t *testing.T) {
 		commandOutput := func(broken string, suggestions ...string) string {
-			output := "tsuru: \"" + broken + "\" is not a tsuru command. See \"tsuru help\"." +
-				"\n\nDid you mean?\n"
+			var output strings.Builder
+			output.WriteString("tsuru: \"" + broken + "\" is not a tsuru command. See \"tsuru help\"." +
+				"\n\nDid you mean?\n")
 			for _, suggestion := range suggestions {
-				output += "\t" + suggestion + "\n"
+				output.WriteString("\t" + suggestion + "\n")
 			}
-			return output
+			return output.String()
 		}
 
 		assertNewCommands(t, rule, "tsuru log", commandOutput("log", "app-log", "login", "logout"),

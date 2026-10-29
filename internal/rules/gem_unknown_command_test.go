@@ -1,6 +1,9 @@
 package rules
 
-import "testing"
+import (
+	"slices"
+	"testing"
+)
 
 // gemUnknownCommandOutput returns the output gem prints for an unknown
 // command.
@@ -68,13 +71,7 @@ func TestRuleGemUnknownCommand(t *testing.T) {
 
 	commands := gemUnknownCommandParseCommands(gemUnknownCommandHelpOutput)
 	for _, want := range []string{"install", "list"} {
-		found := false
-		for _, command := range commands {
-			if command == want {
-				found = true
-				break
-			}
-		}
+		found := slices.Contains(commands, want)
 		if !found {
 			t.Errorf("_get_all_commands() = %q, want it to contain %q", commands, want)
 		}

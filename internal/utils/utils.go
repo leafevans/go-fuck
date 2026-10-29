@@ -108,14 +108,11 @@ func loadAllExecutables() []string {
 
 	perDir := make([][]string, len(dirs))
 	if len(dirs) > 0 {
-		workers := runtime.NumCPU()
-		if workers > len(dirs) {
-			workers = len(dirs)
-		}
+		workers := min(runtime.NumCPU(), len(dirs))
 		jobs := make(chan int)
 		var waitGroup sync.WaitGroup
 		waitGroup.Add(workers)
-		for worker := 0; worker < workers; worker++ {
+		for range workers {
 			go func() {
 				defer waitGroup.Done()
 				for index := range jobs {
@@ -232,8 +229,8 @@ func ReplaceArgument(script, from, to string) string {
 		return script[:len(script)-len(suffix)] + " " + to
 	}
 	search := " " + from + " "
-	if index := strings.Index(script, search); index >= 0 {
-		return script[:index] + " " + to + " " + script[index+len(search):]
+	if before, after, ok := strings.Cut(script, search); ok {
+		return before + " " + to + " " + after
 	}
 	return script
 }
@@ -282,12 +279,7 @@ func IsApp(command *types.Command, atLeast int, appNames ...string) bool {
 		return false
 	}
 	base := filepath.Base(parts[0])
-	for _, name := range appNames {
-		if base == name {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(appNames, base)
 }
 
 // ForApp wraps a function so that it is only called for the given

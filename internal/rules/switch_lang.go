@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/leafevans/go-fuck/internal/types"
@@ -152,12 +153,7 @@ type switchLangLayout struct {
 
 // switchLangContains reports whether the layout contains the character.
 func switchLangContains(layout []rune, ch rune) bool {
-	for _, candidate := range layout {
-		if candidate == ch {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(layout, ch)
 }
 
 // switchLangMatchesLayout reports whether every character of the command

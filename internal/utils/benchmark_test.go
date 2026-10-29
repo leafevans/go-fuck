@@ -10,10 +10,10 @@ import (
 func buildExecutableNames(count int) []string {
 	const alphabet = "abcdefghijklmnopqrstuvwxyz"
 	names := make([]string, 0, count)
-	for i := 0; i < count; i++ {
+	for i := range count {
 		length := 3 + i%12
 		name := make([]byte, 0, length)
-		for j := 0; j < length; j++ {
+		for j := range length {
 			name = append(name, alphabet[(i*7+j*3)%len(alphabet)])
 		}
 		names = append(names, string(name))
