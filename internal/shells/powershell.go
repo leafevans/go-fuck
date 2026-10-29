@@ -9,10 +9,18 @@ import (
 )
 
 // powershellAliasTemplate defines the alias function for PowerShell.
+//
+// Get-History only returns the previous command, so the alias passes it to
+// go-fuck for the normal correction flow. Explicit arguments (for example -h
+// or --version) must also work when the alias is the first command of a
+// session, when there is no history yet, so go-fuck is invoked when either
+// history or arguments are available.
 const powershellAliasTemplate = `function %[1]s {
     $history = (Get-History -Count 1).CommandLine;
-    if (-not [string]::IsNullOrWhiteSpace($history)) {
-        $fuck = $(%[2]s $args $history);
+    if (-not [string]::IsNullOrWhiteSpace($history) -or $args.Count -gt 0) {
+        $goFuckArgs = @($args);
+        if (-not [string]::IsNullOrWhiteSpace($history)) { $goFuckArgs += $history; }
+        $fuck = $(%[2]s @goFuckArgs);
         if (-not [string]::IsNullOrWhiteSpace($fuck)) {
             if ($fuck.StartsWith("echo")) { $fuck = $fuck.Substring(5); }
             else { iex "$fuck"; }
