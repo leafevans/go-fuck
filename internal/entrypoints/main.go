@@ -34,6 +34,8 @@ func Main() int {
 		return shellLogger(args.ShellLogger)
 	case args.AliasRequested:
 		return printAlias(args)
+	case args.Setup:
+		return setup(args)
 	case len(args.Command) > 0 || args.ForceCommand != "" || os.Getenv("TF_HISTORY") != "":
 		return fixCommand(args)
 	default:

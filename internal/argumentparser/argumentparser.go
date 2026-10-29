@@ -20,6 +20,8 @@ type Args struct {
 	Version bool
 	// Help reports whether --help was requested.
 	Help bool
+	// Setup reports whether --setup was requested.
+	Setup bool
 	// Debug enables debug output.
 	Debug bool
 	// Yes executes the corrected command without confirmation.
@@ -60,6 +62,8 @@ func Parse(argv []string) (*Args, error) {
 			args.Version = true
 		case arg == "-h" || arg == "--help":
 			args.Help = true
+		case arg == "--setup":
+			args.Setup = true
 		case arg == "-d" || arg == "--debug":
 			args.Debug = true
 		case arg == "-y" || arg == "--yes" || arg == "--yeah" || arg == "--hard":
@@ -124,7 +128,7 @@ func prepareArguments(argv []string) []string {
 
 // Usage returns the one line usage message.
 func Usage() string {
-	return "usage: go-fuck [-v] [-a [ALIAS]] [-l SHELL_LOGGER] " +
+	return "usage: go-fuck [-v] [-a [ALIAS]] [-l SHELL_LOGGER] [--setup] " +
 		"[--enable-experimental-instant-mode] [-h] [-d] " +
 		"[--force-command FORCE_COMMAND] [-y | -r] [command ...]"
 }
@@ -139,6 +143,7 @@ func Help() string {
 		"options:",
 		"  -v, --version                        show program's version number and exit",
 		"  -a, --alias [ALIAS]                  [custom-alias-name] prints alias for current shell",
+		"  --setup                              configure the shell alias in the shell configuration file",
 		"  -l, --shell-logger SHELL_LOGGER      log shell output to the file",
 		"  --enable-experimental-instant-mode   enable experimental instant mode, use on your own risk",
 		"  -h, --help                           show this help message and exit",

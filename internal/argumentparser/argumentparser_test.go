@@ -71,6 +71,13 @@ func TestParseHelpAndVersion(t *testing.T) {
 	}
 }
 
+func TestParseSetup(t *testing.T) {
+	args, err := Parse([]string{"go-fuck", "--setup"})
+	if err != nil || !args.Setup {
+		t.Fatalf("Parse(--setup) = %+v, %v", args, err)
+	}
+}
+
 func TestParseRepeat(t *testing.T) {
 	args, err := Parse([]string{"go-fuck", "-r"})
 	if err != nil || !args.Repeat {

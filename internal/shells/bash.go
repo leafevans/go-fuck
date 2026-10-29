@@ -78,7 +78,7 @@ func (b *Bash) GetAliases() map[string]string {
 
 // HowToConfigure describes how to configure the alias for bash.
 func (b *Bash) HowToConfigure() *Configuration {
-	config := "bash config"
+	config := "~/.bashrc"
 	if _, err := statHome("~/.bashrc"); err == nil {
 		config = "~/.bashrc"
 	} else if _, err := statHome("~/.bash_profile"); err == nil {
