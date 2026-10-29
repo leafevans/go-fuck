@@ -6,7 +6,7 @@
 //
 // The log reader and the ring buffer writer are platform independent. Spawning
 // the logged shell needs a pseudo terminal and is implemented per platform
-// (currently Linux only).
+// (currently Linux and macOS).
 package instant
 
 import (

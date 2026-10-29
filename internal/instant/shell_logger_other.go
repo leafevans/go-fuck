@@ -7,7 +7,7 @@ func Supported() bool {
 	return false
 }
 
-// RunShellLogger reports that instant mode is only supported on Linux.
+// RunShellLogger reports that instant mode is only supported on Linux and macOS.
 func RunShellLogger(string) (int, error) {
 	return 1, ErrUnsupported
 }
