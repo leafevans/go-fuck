@@ -92,9 +92,11 @@ go run ./tools/gen-rule-list
 
 ## Adding a rule
 
-Rules are compiled into the binary, so a new rule is a Go file with a test file. The complete guide,
-including the rule interface, helper functions and the test helpers, is
-[PORTING.md](PORTING.md). The short version:
+Rules that ship with go-fuck are compiled into the binary, so a new rule is a Go file with a test
+file. Local, machine specific rules can be dropped as JSON files into the configuration directory
+instead; see [Creating custom rules](README.md#creating-custom-rules). The workflow below is for
+rules that ship with go-fuck. The complete guide, including the rule interface, helper functions and
+the test helpers, is [PORTING.md](PORTING.md). The short version:
 
 1. Read PORTING.md completely.
 2. Add `internal/rules/<rule_name>.go` with the match function, the correction function and an

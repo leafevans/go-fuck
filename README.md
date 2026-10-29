@@ -452,10 +452,12 @@ the selection entirely.
 
 ## Rules
 
-Rules are compiled into the binary. Each rule decides whether it applies to a failed command and
-returns one or more corrected commands. 169 rules are ported from the reference implementation;
-go-fuck also adds rules for tools that thefuck does not handle: the GitHub CLI, kubectl, uv, cargo,
-Helm, pnpm, the Go toolchain and Node.js. The list below is generated from the compiled rules:
+The built-in rules are compiled into the binary, and declarative JSON rules can be loaded from the
+configuration directory (see [Creating custom rules](#creating-custom-rules)). Each rule decides
+whether it applies to a failed command and returns one or more corrected commands. 169 rules are
+ported from the reference implementation; go-fuck also adds rules for tools that thefuck does not
+handle: the GitHub CLI, kubectl, uv, cargo, Helm, pnpm, the Go toolchain and Node.js. The list below
+is generated from the compiled rules:
 
 <!-- RULES_LIST_START -->
 - `adb_unknown_command`
@@ -653,7 +655,52 @@ The same names can be used in the `rules`, `exclude_rules` and `priority` settin
 
 ## Creating custom rules
 
-Because the rules are compiled in, adding a rule means adding Go code and rebuilding go-fuck:
+There are two ways to add a rule.
+
+### JSON rules (no rebuild)
+
+go-fuck loads extra rules from JSON files in the `rules` directory inside its configuration
+directory:
+
+| Operating system | Directory |
+| --- | --- |
+| Linux / BSD | `~/.config/go-fuck/rules` (or `$XDG_CONFIG_HOME/go-fuck/rules`) |
+| macOS | `~/Library/Application Support/go-fuck/rules` |
+| Windows | `%AppData%\go-fuck\rules` |
+
+Each file contains one rule:
+
+```json
+{
+  "name": "git_remote_typo",
+  "enabled": true,
+  "priority": 900,
+  "match": {
+    "script": "^git remote add (\\w+)$",
+    "output": "No such remote '([^']+)'"
+  },
+  "commands": [
+    "git remote remove {1}"
+  ]
+}
+```
+
+- `name` is required, must match `^[a-z0-9][a-z0-9_.]*$` and must not collide with a built-in rule.
+- `match.script` and `match.output` are regular expressions; at least one is required. When
+  `match.output` is present the command output must be available, otherwise the rule is skipped.
+- `commands` contains the suggested corrections. `{0}`, `{1}`, ... are replaced with the capture
+  groups of `match.output`; `{script}` is replaced with the original command line.
+- `enabled` (default `true`) and `priority` (default `1000`) behave like the flags of built-in
+  rules and can be overridden with the `rules`, `exclude_rules` and `priority` settings.
+
+The directory is read on every invocation, so a new rule is active the next time you run `fuck`;
+no restart or rebuild is needed. Rules are purely declarative: they cannot run commands as side
+effects or access the network. Invalid files are reported on stderr and skipped without affecting
+the built-in rules.
+
+### Compiled-in rules
+
+Adding a rule to the binary still follows the porting workflow:
 
 1. Read [PORTING.md](PORTING.md). It describes the rule interface, the helpers and the conventions.
 2. Create `internal/rules/<rule_name>.go` and `internal/rules/<rule_name>_test.go`, port the test
@@ -661,9 +708,9 @@ Because the rules are compiled in, adding a rule means adding Go code and rebuil
 3. Run the checks described in [CONTRIBUTING.md](CONTRIBUTING.md).
 4. Regenerate the rule list in this file with `make rules-list`.
 
-There is no plugin mechanism and no third-party rule package format: thefuck's Python rules in
-`~/.config/thefuck/rules` are not loaded, and the only rule set is the one compiled into the binary.
-This keeps the binary self-contained and deterministic. Contributions to the port are welcome.
+JSON rules are the lightweight option for local and machine specific corrections; compiled-in rules
+are the right place for generally useful rules and for rules that need to inspect files or run
+external commands.
 
 ## Differences from thefuck
 
@@ -683,8 +730,10 @@ go-fuck is a reimplementation, not a drop-in replacement for every thefuck featu
 - **In-memory memoization instead of an on-disk cache.** go-fuck is a short-lived process, so
   rule results are memoized only for the duration of one invocation. Thefuck's `@cache` persisted
   values between runs.
-- **Rules are compiled in.** There is no runtime rule loading, no third-party rule packages and no
-  Python rule API. Custom rules require a rebuild.
+- **Rules are compiled in, with declarative JSON extensions.** The ported rule set is compiled into
+  the binary. Additional rules can be dropped as JSON files into the configuration directory (see
+  [Creating custom rules](#creating-custom-rules)); there is no Python rule API, no third-party rule
+  package format and no way for a custom rule to run code or side effects.
 - **No Python-apt database.** thefuck's `apt_get` rule uses the database installed by
   `python-commandnotfound`. go-fuck has no Python runtime, so the apt rules are ported without that
   database.
