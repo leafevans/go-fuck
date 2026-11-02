@@ -5,6 +5,7 @@ package instant
 import (
 	"strconv"
 	"strings"
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -133,19 +134,107 @@ func (t *terminal) resize(columns, rows int) {
 	}
 }
 
+// continuationCell marks the second column of a wide (double width)
+// character. It is never part of the rendered text.
+const continuationCell rune = 0
+
+// wideRanges lists the East Asian wide and fullwidth rune ranges that occupy
+// two terminal columns.
+var wideRanges = [][2]rune{
+	{0x1100, 0x115F},
+	{0x2329, 0x232A},
+	{0x2E80, 0x303E},
+	{0x3041, 0x33FF},
+	{0x3400, 0x4DBF},
+	{0x4E00, 0x9FFF},
+	{0xA000, 0xA4CF},
+	{0xA960, 0xA97F},
+	{0xAC00, 0xD7A3},
+	{0xF900, 0xFAFF},
+	{0xFE10, 0xFE19},
+	{0xFE30, 0xFE6F},
+	{0xFF00, 0xFF60},
+	{0xFFE0, 0xFFE6},
+	{0x1B000, 0x1B2FF},
+	{0x1F300, 0x1F64F},
+	{0x1F680, 0x1F6FF},
+	{0x1F900, 0x1F9FF},
+	{0x1FA70, 0x1FAFF},
+	{0x20000, 0x2FFFD},
+	{0x30000, 0x3FFFD},
+}
+
+// runeWidth returns the number of terminal columns that character occupies.
+func runeWidth(character rune) int {
+	// The zero width space (0x200B) is part of the user command mark that the
+	// log reader looks for, so it keeps its own cell instead of being dropped.
+	if character < 0x20 || character == 0x200C || character == 0x200D ||
+		character == 0xFEFF {
+		return 0
+	}
+	if unicode.In(character, unicode.Mn, unicode.Me) {
+		return 0
+	}
+	for _, wide := range wideRanges {
+		if character >= wide[0] && character <= wide[1] {
+			return 2
+		}
+	}
+	return 1
+}
+
 // put writes a printable character at the cursor and advances it.
+//
+// Wide characters occupy two columns: the character itself and a continuation
+// cell, so cursor positions after CJK or emoji text line up with what the
+// terminal actually displayed.
 func (t *terminal) put(character rune) {
-	if t.cursorX >= t.columns {
+	width := runeWidth(character)
+	if width == 0 {
+		return
+	}
+	if t.cursorX >= t.columns || width == 2 && t.cursorX+1 >= t.columns {
 		t.cursorX = 0
 		t.lineFeed()
 	}
-	line := t.screen[t.cursorY]
-	for len(line) <= t.cursorX {
-		line = append(line, ' ')
+	line := ensureCells(t.screen[t.cursorY], t.cursorX+width)
+	blankCell(line, t.cursorX)
+	if width == 2 {
+		blankCell(line, t.cursorX+1)
 	}
 	line[t.cursorX] = character
+	if width == 2 {
+		line[t.cursorX+1] = continuationCell
+	}
 	t.screen[t.cursorY] = line
-	t.cursorX++
+	t.cursorX += width
+}
+
+// ensureCells grows line to at least length cells.
+func ensureCells(line screenLine, length int) screenLine {
+	for len(line) < length {
+		line = append(line, ' ')
+	}
+	return line
+}
+
+// blankCell blanks one cell and repairs the other half of a wide character
+// that would otherwise be orphaned.
+func blankCell(line screenLine, index int) {
+	if index < 0 || index >= len(line) {
+		return
+	}
+	if line[index] == continuationCell {
+		if index > 0 {
+			line[index-1] = ' '
+		}
+		line[index] = ' '
+		return
+	}
+	if runeWidth(line[index]) == 2 && index+1 < len(line) {
+		line[index+1] = ' '
+	}
+	line[index] = ' '
 }
 
 // tab advances the cursor to the next tab stop.
@@ -189,9 +278,18 @@ func (t *terminal) lines() []string {
 	return lines
 }
 
-// lineText returns the text of a screen line without the trailing blanks.
+// lineText returns the text of a screen line without the continuation cells
+// of wide characters and the trailing blanks.
 func lineText(line screenLine) string {
-	return strings.TrimRight(string(line), " ")
+	var b strings.Builder
+	b.Grow(len(line))
+	for _, character := range line {
+		if character == continuationCell {
+			continue
+		}
+		b.WriteRune(character)
+	}
+	return strings.TrimRight(b.String(), " ")
 }
 
 // escape consumes an escape sequence starting at index and returns the index

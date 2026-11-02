@@ -373,8 +373,9 @@ Limitations:
 - The log keeps the newest 1 MiB of terminal output, matching the reference ring buffer.
 - The reference implementation renders the log with pyte. On Linux and macOS go-fuck strips ANSI
   escape sequences and applies carriage return overwrites; on Windows the ConPTY stream is rendered
-  with a small screen model that supports cursor addressing, erase sequences and scrolling. Full
-  screen programs can still differ from a real terminal.
+  with a small screen model that supports cursor addressing, erase sequences, scrolling and the two
+  column width of CJK and emoji characters. Full screen programs can still differ from a real
+  terminal.
 
 The `instant_mode` setting and `GOFUCK_INSTANT_MODE=true` are read automatically inside the
 logged shell; there is no need to set them manually.

@@ -113,6 +113,71 @@ func TestLogLinesHandlesResize(t *testing.T) {
 	}
 }
 
+// renderedNonEmptyLines returns the non empty lines of a terminal log.
+func renderedNonEmptyLines(data string) []string {
+	nonEmpty := []string{}
+	for _, line := range logLines(data) {
+		if line != "" {
+			nonEmpty = append(nonEmpty, line)
+		}
+	}
+	return nonEmpty
+}
+
+// TestLogLinesRendersWideCharacters checks that CJK text is not mangled.
+func TestLogLinesRendersWideCharacters(t *testing.T) {
+	data := sizeRecord(80, 30) + "错误: 未找到命令\r\n"
+	lines := renderedNonEmptyLines(data)
+	if len(lines) == 0 || lines[0] != "错误: 未找到命令" {
+		t.Fatalf("logLines() = %q, want the CJK line", lines)
+	}
+}
+
+// TestLogLinesWideCharacterCursorPositioning checks that cursor positions after
+// wide characters match the columns the terminal actually used.
+func TestLogLinesWideCharacterCursorPositioning(t *testing.T) {
+	data := sizeRecord(80, 30) + "中文\x1b[5GOK\r\n"
+	lines := renderedNonEmptyLines(data)
+	if len(lines) == 0 || lines[0] != "中文OK" {
+		t.Fatalf("logLines() = %q, want the wide character line with the positioned text", lines)
+	}
+}
+
+// TestLogLinesWrapsWideCharactersAtTheRightEdge checks that a wide character
+// which does not fit into the remaining columns starts the next line.
+func TestLogLinesWrapsWideCharactersAtTheRightEdge(t *testing.T) {
+	data := sizeRecord(5, 3) + "中文中文"
+	lines := renderedNonEmptyLines(data)
+	want := []string{"中文", "中文"}
+	if len(lines) != len(want) {
+		t.Fatalf("logLines() = %q, want %q", lines, want)
+	}
+	for index, expected := range want {
+		if lines[index] != expected {
+			t.Fatalf("logLines()[%d] = %q, want %q (all: %q)", index, lines[index], expected, lines)
+		}
+	}
+}
+
+// TestLogLinesOverwritesHalfOfAWideCharacter checks that a cursor inside a
+// wide character clears the whole character before writing.
+func TestLogLinesOverwritesHalfOfAWideCharacter(t *testing.T) {
+	data := sizeRecord(80, 30) + "中文\x1b[2GX\r\n"
+	lines := renderedNonEmptyLines(data)
+	if len(lines) == 0 || lines[0] != " X文" {
+		t.Fatalf("logLines() = %q, want the repaired wide character line", lines)
+	}
+}
+
+// TestLogLinesRendersEmoji checks that emoji occupy two columns as well.
+func TestLogLinesRendersEmoji(t *testing.T) {
+	data := sizeRecord(80, 30) + "🎉ok\r\n"
+	lines := renderedNonEmptyLines(data)
+	if len(lines) == 0 || lines[0] != "🎉ok" {
+		t.Fatalf("logLines() = %q, want the emoji line", lines)
+	}
+}
+
 // TestLogLinesSkipsOSC checks that window title sequences are not rendered.
 func TestLogLinesSkipsOSC(t *testing.T) {
 	title := string([]byte{27}) + "]0;window title" + string([]byte{7})
