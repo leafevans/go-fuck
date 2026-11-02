@@ -21,7 +21,6 @@ const (
 	foreRed     = "\x1b[31m"
 	foreGreen   = "\x1b[32m"
 	foreBlue    = "\x1b[34m"
-	foreCyan    = "\x1b[36m"
 	foreWhite   = "\x1b[37m"
 	backRed     = "\x1b[41m"
 )

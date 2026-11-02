@@ -118,9 +118,9 @@ type rgb struct {
 
 // logoGradient contains the stops of the horizontal logo gradient.
 var logoGradient = []rgb{
-	{red: 34, green: 211, blue: 238},  // cyan
-	{red: 99, green: 102, blue: 241},  // indigo
-	{red: 192, green: 132, blue: 252}, // violet
+	{red: 239, green: 68, blue: 68},  // red
+	{red: 249, green: 115, blue: 22}, // orange
+	{red: 250, green: 204, blue: 21}, // gold
 }
 
 // gradientColor returns the color at position t of the logo gradient.
@@ -209,7 +209,7 @@ func renderLogo(lines []string, profile colorProfile) string {
 	for _, line := range lines {
 		if profile == colorProfileANSI {
 			b.WriteString(styleBright)
-			b.WriteString(foreCyan)
+			b.WriteString(foreRed)
 			b.WriteString(line)
 			b.WriteString(styleReset)
 			b.WriteString(newline)
@@ -221,7 +221,7 @@ func renderLogo(lines []string, profile colorProfile) string {
 			if width > 1 {
 				position = float64(index) / float64(width-1)
 			}
-			b.WriteString(profile.sequence(gradientColor(position), foreCyan))
+			b.WriteString(profile.sequence(gradientColor(position), foreRed))
 			b.WriteRune(character)
 		}
 		b.WriteString(styleReset)

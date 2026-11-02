@@ -112,7 +112,7 @@ func TestRenderBannerBasicColors(t *testing.T) {
 	setBannerEnvironment(t, "xterm", "", "", "")
 
 	banner := renderBanner(bannerInfo(), false)
-	if !strings.Contains(banner, foreCyan) {
+	if !strings.Contains(banner, foreRed) {
 		t.Fatalf("banner does not use the 16 color fallback")
 	}
 	if strings.Contains(banner, "[38;") {
