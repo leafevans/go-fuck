@@ -14,8 +14,9 @@ const (
 )
 
 // executableName is the name the command was started as. It differs from
-// AppName when the binary is installed under another name, for example "gof"
-// from winget, and is used whenever generated code has to call go-fuck again.
+// AppName when the binary is installed under another name, for example a short
+// alias such as "gof", and is used whenever generated code has to call
+// go-fuck again.
 var executableName = AppName
 
 // ExecutableName returns the name the command was started as, without a

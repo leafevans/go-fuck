@@ -121,21 +121,6 @@ scoop install go-fuck
 
 Upgrade with `scoop update go-fuck`.
 
-### With winget (Windows)
-
-The winget manifest in `packaging/winget/` is submitted to
-[microsoft/winget-pkgs](https://github.com/microsoft/winget-pkgs). winget-pkgs
-requires a professional command name, so the package is published as
-`leafevans.gof` and installs the `gof` command. The project itself keeps its
-name. Once the manifest is accepted, install with:
-
-```powershell
-winget install leafevans.gof
-```
-
-Then configure the shell with `gof --alias` (or `gof --setup`); the generated
-`fuck` function calls `gof`.
-
 ### With `go install`
 
 ```bash
@@ -343,7 +328,7 @@ Windows (Windows PowerShell 5.1 and PowerShell 7):
 
 ```powershell
 # $PROFILE
-iex "$(gof --alias --enable-experimental-instant-mode)"
+iex "$(go-fuck --alias --enable-experimental-instant-mode)"
 ```
 
 Restart the shell. The initialization replaces the terminal shell with a logged subshell: commands
