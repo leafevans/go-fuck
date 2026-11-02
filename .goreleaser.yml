@@ -47,6 +47,8 @@ archives:
       - CONTRIBUTING.md
       - PORTING.md
       - LICENSE
+      - scripts/fuck.bat
+      - scripts/fuck.ps1
 
 checksum:
   name_template: checksums.txt
