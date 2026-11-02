@@ -201,9 +201,11 @@ var expectedExtraRuleNames = []string{
 	"go_missing_module",
 	"go_unknown_flag",
 	"helm_unknown_command",
+	"just_unknown_recipe",
 	"kubectl_unknown_command",
 	"node_missing_module",
 	"pnpm_command_not_found",
+	"poetry_unknown_command",
 	"uv_unknown_argument",
 	"uv_unknown_subcommand",
 }

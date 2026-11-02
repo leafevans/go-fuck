@@ -41,3 +41,7 @@ go.work.sum
 /dist/
 /bin/
 
+# Local DSH client-plugin workspace created by the editor integration; it is
+# not part of the project.
+/plugins/
+
