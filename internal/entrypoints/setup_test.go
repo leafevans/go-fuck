@@ -3,6 +3,7 @@ package entrypoints
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -135,6 +136,69 @@ func TestMainSetupPowerShell(t *testing.T) {
 	}
 	if got := strings.Count(readFile(t, existingProfile), "go-fuck --alias"); got != 1 {
 		t.Fatalf("existing profile contains %d alias lines after the second run, want 1", got)
+	}
+}
+
+func TestMainSetupInstantModeBash(t *testing.T) {
+	configDir := resetEntrypointsState(t)
+	t.Setenv("TF_SHELL", "bash")
+	configPath := filepath.Join(configDir, ".bashrc")
+	if err := os.WriteFile(configPath, []byte("export EXISTING=1\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	code, _, stderr := runMain(t, "go-fuck", "--setup", "--enable-experimental-instant-mode")
+	if code != 0 {
+		t.Fatalf("Main(--setup --enable-experimental-instant-mode) = %d, want 0; stderr = %s", code, stderr)
+	}
+	content := readFile(t, configPath)
+	if !strings.Contains(content, "--alias --enable-experimental-instant-mode") {
+		t.Fatalf("configuration does not enable instant mode: %q", content)
+	}
+}
+
+func TestMainSetupInstantModeUnsupportedShell(t *testing.T) {
+	configDir := resetEntrypointsState(t)
+	t.Setenv("TF_SHELL", "fish")
+	configPath := filepath.Join(configDir, ".config", "fish", "config.fish")
+	if err := os.MkdirAll(filepath.Dir(configPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(configPath, []byte("set -g EXISTING 1\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	code, _, stderr := runMain(t, "go-fuck", "--setup", "--enable-experimental-instant-mode")
+	if code != 0 {
+		t.Fatalf("Main(--setup --enable-experimental-instant-mode) = %d, want 0; stderr = %s", code, stderr)
+	}
+	if !strings.Contains(stderr, "instant mode is not supported") {
+		t.Fatalf("stderr = %q, want an instant mode warning", stderr)
+	}
+	content := readFile(t, configPath)
+	if strings.Contains(content, "--enable-experimental-instant-mode") {
+		t.Fatalf("unsupported shell was configured with instant mode: %q", content)
+	}
+	if !strings.Contains(content, "go-fuck --alias | source") {
+		t.Fatalf("regular fish alias was not configured: %q", content)
+	}
+}
+
+func TestMainSetupInstantModePowerShell(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("PowerShell instant mode is only available on Windows")
+	}
+	configDir := resetEntrypointsState(t)
+	t.Setenv("TF_SHELL", "powershell")
+	profile := filepath.Join(configDir, "Documents", "PowerShell", "Microsoft.PowerShell_profile.ps1")
+	stubPowerShellProfiles(t, []string{profile})
+
+	code, _, stderr := runMain(t, "go-fuck", "--setup", "--enable-experimental-instant-mode")
+	if code != 0 {
+		t.Fatalf("Main(--setup --enable-experimental-instant-mode) = %d, want 0; stderr = %s", code, stderr)
+	}
+	if content := readFile(t, profile); !strings.Contains(content, "--alias --enable-experimental-instant-mode") {
+		t.Fatalf("profile does not enable instant mode: %q", content)
 	}
 }
 

@@ -20,6 +20,9 @@ type Configuration struct {
 	// CanConfigureAutomatically reports whether go-fuck may append the alias to
 	// the configuration file without user interaction.
 	CanConfigureAutomatically bool
+	// InstantContent is the configuration line of the experimental instant
+	// mode, or empty when the shell does not support instant mode.
+	InstantContent string
 }
 
 // Shell abstracts the shell specific behavior.

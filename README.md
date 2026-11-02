@@ -168,6 +168,10 @@ tree. If detection is unreliable (for example when generating the alias from a s
 command that reloads it. The command is idempotent: when the line is already present go-fuck reports
 that the shell is already configured and leaves the file untouched.
 
+Pass `--enable-experimental-instant-mode` to configure the experimental [instant mode](#instant-mode)
+instead of the regular alias; shells without instant mode support fall back to the regular alias
+with a warning.
+
 bash, zsh, fish and tcsh are configured when their configuration file already exists. PowerShell is
 configured for every installed flavor: go-fuck asks the `powershell.exe` and `pwsh` executables for
 their `$PROFILE` (the Documents folder can be redirected, for example to OneDrive) and creates the
@@ -260,7 +264,8 @@ thefuck:
 - `scripts/fuck.ps1` — for PowerShell. The first call writes the go-fuck initialization to your
   profile and defines `fuck()` for the current session; later calls delegate to the function.
 
-Put the script somewhere on your `PATH` and call `fuck`.
+Put the script somewhere on your `PATH` and call `fuck`. The release archives of every platform
+ship both shims in their `scripts/` directory.
 
 ## First steps
 
@@ -300,7 +305,7 @@ Common options:
 | `-d`, `--debug` | print debug information to stderr |
 | `-v`, `--version` | print build and environment details (a colored banner in a terminal, a single line when piped) |
 | `-h`, `--help` | print the full option list |
-| `--setup` | add the alias to the detected shell's configuration file (bash, zsh, fish, tcsh, PowerShell) |
+| `--setup` | add the alias to the detected shell's configuration file (bash, zsh, fish, tcsh, PowerShell); combine with `--enable-experimental-instant-mode` to configure instant mode |
 | `--enable-experimental-instant-mode` | print the initialization code of the experimental instant mode (bash/zsh on Linux and macOS, PowerShell on Windows) |
 
 ## How it works
@@ -328,6 +333,8 @@ implemented for **bash and zsh on Linux and macOS** and for **PowerShell on Wind
 and platforms warn and fall back to the regular alias.
 
 Enable it by adding the experimental flag to the alias initialization in your shell configuration.
+On bash, zsh and Windows PowerShell `go-fuck --setup --enable-experimental-instant-mode` writes that
+line to your configuration file for you.
 
 Linux and macOS:
 
@@ -861,6 +868,10 @@ go-fuck is a reimplementation, not a drop-in replacement for every thefuck featu
 - **Optional AI fallback.** thefuck has no model based fallback. go-fuck can ask an OpenAI
   compatible endpoint for a correction when no rule matched; it is opt-in, disabled by default and
   only sends the failed command and its output tail.
+- **Explicit alias setup.** thefuck's `fuck` entry point detects a missing alias on the first run,
+  prints instructions and configures the shell automatically on the second run. go-fuck uses the
+  explicit `--setup` command instead, which reports what it changed and is safe to run again; it
+  also configures every installed PowerShell flavor.
 
 ## Contributing
 

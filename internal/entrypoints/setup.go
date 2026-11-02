@@ -34,6 +34,10 @@ var powerShellProfiles = func() []string {
 // PowerShell has one profile file per installed flavor, so the installed
 // executables are asked for their $PROFILE path and every profile that can be
 // written to is updated.
+//
+// With --enable-experimental-instant-mode the instant mode initialization line
+// is configured instead of the regular alias. Shells without instant mode
+// support fall back to the regular alias and report a warning.
 func setup(args *argumentparser.Args) int {
 	if _, err := conf.Load(&conf.Args{Debug: args.Debug}); err != nil {
 		fmt.Fprintf(os.Stderr, "go-fuck: can't load settings: %v\n", err)
@@ -44,6 +48,16 @@ func setup(args *argumentparser.Args) int {
 	if configuration == nil || configuration.Content == "" || configuration.Path == "" {
 		fmt.Fprintf(os.Stderr, "go-fuck can't configure the %s shell automatically.\n", shell.FriendlyName())
 		return 1
+	}
+
+	if args.EnableExperimentalInstantMode {
+		if configuration.InstantContent == "" {
+			fmt.Fprintf(os.Stderr, "go-fuck: instant mode is not supported for %s, configuring the regular alias instead.\n", shell.FriendlyName())
+		} else {
+			instantConfiguration := *configuration
+			instantConfiguration.Content = configuration.InstantContent
+			configuration = &instantConfiguration
+		}
 	}
 
 	if shell.Name() == "powershell" {

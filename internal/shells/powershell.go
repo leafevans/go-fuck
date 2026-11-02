@@ -129,12 +129,18 @@ func (p *Powershell) And(commands ...string) string {
 // HowToConfigure describes how to configure the alias for PowerShell.
 func (p *Powershell) HowToConfigure() *Configuration {
 	content := "iex " + dquote + "$(" + consts.ExecutableName() + " --alias)" + dquote
-	return &Configuration{
+	configuration := &Configuration{
 		Content:                   content,
 		Path:                      "$profile",
 		Reload:                    ". $profile",
 		CanConfigureAutomatically: false,
 	}
+	// Instant mode needs ConPTY, so it is only available in Windows PowerShell.
+	if runtime.GOOS == "windows" && instant.Supported() {
+		configuration.InstantContent = "iex " + dquote + "$(" + consts.ExecutableName() +
+			" --alias --enable-experimental-instant-mode)" + dquote
+	}
+	return configuration
 }
 
 // powerShellStringExpression returns PowerShell code that evaluates to value.

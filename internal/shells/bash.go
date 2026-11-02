@@ -84,8 +84,11 @@ func (b *Bash) HowToConfigure() *Configuration {
 	} else if _, err := statHome("~/.bash_profile"); err == nil {
 		config = "~/.bash_profile"
 	}
-	return createConfiguration("eval "+dquote+"$("+consts.ExecutableName()+" --alias)"+dquote,
+	configuration := createConfiguration("eval "+dquote+"$("+consts.ExecutableName()+" --alias)"+dquote,
 		config, "source "+config)
+	configuration.InstantContent = "eval " + dquote + "$(" + consts.ExecutableName() +
+		" --alias --enable-experimental-instant-mode)" + dquote
+	return configuration
 }
 
 // bashHistoryFile returns the bash history file path.

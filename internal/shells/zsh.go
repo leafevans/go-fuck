@@ -80,8 +80,10 @@ func (z *Zsh) GetAliases() map[string]string {
 
 // HowToConfigure describes how to configure the alias for zsh.
 func (z *Zsh) HowToConfigure() *Configuration {
-	return createConfiguration("eval $("+consts.ExecutableName()+" --alias)",
+	configuration := createConfiguration("eval $("+consts.ExecutableName()+" --alias)",
 		"~/.zshrc", "source ~/.zshrc")
+	configuration.InstantContent = "eval $(" + consts.ExecutableName() + " --alias --enable-experimental-instant-mode)"
+	return configuration
 }
 
 // zshHistoryFile returns the zsh history file path.
