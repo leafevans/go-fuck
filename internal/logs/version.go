@@ -118,9 +118,9 @@ type rgb struct {
 
 // logoGradient contains the stops of the horizontal logo gradient.
 var logoGradient = []rgb{
-	{red: 239, green: 68, blue: 68},  // red
-	{red: 249, green: 115, blue: 22}, // orange
-	{red: 250, green: 204, blue: 21}, // gold
+	{red: 153, green: 27, blue: 27},  // dark red
+	{red: 234, green: 88, blue: 12},  // orange
+	{red: 251, green: 191, blue: 36}, // amber
 }
 
 // gradientColor returns the color at position t of the logo gradient.
