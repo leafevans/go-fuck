@@ -193,8 +193,10 @@ var expectedRuleNames = []string{
 // implementation. They are tested and documented like the ported rules, but
 // they are not part of the thefuck rule set.
 var expectedExtraRuleNames = []string{
+	"bun_script_not_found",
 	"cargo_unknown_argument",
 	"cargo_unknown_command",
+	"deno_task_not_found",
 	"gh_unknown_command",
 	"gh_unknown_flag",
 	"go_install_version",
