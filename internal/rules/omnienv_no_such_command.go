@@ -67,7 +67,7 @@ func omnienvNoSuchCommandNewCommand(command *types.Command) ([]string, error) {
 func init() {
 	enabled := false
 	for _, app := range omnienvNoSuchCommandSupportedApps {
-		if utils.Which(app) != "" {
+		if utils.IsAvailable(app) {
 			enabled = true
 			break
 		}

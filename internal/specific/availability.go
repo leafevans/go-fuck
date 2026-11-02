@@ -6,35 +6,35 @@ import (
 
 // AptAvailable reports whether apt is available.
 func AptAvailable() bool {
-	return utils.Which("apt-get") != ""
+	return utils.IsAvailable("apt-get")
 }
 
 // BrewAvailable reports whether Homebrew is available.
 func BrewAvailable() bool {
-	return utils.Which("brew") != ""
+	return utils.IsAvailable("brew")
 }
 
 // DnfAvailable reports whether dnf is available.
 func DnfAvailable() bool {
-	return utils.Which("dnf") != ""
+	return utils.IsAvailable("dnf")
 }
 
 // YumAvailable reports whether yum is available.
 func YumAvailable() bool {
-	return utils.Which("yum") != ""
+	return utils.IsAvailable("yum")
 }
 
 // NixAvailable reports whether nix is available.
 func NixAvailable() bool {
-	return utils.Which("nix") != ""
+	return utils.IsAvailable("nix")
 }
 
 // NpmAvailable reports whether npm is available.
 func NpmAvailable() bool {
-	return utils.Which("npm") != ""
+	return utils.IsAvailable("npm")
 }
 
 // ChocoAvailable reports whether Chocolatey is available.
 func ChocoAvailable() bool {
-	return utils.Which("choco") != "" || utils.Which("cinst") != ""
+	return utils.IsAvailable("choco") || utils.IsAvailable("cinst")
 }

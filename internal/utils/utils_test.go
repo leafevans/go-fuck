@@ -286,6 +286,43 @@ func TestGetAllExecutablesExcludesPaths(t *testing.T) {
 	}
 }
 
+func TestIsAvailable(t *testing.T) {
+	resetUtilsState(t)
+	dir := fakeExecutableDir(t, "vim", "fsck")
+	t.Setenv("PATH", dir)
+
+	if !IsAvailable("vim") || !IsAvailable("fsck") {
+		t.Fatalf("IsAvailable() = false for a program that exists in PATH")
+	}
+	if IsAvailable("go-fuck-test-missing-tool") {
+		t.Fatalf("IsAvailable() = true for a missing program")
+	}
+}
+
+func TestIsAvailableTracksPathChanges(t *testing.T) {
+	resetUtilsState(t)
+	const tool = "go-fuck-test-path-change-tool"
+	if IsAvailable(tool) {
+		t.Skip("the sentinel tool is unexpectedly available on this host")
+	}
+
+	t.Setenv("PATH", fakeExecutableDir(t, tool))
+	if !IsAvailable(tool) {
+		t.Fatalf("IsAvailable() did not pick up the new PATH")
+	}
+}
+
+func TestIsAvailableExcludesPaths(t *testing.T) {
+	resetUtilsState(t)
+	dir := fakeExecutableDir(t, "fsck")
+	t.Setenv("PATH", dir)
+	conf.Current().ExcludedSearchPathPrefixes = []string{dir}
+
+	if IsAvailable("fsck") {
+		t.Fatalf("IsAvailable() included a program from an excluded PATH entry")
+	}
+}
+
 func TestGetValidHistoryWithoutCurrent(t *testing.T) {
 	resetUtilsState(t)
 	dir := fakeExecutableDir(t, "ls", "diff", "café")

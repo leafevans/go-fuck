@@ -56,16 +56,16 @@ func GetPkgFile(command string) ([]string, error) {
 // default, the second one is the pacman command to use.
 func ArchlinuxEnv() (enabledByDefault bool, pacman string) {
 	switch {
-	case utils.Which("yay") != "":
+	case utils.IsAvailable("yay"):
 		pacman = "yay"
-	case utils.Which("pikaur") != "":
+	case utils.IsAvailable("pikaur"):
 		pacman = "pikaur"
-	case utils.Which("yaourt") != "":
+	case utils.IsAvailable("yaourt"):
 		pacman = "yaourt"
-	case utils.Which("pacman") != "":
+	case utils.IsAvailable("pacman"):
 		pacman = "sudo pacman"
 	default:
 		return false, ""
 	}
-	return utils.Which("pkgfile") != "", pacman
+	return utils.IsAvailable("pkgfile"), pacman
 }

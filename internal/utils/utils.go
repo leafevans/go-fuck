@@ -55,6 +55,10 @@ func ResetCaches() {
 	executables = nil
 	executableSet = nil
 	whichCache = sync.Map{}
+	pathScanMu.Lock()
+	pathScanCache = nil
+	pathScanPath = ""
+	pathScanMu.Unlock()
 }
 
 var (
@@ -90,19 +94,106 @@ var executableEntryPoints = map[string]bool{
 	"fuck":    true,
 }
 
-// loadAllExecutables scans PATH and the shell aliases.
+// pathScan is the cached result of scanning the PATH directories.
+type pathScan struct {
+	// names are the executable file names in PATH order.
+	names []string
+	// available maps normalized program names to true.
+	available map[string]bool
+}
+
+var (
+	pathScanMu    sync.Mutex
+	pathScanPath  string
+	pathScanCache *pathScan
+)
+
+// scanPath returns the cached PATH scan.
 //
-// The PATH directories are scanned in parallel because a typical Windows PATH
-// contains many directories and the scan is latency bound.
-func loadAllExecutables() []string {
+// The cache is keyed by PATH so that tests and shell history helpers see tools
+// that were added to PATH later in the process.
+func scanPath() *pathScan {
+	path := os.Getenv("PATH")
+	key := path + "\x00" + strings.Join(conf.Current().ExcludedSearchPathPrefixes, "\x00")
+
+	pathScanMu.Lock()
+	defer pathScanMu.Unlock()
+	if pathScanCache != nil && pathScanPath == key {
+		return pathScanCache
+	}
+
+	names := readPathExecutableNames(path)
+	available := make(map[string]bool, len(names))
+	for _, name := range names {
+		if normalized := availableFileName(name); normalized != "" {
+			available[normalized] = true
+		}
+	}
+	pathScanPath = key
+	pathScanCache = &pathScan{names: names, available: available}
+	return pathScanCache
+}
+
+// IsAvailable reports whether an executable called program exists in PATH.
+//
+// Unlike Which it does not resolve the absolute path. The PATH directories are
+// scanned once and cached, so checking the availability of many programs costs
+// a single directory scan instead of one executable lookup per program. This is
+// what makes the enabled_by_default flags of the rules cheap to evaluate.
+func IsAvailable(program string) bool {
+	return scanPath().available[availableName(program)]
+}
+
+// availableFileName normalizes the name of a scanned PATH file for
+// availability checks. It returns an empty string when the file cannot be
+// executed on the platform.
+func availableFileName(name string) string {
+	lower := strings.ToLower(name)
+	if runtime.GOOS != "windows" {
+		// LookPath would also check the executable bit; the directory scan does
+		// not, which can only make a rule enabled when the tool is not runnable.
+		return lower
+	}
+	for _, extension := range windowsExecutableExtensions {
+		if strings.HasSuffix(lower, extension) {
+			return strings.TrimSuffix(lower, extension)
+		}
+	}
+	return ""
+}
+
+// availableName normalizes a program name for availability lookups.
+func availableName(program string) string {
+	lower := strings.ToLower(program)
+	if runtime.GOOS != "windows" {
+		return lower
+	}
+	for _, extension := range windowsExecutableExtensions {
+		if strings.HasSuffix(lower, extension) {
+			return strings.TrimSuffix(lower, extension)
+		}
+	}
+	return lower
+}
+
+// windowsExecutableExtensions are the executable suffixes that are considered
+// available on Windows.
+var windowsExecutableExtensions = [...]string{".exe", ".cmd", ".bat", ".com"}
+
+// readPathExecutableNames scans the PATH directories in parallel and returns
+// the file names of all executable candidates, in PATH order.
+//
+// The scan is parallel because a typical Windows PATH contains many
+// directories and the scan is latency bound.
+func readPathExecutableNames(path string) []string {
 	alias := GetAlias()
 	aliasLower := strings.ToLower(alias)
 
-	paths := filepath.SplitList(os.Getenv("PATH"))
+	paths := filepath.SplitList(path)
 	dirs := make([]string, 0, len(paths))
-	for _, path := range paths {
-		if includePathInSearch(path) {
-			dirs = append(dirs, path)
+	for _, dir := range paths {
+		if dir != "" && includePathInSearch(dir) {
+			dirs = append(dirs, dir)
 		}
 	}
 
@@ -127,11 +218,17 @@ func loadAllExecutables() []string {
 		waitGroup.Wait()
 	}
 
-	found := []string{}
-	for _, names := range perDir {
-		found = append(found, names...)
+	names := []string{}
+	for _, dirNames := range perDir {
+		names = append(names, dirNames...)
 	}
+	return names
+}
 
+// loadAllExecutables returns the PATH executables and the shell aliases.
+func loadAllExecutables() []string {
+	found := append([]string{}, scanPath().names...)
+	alias := GetAlias()
 	for name := range shells.Current().GetAliases() {
 		if name != alias {
 			found = append(found, name)

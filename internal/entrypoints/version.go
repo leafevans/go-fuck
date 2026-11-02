@@ -41,7 +41,7 @@ func versionInfo(detailed bool) logs.VersionInfo {
 		Rules:       rules.Count(),
 		ConfigPath:  conf.UserDir(),
 		InstantMode: instantState,
-		Fzf:         utils.Which("fzf") != "",
+		Fzf:         utils.IsAvailable("fzf"),
 		Alias:       conf.Alias(),
 	}
 }
