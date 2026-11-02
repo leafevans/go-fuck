@@ -42,7 +42,7 @@ func SetExecutableName(raw string) {
 // It is a variable so that release builds can override it at link time:
 //
 //	go build -ldflags "-X github.com/leafevans/go-fuck/internal/consts.Version=v1.2.3"
-var Version = "0.5.0"
+var Version = "0.6.0"
 
 // Rule defaults.
 const (
