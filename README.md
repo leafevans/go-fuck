@@ -164,11 +164,14 @@ tree. If detection is unreliable (for example when generating the alias from a s
 
 ### Automatic setup
 
-`go-fuck --setup` appends the line below to the detected shell's configuration file when that file
-exists (bash, zsh, fish and tcsh) and prints the command that reloads it. Shells that cannot be
-configured automatically, such as PowerShell, and shells whose configuration file does not exist yet
-print the line to add instead. The command is idempotent: when the line is already present go-fuck
-reports that the shell is already configured and leaves the file untouched.
+`go-fuck --setup` appends the line below to the detected shell's configuration file and prints the
+command that reloads it. The command is idempotent: when the line is already present go-fuck reports
+that the shell is already configured and leaves the file untouched.
+
+bash, zsh, fish and tcsh are configured when their configuration file already exists. PowerShell is
+configured for every installed flavor: go-fuck asks the `powershell.exe` and `pwsh` executables for
+their `$PROFILE` (the Documents folder can be redirected, for example to OneDrive) and creates the
+profile file when it is missing.
 
 ### bash
 
@@ -209,6 +212,15 @@ Add to your profile (the path is stored in `$PROFILE`):
 ```powershell
 iex "$(go-fuck --alias)"
 ```
+
+Or let go-fuck write the line for you:
+
+```powershell
+go-fuck --setup
+```
+
+The setup covers both Windows PowerShell 5.1 and PowerShell 7 when they are installed. Start a new
+shell or reload the profile with `. $PROFILE`.
 
 ### Custom alias name
 
@@ -288,7 +300,7 @@ Common options:
 | `-d`, `--debug` | print debug information to stderr |
 | `-v`, `--version` | print build and environment details (a colored banner in a terminal, a single line when piped) |
 | `-h`, `--help` | print the full option list |
-| `--setup` | add the alias to the detected shell's configuration file (bash, zsh, fish, tcsh) |
+| `--setup` | add the alias to the detected shell's configuration file (bash, zsh, fish, tcsh, PowerShell) |
 | `--enable-experimental-instant-mode` | print the initialization code of the experimental instant mode (bash/zsh on Linux and macOS, PowerShell on Windows) |
 
 ## How it works

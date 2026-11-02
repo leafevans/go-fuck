@@ -3,6 +3,7 @@ package entrypoints
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -12,13 +13,27 @@ import (
 	"github.com/leafevans/go-fuck/internal/system"
 )
 
+// powerShellProfileExecutables are the PowerShell flavors whose profile files
+// are configured, in display order.
+var powerShellProfileExecutables = []string{"powershell.exe", "pwsh"}
+
+// powerShellProfiles returns the profile files of the installed PowerShell
+// flavors. It is a variable so tests can replace the subprocess lookup.
+var powerShellProfiles = func() []string {
+	return resolveProfiles(powerShellProfileExecutables, powerShellProfile)
+}
+
 // setup configures the alias for the current shell. It is the implementation of
 // the --setup option.
 //
 // Shells that can be configured automatically get the required line appended to
-// their configuration file. Other shells, such as PowerShell, and shells whose
-// configuration file does not exist yet get the line printed instead. Running
-// --setup again is safe: an already configured file is not modified.
+// their configuration file. Other shells and shells whose configuration file
+// does not exist yet get the line printed instead. Running --setup again is
+// safe: an already configured file is not modified.
+//
+// PowerShell has one profile file per installed flavor, so the installed
+// executables are asked for their $PROFILE path and every profile that can be
+// written to is updated.
 func setup(args *argumentparser.Args) int {
 	if _, err := conf.Load(&conf.Args{Debug: args.Debug}); err != nil {
 		fmt.Fprintf(os.Stderr, "go-fuck: can't load settings: %v\n", err)
@@ -29,6 +44,10 @@ func setup(args *argumentparser.Args) int {
 	if configuration == nil || configuration.Content == "" || configuration.Path == "" {
 		fmt.Fprintf(os.Stderr, "go-fuck can't configure the %s shell automatically.\n", shell.FriendlyName())
 		return 1
+	}
+
+	if shell.Name() == "powershell" {
+		return setupPowerShell(shell, configuration)
 	}
 
 	if !configuration.CanConfigureAutomatically || strings.HasPrefix(configuration.Path, "$") {
@@ -68,6 +87,112 @@ func setup(args *argumentparser.Args) int {
 	return 0
 }
 
+// setupPowerShell configures the alias in the profile file of every installed
+// PowerShell flavor.
+//
+// The profile path is not a constant: Windows PowerShell 5.1 and PowerShell 7
+// use different directories and the Documents folder may be redirected (for
+// example to OneDrive), so the installed executables report their $PROFILE
+// instead of go-fuck guessing it. Missing profile files and their directories
+// are created, because a fresh PowerShell installation does not have them.
+func setupPowerShell(shell shells.Shell, configuration *shells.Configuration) int {
+	paths := powerShellProfiles()
+	if len(paths) == 0 {
+		printManualConfiguration(configuration)
+		return 0
+	}
+
+	configured := 0
+	alreadyConfigured := 0
+	for _, path := range paths {
+		existing, err := os.ReadFile(path)
+		if err != nil && !os.IsNotExist(err) {
+			fmt.Fprintf(os.Stderr, "go-fuck: can't read %s: %v\n", path, err)
+			return 1
+		}
+		if os.IsNotExist(err) {
+			if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+				fmt.Fprintf(os.Stderr, "go-fuck: can't create %s: %v\n", filepath.Dir(path), err)
+				return 1
+			}
+			existing = nil
+		}
+		if strings.Contains(string(existing), configuration.Content) {
+			fmt.Fprintf(os.Stderr, "go-fuck is already configured for %s (%s).\n", shell.FriendlyName(), path)
+			alreadyConfigured++
+			continue
+		}
+		if err := appendConfigurationLine(path, configuration.Content, existing); err != nil {
+			fmt.Fprintf(os.Stderr, "go-fuck: can't update %s: %v\n", path, err)
+			return 1
+		}
+		fmt.Fprintf(os.Stderr, "go-fuck is now configured for %s (%s).\n", shell.FriendlyName(), path)
+		configured++
+	}
+
+	if configured > 0 || alreadyConfigured > 0 {
+		fmt.Fprintf(os.Stderr, "Reload it with: %s\n", configuration.Reload)
+	}
+	return 0
+}
+
+// resolveProfiles resolves configuration paths with lookup, keeps the first
+// occurrence of every path and drops flavors that are not installed.
+func resolveProfiles(executables []string, lookup func(string) (string, bool)) []string {
+	seen := make(map[string]bool, len(executables))
+	paths := make([]string, 0, len(executables))
+	for _, executable := range executables {
+		path, ok := lookup(executable)
+		if !ok || seen[path] {
+			continue
+		}
+		seen[path] = true
+		paths = append(paths, path)
+	}
+	return paths
+}
+
+// powerShellProfile returns the $PROFILE path reported by the PowerShell
+// executable, or false when the executable is not installed or does not
+// report a profile path.
+func powerShellProfile(executable string) (string, bool) {
+	command, err := exec.LookPath(executable)
+	if err != nil {
+		command = wellKnownPowerShellPath(executable)
+		if command == "" {
+			return "", false
+		}
+	}
+	profile, err := exec.Command(command, "-NoProfile", "-NonInteractive",
+		"-Command", "[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; $PROFILE").Output()
+	if err != nil {
+		return "", false
+	}
+	path := strings.TrimSpace(string(profile))
+	if path == "" {
+		return "", false
+	}
+	return path, true
+}
+
+// wellKnownPowerShellPath returns the default installation path of Windows
+// PowerShell. The directory is usually on PATH, but some environments run
+// go-fuck with a reduced PATH, so the well-known location is used as fallback.
+func wellKnownPowerShellPath(executable string) string {
+	if executable != "powershell.exe" {
+		return ""
+	}
+	root := os.Getenv("SystemRoot")
+	if root == "" {
+		return ""
+	}
+	path := filepath.Join(root, "System32", "WindowsPowerShell", "v1.0", executable)
+	if _, err := os.Stat(path); err != nil {
+		return ""
+	}
+	return path
+}
+
 // setupConfigPath expands the shell configuration path.
 func setupConfigPath(path string) (string, error) {
 	expanded := system.ExpandHome(path)
@@ -85,7 +210,7 @@ func appendConfigurationLine(path, content string, existing []byte) error {
 	}
 	line += "\n"
 
-	file, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0o644)
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0o644)
 	if err != nil {
 		return err
 	}
