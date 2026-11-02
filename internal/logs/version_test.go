@@ -70,3 +70,78 @@ func TestOutputIsTerminal(t *testing.T) {
 		t.Fatal("OutputIsTerminal() = true for a buffer, want false")
 	}
 }
+
+// setBannerEnvironment isolates the environment variables that influence the
+// color profile detection.
+func setBannerEnvironment(t *testing.T, term, colorTerm, wtSession, noColor string) {
+	t.Helper()
+	t.Setenv("TERM", term)
+	t.Setenv("COLORTERM", colorTerm)
+	t.Setenv("WT_SESSION", wtSession)
+	t.Setenv("NO_COLOR", noColor)
+}
+
+func TestRenderBannerTrueColor(t *testing.T) {
+	_ = resetLogsState(t)
+	conf.Reset()
+	setBannerEnvironment(t, "xterm-256color", "truecolor", "", "")
+
+	banner := renderBanner(bannerInfo(), false)
+	if !strings.Contains(banner, "[38;2;") {
+		t.Fatalf("banner does not contain 24 bit color sequences")
+	}
+}
+
+func TestRenderBanner256Colors(t *testing.T) {
+	_ = resetLogsState(t)
+	conf.Reset()
+	setBannerEnvironment(t, "xterm-256color", "", "", "")
+
+	banner := renderBanner(bannerInfo(), false)
+	if !strings.Contains(banner, "[38;5;") {
+		t.Fatalf("banner does not contain 256 color sequences")
+	}
+	if strings.Contains(banner, "[38;2;") {
+		t.Fatalf("256 color banner must not use 24 bit colors")
+	}
+}
+
+func TestRenderBannerBasicColors(t *testing.T) {
+	_ = resetLogsState(t)
+	conf.Reset()
+	setBannerEnvironment(t, "xterm", "", "", "")
+
+	banner := renderBanner(bannerInfo(), false)
+	if !strings.Contains(banner, foreCyan) {
+		t.Fatalf("banner does not use the 16 color fallback")
+	}
+	if strings.Contains(banner, "[38;") {
+		t.Fatalf("16 color banner must not use extended color sequences")
+	}
+}
+
+func TestRenderBannerNoColorEnvironment(t *testing.T) {
+	_ = resetLogsState(t)
+	conf.Reset()
+	setBannerEnvironment(t, "xterm-256color", "truecolor", "", "1")
+
+	banner := renderBanner(bannerInfo(), false)
+	if strings.Contains(banner, "[") {
+		t.Fatalf("NO_COLOR banner contains escape sequences")
+	}
+	if !strings.Contains(banner, "182 rules") {
+		t.Fatalf("NO_COLOR banner lost its text")
+	}
+}
+
+func TestRenderBannerNoColorSetting(t *testing.T) {
+	_ = resetLogsState(t)
+	conf.Reset()
+	setBannerEnvironment(t, "xterm-256color", "truecolor", "", "")
+	conf.Current().NoColors = true
+
+	banner := renderBanner(bannerInfo(), false)
+	if strings.Contains(banner, "[") {
+		t.Fatalf("no_colors banner contains escape sequences")
+	}
+}

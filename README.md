@@ -303,7 +303,7 @@ Common options:
 | `--force-command CMD` | fix `CMD` instead of the previous command |
 | `--json` | print the suggestions as JSON and exit (useful for scripts and editors; call go-fuck directly rather than through the alias) |
 | `-d`, `--debug` | print debug information to stderr |
-| `-v`, `--version` | print build and environment details (a colored banner in a terminal, a single line when piped) |
+| `-v`, `--version` | print build and environment details (a banner with a gradient logo in a terminal, a single line when piped; `NO_COLOR` or `no_colors` disables the colors) |
 | `-h`, `--help` | print the full option list |
 | `--setup` | add the alias to the detected shell's configuration file (bash, zsh, fish, tcsh, PowerShell); combine with `--enable-experimental-instant-mode` to configure instant mode |
 | `--enable-experimental-instant-mode` | print the initialization code of the experimental instant mode (bash/zsh on Linux and macOS, PowerShell on Windows) |
