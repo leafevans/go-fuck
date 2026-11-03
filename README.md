@@ -141,7 +141,8 @@ cd go-fuck
 makepkg -si
 ```
 
-Upgrade it with your AUR helper (`yay -Syu` or `paru -Syu`).
+Upgrade it with your AUR helper (`yay -Syu` or `paru -Syu`). The AUR package
+targets x86_64; on other architectures use `go install` or the prebuilt binaries.
 
 ### With `go install`
 

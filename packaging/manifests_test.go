@@ -323,9 +323,6 @@ func check(root string) error {
 	if !containsString(aurArch, "x86_64") {
 		add("AUR package does not target x86_64: %q", aurArch)
 	}
-	if !containsString(aurArch, "aarch64") {
-		add("AUR package does not target aarch64: %q", aurArch)
-	}
 
 	missingAssets := []string{}
 	for asset := range expectedAssets {

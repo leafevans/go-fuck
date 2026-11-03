@@ -56,9 +56,9 @@ are `packaging/aur/PKGBUILD` and `packaging/aur/.SRCINFO`; the package builds
 from the GitHub tag archive (`archive/refs/tags/vX.Y.Z.tar.gz`) with the Arch
 Go toolchain and installs `/usr/bin/go-fuck`.
 
-The package declares `x86_64` and `aarch64`. go-fuck is pure Go, so Arch Linux
-ARM users build the same source with `makepkg`; no architecture specific code is
-involved.
+The package targets `x86_64`, the architecture of the official Arch Linux
+repositories. On other architectures (for example Arch Linux ARM) use
+`go install`, the prebuilt release binaries or build from source.
 
 There is no CI job for the AUR because Arch tooling is not available on the
 GitHub runners. The `packaging` tests check that `pkgver`, `pkgrel` and the
