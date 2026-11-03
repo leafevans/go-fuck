@@ -35,10 +35,11 @@ func TestWarn(t *testing.T) {
 
 func TestWarnWithColors(t *testing.T) {
 	buffer := resetLogsState(t)
+	setBannerEnvironment(t, "xterm", "", "", "")
 	conf.Current().NoColors = false
 	Warn("title")
 	got := buffer.String()
-	if !strings.Contains(got, "\x1b[41m") || !strings.Contains(got, "[WARN] title") {
+	if !strings.Contains(got, foreYellow) || !strings.Contains(got, "[WARN]") || !strings.Contains(got, "title") {
 		t.Fatalf("Warn() wrote %q, want colored output", got)
 	}
 }
@@ -69,7 +70,7 @@ func TestRuleFailed(t *testing.T) {
 func TestFailed(t *testing.T) {
 	buffer := resetLogsState(t)
 	Failed("No fucks given")
-	if got, want := buffer.String(), "No fucks given"+newline; got != want {
+	if got, want := buffer.String(), "× No fucks given"+newline; got != want {
 		t.Fatalf("Failed() wrote %q, want %q", got, want)
 	}
 }
@@ -77,14 +78,14 @@ func TestFailed(t *testing.T) {
 func TestShowCorrectedCommand(t *testing.T) {
 	buffer := resetLogsState(t)
 	ShowCorrectedCommand("ls", false)
-	want := consts.UserCommandMark + "ls" + newline
+	want := consts.UserCommandMark + "› ls" + newline
 	if got := buffer.String(); got != want {
 		t.Fatalf("ShowCorrectedCommand() wrote %q, want %q", got, want)
 	}
 
 	buffer.Reset()
 	ShowCorrectedCommand("ls", true)
-	want = consts.UserCommandMark + "ls (+side effect)" + newline
+	want = consts.UserCommandMark + "› ls  (+side effect)" + newline
 	if got := buffer.String(); got != want {
 		t.Fatalf("ShowCorrectedCommand() wrote %q, want %q", got, want)
 	}
@@ -93,7 +94,7 @@ func TestShowCorrectedCommand(t *testing.T) {
 func TestConfirmText(t *testing.T) {
 	buffer := resetLogsState(t)
 	ConfirmText("ls", false)
-	want := consts.UserCommandMark + "\x1b[1K\rls [enter/↑/↓/ctrl+c]"
+	want := consts.UserCommandMark + "\x1b[1K\r› ls  [enter · ↑↓ · ctrl+c]"
 	if got := buffer.String(); got != want {
 		t.Fatalf("ConfirmText() wrote %q, want %q", got, want)
 	}

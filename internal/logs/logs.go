@@ -14,15 +14,14 @@ import (
 	"github.com/leafevans/go-fuck/internal/consts"
 )
 
-// ANSI escape sequences used for colored output.
+// ANSI attributes used by the ember theme. The theme colors themselves are
+// defined in theme.go.
 const (
 	styleBright = "\x1b[1m"
 	styleReset  = "\x1b[0m"
 	foreRed     = "\x1b[31m"
 	foreGreen   = "\x1b[32m"
-	foreBlue    = "\x1b[34m"
-	foreWhite   = "\x1b[37m"
-	backRed     = "\x1b[41m"
+	foreYellow  = "\x1b[33m"
 )
 
 // out is the writer used by all log helpers. It is replaceable in tests.
@@ -36,25 +35,15 @@ func SetOutput(w io.Writer) {
 	out = w
 }
 
-// color returns the escape sequence unless colors are disabled.
-func color(sequence string) string {
-	if conf.Current().NoColors {
-		return ""
-	}
-	return sequence
-}
-
 // Warn writes a highlighted warning message.
 func Warn(title string) {
-	fmt.Fprintf(out, "%s[WARN] %s%s\n",
-		color(backRed+foreWhite+styleBright), title, color(styleReset))
+	fmt.Fprintf(out, "%s %s\n", accent("[WARN]"), title)
 }
 
 // Exception writes a highlighted warning followed by the error trace.
 func Exception(title string, err error) {
-	fmt.Fprintf(out, "%s[WARN] %s:%s\n%s%s----------------------------%s\n\n",
-		color(backRed+foreWhite+styleBright), title, color(styleReset),
-		trace(err), color(backRed+foreWhite+styleBright), color(styleReset))
+	fmt.Fprintf(out, "%s %s:\n%s%s\n\n",
+		accent("[WARN]"), title, trace(err), muted("----------------------------"))
 }
 
 // trace renders an error, including its wrapped chain.
@@ -72,7 +61,7 @@ func RuleFailed(ruleName string, err error) {
 
 // Failed writes a plain error message.
 func Failed(msg string) {
-	fmt.Fprintf(out, "%s%s%s\n", color(foreRed), msg, color(styleReset))
+	fmt.Fprintf(out, "%s %s\n", failure(failureSymbol), failure(msg))
 }
 
 // NewLine writes a line separator to the log output.
@@ -80,39 +69,38 @@ func NewLine() {
 	fmt.Fprint(out, newline)
 }
 
+// sideEffectSuffix returns the marker appended to commands that change state.
+func sideEffectSuffix(hasSideEffect bool) string {
+	if !hasSideEffect {
+		return ""
+	}
+	return "  " + accent("(+side effect)")
+}
+
 // ShowCorrectedCommand prints the selected command without the confirmation
 // prompt.
 func ShowCorrectedCommand(script string, hasSideEffect bool) {
-	fmt.Fprintf(out, "%s%s%s%s%s\n",
-		consts.UserCommandMark, color(styleBright), script,
-		color(styleReset), sideEffectSuffix(hasSideEffect))
-}
-
-// sideEffectSuffix returns the marker appended to commands that change state.
-func sideEffectSuffix(hasSideEffect bool) string {
-	if hasSideEffect {
-		return " (+side effect)"
-	}
-	return ""
+	fmt.Fprintf(out, "%s%s %s%s\n",
+		consts.UserCommandMark, accent(selectionSymbol), strong(script),
+		sideEffectSuffix(hasSideEffect))
 }
 
 // ConfirmText prints the interactive confirmation prompt for a command.
+//
+// The prompt uses the same selection symbol, ember accents and "·" separators
+// as the version banner, so all interactive output shares one visual language.
 func ConfirmText(script string, hasSideEffect bool) {
-	fmt.Fprintf(out, "%s%s%s%s%s%s [%senter%s/%s↑%s/%s↓%s/%sctrl+c%s]",
-		consts.UserCommandMark, "\x1b[1K\r", color(styleBright), script,
-		color(styleReset), sideEffectSuffix(hasSideEffect),
-		color(foreGreen), color(styleReset),
-		color(foreBlue), color(styleReset),
-		color(foreBlue), color(styleReset),
-		color(foreRed), color(styleReset))
+	fmt.Fprintf(out, "%s%s%s %s%s  %s%s%s%s%s%s%s",
+		consts.UserCommandMark, "\x1b[1K\r", accent(selectionSymbol), strong(script),
+		sideEffectSuffix(hasSideEffect),
+		muted("["), success("enter"), muted(" "+separatorSymbol+" "),
+		muted("↑↓"), muted(" "+separatorSymbol+" "), failure("ctrl+c"), muted("]"))
 }
 
 // Debug writes a debug message when the debug setting is enabled.
 func Debug(format string, args ...any) {
 	if conf.Current().Debug {
-		fmt.Fprintf(out, "%s%sDEBUG:%s %s\n",
-			color(foreBlue+styleBright), "", color(styleReset),
-			fmt.Sprintf(format, args...))
+		fmt.Fprintf(out, "%s %s\n", muted("DEBUG:"), fmt.Sprintf(format, args...))
 	}
 }
 

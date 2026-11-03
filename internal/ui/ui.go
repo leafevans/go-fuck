@@ -101,7 +101,7 @@ func runFzf(candidates []string) (string, error) {
 		"--height=40%",
 		"--reverse",
 		"--no-multi",
-		"--prompt=fuck> ",
+		"--prompt=› ",
 		"--header=enter: select   esc: abort")
 	command.Stdin = strings.NewReader(strings.Join(candidates, newline) + newline)
 	command.Stderr = os.Stderr
@@ -134,7 +134,8 @@ func selectWithFzf(commands []*types.CorrectedCommand) (*types.CorrectedCommand,
 	selected, err := FzfRunner(candidates)
 	switch {
 	case errors.Is(err, errFzfAborted):
-		logs.Failed(newline + "Aborted")
+		logs.NewLine()
+		logs.Failed("Aborted")
 		return nil, true
 	case err != nil:
 		logs.Debug("fzf selection failed, falling back to the built-in prompt: %v", err)
@@ -187,7 +188,8 @@ func SelectCommand(commands []*types.CorrectedCommand) *types.CorrectedCommand {
 			logs.NewLine()
 			return selector.Value()
 		case consts.ActionAbort:
-			logs.Failed(newline + "Aborted")
+			logs.NewLine()
+			logs.Failed("Aborted")
 			return nil
 		case consts.ActionPrevious:
 			selector.Previous()
