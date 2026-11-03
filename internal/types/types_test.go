@@ -203,7 +203,9 @@ func TestRuleFailureIsReported(t *testing.T) {
 		t.Fatal("panicking rule reported a match")
 	}
 	firstLine := strings.Split(buffer.String(), string(rune(10)))[0]
-	if !strings.Contains(firstLine, "[WARN] Rule test:") {
+	// The warning prefix is colored, so the label and the title are checked
+	// separately instead of relying on one contiguous string.
+	if !strings.Contains(firstLine, "[WARN]") || !strings.Contains(firstLine, "Rule test:") {
 		t.Fatalf("unexpected log output: %q", buffer.String())
 	}
 }
