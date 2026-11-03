@@ -41,6 +41,25 @@ func unquote(value string) string {
 	return strings.Trim(value, string(rune(34)))
 }
 
+// quotedList splits a space separated list of shell quoted values.
+func quotedList(value string) []string {
+	values := []string{}
+	for _, part := range strings.Fields(value) {
+		values = append(values, strings.Trim(part, "'"))
+	}
+	return values
+}
+
+// containsString reports whether values contains value.
+func containsString(values []string, value string) bool {
+	for _, candidate := range values {
+		if candidate == value {
+			return true
+		}
+	}
+	return false
+}
+
 // validHash reports whether hash is a lowercase SHA-256 hex string.
 func validHash(hash string) bool {
 	if len(hash) != 64 {
@@ -295,6 +314,17 @@ func check(root string) error {
 	}
 	if names := fieldValues(srcinfo, "pkgname = "); len(names) != 1 || names[0] != "go-fuck" {
 		add("AUR pkgname = %q, want go-fuck", names)
+	}
+	aurArch := quotedList(strings.TrimSuffix(firstValue(pkgbuild, "arch=("), ")"))
+	srcinfoArch := fieldValues(srcinfo, "arch = ")
+	if strings.Join(aurArch, ",") != strings.Join(srcinfoArch, ",") {
+		add("AUR PKGBUILD arch is %q, .SRCINFO arch is %q", aurArch, srcinfoArch)
+	}
+	if !containsString(aurArch, "x86_64") {
+		add("AUR package does not target x86_64: %q", aurArch)
+	}
+	if !containsString(aurArch, "aarch64") {
+		add("AUR package does not target aarch64: %q", aurArch)
 	}
 
 	missingAssets := []string{}

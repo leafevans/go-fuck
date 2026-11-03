@@ -56,6 +56,10 @@ are `packaging/aur/PKGBUILD` and `packaging/aur/.SRCINFO`; the package builds
 from the GitHub tag archive (`archive/refs/tags/vX.Y.Z.tar.gz`) with the Arch
 Go toolchain and installs `/usr/bin/go-fuck`.
 
+The package declares `x86_64` and `aarch64`. go-fuck is pure Go, so Arch Linux
+ARM users build the same source with `makepkg`; no architecture specific code is
+involved.
+
 There is no CI job for the AUR because Arch tooling is not available on the
 GitHub runners. The `packaging` tests check that `pkgver`, `pkgrel` and the
 archive checksum in `PKGBUILD` and `.SRCINFO` agree with each other and with
@@ -120,7 +124,8 @@ When publishing a new release `vX.Y.Z`:
 3. Update the AUR package: download the new tag archive, refresh
    `pkgver`, `pkgrel` and `sha256sums` in `packaging/aur/PKGBUILD` and
    `packaging/aur/.SRCINFO`, then push the two files to
-   `ssh://aur@aur.archlinux.org/go-fuck.git` (see the AUR section above).
+   `ssh://aur@aur.archlinux.org/go-fuck.git` (see the AUR section above). Bump
+   `pkgrel` when only the packaging changes.
 4. Optionally submit the regenerated winget manifests to
    `microsoft/winget-pkgs`; they are kept current for that purpose but are
    not published.
