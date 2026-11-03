@@ -33,11 +33,12 @@ func cargoUnknownArgumentNewCommand(command *types.Command) ([]string, error) {
 	}
 	broken := match[1]
 
-	corrected := []string{}
-	for _, suggestion := range cargoSimilarArgument.FindAllStringSubmatch(command.Output, -1) {
-		corrected = append(corrected, utils.ReplaceArgument(command.Script, broken, suggestion[1]))
+	matches := cargoSimilarArgument.FindAllStringSubmatch(command.Output, -1)
+	suggestions := make([]string, 0, len(matches))
+	for _, match := range matches {
+		suggestions = append(suggestions, match[1])
 	}
-	return corrected, nil
+	return utils.ReplaceArguments(command.Script, broken, suggestions), nil
 }
 
 func init() {

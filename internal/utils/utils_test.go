@@ -162,6 +162,25 @@ func TestReplaceArgument(t *testing.T) {
 	}
 }
 
+func TestReplaceArguments(t *testing.T) {
+	cases := []struct {
+		script  string
+		from    string
+		targets []string
+		want    []string
+	}{
+		{"gh prr", "prr", []string{"org", "pr"}, []string{"gh org", "gh pr"}},
+		{"git brnch", "missing", []string{"branch"}, nil},
+	}
+	for _, testCase := range cases {
+		got := ReplaceArguments(testCase.script, testCase.from, testCase.targets)
+		if strings.Join(got, "|") != strings.Join(testCase.want, "|") {
+			t.Errorf("ReplaceArguments(%q, %q, %q) = %q, want %q",
+				testCase.script, testCase.from, testCase.targets, got, testCase.want)
+		}
+	}
+}
+
 func TestReplaceCommand(t *testing.T) {
 	resetUtilsState(t)
 	command := types.NewCommand("git brnch", "")

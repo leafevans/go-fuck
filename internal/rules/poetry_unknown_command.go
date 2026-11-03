@@ -31,14 +31,7 @@ func poetryUnknownCommandNewCommand(command *types.Command) ([]string, error) {
 	if match == nil {
 		return nil, nil
 	}
-	corrected := []string{}
-	for _, suggestion := range poetrySuggestions(command.Output) {
-		newCommand := utils.ReplaceArgument(command.Script, match[1], suggestion)
-		if newCommand != command.Script {
-			corrected = append(corrected, newCommand)
-		}
-	}
-	return corrected, nil
+	return utils.ReplaceArguments(command.Script, match[1], poetrySuggestions(command.Output)), nil
 }
 
 // poetrySuggestions extracts the suggested command names from the indented

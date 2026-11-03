@@ -332,6 +332,19 @@ func ReplaceArgument(script, from, to string) string {
 	return script
 }
 
+// ReplaceArguments replaces from with every target and returns the commands
+// that actually changed.
+func ReplaceArguments(script, from string, targets []string) []string {
+	corrected := make([]string, 0, len(targets))
+	for _, target := range targets {
+		replaced := ReplaceArgument(script, from, target)
+		if replaced != script {
+			corrected = append(corrected, replaced)
+		}
+	}
+	return corrected
+}
+
 // ReplaceCommand replaces a misspelled command with its closest matches.
 func ReplaceCommand(command *types.Command, broken string, matched []string) []string {
 	closeMatches := GetCloseMatches(broken, matched, 0, 0.1)
