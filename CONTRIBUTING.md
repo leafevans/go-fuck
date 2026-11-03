@@ -182,16 +182,19 @@ Releases are cut by pushing a `vX.Y.Z` tag; the Release workflow runs GoReleaser
 distribution manifests are regenerated from the release checksums afterwards (see
 [packaging/README.md](packaging/README.md)).
 
-The project is still in `0.x` while the behavior and the settings format are finalized. From the
-first official release on, the major version is the calendar year of the release:
+The project is still in `0.x` while the behavior and the settings format are finalized. The first
+official release is `1.0.0`; from then on the project follows
+[Semantic Versioning](https://semver.org/):
 
-- **`26.x.y`** for the releases in 2026, **`27.x.y`** for 2027, and so on. The major version
-  changes only when the year changes.
-- The **minor** version is incremented for new features and rules.
+- The **major** version is incremented for releases that change the documented behavior, the
+  settings format or the `--json` contract in a breaking way.
+- The **minor** version is incremented for new features and rules that stay backward compatible.
 - The **patch** version is incremented for bug fixes and documentation only releases.
 
-Before the first official release, `0.x.y` follows the usual semantic versioning rules: minor
-versions for features, patch versions for fixes.
+Before the first official release, `0.x.y` follows the same rules: minor versions for features,
+patch versions for fixes. Calendar year based version numbers are deliberately not used: keeping the
+Go module tags at `v1.x.y` is what allows `go install github.com/leafevans/go-fuck/cmd/go-fuck@latest`
+to resolve the latest release.
 
 ## Reporting bugs
 
