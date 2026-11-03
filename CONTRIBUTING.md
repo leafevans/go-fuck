@@ -176,6 +176,23 @@ chore(ci): test on Go 1.23 and stable
 - [ ] Commits follow Conventional Commits and the branch is based on the latest `main`.
 - [ ] CI is green on Linux, macOS and Windows.
 
+## Release and versioning
+
+Releases are cut by pushing a `vX.Y.Z` tag; the Release workflow runs GoReleaser, and the
+distribution manifests are regenerated from the release checksums afterwards (see
+[packaging/README.md](packaging/README.md)).
+
+The project is still in `0.x` while the behavior and the settings format are finalized. From the
+first official release on, the major version is the calendar year of the release:
+
+- **`26.x.y`** for the releases in 2026, **`27.x.y`** for 2027, and so on. The major version
+  changes only when the year changes.
+- The **minor** version is incremented for new features and rules.
+- The **patch** version is incremented for bug fixes and documentation only releases.
+
+Before the first official release, `0.x.y` follows the usual semantic versioning rules: minor
+versions for features, patch versions for fixes.
+
 ## Reporting bugs
 
 Open an issue with:
