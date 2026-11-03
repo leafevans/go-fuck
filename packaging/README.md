@@ -3,14 +3,14 @@
 This directory (together with `Formula/` and `bucket/`) makes the repository a
 multi-channel distribution for go-fuck.
 
-| Channel | File | Install |
-| --- | --- | --- |
-| Homebrew (macOS/Linux) | `Formula/go-fuck.rb` | `brew tap leafevans/go-fuck https://github.com/leafevans/go-fuck && brew trust leafevans/go-fuck && brew install go-fuck` |
-| Scoop (Windows) | `bucket/go-fuck.json` | `scoop bucket add go-fuck https://github.com/leafevans/go-fuck` then `scoop install go-fuck` |
-| AUR (Arch Linux) | `packaging/aur/` | `yay -S go-fuck`, or clone `https://aur.archlinux.org/go-fuck.git` and run `makepkg -si` |
-| winget (Windows) | `packaging/winget/` | not published; the manifests are kept up to date for a future submission |
-| Prebuilt binaries | GitHub releases | download and put `go-fuck` on `PATH` |
-| Go toolchain | `go install github.com/leafevans/go-fuck/cmd/go-fuck@latest` | |
+| Channel                | File                                                         | Install                                                                                                                   |
+| ---------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| Homebrew (macOS/Linux) | `Formula/go-fuck.rb`                                         | `brew tap leafevans/go-fuck https://github.com/leafevans/go-fuck && brew trust leafevans/go-fuck && brew install go-fuck` |
+| Scoop (Windows)        | `bucket/go-fuck.json`                                        | `scoop bucket add go-fuck https://github.com/leafevans/go-fuck` then `scoop install go-fuck`                              |
+| AUR (Arch Linux)       | `packaging/aur/`                                             | `yay -S go-fuck`, or clone `https://aur.archlinux.org/go-fuck.git` and run `makepkg -si`                                  |
+| winget (Windows)       | `packaging/winget/`                                          | not published; the manifests are kept up to date for a future submission                                                  |
+| Prebuilt binaries      | GitHub releases                                              | download and put `go-fuck` on `PATH`                                                                                      |
+| Go toolchain           | `go install github.com/leafevans/go-fuck/cmd/go-fuck@latest` |                                                                                                                           |
 
 ## Homebrew
 
@@ -67,22 +67,27 @@ the Homebrew formula version.
 
 To update the package for a release:
 
-1. Download the tag archive and compute its checksum:
-   ```bash
-   curl -L -o go-fuck.tar.gz https://github.com/leafevans/go-fuck/archive/refs/tags/vX.Y.Z.tar.gz
-   sha256sum go-fuck.tar.gz
-   ```
-2. Update `pkgver`, `pkgrel` and `sha256sums` in `packaging/aur/PKGBUILD`, then
-   mirror them and the source URL into `packaging/aur/.SRCINFO`. On Arch,
-   `makepkg --printsrcinfo > .SRCINFO` regenerates the file.
+1. Download the tag archive:
+    ```bash
+    curl -L -o go-fuck-X.Y.Z.tar.gz https://github.com/leafevans/go-fuck/archive/refs/tags/vX.Y.Z.tar.gz
+    ```
+2. Regenerate the package files. `tools/update-packaging` rewrites
+   `PKGBUILD` and `.SRCINFO` when `-aur-source` is passed: it sets `pkgver`,
+   resets `pkgrel` to 1 and computes the checksum of the archive.
+    ```bash
+    go run ./tools/update-packaging -version X.Y.Z \
+      -checksums checksums.txt -aur-source go-fuck-X.Y.Z.tar.gz
+    ```
+   A packaging-only change (no new version) is not generated; bump `pkgrel`
+   manually in both files instead.
 3. Push the two files to the AUR:
-   ```bash
-   git clone ssh://aur@aur.archlinux.org/go-fuck.git
-   cp packaging/aur/PKGBUILD packaging/aur/.SRCINFO go-fuck/
-   cd go-fuck
-   git commit -am "upgpkg: go-fuck X.Y.Z-1"
-   git push
-   ```
+    ```bash
+    git clone ssh://aur@aur.archlinux.org/go-fuck.git
+    cp packaging/aur/PKGBUILD packaging/aur/.SRCINFO go-fuck/
+    cd go-fuck
+    git commit -am "upgpkg: go-fuck X.Y.Z-1"
+    git push
+    ```
 
 ## winget
 
@@ -112,20 +117,20 @@ packaging/winget`, and open a pull request against `microsoft/winget-pkgs`.
 When publishing a new release `vX.Y.Z`:
 
 1. Push the tag and wait for the Release workflow to finish.
-2. Download `checksums.txt` from the release and regenerate the manifests:
-   ```bash
-   go run ./tools/update-packaging -version X.Y.Z -checksums checksums.txt
-   ```
-   The tool checks that the checksums are for the requested version and that
-   all six release assets are present, then rewrites the Homebrew formula, the
-   Scoop manifest and the winget manifests in one step. Review the diff and
-   commit it (also possible through `make packaging VERSION=X.Y.Z
-   CHECKSUMS=checksums.txt`).
-3. Update the AUR package: download the new tag archive, refresh
-   `pkgver`, `pkgrel` and `sha256sums` in `packaging/aur/PKGBUILD` and
-   `packaging/aur/.SRCINFO`, then push the two files to
-   `ssh://aur@aur.archlinux.org/go-fuck.git` (see the AUR section above). Bump
-   `pkgrel` when only the packaging changes.
+2. Download `checksums.txt` and the tag archive from the release, then
+    regenerate the manifests and the AUR package:
+    ```bash
+    go run ./tools/update-packaging -version X.Y.Z \
+      -checksums checksums.txt -aur-source go-fuck-X.Y.Z.tar.gz
+    ```
+    The tool checks that the checksums are for the requested version and that
+    all six release assets are present, then rewrites the Homebrew formula, the
+    Scoop manifest, the winget manifests and (with `-aur-source`) the AUR
+    `PKGBUILD` and `.SRCINFO` with a fresh `pkgrel=1`, in one step. Review the
+    diff and commit it (also possible through `make packaging VERSION=X.Y.Z
+CHECKSUMS=checksums.txt AUR_SOURCE=go-fuck-X.Y.Z.tar.gz`).
+3. Push the regenerated `PKGBUILD` and `.SRCINFO` to
+   `ssh://aur@aur.archlinux.org/go-fuck.git` (see the AUR section above).
 4. Optionally submit the regenerated winget manifests to
    `microsoft/winget-pkgs`; they are kept current for that purpose but are
    not published.

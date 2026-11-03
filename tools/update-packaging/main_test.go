@@ -1,7 +1,9 @@
 package main
 
 import (
+	"crypto/sha256"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -136,5 +138,58 @@ func TestWingetManifests(t *testing.T) {
 	locale := wingetLocaleManifest(rel)
 	if !strings.Contains(locale, "PackageVersion: 0.2.0") || !strings.Contains(locale, "releases/tag/v0.2.0") {
 		t.Fatalf("winget locale manifest is incomplete:\n%s", locale)
+	}
+}
+
+func TestAURPKGBUILD(t *testing.T) {
+	rel := loadTestRelease(t)
+	checksum := testHash(6)
+	pkgbuild := aurPKGBUILD(rel, checksum)
+	for _, want := range []string{
+		"pkgver=0.2.0\n",
+		"pkgrel=1\n",
+		"arch=('x86_64')",
+		"sha256sums=('" + checksum + "')",
+		"archive/refs/tags/v$pkgver.tar.gz",
+	} {
+		if !strings.Contains(pkgbuild, want) {
+			t.Fatalf("AUR PKGBUILD does not contain %q:\n%s", want, pkgbuild)
+		}
+	}
+	if strings.Contains(pkgbuild, "aarch64") {
+		t.Fatalf("AUR PKGBUILD must target x86_64 only:\n%s", pkgbuild)
+	}
+}
+
+func TestAURSrcinfo(t *testing.T) {
+	rel := loadTestRelease(t)
+	checksum := testHash(6)
+	srcinfo := aurSrcinfo(rel, checksum)
+	for _, want := range []string{
+		"pkgver = 0.2.0\n",
+		"pkgrel = 1\n",
+		"arch = x86_64\n",
+		"source = go-fuck-0.2.0.tar.gz::" + archiveBase + "/v0.2.0.tar.gz",
+		"sha256sums = " + checksum,
+		"pkgname = go-fuck\n",
+	} {
+		if !strings.Contains(srcinfo, want) {
+			t.Fatalf("AUR .SRCINFO does not contain %q:\n%s", want, srcinfo)
+		}
+	}
+}
+
+func TestFileChecksum(t *testing.T) {
+	path := writeFile(t, "archive.tar.gz", "hello")
+	want := fmt.Sprintf("%x", sha256.Sum256([]byte("hello")))
+	got, err := fileChecksum(path)
+	if err != nil {
+		t.Fatalf("fileChecksum() error = %v", err)
+	}
+	if got != want {
+		t.Fatalf("fileChecksum() = %q, want %q", got, want)
+	}
+	if _, err := fileChecksum(filepath.Join(t.TempDir(), "missing")); err == nil {
+		t.Fatal("fileChecksum() should fail for a missing file")
 	}
 }

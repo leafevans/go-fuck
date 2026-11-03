@@ -2,18 +2,23 @@
 //
 // It reads the checksums.txt asset of a GitHub release and updates the
 // Homebrew formula, the Scoop manifest and the winget manifests so that they
-// point at the released archives. The version is written without the "v"
-// prefix; release assets are matched by name and validated to be complete.
+// point at the released archives. When -aur-source points at the GitHub tag
+// archive of the release, the AUR PKGBUILD and .SRCINFO are regenerated too.
+// The version is written without the "v" prefix; release assets are matched by
+// name and validated to be complete.
 //
 // Usage:
 //
-//	go run ./tools/update-packaging -version 0.2.0 -checksums dist/checksums.txt
+//	go run ./tools/update-packaging -version 0.2.0 -checksums dist/checksums.txt -aur-source go-fuck-0.2.0.tar.gz
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -23,6 +28,7 @@ import (
 const (
 	projectName = "go-fuck"
 	releaseBase = "https://github.com/leafevans/go-fuck/releases/download"
+	archiveBase = "https://github.com/leafevans/go-fuck/archive/refs/tags"
 )
 
 // checksumLine matches one line of a GoReleaser checksums file.
@@ -47,11 +53,12 @@ type release struct {
 func main() {
 	version := flag.String("version", "", "release version, for example 0.2.0 (a leading v is accepted)")
 	checksums := flag.String("checksums", "", "path of the checksums.txt asset of the release")
+	aurSource := flag.String("aur-source", "", "path of the GitHub tag archive (go-fuck-X.Y.Z.tar.gz) used by the AUR package")
 	root := flag.String("root", ".", "repository root")
 	flag.Parse()
 
 	if *version == "" || *checksums == "" {
-		fmt.Fprintln(os.Stderr, "usage: update-packaging -version VERSION -checksums CHECKSUMS")
+		fmt.Fprintln(os.Stderr, "usage: update-packaging -version VERSION -checksums CHECKSUMS [-aur-source ARCHIVE]")
 		flag.PrintDefaults()
 		os.Exit(2)
 	}
@@ -74,6 +81,25 @@ func main() {
 		filepath.Join(*root, "packaging", "winget", "leafevans.gof.yaml"):              wingetVersionManifest(rel),
 		filepath.Join(*root, "packaging", "winget", "leafevans.gof.installer.yaml"):    wingetInstallerManifest(rel),
 		filepath.Join(*root, "packaging", "winget", "leafevans.gof.locale.en-US.yaml"): wingetLocaleManifest(rel),
+	}
+
+	aurDir := filepath.Join(*root, "packaging", "aur")
+	if *aurSource == "" {
+		// Keep the AUR files untouched without a source archive, but do not
+		// silently leave them behind a new release.
+		pkgbuild, err := os.ReadFile(filepath.Join(aurDir, "PKGBUILD"))
+		if err == nil && !strings.Contains(string(pkgbuild), "pkgver="+rel.version+"\n") {
+			fmt.Fprintln(os.Stderr, "update-packaging: packaging/aur is still at another version; pass -aur-source to update it")
+			os.Exit(1)
+		}
+	} else {
+		checksum, err := fileChecksum(*aurSource)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "update-packaging:", err)
+			os.Exit(1)
+		}
+		files[filepath.Join(aurDir, "PKGBUILD")] = aurPKGBUILD(rel, checksum)
+		files[filepath.Join(aurDir, ".SRCINFO")] = aurSrcinfo(rel, checksum)
 	}
 
 	for _, path := range sortedKeys(files) {
@@ -262,6 +288,77 @@ func wingetLocaleManifest(r *release) string {
 		"ReleaseNotesUrl: https://github.com/leafevans/go-fuck/releases/tag/v" + r.version + "\n" +
 		"ManifestType: defaultLocale\n" +
 		"ManifestVersion: 1.12.0\n"
+}
+
+// aurPKGBUILDTemplate is the PKGBUILD of the AUR package. The release
+// version and the checksum of the GitHub tag archive are filled in.
+const aurPKGBUILDTemplate = `# Maintainer: LeafEvans <leafevans@foxmail.com>
+pkgname=go-fuck
+pkgver=%s
+pkgrel=1
+pkgdesc='A blazingly fast reimplementation of thefuck in Go'
+arch=('x86_64')
+url='https://github.com/leafevans/go-fuck'
+license=('MIT')
+makedepends=('go')
+source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('%s')
+
+build() {
+  cd "$pkgname-$pkgver"
+  export CGO_ENABLED=0
+  go build -trimpath \
+    -ldflags "-s -w -X github.com/leafevans/go-fuck/internal/consts.Version=$pkgver" \
+    -o go-fuck ./cmd/go-fuck
+}
+
+package() {
+  cd "$pkgname-$pkgver"
+  install -Dm755 go-fuck "$pkgdir/usr/bin/go-fuck"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
+}
+`
+
+// aurSrcinfoTemplate is the .SRCINFO of the AUR package. The version, the
+// archive name, the source URL and the checksum are filled in.
+const aurSrcinfoTemplate = `pkgbase = go-fuck
+	pkgdesc = A blazingly fast reimplementation of thefuck in Go
+	pkgver = %s
+	pkgrel = 1
+	url = https://github.com/leafevans/go-fuck
+	arch = x86_64
+	license = MIT
+	makedepends = go
+	source = go-fuck-%s.tar.gz::%s/v%s.tar.gz
+	sha256sums = %s
+
+pkgname = go-fuck
+`
+
+// aurPKGBUILD returns the AUR PKGBUILD for the release.
+func aurPKGBUILD(r *release, checksum string) string {
+	return fmt.Sprintf(aurPKGBUILDTemplate, r.version, checksum)
+}
+
+// aurSrcinfo returns the AUR .SRCINFO for the release.
+func aurSrcinfo(r *release, checksum string) string {
+	return fmt.Sprintf(aurSrcinfoTemplate, r.version, r.version, archiveBase, r.version, checksum)
+}
+
+// fileChecksum returns the SHA-256 checksum of a file.
+func fileChecksum(path string) (string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return "", fmt.Errorf("read AUR source archive: %w", err)
+	}
+	defer file.Close()
+
+	hash := sha256.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		return "", fmt.Errorf("hash AUR source archive: %w", err)
+	}
+	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
 // sortedKeys returns the keys of a string map in lexicographic order.

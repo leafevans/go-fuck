@@ -15,6 +15,8 @@ GOLANGCI_LINT ?= golangci-lint
 # the path of the checksums.txt asset of that release.
 VERSION   ?=
 CHECKSUMS ?= dist/checksums.txt
+# Optional: path of the GitHub tag archive used to regenerate the AUR package.
+AUR_SOURCE ?=
 
 # Add an .exe suffix on Windows so that "make build" produces a file the
 # system can start directly.
@@ -69,7 +71,7 @@ clean: ## Remove the built binary and the GoReleaser output
 	@$(GO) run ./tools/clean $(BINARY) $(BINARY).exe dist coverage.out
 
 packaging: ## Regenerate the distribution manifests for VERSION from CHECKSUMS
-	@$(GO) run ./tools/update-packaging -version $(VERSION) -checksums $(CHECKSUMS)
+	@$(GO) run ./tools/update-packaging -version $(VERSION) -checksums $(CHECKSUMS) $(if $(AUR_SOURCE),-aur-source $(AUR_SOURCE))
 
 packaging-check: ## Validate the distribution manifests
 	@$(GO) test ./packaging -count=1
