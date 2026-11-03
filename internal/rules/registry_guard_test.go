@@ -197,6 +197,7 @@ var expectedExtraRuleNames = []string{
 	"cargo_unknown_argument",
 	"cargo_unknown_command",
 	"deno_task_not_found",
+	"docker_compose_unknown_service",
 	"gh_unknown_command",
 	"gh_unknown_flag",
 	"glab_unknown_command",
@@ -210,6 +211,7 @@ var expectedExtraRuleNames = []string{
 	"node_missing_module",
 	"pnpm_command_not_found",
 	"poetry_unknown_command",
+	"task_unknown_task",
 	"uv_unknown_argument",
 	"uv_unknown_subcommand",
 }

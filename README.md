@@ -552,7 +552,8 @@ configuration directory (see [Creating custom rules](#creating-custom-rules)). E
 whether it applies to a failed command and returns one or more corrected commands. 169 rules are
 ported from the reference implementation; go-fuck also adds rules for tools that thefuck does not
 handle: the GitHub CLI, the GitLab CLI, kubectl, uv, cargo, Helm, pnpm, the Go toolchain, Node.js,
-bun, Deno, just, Poetry and make. The list below is generated from the compiled rules:
+bun, Deno, Docker Compose, just, Poetry, make and the go-task runner. The list below is generated from
+the compiled rules:
 
 <!-- RULES_LIST_START -->
 - `adb_unknown_command`
@@ -594,6 +595,7 @@ bun, Deno, just, Poetry and make. The list below is generated from the compiled 
 - `django_south_ghost`
 - `django_south_merge`
 - `dnf_no_such_command`
+- `docker_compose_unknown_service`
 - `docker_image_being_used_by_container`
 - `docker_login`
 - `docker_not_command`
@@ -723,6 +725,7 @@ bun, Deno, just, Poetry and make. The list below is generated from the compiled 
 - `sudo_command_from_user_path`
 - `switch_lang`
 - `systemctl`
+- `task_unknown_task`
 - `terraform_init`
 - `terraform_no_command`
 - `test.py`
@@ -846,8 +849,9 @@ go-fuck is a reimplementation, not a drop-in replacement for every thefuck featu
 
 - **Complete rule port plus extras.** All 169 rules of the reference implementation are ported,
   plus go-fuck specific rules for the GitHub CLI, the GitLab CLI, kubectl, uv, cargo, Helm, pnpm,
-  the Go toolchain, Node.js, bun, Deno, just, Poetry and make; the list above is authoritative. The
-  porting conventions are documented in [PORTING.md](PORTING.md).
+  the Go toolchain, Node.js, bun, Deno, Docker Compose, just, Poetry, make and the go-task runner;
+  the list above is authoritative. The porting conventions are documented in
+  [PORTING.md](PORTING.md).
 - **Instant mode covers Linux, macOS and Windows.** The experimental instant mode reads the
   previous command output from a terminal log instead of re-running the command. It is implemented
   for bash and zsh on Linux and macOS and for PowerShell on Windows (hosted on ConPTY); other
