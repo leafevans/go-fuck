@@ -62,12 +62,12 @@ The correction hot path and the shell history parser have Go benchmarks
 (`make bench`); they run on every supported platform and do not depend on the
 installed tools. Measured on an AMD Ryzen 7 7730U (16 logical CPUs) with Go 1.26:
 
-| Benchmark | Result |
-| --- | --- |
-| Full correction path (select rules, match them, order suggestions) | ~76 µs/op |
-| Matching every rule against a captured output | ~65 µs/op |
-| Matching rules when the command output could not be captured | ~0.5 µs/op |
-| Parsing a 20,000 line shell history file | ~0.67 ms/op |
+| Benchmark                                                          | Result      |
+| ------------------------------------------------------------------ | ----------- |
+| Full correction path (select rules, match them, order suggestions) | ~76 µs/op   |
+| Matching every rule against a captured output                      | ~65 µs/op   |
+| Matching rules when the command output could not be captured       | ~0.5 µs/op  |
+| Parsing a 20,000 line shell history file                           | ~0.67 ms/op |
 
 The rule engine adds tens of microseconds; the wall clock time of a correction
 is dominated by deliberately re-running the failed command. An interpreter based
@@ -265,13 +265,13 @@ The name has to be a valid shell function name. Without an argument, the alias i
 The generated function exports a few variables, calls go-fuck and evaluates the corrected command that
 go-fuck prints on standard output:
 
-| Variable | Set by | Purpose |
-| --- | --- | --- |
-| `TF_SHELL` | the alias | shell name (`bash`, `zsh`, `fish`, `tcsh`, `powershell`); go-fuck uses it instead of guessing from the process tree |
-| `TF_ALIAS` | the alias | name of the alias function; used in messages and by the repeat mechanism |
-| `TF_HISTORY` | the bash and zsh alias | the last ten history lines; go-fuck picks the failed command from them |
-| `TF_SHELL_ALIASES` | the bash and zsh alias | the shell aliases, expanded before the command is matched |
-| `GOFUCK_ARGUMENT_PLACEHOLDER` | the alias | separates go-fuck's own arguments from the arguments of the corrected command; the legacy `THEFUCK_ARGUMENT_PLACEHOLDER` is accepted too |
+| Variable                      | Set by                 | Purpose                                                                                                                                  |
+| ----------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `TF_SHELL`                    | the alias              | shell name (`bash`, `zsh`, `fish`, `tcsh`, `powershell`); go-fuck uses it instead of guessing from the process tree                      |
+| `TF_ALIAS`                    | the alias              | name of the alias function; used in messages and by the repeat mechanism                                                                 |
+| `TF_HISTORY`                  | the bash and zsh alias | the last ten history lines; go-fuck picks the failed command from them                                                                   |
+| `TF_SHELL_ALIASES`            | the bash and zsh alias | the shell aliases, expanded before the command is matched                                                                                |
+| `GOFUCK_ARGUMENT_PLACEHOLDER` | the alias              | separates go-fuck's own arguments from the arguments of the corrected command; the legacy `THEFUCK_ARGUMENT_PLACEHOLDER` is accepted too |
 
 The fish alias passes the previous command explicitly via its `$history[1]` variable. Because
 `TF_SHELL` is always set by the alias, go-fuck uses the right shell-specific behavior even when the
@@ -319,17 +319,17 @@ echo "hello" [enter/↑/↓/ctrl+c]
 
 Common options:
 
-| Option | Meaning |
-| --- | --- |
-| `-y`, `--yes`, `--yeah`, `--hard` | execute the first suggestion without asking |
-| `-r`, `--repeat` | if the corrected command fails, run go-fuck again |
-| `--force-command CMD` | fix `CMD` instead of the previous command |
-| `--json` | print the suggestions as JSON and exit (useful for scripts and editors; call go-fuck directly rather than through the alias) |
-| `-d`, `--debug` | print debug information to stderr |
-| `-v`, `--version` | print build and environment details (a banner with a gradient logo in a terminal, a single line when piped; `NO_COLOR` or `no_colors` disables the colors) |
-| `-h`, `--help` | print the full option list |
-| `--setup` | add the alias to the detected shell's configuration file (bash, zsh, fish, tcsh, PowerShell); combine with `--enable-experimental-instant-mode` to configure instant mode |
-| `--enable-experimental-instant-mode` | print the initialization code of the experimental instant mode (bash/zsh on Linux and macOS, PowerShell on Windows) |
+| Option                               | Meaning                                                                                                                                                                   |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `-y`, `--yes`, `--yeah`, `--hard`    | execute the first suggestion without asking                                                                                                                               |
+| `-r`, `--repeat`                     | if the corrected command fails, run go-fuck again                                                                                                                         |
+| `--force-command CMD`                | fix `CMD` instead of the previous command                                                                                                                                 |
+| `--json`                             | print the suggestions as JSON and exit (useful for scripts and editors; call go-fuck directly rather than through the alias)                                              |
+| `-d`, `--debug`                      | print debug information to stderr                                                                                                                                         |
+| `-v`, `--version`                    | print build and environment details (a banner with a gradient logo in a terminal, a single line when piped; `NO_COLOR` or `no_colors` disables the colors)                |
+| `-h`, `--help`                       | print the full option list                                                                                                                                                |
+| `--setup`                            | add the alias to the detected shell's configuration file (bash, zsh, fish, tcsh, PowerShell); combine with `--enable-experimental-instant-mode` to configure instant mode |
+| `--enable-experimental-instant-mode` | print the initialization code of the experimental instant mode (bash/zsh on Linux and macOS, PowerShell on Windows)                                                       |
 
 ## How it works
 
@@ -441,16 +441,17 @@ when the output could not be captured. Output larger than 32 KiB is cut at a UTF
 In JSON mode go-fuck does not execute the corrected command, does not apply side effects and does
 not update the shell history; the caller decides what to do with the suggestions. The exit code is
 0 once the JSON was written, even when no rule matched and `suggestions` is empty.
+
 ## Settings
 
 Settings are stored in `settings.json` inside the go-fuck directory of the user configuration
 directory returned by Go's `os.UserConfigDir()`:
 
-| Operating system | Path |
-| --- | --- |
-| Linux / BSD | `~/.config/go-fuck/settings.json` (or `$XDG_CONFIG_HOME/go-fuck/settings.json`) |
-| macOS | `~/Library/Application Support/go-fuck/settings.json` |
-| Windows | `%AppData%\go-fuck\settings.json` |
+| Operating system | Path                                                                            |
+| ---------------- | ------------------------------------------------------------------------------- |
+| Linux / BSD      | `~/.config/go-fuck/settings.json` (or `$XDG_CONFIG_HOME/go-fuck/settings.json`) |
+| macOS            | `~/Library/Application Support/go-fuck/settings.json`                           |
+| Windows          | `%AppData%\go-fuck\settings.json`                                               |
 
 The file is created with the default settings on first use. JSON does not support comments, so the
 generated file contains an explanatory `_comment` field; it is ignored when the file is loaded.
@@ -459,43 +460,43 @@ A minimal file that customizes a few values:
 
 ```json
 {
-  "rules": ["All rules enabled"],
-  "exclude_rules": ["git_push"],
-  "wait_command": 10,
-  "require_confirmation": true,
-  "priority": {
-    "cd_mkdir": 100
-  },
-  "settings": {}
+    "rules": ["All rules enabled"],
+    "exclude_rules": ["git_push"],
+    "wait_command": 10,
+    "require_confirmation": true,
+    "priority": {
+        "cd_mkdir": 100
+    },
+    "settings": {}
 }
 ```
 
 All fields:
 
-| Key | Type | Default | Meaning |
-| --- | --- | --- | --- |
-| `rules` | array of strings | `["All rules enabled"]` | Rules that are enabled. The sentinel value `"All rules enabled"` enables every rule that is enabled by default; list explicit rule names to enable exactly those rules. |
-| `exclude_rules` | array of strings | `[]` | Rules that are never loaded, even when enabled. |
-| `wait_command` | integer | `3` | Seconds to wait for the output of the re-run command. |
-| `require_confirmation` | boolean | `true` | Ask before executing a corrected command. |
-| `fzf` | boolean | `false` | Use [fzf](https://github.com/junegunn/fzf) as the selection prompt when it is installed. Falls back to the built-in prompt automatically. |
-| `no_colors` | boolean | `false` | Disable colored output. |
-| `debug` | boolean | `false` | Print debug information to stderr. |
-| `priority` | object of integer | `{}` | Per-rule priority overrides. Lower values are tried first; the built-in default is `1000`. |
-| `history_limit` | integer | `0` | Maximum number of shell history lines that are read. `0` means no limit. |
-| `alter_history` | boolean | `true` | Write the corrected command back to the shell history. |
-| `wait_slow_command` | integer | `15` | Seconds to wait for the output of commands listed in `slow_commands`. |
-| `slow_commands` | array of strings | `["lein", "react-native", "gradle", "./gradlew", "vagrant"]` | Commands that are expected to be slow to re-run. |
-| `repeat` | boolean | `false` | If the corrected command fails, run go-fuck again. |
-| `instant_mode` | boolean | `false` | Read the previous command output from the shell logger terminal log instead of re-running the command. See [Instant mode](#instant-mode). |
-| `num_close_matches` | integer | `3` | Maximum number of close matches suggested for misspelled commands. |
-| `env` | object of string | `{"LC_ALL": "C", "LANG": "C", "GIT_TRACE": "1"}` | Environment variables added when the failed command is re-run. |
-| `excluded_search_path_prefixes` | array of strings | `[]` | `PATH` prefixes that are skipped when searching for executables. |
-| `ai` | boolean | `false` | Enable the optional AI fallback when no rule matched. See [AI fallback](#ai-fallback-optional). |
-| `ai_endpoint` | string | `""` | OpenAI compatible API base URL, for example `https://api.openai.com/v1`. |
-| `ai_model` | string | `""` | Chat completion model used by the AI fallback. |
-| `ai_timeout` | integer | `10` | Seconds to wait for the AI endpoint. |
-| `settings` | object | `{} in the default file` | Rule-specific string settings, read by rules with `conf.Current().String(key, default)`. |
+| Key                             | Type              | Default                                                      | Meaning                                                                                                                                                                 |
+| ------------------------------- | ----------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rules`                         | array of strings  | `["All rules enabled"]`                                      | Rules that are enabled. The sentinel value `"All rules enabled"` enables every rule that is enabled by default; list explicit rule names to enable exactly those rules. |
+| `exclude_rules`                 | array of strings  | `[]`                                                         | Rules that are never loaded, even when enabled.                                                                                                                         |
+| `wait_command`                  | integer           | `3`                                                          | Seconds to wait for the output of the re-run command.                                                                                                                   |
+| `require_confirmation`          | boolean           | `true`                                                       | Ask before executing a corrected command.                                                                                                                               |
+| `fzf`                           | boolean           | `false`                                                      | Use [fzf](https://github.com/junegunn/fzf) as the selection prompt when it is installed. Falls back to the built-in prompt automatically.                               |
+| `no_colors`                     | boolean           | `false`                                                      | Disable colored output.                                                                                                                                                 |
+| `debug`                         | boolean           | `false`                                                      | Print debug information to stderr.                                                                                                                                      |
+| `priority`                      | object of integer | `{}`                                                         | Per-rule priority overrides. Lower values are tried first; the built-in default is `1000`.                                                                              |
+| `history_limit`                 | integer           | `0`                                                          | Maximum number of shell history lines that are read. `0` means no limit.                                                                                                |
+| `alter_history`                 | boolean           | `true`                                                       | Write the corrected command back to the shell history.                                                                                                                  |
+| `wait_slow_command`             | integer           | `15`                                                         | Seconds to wait for the output of commands listed in `slow_commands`.                                                                                                   |
+| `slow_commands`                 | array of strings  | `["lein", "react-native", "gradle", "./gradlew", "vagrant"]` | Commands that are expected to be slow to re-run.                                                                                                                        |
+| `repeat`                        | boolean           | `false`                                                      | If the corrected command fails, run go-fuck again.                                                                                                                      |
+| `instant_mode`                  | boolean           | `false`                                                      | Read the previous command output from the shell logger terminal log instead of re-running the command. See [Instant mode](#instant-mode).                               |
+| `num_close_matches`             | integer           | `3`                                                          | Maximum number of close matches suggested for misspelled commands.                                                                                                      |
+| `env`                           | object of string  | `{"LC_ALL": "C", "LANG": "C", "GIT_TRACE": "1"}`             | Environment variables added when the failed command is re-run.                                                                                                          |
+| `excluded_search_path_prefixes` | array of strings  | `[]`                                                         | `PATH` prefixes that are skipped when searching for executables.                                                                                                        |
+| `ai`                            | boolean           | `false`                                                      | Enable the optional AI fallback when no rule matched. See [AI fallback](#ai-fallback-optional).                                                                         |
+| `ai_endpoint`                   | string            | `""`                                                         | OpenAI compatible API base URL, for example `https://api.openai.com/v1`.                                                                                                |
+| `ai_model`                      | string            | `""`                                                         | Chat completion model used by the AI fallback.                                                                                                                          |
+| `ai_timeout`                    | integer           | `10`                                                         | Seconds to wait for the AI endpoint.                                                                                                                                    |
+| `settings`                      | object            | `{} in the default file`                                     | Rule-specific string settings, read by rules with `conf.Current().String(key, default)`.                                                                                |
 
 ### Environment variables
 
@@ -505,28 +506,28 @@ configuration keeps working. For example, `GOFUCK_WAIT_COMMAND=10` and
 `THEFUCK_WAIT_COMMAND=10` do the same thing. If both prefixes are set for the same setting, the
 legacy `THEFUCK_*` variable is applied last and wins.
 
-| Suffix | Type | Example | Corresponding setting |
-| --- | --- | --- | --- |
-| `RULES` | colon separated list | `GOFUCK_RULES='sudo:no_command'` | `rules`; the token `DEFAULT_RULES` stands for `"All rules enabled"` |
-| `EXCLUDE_RULES` | colon separated list | `GOFUCK_EXCLUDE_RULES='git_push'` | `exclude_rules` |
-| `WAIT_COMMAND` | integer seconds | `GOFUCK_WAIT_COMMAND=10` | `wait_command` |
-| `REQUIRE_CONFIRMATION` | boolean | `GOFUCK_REQUIRE_CONFIRMATION=false` | `require_confirmation` |
-| `FZF` | boolean | `GOFUCK_FZF=true` | `fzf` |
-| `NO_COLORS` | boolean | `GOFUCK_NO_COLORS=true` | `no_colors` |
-| `DEBUG` | boolean | `GOFUCK_DEBUG=true` | `debug` |
-| `PRIORITY` | `rule=priority` list separated by colons | `GOFUCK_PRIORITY='cd_mkdir=100:git_push=900'` | `priority` |
-| `HISTORY_LIMIT` | integer | `GOFUCK_HISTORY_LIMIT=2000` | `history_limit` |
-| `ALTER_HISTORY` | boolean | `GOFUCK_ALTER_HISTORY=false` | `alter_history` |
-| `WAIT_SLOW_COMMAND` | integer seconds | `GOFUCK_WAIT_SLOW_COMMAND=30` | `wait_slow_command` |
-| `SLOW_COMMANDS` | colon separated list | `GOFUCK_SLOW_COMMANDS='lein:gradle'` | `slow_commands` |
-| `REPEAT` | boolean | `GOFUCK_REPEAT=true` | `repeat` |
-| `INSTANT_MODE` | boolean | `GOFUCK_INSTANT_MODE=false` | `instant_mode` |
-| `NUM_CLOSE_MATCHES` | integer | `GOFUCK_NUM_CLOSE_MATCHES=5` | `num_close_matches` |
-| `EXCLUDED_SEARCH_PATH_PREFIXES` | colon separated list | `GOFUCK_EXCLUDED_SEARCH_PATH_PREFIXES='/snap'` | `excluded_search_path_prefixes` |
-| `AI` | boolean | `GOFUCK_AI=true` | `ai` |
-| `AI_ENDPOINT` | string | `GOFUCK_AI_ENDPOINT=https://api.openai.com/v1` | `ai_endpoint` |
-| `AI_MODEL` | string | `GOFUCK_AI_MODEL=gpt-4o-mini` | `ai_model` |
-| `AI_TIMEOUT` | integer seconds | `GOFUCK_AI_TIMEOUT=20` | `ai_timeout` |
+| Suffix                          | Type                                     | Example                                        | Corresponding setting                                               |
+| ------------------------------- | ---------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------- |
+| `RULES`                         | colon separated list                     | `GOFUCK_RULES='sudo:no_command'`               | `rules`; the token `DEFAULT_RULES` stands for `"All rules enabled"` |
+| `EXCLUDE_RULES`                 | colon separated list                     | `GOFUCK_EXCLUDE_RULES='git_push'`              | `exclude_rules`                                                     |
+| `WAIT_COMMAND`                  | integer seconds                          | `GOFUCK_WAIT_COMMAND=10`                       | `wait_command`                                                      |
+| `REQUIRE_CONFIRMATION`          | boolean                                  | `GOFUCK_REQUIRE_CONFIRMATION=false`            | `require_confirmation`                                              |
+| `FZF`                           | boolean                                  | `GOFUCK_FZF=true`                              | `fzf`                                                               |
+| `NO_COLORS`                     | boolean                                  | `GOFUCK_NO_COLORS=true`                        | `no_colors`                                                         |
+| `DEBUG`                         | boolean                                  | `GOFUCK_DEBUG=true`                            | `debug`                                                             |
+| `PRIORITY`                      | `rule=priority` list separated by colons | `GOFUCK_PRIORITY='cd_mkdir=100:git_push=900'`  | `priority`                                                          |
+| `HISTORY_LIMIT`                 | integer                                  | `GOFUCK_HISTORY_LIMIT=2000`                    | `history_limit`                                                     |
+| `ALTER_HISTORY`                 | boolean                                  | `GOFUCK_ALTER_HISTORY=false`                   | `alter_history`                                                     |
+| `WAIT_SLOW_COMMAND`             | integer seconds                          | `GOFUCK_WAIT_SLOW_COMMAND=30`                  | `wait_slow_command`                                                 |
+| `SLOW_COMMANDS`                 | colon separated list                     | `GOFUCK_SLOW_COMMANDS='lein:gradle'`           | `slow_commands`                                                     |
+| `REPEAT`                        | boolean                                  | `GOFUCK_REPEAT=true`                           | `repeat`                                                            |
+| `INSTANT_MODE`                  | boolean                                  | `GOFUCK_INSTANT_MODE=false`                    | `instant_mode`                                                      |
+| `NUM_CLOSE_MATCHES`             | integer                                  | `GOFUCK_NUM_CLOSE_MATCHES=5`                   | `num_close_matches`                                                 |
+| `EXCLUDED_SEARCH_PATH_PREFIXES` | colon separated list                     | `GOFUCK_EXCLUDED_SEARCH_PATH_PREFIXES='/snap'` | `excluded_search_path_prefixes`                                     |
+| `AI`                            | boolean                                  | `GOFUCK_AI=true`                               | `ai`                                                                |
+| `AI_ENDPOINT`                   | string                                   | `GOFUCK_AI_ENDPOINT=https://api.openai.com/v1` | `ai_endpoint`                                                       |
+| `AI_MODEL`                      | string                                   | `GOFUCK_AI_MODEL=gpt-4o-mini`                  | `ai_model`                                                          |
+| `AI_TIMEOUT`                    | integer seconds                          | `GOFUCK_AI_TIMEOUT=20`                         | `ai_timeout`                                                        |
 
 The `env` map can only be set in `settings.json`. Booleans accept `true` and `false`
 (case-insensitive).
@@ -543,12 +544,12 @@ Settings are applied in increasing order of precedence:
 By default go-fuck asks before running the corrected command. The prompt shows the suggestion and the
 available actions:
 
-| Key | Action |
-| --- | --- |
-| `Enter` | execute the selected command |
+| Key                     | Action                         |
+| ----------------------- | ------------------------------ |
+| `Enter`                 | execute the selected command   |
 | `↑`, `Ctrl+N`, `k`, `e` | select the previous suggestion |
-| `↓`, `Ctrl+P`, `j`, `n` | select the next suggestion |
-| `Ctrl+C`, `q` | abort without running anything |
+| `↓`, `Ctrl+P`, `j`, `n` | select the next suggestion     |
+| `Ctrl+C`, `q`           | abort without running anything |
 
 Disable the prompt with `require_confirmation: false` in `settings.json` or by passing `-y`.
 
@@ -559,7 +560,7 @@ Enable it once in `settings.json`:
 
 ```json
 {
-  "fzf": true
+    "fzf": true
 }
 ```
 
@@ -575,8 +576,8 @@ configuration directory (see [Creating custom rules](#creating-custom-rules)). E
 whether it applies to a failed command and returns one or more corrected commands. 169 rules are
 ported from the reference implementation; go-fuck also adds rules for tools that thefuck does not
 handle: the GitHub CLI, the GitLab CLI, kubectl, uv, cargo, Helm, pnpm, the Go toolchain, Node.js,
-bun, Deno, Docker Compose, just, Poetry, make and the go-task runner. The list below is generated from
-the compiled rules:
+bun, Deno, Docker Compose, just, Poetry, make, the go-task runner and minikube. The list below is
+generated from the compiled rules:
 
 <!-- RULES_LIST_START -->
 - `adb_unknown_command`
@@ -706,6 +707,7 @@ the compiled rules:
 - `man`
 - `man_no_space`
 - `mercurial`
+- `minikube_unknown_command`
 - `missing_space_before_subcommand`
 - `mkdir_p`
 - `mvn_no_command`
@@ -788,10 +790,10 @@ tail of its output (up to 4,000 bytes) to the configured endpoint:
 
 ```json
 {
-  "ai": true,
-  "ai_endpoint": "https://api.openai.com/v1",
-  "ai_model": "gpt-4o-mini",
-  "ai_timeout": 10
+    "ai": true,
+    "ai_endpoint": "https://api.openai.com/v1",
+    "ai_model": "gpt-4o-mini",
+    "ai_timeout": 10
 }
 ```
 
@@ -816,26 +818,24 @@ There are two ways to add a rule.
 go-fuck loads extra rules from JSON files in the `rules` directory inside its configuration
 directory:
 
-| Operating system | Directory |
-| --- | --- |
-| Linux / BSD | `~/.config/go-fuck/rules` (or `$XDG_CONFIG_HOME/go-fuck/rules`) |
-| macOS | `~/Library/Application Support/go-fuck/rules` |
-| Windows | `%AppData%\go-fuck\rules` |
+| Operating system | Directory                                                       |
+| ---------------- | --------------------------------------------------------------- |
+| Linux / BSD      | `~/.config/go-fuck/rules` (or `$XDG_CONFIG_HOME/go-fuck/rules`) |
+| macOS            | `~/Library/Application Support/go-fuck/rules`                   |
+| Windows          | `%AppData%\go-fuck\rules`                                       |
 
 Each file contains one rule:
 
 ```json
 {
-  "name": "git_remote_typo",
-  "enabled": true,
-  "priority": 900,
-  "match": {
-    "script": "^git remote add (\\w+)$",
-    "output": "No such remote '([^']+)'"
-  },
-  "commands": [
-    "git remote remove {1}"
-  ]
+    "name": "git_remote_typo",
+    "enabled": true,
+    "priority": 900,
+    "match": {
+        "script": "^git remote add (\\w+)$",
+        "output": "No such remote '([^']+)'"
+    },
+    "commands": ["git remote remove {1}"]
 }
 ```
 
@@ -872,8 +872,8 @@ go-fuck is a reimplementation, not a drop-in replacement for every thefuck featu
 
 - **Complete rule port plus extras.** All 169 rules of the reference implementation are ported,
   plus go-fuck specific rules for the GitHub CLI, the GitLab CLI, kubectl, uv, cargo, Helm, pnpm,
-  the Go toolchain, Node.js, bun, Deno, Docker Compose, just, Poetry, make and the go-task runner;
-  the list above is authoritative. The porting conventions are documented in
+  the Go toolchain, Node.js, bun, Deno, Docker Compose, just, Poetry, make, the go-task runner and
+  minikube; the list above is authoritative. The porting conventions are documented in
   [PORTING.md](PORTING.md).
 - **Instant mode covers Linux, macOS and Windows.** The experimental instant mode reads the
   previous command output from a terminal log instead of re-running the command. It is implemented

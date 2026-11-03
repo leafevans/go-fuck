@@ -208,6 +208,7 @@ var expectedExtraRuleNames = []string{
 	"just_unknown_recipe",
 	"kubectl_unknown_command",
 	"make_unknown_target",
+	"minikube_unknown_command",
 	"node_missing_module",
 	"pnpm_command_not_found",
 	"poetry_unknown_command",
