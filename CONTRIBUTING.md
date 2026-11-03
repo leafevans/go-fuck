@@ -113,6 +113,9 @@ the test helpers, is [PORTING.md](PORTING.md). The short version:
 
 - Run the full suite with `go test ./... -count=1`.
 - Run only the rule tests with `go test ./internal/rules -run 'TestRule' -count=1`.
+- On Linux with bash, zsh, fish and tcsh installed, run
+  `bash scripts/check-shell-integration.sh ./go-fuck` to verify the generated aliases and
+  `--setup` for every supported shell. CI runs the same script in the `Shell integration` job.
 - Use `go test -race ./...` when a C compiler is available.
 - Tests must pass on Linux, macOS and Windows; CI runs all three. Do not depend on the host shell,
   installed programs, network access or the user's configuration.

@@ -37,6 +37,16 @@ jobs:
         run: go vet ./...
       - name: Test
         run: go test ./... -count=1
+      - name: Check the PowerShell alias
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          go build -trimpath -o "$env:RUNNER_TEMP\go-fuck.exe" ./cmd/go-fuck
+          $alias = (& "$env:RUNNER_TEMP\go-fuck.exe" --alias) -join "`n"
+          Invoke-Expression $alias
+          if (-not (Get-Command fuck -ErrorAction SilentlyContinue)) {
+            throw "the PowerShell alias was not defined"
+          }
 
   race:
     name: Race detector
@@ -107,6 +117,30 @@ jobs:
           HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install go-fuck
       - name: Verify the installed binary
         run: go-fuck --version
+      - name: Check the bash alias
+        run: |
+          eval "$(go-fuck --alias)"
+          type fuck
+
+  shell-integration:
+    name: Shell integration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: stable
+          cache: true
+      - name: Install the shells
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zsh fish tcsh
+      - name: Build
+        run: go build -trimpath -o "$RUNNER_TEMP/go-fuck" ./cmd/go-fuck
+      - name: Check the shell integration
+        run: bash scripts/check-shell-integration.sh "$RUNNER_TEMP/go-fuck"
 
   gofmt:
     name: gofmt
