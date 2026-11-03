@@ -10,6 +10,7 @@ import (
 
 // jsonTestResult mirrors the machine readable output of --json.
 type jsonTestResult struct {
+	SchemaVersion   int                  `json:"schema_version"`
 	Command         string               `json:"command"`
 	Output          string               `json:"output"`
 	OutputTruncated bool                 `json:"output_truncated"`
@@ -36,6 +37,9 @@ func TestMainJSONOutput(t *testing.T) {
 	var result jsonTestResult
 	if err := json.Unmarshal([]byte(stdout), &result); err != nil {
 		t.Fatalf("stdout is not valid JSON: %v\n%s", err, stdout)
+	}
+	if result.SchemaVersion != jsonSchemaVersion {
+		t.Fatalf("schema_version = %d, want %d", result.SchemaVersion, jsonSchemaVersion)
 	}
 	if result.Command == "" {
 		t.Fatalf("JSON output has no command: %s", stdout)

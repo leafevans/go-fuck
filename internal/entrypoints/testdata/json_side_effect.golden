@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "command": "git commit",
+  "suggestions": [
+    {
+      "command": "git commit --amend",
+      "priority": 2000,
+      "side_effect": true
+    }
+  ]
+}

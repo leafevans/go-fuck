@@ -14,6 +14,11 @@ import (
 // output, so the JSON output is capped instead of growing without a bound.
 const jsonOutputLimit = 32 * 1024
 
+// jsonSchemaVersion is the version of the machine readable output contract.
+// It is 1 for the 1.x releases and is only incremented for a breaking layout
+// change, not for new optional fields.
+const jsonSchemaVersion = 1
+
 // jsonSuggestion is one corrected command of the machine readable output.
 type jsonSuggestion struct {
 	// Command is the corrected command line.
@@ -27,6 +32,8 @@ type jsonSuggestion struct {
 
 // jsonResult is the machine readable result of a correction request.
 type jsonResult struct {
+	// SchemaVersion is the version of this document layout.
+	SchemaVersion int `json:"schema_version"`
 	// Command is the command line that was fixed, with shell aliases expanded.
 	Command string `json:"command"`
 	// Output is the captured standard output and standard error of the failed
@@ -45,7 +52,10 @@ type jsonResult struct {
 // Unlike the interactive mode it does not run the corrected command, update
 // the shell history or apply rule side effects.
 func printJSON(command *types.Command, corrected []*types.CorrectedCommand) int {
-	result := jsonResult{Suggestions: make([]jsonSuggestion, 0, len(corrected))}
+	result := jsonResult{
+		SchemaVersion: jsonSchemaVersion,
+		Suggestions:   make([]jsonSuggestion, 0, len(corrected)),
+	}
 	if command != nil {
 		result.Command = command.Script
 		if command.HasOutput() {

@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "command": "git brnch",
+  "output": "git: 'brnch' is not a git command.\n",
+  "suggestions": [
+    {
+      "command": "git branch",
+      "priority": 1000,
+      "side_effect": false
+    },
+    {
+      "command": "git brnch",
+      "priority": 5000,
+      "side_effect": false
+    }
+  ]
+}
