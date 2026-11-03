@@ -412,6 +412,7 @@ shell alias, because the alias evaluates whatever go-fuck prints.
 ```console
 $ go-fuck --json --force-command "git brnch"
 {
+  "schema_version": 1,
   "command": "git brnch",
   "suggestions": [
     {
@@ -442,6 +443,11 @@ In JSON mode go-fuck does not execute the corrected command, does not apply side
 not update the shell history; the caller decides what to do with the suggestions. The exit code is
 0 once the JSON was written, even when no rule matched and `suggestions` is empty.
 
+The JSON document is a stable machine readable contract. `schema_version` is `1` for the whole
+1.x series; it is only incremented for a breaking layout change, while new optional fields may be
+added in minor releases. Consumers must ignore unknown fields and must not rely on the key order.
+The document is always written to stdout; diagnostics stay on stderr.
+
 ## Settings
 
 Settings are stored in `settings.json` inside the go-fuck directory of the user configuration
@@ -455,6 +461,11 @@ directory returned by Go's `os.UserConfigDir()`:
 
 The file is created with the default settings on first use. JSON does not support comments, so the
 generated file contains an explanatory `_comment` field; it is ignored when the file is loaded.
+
+Unknown keys are ignored, so a settings file written by a newer go-fuck keeps working with an older
+one. Invalid JSON or a value of the wrong type is reported and the file is not applied, so go-fuck
+falls back to the built-in defaults instead of running with a half applied configuration. From 1.0.0
+the keys above and their meaning are frozen; new optional keys may be added in minor releases.
 
 A minimal file that customizes a few values:
 

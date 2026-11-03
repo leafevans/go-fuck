@@ -146,6 +146,62 @@ func TestEnvOverridesFile(t *testing.T) {
 	}
 }
 
+// writeSettingsFile writes content to the isolated settings file.
+func writeSettingsFile(t *testing.T, content string) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(settingsFilePath(t)), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(settingsFilePath(t), []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestLoadIgnoresUnknownFields(t *testing.T) {
+	isolateConfig(t)
+	writeSettingsFile(t, `{
+		"wait_command": 9,
+		"future_option": {"nested": true},
+		"settings": {"fixlinecmd": "{editor} {file}"}
+	}`)
+
+	settings, err := Load(nil)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if settings.WaitCommand != 9 {
+		t.Fatalf("WaitCommand = %d, want 9", settings.WaitCommand)
+	}
+	if !settings.RequireConfirmation {
+		t.Fatal("RequireConfirmation = false, want the default true")
+	}
+	if got := settings.String("fixlinecmd", ""); got != "{editor} {file}" {
+		t.Fatalf("fixlinecmd = %q, want the settings map value", got)
+	}
+}
+
+func TestLoadRejectsWrongFieldTypes(t *testing.T) {
+	isolateConfig(t)
+	writeSettingsFile(t, `{"wait_command": "many"}`)
+
+	if _, err := Load(nil); err == nil {
+		t.Fatal("Load() should report a settings value of the wrong type")
+	}
+}
+
+func TestLoadMissingFieldsKeepDefaults(t *testing.T) {
+	isolateConfig(t)
+	writeSettingsFile(t, "{}")
+
+	settings, err := Load(nil)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if settings.WaitCommand != 3 || !settings.RequireConfirmation || settings.NoColors {
+		t.Fatalf("unexpected defaults: %+v", settings)
+	}
+}
+
 func TestLoadEnv(t *testing.T) {
 	isolateConfig(t)
 	t.Setenv("GOFUCK_RULES", "DEFAULT_RULES:git_push")
