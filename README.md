@@ -124,6 +124,25 @@ scoop install go-fuck
 
 Upgrade with `scoop update go-fuck`.
 
+### With the AUR (Arch Linux)
+
+The package is in the [Arch User Repository](https://aur.archlinux.org/packages/go-fuck) and builds
+from source:
+
+```bash
+yay -S go-fuck        # or: paru -S go-fuck
+```
+
+Or install it manually with `makepkg`:
+
+```bash
+git clone https://aur.archlinux.org/go-fuck.git
+cd go-fuck
+makepkg -si
+```
+
+Upgrade it with your AUR helper (`yay -Syu` or `paru -Syu`).
+
 ### With `go install`
 
 ```bash

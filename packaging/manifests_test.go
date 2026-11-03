@@ -17,6 +17,8 @@ var manifestFiles = []string{
 	"packaging/winget/leafevans.gof.yaml",
 	"packaging/winget/leafevans.gof.installer.yaml",
 	"packaging/winget/leafevans.gof.locale.en-US.yaml",
+	"packaging/aur/PKGBUILD",
+	"packaging/aur/.SRCINFO",
 }
 
 // expectedAssets maps the six release assets to their archive extension.
@@ -80,6 +82,15 @@ func assetOf(rawURL, version, expectedExtension string) (string, error) {
 	}
 	architecture := strings.TrimSuffix(parts[3], "."+extension)
 	return parts[2] + "_" + architecture, nil
+}
+
+// firstValue returns the first value of a line prefix in content.
+func firstValue(content, prefix string) string {
+	values := fieldValues(content, prefix)
+	if len(values) == 0 {
+		return ""
+	}
+	return values[0]
 }
 
 // fieldValues returns all values of a line prefix in content.
@@ -243,6 +254,49 @@ func check(root string) error {
 		add("winget Moniker = %q, want gof", monikers)
 	}
 
+	aurDir := filepath.Join(root, "packaging", "aur")
+	pkgbuildData, err := os.ReadFile(filepath.Join(aurDir, "PKGBUILD"))
+	if err != nil {
+		return fmt.Errorf("read AUR PKGBUILD: %w", err)
+	}
+	pkgbuild := string(pkgbuildData)
+	srcinfoData, err := os.ReadFile(filepath.Join(aurDir, ".SRCINFO"))
+	if err != nil {
+		return fmt.Errorf("read AUR .SRCINFO: %w", err)
+	}
+	srcinfo := string(srcinfoData)
+
+	aurVersion := firstValue(pkgbuild, "pkgver=")
+	aurRelease := firstValue(pkgbuild, "pkgrel=")
+	aurChecksum := strings.Trim(strings.TrimSuffix(firstValue(pkgbuild, "sha256sums=("), ")"), "'")
+	if aurVersion != version {
+		add("AUR pkgver is %q, formula version is %q", aurVersion, version)
+	}
+	if !validHash(aurChecksum) {
+		add("AUR checksum %q is not a SHA-256 value", aurChecksum)
+	}
+
+	srcinfoVersion := firstValue(srcinfo, "pkgver = ")
+	srcinfoRelease := firstValue(srcinfo, "pkgrel = ")
+	srcinfoChecksum := firstValue(srcinfo, "sha256sums = ")
+	srcinfoSource := firstValue(srcinfo, "source = ")
+	if srcinfoVersion != aurVersion {
+		add("AUR .SRCINFO pkgver is %q, PKGBUILD pkgver is %q", srcinfoVersion, aurVersion)
+	}
+	if srcinfoRelease != aurRelease {
+		add("AUR .SRCINFO pkgrel is %q, PKGBUILD pkgrel is %q", srcinfoRelease, aurRelease)
+	}
+	if srcinfoChecksum != aurChecksum {
+		add("AUR .SRCINFO checksum is %q, PKGBUILD checksum is %q", srcinfoChecksum, aurChecksum)
+	}
+	wantSource := "go-fuck-" + version + ".tar.gz::https://github.com/leafevans/go-fuck/archive/refs/tags/v" + version + ".tar.gz"
+	if srcinfoSource != wantSource {
+		add("AUR source is %q, want %q", srcinfoSource, wantSource)
+	}
+	if names := fieldValues(srcinfo, "pkgname = "); len(names) != 1 || names[0] != "go-fuck" {
+		add("AUR pkgname = %q, want go-fuck", names)
+	}
+
 	missingAssets := []string{}
 	for asset := range expectedAssets {
 		if _, ok := urls[asset]; !ok {
@@ -309,6 +363,29 @@ func TestCheckDetectsVersionMismatch(t *testing.T) {
 	}
 	if err := check(root); err == nil {
 		t.Fatal("check() should reject a version mismatch")
+	}
+}
+
+func TestCheckDetectsAURVersionMismatch(t *testing.T) {
+	root := copyManifests(t)
+	path := filepath.Join(root, "packaging", "aur", "PKGBUILD")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lines := splitLines(string(data))
+	for index, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if after, ok := strings.CutPrefix(trimmed, "pkgver="); ok {
+			lines[index] = strings.Replace(line, after, "9.9.9", 1)
+			break
+		}
+	}
+	if err := os.WriteFile(path, []byte(strings.Join(lines, string(rune(10)))), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := check(root); err == nil {
+		t.Fatal("check() should reject an AUR version mismatch")
 	}
 }
 
