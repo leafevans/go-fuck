@@ -12,6 +12,7 @@ import (
 
 	"github.com/leafevans/go-fuck/internal/conf"
 	"github.com/leafevans/go-fuck/internal/consts"
+	"github.com/leafevans/go-fuck/internal/logs"
 )
 
 // Args holds the parsed command line arguments.
@@ -131,33 +132,76 @@ func prepareArguments(argv []string) []string {
 	return argv
 }
 
+// helpOption is one option row of the help output.
+type helpOption struct {
+	flags       string
+	description string
+}
+
+// helpOptions lists the command line options in help order.
+var helpOptions = []helpOption{
+	{"-v, --version", "show program's version number and exit"},
+	{"-a, --alias [ALIAS]", "[custom-alias-name] prints alias for current shell"},
+	{"--setup", "configure the shell alias in the shell configuration file"},
+	{"-l, --shell-logger SHELL_LOGGER", "log shell output to the file"},
+	{"--enable-experimental-instant-mode", "enable experimental instant mode, use on your own risk"},
+	{"-h, --help", "show this help message and exit"},
+	{"-d, --debug", "enable debug output"},
+	{"--force-command FORCE_COMMAND", "fix this command instead of the previous one"},
+	{"--json", "print the suggestions as JSON and exit"},
+	{"-y, --yes, --yeah, --hard", "execute fixed command without confirmation"},
+	{"-r, --repeat", "repeat on failure"},
+	{"command", "command that should be fixed"},
+}
+
+// helpOptionWidth is the width of the option column so that the descriptions
+// line up.
+const helpOptionWidth = 37
+
 // Usage returns the one line usage message.
 func Usage() string {
-	return "usage: " + consts.ExecutableName() + " [-v] [-a [ALIAS]] [-l SHELL_LOGGER] [--setup] " +
+	return usageText(logs.OutputIsTerminal() && logs.ColorsEnabled())
+}
+
+// usageText returns the usage line, optionally styled with the ember theme.
+func usageText(styled bool) string {
+	rest := consts.ExecutableName() + " [-v] [-a [ALIAS]] [-l SHELL_LOGGER] [--setup] " +
 		"[--enable-experimental-instant-mode] [-h] [-d] " +
 		"[--force-command FORCE_COMMAND] [--json] [-y | -r] [command ...]"
+	if !styled {
+		return "usage: " + rest
+	}
+	executable, flags, _ := strings.Cut(rest, " ")
+	return logs.Accent("usage:") + " " + logs.Strong(executable) + " " + logs.Muted(flags)
 }
 
 // Help returns the full help message.
 func Help() string {
-	return strings.Join([]string{
-		Usage(),
+	return helpText(logs.OutputIsTerminal() && logs.ColorsEnabled())
+}
+
+// helpText returns the full help message, optionally styled with the ember
+// theme.
+func helpText(styled bool) string {
+	lines := []string{
+		usageText(styled),
 		"",
 		"Magnificent app which corrects your previous console command.",
 		"",
 		"options:",
-		"  -v, --version                        show program's version number and exit",
-		"  -a, --alias [ALIAS]                  [custom-alias-name] prints alias for current shell",
-		"  --setup                              configure the shell alias in the shell configuration file",
-		"  -l, --shell-logger SHELL_LOGGER      log shell output to the file",
-		"  --enable-experimental-instant-mode   enable experimental instant mode, use on your own risk",
-		"  -h, --help                           show this help message and exit",
-		"  -d, --debug                          enable debug output",
-		"  --force-command FORCE_COMMAND        fix this command instead of the previous one",
-		"  --json                               print the suggestions as JSON and exit",
-		"  -y, --yes, --yeah, --hard            execute fixed command without confirmation",
-		"  -r, --repeat                         repeat on failure",
-		"  command                              command that should be fixed",
-		"",
-	}, string(rune(10)))
+	}
+	if styled {
+		lines[2] = logs.Muted(lines[2])
+		lines[4] = logs.Accent(lines[4])
+	}
+	for _, option := range helpOptions {
+		flags := fmt.Sprintf("%-*s", helpOptionWidth, option.flags)
+		if styled {
+			lines = append(lines, "  "+logs.Accent(flags)+logs.Muted(option.description))
+			continue
+		}
+		lines = append(lines, "  "+flags+option.description)
+	}
+	lines = append(lines, "")
+	return strings.Join(lines, string(rune(10)))
 }

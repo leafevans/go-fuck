@@ -9,6 +9,7 @@ import (
 
 	"github.com/leafevans/go-fuck/internal/argumentparser"
 	"github.com/leafevans/go-fuck/internal/conf"
+	"github.com/leafevans/go-fuck/internal/logs"
 	"github.com/leafevans/go-fuck/internal/shells"
 	"github.com/leafevans/go-fuck/internal/system"
 )
@@ -40,19 +41,19 @@ var powerShellProfiles = func() []string {
 // support fall back to the regular alias and report a warning.
 func setup(args *argumentparser.Args) int {
 	if _, err := conf.Load(&conf.Args{Debug: args.Debug}); err != nil {
-		fmt.Fprintf(os.Stderr, "go-fuck: can't load settings: %v\n", err)
+		fmt.Fprintln(os.Stderr, logs.FailureLine(fmt.Sprintf("can't load settings: %v", err)))
 	}
 
 	shell := shells.Current()
 	configuration := shell.HowToConfigure()
 	if configuration == nil || configuration.Content == "" || configuration.Path == "" {
-		fmt.Fprintf(os.Stderr, "go-fuck can't configure the %s shell automatically.\n", shell.FriendlyName())
+		fmt.Fprintln(os.Stderr, logs.WarningLine(fmt.Sprintf("can't configure the %s shell automatically", shell.FriendlyName())))
 		return 1
 	}
 
 	if args.EnableExperimentalInstantMode {
 		if configuration.InstantContent == "" {
-			fmt.Fprintf(os.Stderr, "go-fuck: instant mode is not supported for %s, configuring the regular alias instead.\n", shell.FriendlyName())
+			fmt.Fprintln(os.Stderr, logs.WarningLine(fmt.Sprintf("instant mode is not supported for %s, configuring the regular alias instead", shell.FriendlyName())))
 		} else {
 			instantConfiguration := *configuration
 			instantConfiguration.Content = configuration.InstantContent
@@ -81,23 +82,23 @@ func setup(args *argumentparser.Args) int {
 			printManualConfiguration(configuration)
 			return 0
 		}
-		fmt.Fprintf(os.Stderr, "go-fuck: can't read %s: %v\n", path, err)
+		fmt.Fprintln(os.Stderr, logs.FailureLine(fmt.Sprintf("can't read %s: %v", path, err)))
 		return 1
 	}
 
 	if strings.Contains(string(existing), configuration.Content) {
-		fmt.Fprintf(os.Stderr, "go-fuck is already configured for %s (%s).\n", shell.FriendlyName(), path)
-		fmt.Fprintf(os.Stderr, "Reload it with: %s\n", configuration.Reload)
+		printConfigured(shell.FriendlyName(), path, true)
+		fmt.Fprintf(os.Stderr, "%s %s\n", logs.Muted("Reload it with:"), logs.Strong(configuration.Reload))
 		return 0
 	}
 
 	if err := appendConfigurationLine(path, configuration.Content, existing); err != nil {
-		fmt.Fprintf(os.Stderr, "go-fuck: can't update %s: %v\n", path, err)
+		fmt.Fprintln(os.Stderr, logs.FailureLine(fmt.Sprintf("can't update %s: %v", path, err)))
 		return 1
 	}
 
-	fmt.Fprintf(os.Stderr, "go-fuck is now configured for %s (%s).\n", shell.FriendlyName(), path)
-	fmt.Fprintf(os.Stderr, "Reload it with: %s\n", configuration.Reload)
+	printConfigured(shell.FriendlyName(), path, false)
+	fmt.Fprintf(os.Stderr, "%s %s\n", logs.Muted("Reload it with:"), logs.Strong(configuration.Reload))
 	return 0
 }
 
@@ -121,31 +122,31 @@ func setupPowerShell(shell shells.Shell, configuration *shells.Configuration) in
 	for _, path := range paths {
 		existing, err := os.ReadFile(path)
 		if err != nil && !os.IsNotExist(err) {
-			fmt.Fprintf(os.Stderr, "go-fuck: can't read %s: %v\n", path, err)
+			fmt.Fprintln(os.Stderr, logs.FailureLine(fmt.Sprintf("can't read %s: %v", path, err)))
 			return 1
 		}
 		if os.IsNotExist(err) {
 			if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-				fmt.Fprintf(os.Stderr, "go-fuck: can't create %s: %v\n", filepath.Dir(path), err)
+				fmt.Fprintln(os.Stderr, logs.FailureLine(fmt.Sprintf("can't create %s: %v", filepath.Dir(path), err)))
 				return 1
 			}
 			existing = nil
 		}
 		if strings.Contains(string(existing), configuration.Content) {
-			fmt.Fprintf(os.Stderr, "go-fuck is already configured for %s (%s).\n", shell.FriendlyName(), path)
+			printConfigured(shell.FriendlyName(), path, true)
 			alreadyConfigured++
 			continue
 		}
 		if err := appendConfigurationLine(path, configuration.Content, existing); err != nil {
-			fmt.Fprintf(os.Stderr, "go-fuck: can't update %s: %v\n", path, err)
+			fmt.Fprintln(os.Stderr, logs.FailureLine(fmt.Sprintf("can't update %s: %v", path, err)))
 			return 1
 		}
-		fmt.Fprintf(os.Stderr, "go-fuck is now configured for %s (%s).\n", shell.FriendlyName(), path)
+		printConfigured(shell.FriendlyName(), path, false)
 		configured++
 	}
 
 	if configured > 0 || alreadyConfigured > 0 {
-		fmt.Fprintf(os.Stderr, "Reload it with: %s\n", configuration.Reload)
+		fmt.Fprintf(os.Stderr, "%s %s\n", logs.Muted("Reload it with:"), logs.Strong(configuration.Reload))
 	}
 	return 0
 }
@@ -235,8 +236,20 @@ func appendConfigurationLine(path, content string, existing []byte) error {
 	return file.Close()
 }
 
+// printConfigured reports that the shell configuration was found or updated.
+func printConfigured(shellName, path string, alreadyConfigured bool) {
+	state := "is now configured for"
+	if alreadyConfigured {
+		state = "is already configured for"
+	}
+	fmt.Fprintf(os.Stderr, "%s %s %s (%s).\n",
+		logs.Strong("go-fuck"), state, logs.Accent(shellName), logs.Muted(path))
+}
+
 // printManualConfiguration prints the line that has to be added manually.
 func printManualConfiguration(configuration *shells.Configuration) {
-	fmt.Fprintf(os.Stderr, "Add the following line to %s:\n\n  %s\n\n", configuration.Path, configuration.Content)
-	fmt.Fprintf(os.Stderr, "Then reload it with: %s\n", configuration.Reload)
+	fmt.Fprintf(os.Stderr, "%s %s\n\n  %s\n\n%s %s\n",
+		logs.Strong("Add the following line to"), logs.Muted(configuration.Path),
+		logs.Strong(configuration.Content),
+		logs.Muted("Then reload it with:"), logs.Strong(configuration.Reload))
 }

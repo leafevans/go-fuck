@@ -97,12 +97,17 @@ func runFzf(candidates []string) (string, error) {
 		return "", errFzfUnavailable
 	}
 
-	command := exec.Command(fzf,
+	args := []string{
 		"--height=40%",
 		"--reverse",
 		"--no-multi",
 		"--prompt=› ",
-		"--header=enter: select   esc: abort")
+		"--header=enter: select   esc: abort",
+	}
+	if logs.ColorsEnabled() {
+		args = append(args, "--color=prompt:214,pointer:214,header:245,info:245")
+	}
+	command := exec.Command(fzf, args...)
 	command.Stdin = strings.NewReader(strings.Join(candidates, newline) + newline)
 	command.Stderr = os.Stderr
 	output, err := command.Output()

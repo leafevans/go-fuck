@@ -153,3 +153,45 @@ func muted(text string) string {
 func strong(text string) string {
 	return paint(detectColorProfile(), styleBright, text)
 }
+
+// Accent returns text styled with the theme accent color.
+func Accent(text string) string {
+	return accent(text)
+}
+
+// Muted returns text styled with the theme muted color.
+func Muted(text string) string {
+	return muted(text)
+}
+
+// Strong returns bold text.
+func Strong(text string) string {
+	return strong(text)
+}
+
+// Success returns text styled with the success color.
+func Success(text string) string {
+	return success(text)
+}
+
+// Failure returns text styled with the failure color.
+func Failure(text string) string {
+	return failure(text)
+}
+
+// ColorsEnabled reports whether the theme emits color sequences.
+func ColorsEnabled() bool {
+	return detectColorProfile() != colorProfileNone
+}
+
+// FailureLine returns a message with the failure symbol, styled as an error
+// line. It is used by callers that write directly to standard error.
+func FailureLine(message string) string {
+	return failure(failureSymbol + " " + message)
+}
+
+// WarningLine returns a message with the WARN prefix, styled as a warning line.
+// It is used by callers that write directly to standard error.
+func WarningLine(message string) string {
+	return accent("[WARN]") + " " + message
+}

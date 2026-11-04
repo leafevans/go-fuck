@@ -84,8 +84,9 @@ rule runs, which a native binary does not need.
 - Shell integration for **bash**, **zsh**, **fish**, **tcsh** and **PowerShell**.
 - Machine readable JSON output for editor plugins, scripts and AI agents with `--json`.
 - Interactive confirmation prompt with keyboard navigation, or skip it with `-y`/`--yes`.
-- A single "ember" visual theme for the version banner, the confirmation prompt and the diagnostics:
-  the amber accent, `›`/[`×`] symbols and `·` separators are shared everywhere, colors adapt to the
+- A single "ember" visual theme for the version banner, the confirmation prompt, the help text,
+  the shell setup messages and the diagnostics: the amber accent, `›`/[`×`] symbols and `·`
+  separators are shared everywhere, the fzf prompt uses the same palette, colors adapt to the
   terminal (24 bit, 256 colors or 16 colors) and `NO_COLOR` disables them.
 - Repeats automatically on failure with `-r`/`--repeat`, and can fix an arbitrary command with
   `--force-command`.
