@@ -76,7 +76,7 @@ jobs:
       - name: Measure coverage
         run: go test ./... -count=1 -coverprofile=coverage.out
       - name: Enforce the coverage minimum
-        run: go run ./tools/coveragecheck -profile coverage.out -min 78
+        run: go run ./tools/coveragecheck -profile coverage.out -min 80
       - name: Upload the coverage profile
         uses: actions/upload-artifact@v5
         with:
