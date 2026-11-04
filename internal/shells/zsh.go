@@ -54,7 +54,7 @@ func (z *Zsh) AppAlias(aliasName string) string {
 // go-fuck can find the command output in the terminal log.
 func (z *Zsh) InstantModeAlias(aliasName string) string {
 	if instantModeEnabled() {
-		return instantModeMarkedAlias(z.AppAlias(aliasName))
+		return instantModeMarkedAlias(z.AppAlias(aliasName), "%{", "%}")
 	}
 	return instantModeInitAlias()
 }
@@ -80,9 +80,10 @@ func (z *Zsh) GetAliases() map[string]string {
 
 // HowToConfigure describes how to configure the alias for zsh.
 func (z *Zsh) HowToConfigure() *Configuration {
-	configuration := createConfiguration("eval $("+consts.ExecutableName()+" --alias)",
+	configuration := createConfiguration("eval "+dquote+"$("+consts.ExecutableName()+" --alias)"+dquote,
 		"~/.zshrc", "source ~/.zshrc")
-	configuration.InstantContent = "eval $(" + consts.ExecutableName() + " --alias --enable-experimental-instant-mode)"
+	configuration.InstantContent = "eval " + dquote + "$(" + consts.ExecutableName() +
+		" --alias --enable-experimental-instant-mode)" + dquote
 	return configuration
 }
 

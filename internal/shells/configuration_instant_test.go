@@ -16,6 +16,12 @@ func TestHowToConfigureInstantContent(t *testing.T) {
 			!strings.Contains(configuration.InstantContent, "--enable-experimental-instant-mode") {
 			t.Fatalf("%s InstantContent = %q, want the instant mode alias line", shell.Name(), configuration.InstantContent)
 		}
+		if shell.Name() == "zsh" {
+			want := "eval \"$(go-fuck --alias --enable-experimental-instant-mode)\""
+			if !strings.Contains(configuration.InstantContent, want) {
+				t.Fatalf("zsh InstantContent = %q, want the quoted eval form", configuration.InstantContent)
+			}
+		}
 	}
 }
 

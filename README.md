@@ -398,6 +398,10 @@ Limitations:
 - Changing `PS1` after the alias initialization breaks the command detection in the log. On
   Windows the alias wraps the `prompt` function, so the instant mode line has to be the last
   prompt definition in the profile.
+- The prompt marker is wrapped in the shell's non-printing sequence (bash `\[...\]`, zsh
+  `%{...%}`) so that themes which redraw a multi line prompt keep the cursor at the right
+  column. A theme that rewrites the prompt after the instant mode line can still break the
+  alignment; disable instant mode if the prompt looks wrong.
 - Full screen programs such as `vim` or `tmux` can confuse the log; fall back to the regular
   mode if a suggestion looks wrong.
 - On Windows the terminal size is polled, so a resized window reaches the logged shell with a

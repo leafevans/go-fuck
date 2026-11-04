@@ -61,6 +61,28 @@ func TestMainSetupBash(t *testing.T) {
 	}
 }
 
+func TestMainSetupReplacesLegacyInstantModeLine(t *testing.T) {
+	configDir := resetEntrypointsState(t)
+	t.Setenv("TF_SHELL", "zsh")
+	configPath := filepath.Join(configDir, ".zshrc")
+	legacy := "eval $(go-fuck --alias --enable-experimental-instant-mode)\n"
+	if err := os.WriteFile(configPath, []byte(legacy), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	code, _, stderr := runMain(t, "go-fuck", "--setup", "--enable-experimental-instant-mode")
+	if code != 0 {
+		t.Fatalf("Main(--setup --enable-experimental-instant-mode) = %d, want 0; stderr = %s", code, stderr)
+	}
+	content := readFile(t, configPath)
+	if !strings.Contains(content, "eval \"$(go-fuck --alias --enable-experimental-instant-mode)\"") {
+		t.Fatalf("legacy line was not upgraded to the quoted form: %q", content)
+	}
+	if got := strings.Count(content, "--enable-experimental-instant-mode"); got != 1 {
+		t.Fatalf("configuration contains %d instant mode lines, want 1: %q", got, content)
+	}
+}
+
 func TestMainSetupAppendsNewline(t *testing.T) {
 	configDir := resetEntrypointsState(t)
 	t.Setenv("TF_SHELL", "bash")

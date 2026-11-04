@@ -36,8 +36,13 @@ func instantModeInitAlias() string {
 
 // instantModeMarkedAlias prefixes PS1 with the invisible prompt marker so that
 // the log reader can split the terminal log into command calls.
-func instantModeMarkedAlias(appAlias string) string {
-	return "export PS1=\"" + consts.UserCommandMark + "$PS1\";\n" + appAlias
+//
+// The marker is wrapped in the shell's non-printing sequence (bash \[...\],
+// zsh %{...%}) so that the prompt width accounting ignores it. Without the
+// wrapper multi line themes such as bira position the cursor at the wrong
+// column after the prompt is redrawn.
+func instantModeMarkedAlias(appAlias, promptStart, promptEnd string) string {
+	return "export PS1=\"" + promptStart + consts.UserCommandMark + promptEnd + "$PS1\";\n" + appAlias
 }
 
 // instantModeLogPath returns a fresh temporary path for the terminal log.

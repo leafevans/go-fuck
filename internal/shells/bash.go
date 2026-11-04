@@ -51,7 +51,7 @@ func (b *Bash) AppAlias(aliasName string) string {
 // go-fuck can find the command output in the terminal log.
 func (b *Bash) InstantModeAlias(aliasName string) string {
 	if instantModeEnabled() {
-		return instantModeMarkedAlias(b.AppAlias(aliasName))
+		return instantModeMarkedAlias(b.AppAlias(aliasName), "\\[", "\\]")
 	}
 	return instantModeInitAlias()
 }

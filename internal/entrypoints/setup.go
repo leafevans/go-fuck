@@ -92,6 +92,20 @@ func setup(args *argumentparser.Args) int {
 		return 0
 	}
 
+	// Older releases wrote the instant mode line without quoting the eval
+	// argument. Replace that line in place so enabling instant mode again does
+	// not append a second initialization line.
+	if args.EnableExperimentalInstantMode {
+		if changed, err := replaceInstantModeLine(path, existing, configuration.Content); err != nil {
+			fmt.Fprintln(os.Stderr, logs.FailureLine(fmt.Sprintf("can't update %s: %v", path, err)))
+			return 1
+		} else if changed {
+			printConfigured(shell.FriendlyName(), path, false)
+			fmt.Fprintf(os.Stderr, "%s %s\n", logs.Muted("Reload it with:"), logs.Strong(configuration.Reload))
+			return 0
+		}
+	}
+
 	if err := appendConfigurationLine(path, configuration.Content, existing); err != nil {
 		fmt.Fprintln(os.Stderr, logs.FailureLine(fmt.Sprintf("can't update %s: %v", path, err)))
 		return 1
@@ -215,6 +229,27 @@ func setupConfigPath(path string) (string, error) {
 		return "", fmt.Errorf("not an absolute path: %s", path)
 	}
 	return expanded, nil
+}
+
+// replaceInstantModeLine replaces a legacy instant mode initialization line with
+// content and reports whether the file was changed.
+func replaceInstantModeLine(path string, existing []byte, content string) (bool, error) {
+	lines := strings.Split(string(existing), "\n")
+	changed := false
+	for index, line := range lines {
+		if line != content && strings.Contains(line, "--enable-experimental-instant-mode") {
+			lines[index] = content
+			changed = true
+		}
+	}
+	if !changed {
+		return false, nil
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		return false, err
+	}
+	return true, os.WriteFile(path, []byte(strings.Join(lines, "\n")), info.Mode().Perm())
 }
 
 // appendConfigurationLine appends content to the existing shell configuration.
