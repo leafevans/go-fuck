@@ -38,11 +38,12 @@ func instantModeInitAlias() string {
 // the log reader can split the terminal log into command calls.
 //
 // The marker is wrapped in the shell's non-printing sequence (bash \[...\],
-// zsh %{...%}) so that the prompt width accounting ignores it. Without the
-// wrapper multi line themes such as bira position the cursor at the wrong
-// column after the prompt is redrawn.
+// zsh %{...%}) so that the prompt width accounting ignores it. A carriage
+// return after the marker resets the terminal column in case the terminal
+// renders the zero width marker as a cell, which would otherwise indent the
+// first prompt line by one column.
 func instantModeMarkedAlias(appAlias, promptStart, promptEnd string) string {
-	return "export PS1=\"" + promptStart + consts.UserCommandMark + promptEnd + "$PS1\";\n" + appAlias
+	return "export PS1=\"" + promptStart + consts.UserCommandMark + "\r" + promptEnd + "$PS1\";\n" + appAlias
 }
 
 // instantModeLogPath returns a fresh temporary path for the terminal log.

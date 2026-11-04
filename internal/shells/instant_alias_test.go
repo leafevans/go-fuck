@@ -34,7 +34,7 @@ func TestBashInstantModeMarkedAlias(t *testing.T) {
 	if !strings.Contains(alias, consts.UserCommandMark) {
 		t.Fatalf("logged shell alias does not mark the prompt: %q", alias)
 	}
-	wantMarked := "PS1=\"\\[" + consts.UserCommandMark + "\\]$PS1\""
+	wantMarked := "PS1=\"\\[" + consts.UserCommandMark + "\r\\]$PS1\""
 	if !strings.Contains(alias, wantMarked) {
 		t.Fatalf("bash prompt marker is not wrapped as a non printing sequence: %q", alias)
 	}
@@ -58,7 +58,7 @@ func TestZshInstantModeMarkedAlias(t *testing.T) {
 	if !strings.Contains(alias, consts.UserCommandMark) || !strings.Contains(alias, "fuck () {") {
 		t.Fatalf("logged shell alias is incomplete: %q", alias)
 	}
-	wantMarked := "PS1=\"%{" + consts.UserCommandMark + "%}$PS1\""
+	wantMarked := "PS1=\"%{" + consts.UserCommandMark + "\r%}$PS1\""
 	if !strings.Contains(alias, wantMarked) {
 		t.Fatalf("zsh prompt marker is not wrapped as a non printing sequence: %q", alias)
 	}
