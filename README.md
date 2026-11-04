@@ -595,9 +595,9 @@ The built-in rules are compiled into the binary, and declarative JSON rules can 
 configuration directory (see [Creating custom rules](#creating-custom-rules)). Each rule decides
 whether it applies to a failed command and returns one or more corrected commands. 169 rules are
 ported from the reference implementation; go-fuck also adds rules for tools that thefuck does not
-handle: the GitHub CLI, the GitLab CLI, kubectl, uv, cargo, Helm, pnpm, the Go toolchain, Node.js,
-bun, Deno, Docker Compose, just, Poetry, make, the go-task runner and minikube. The list below is
-generated from the compiled rules:
+handle: the GitHub CLI, the GitLab CLI, kubectl, kind, kustomize, uv, cargo, Helm, pnpm, the Go
+toolchain, Node.js, bun, Deno, Docker Compose, just, Poetry, make, the go-task runner and minikube.
+The list below is generated from the compiled rules:
 
 <!-- RULES_LIST_START -->
 - `adb_unknown_command`
@@ -716,7 +716,9 @@ generated from the compiled rules:
 - `java`
 - `javac`
 - `just_unknown_recipe`
+- `kind_unknown_command`
 - `kubectl_unknown_command`
+- `kustomize_unknown_command`
 - `lein_not_task`
 - `ln_no_hard_link`
 - `ln_s_order`
@@ -891,9 +893,9 @@ external commands.
 go-fuck is a reimplementation, not a drop-in replacement for every thefuck feature:
 
 - **Complete rule port plus extras.** All 169 rules of the reference implementation are ported,
-  plus go-fuck specific rules for the GitHub CLI, the GitLab CLI, kubectl, uv, cargo, Helm, pnpm,
-  the Go toolchain, Node.js, bun, Deno, Docker Compose, just, Poetry, make, the go-task runner and
-  minikube; the list above is authoritative. The porting conventions are documented in
+  plus go-fuck specific rules for the GitHub CLI, the GitLab CLI, kubectl, kind, kustomize, uv,
+  cargo, Helm, pnpm, the Go toolchain, Node.js, bun, Deno, Docker Compose, just, Poetry, make, the
+  go-task runner and minikube; the list above is authoritative. The porting conventions are documented in
   [PORTING.md](PORTING.md).
 - **Instant mode covers Linux, macOS and Windows.** The experimental instant mode reads the
   previous command output from a terminal log instead of re-running the command. It is implemented
