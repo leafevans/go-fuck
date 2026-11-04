@@ -24,8 +24,7 @@ To push the current branch and set the remote as upstream, use
     git push --set-upstream origin main
 
 $ fuck
-git push --set-upstream origin main [enter/↑/↓/ctrl+c]
-...
+› git push --set-upstream origin main  [enter · ↑↓ · ctrl+c]
 ```
 
 ## Contents
@@ -52,57 +51,52 @@ git push --set-upstream origin main [enter/↑/↓/ctrl+c]
 ## Why Go
 
 - **One static binary.** A single `go-fuck` executable (or `go-fuck.exe` on Windows) contains
-  everything. No interpreter, no packages, no virtualenv.
-- **No runtime dependencies.** You do not need Python, pip or any other software installed to run the
-  compiled binary.
-- **Fast startup.** Fixing a command should be instantaneous. A native Go binary starts in
-  milliseconds, without importing an interpreter and its modules.
+  everything. No interpreter, no packages and no runtime dependencies.
+- **Fast startup.** A native Go binary starts in milliseconds, without importing an interpreter and
+  its modules.
 - **Cross-platform by default.** The same source builds for Linux, macOS and Windows on amd64 and
-  arm64, and the release workflow does exactly that.
-- **Simple to contribute.** The code is standard library only, formatted with `gofmt` and tested on
-  three operating systems in CI.
+  arm64, and CI builds and tests all three systems.
+- **Small, dependency-free codebase.** Standard library only, formatted with `gofmt` and organized
+  so a new rule is one file plus one test file.
 
 ### Benchmarks
 
 The correction hot path and the shell history parser have Go benchmarks
-(`make bench`); they run on every supported platform and do not depend on the
-installed tools. Measured on an AMD Ryzen 7 7730U (16 logical CPUs) with Go 1.26:
+(`make bench`); they do not depend on the installed tools. Measured on an AMD Ryzen 7 7730U (16 logical CPUs) with Go 1.26:
 
 | Benchmark                                                          | Result      |
 | ------------------------------------------------------------------ | ----------- |
-| Full correction path (select rules, match them, order suggestions) | ~76 µs/op   |
-| Matching every rule against a captured output                      | ~65 µs/op   |
-| Matching rules when the command output could not be captured       | ~0.5 µs/op  |
-| Parsing a 20,000 line shell history file                           | ~0.67 ms/op |
+| Full correction path (select rules, match them, order suggestions) | ~0.2 ms/op  |
+| Matching every rule against a captured output                      | ~0.18 ms/op |
+| Matching rules when the command output could not be captured       | ~1.4 µs/op  |
+| Parsing a 20,000 line shell history file                           | ~1.3 ms/op  |
 
-The rule engine adds tens of microseconds; the wall clock time of a correction
-is dominated by deliberately re-running the failed command. An interpreter based
+The rule engine adds roughly 0.2 ms; the wall clock time of a correction is
+dominated by deliberately re-running the failed command. An interpreter based
 implementation pays for interpreter and module import startup before the first
 rule runs, which a native binary does not need.
 
 ## Features
 
-- Corrects the previous console command by matching its output against a set of rules.
 - Shell integration for **bash**, **zsh**, **fish**, **tcsh** and **PowerShell**.
 - Machine readable JSON output for editor plugins, scripts and AI agents with `--json`.
 - Interactive confirmation prompt with keyboard navigation, or skip it with `-y`/`--yes`.
-- A single "ember" visual theme for the version banner, the confirmation prompt, the help text,
-  the shell setup messages and the diagnostics: the amber accent, `›`/[`×`] symbols and `·`
-  separators are shared everywhere, the fzf prompt uses the same palette, colors adapt to the
-  terminal (24 bit, 256 colors or 16 colors) and `NO_COLOR` disables them.
-- Repeats automatically on failure with `-r`/`--repeat`, and can fix an arbitrary command with
-  `--force-command`.
-- A JSON settings file with defaults for every option, plus environment variable overrides using the
-  `GOFUCK_*` prefix and the legacy `THEFUCK_*` prefix.
-- Rule priorities, disabled rules and per-rule settings.
+- Re-runs go-fuck when the corrected command fails with `-r`/`--repeat`; `--force-command` fixes an
+  arbitrary command instead of the previous one.
+- A single ember theme for the version banner, confirmation prompt, help text, setup messages and
+  diagnostics: shared `›`/`×`/`·` symbols, an fzf prompt in the same palette, 24 bit, 256 color and
+  16 color fallbacks, and `NO_COLOR` support.
+- A JSON settings file with defaults for every option, environment variable overrides using the
+  `GOFUCK_*` prefix and the legacy `THEFUCK_*` prefix, rule priorities, disabled rules and
+  per-rule settings.
+- Custom rules as compiled Go rules or declarative JSON files in the configuration directory.
 - An optional AI fallback for commands that no rule matches (disabled by default; see
   [AI fallback](#ai-fallback-optional)).
-- No third-party Go dependencies: the whole project uses the standard library.
 
 ## Requirements
 
-- **Go 1.23 or newer** to build from source. Go 1.22 and older produce macOS binaries without the
-  LC_UUID Mach-O load command, which macOS 26 refuses to start.
+- **Go 1.23 or newer** to build from source. Older Go toolchains can produce macOS binaries that
+  macOS 26 refuses to start; use a current toolchain.
 - **No runtime dependencies.** The compiled binary is self-contained.
 - A supported shell for the alias: bash, zsh, fish, tcsh or PowerShell. On Windows, PowerShell is
   recommended; a `cmd.exe` shim is provided as well.
@@ -181,80 +175,47 @@ make build          # or: go build -o go-fuck ./cmd/go-fuck
 
 ## Shell setup
 
-go-fuck is a normal executable: the shell function is what connects it to your previous command.
-`go-fuck --alias` prints the function definition for the current shell, so the setup is the same for
-every shell and you always get the version matching your binary.
-
-Add one of the following lines to your shell configuration file, then start a new shell or reload the
-file.
-
-go-fuck detects the shell from the `TF_SHELL` environment variable and otherwise from the process
-tree. If detection is unreliable (for example when generating the alias from a setup script), set
-`TF_SHELL` explicitly: `TF_SHELL=fish go-fuck --alias`.
+go-fuck is a normal executable; the alias function connects it to the previous command and evaluates
+the corrected command that go-fuck prints. `go-fuck --alias` generates the function for the detected
+shell, so the setup is the same everywhere and always matches the installed binary.
 
 ### Automatic setup
 
-`go-fuck --setup` appends the line below to the detected shell's configuration file and prints the
-command that reloads it. The command is idempotent: when the line is already present go-fuck reports
+`go-fuck --setup` writes the alias line to the detected shell's configuration file and prints the
+command that reloads it. Running it again is safe: when the line is already present go-fuck reports
 that the shell is already configured and leaves the file untouched.
 
 Pass `--enable-experimental-instant-mode` to configure the experimental [instant mode](#instant-mode)
-instead of the regular alias; shells without instant mode support fall back to the regular alias
-with a warning.
+instead of the regular alias; shells without instant mode support warn and fall back to the regular
+alias.
 
 bash, zsh, fish and tcsh are configured when their configuration file already exists. PowerShell is
-configured for every installed flavor: go-fuck asks the `powershell.exe` and `pwsh` executables for
-their `$PROFILE` (the Documents folder can be redirected, for example to OneDrive) and creates the
-profile file when it is missing.
+configured for every installed flavor: go-fuck asks `powershell.exe` and `pwsh` for their
+`$PROFILE` (the Documents folder can be redirected, for example to OneDrive) and creates the profile
+file when it is missing.
 
-### bash
+### Manual setup
 
-Add to `~/.bashrc` (or `~/.bash_profile` on macOS):
+Add the line for your shell to its configuration file, then start a new shell or reload the file:
 
-```bash
+```console
+# bash: ~/.bashrc (or ~/.bash_profile on macOS)
+# zsh:  ~/.zshrc
 eval "$(go-fuck --alias)"
-```
 
-### zsh
-
-Add to `~/.zshrc`:
-
-```zsh
-eval "$(go-fuck --alias)"
-```
-
-### fish
-
-Add to `~/.config/fish/config.fish`:
-
-```fish
+# fish: ~/.config/fish/config.fish
 go-fuck --alias | source
-```
 
-### tcsh
-
-Add to `~/.tcshrc`:
-
-```tcsh
+# tcsh: ~/.tcshrc
 eval `go-fuck --alias`
-```
 
-### PowerShell
-
-Add to your profile (the path is stored in `$PROFILE`):
-
-```powershell
+# PowerShell: $PROFILE
 iex "$(go-fuck --alias)"
 ```
 
-Or let go-fuck write the line for you:
-
-```powershell
-go-fuck --setup
-```
-
-The setup covers both Windows PowerShell 5.1 and PowerShell 7 when they are installed. Start a new
-shell or reload the profile with `. $PROFILE`.
+go-fuck detects the shell from `TF_SHELL` and otherwise from the process tree. If detection is
+unreliable, for example when generating the alias from a setup script, set it explicitly:
+`TF_SHELL=fish go-fuck --alias`.
 
 ### Custom alias name
 
@@ -299,21 +260,14 @@ ship both shims in their `scripts/` directory.
 
 ## First steps
 
+The introduction shows a git correction. Two more examples:
+
 ```console
 $ cd project/src
 cd: no such file or directory: project/src
 
 $ fuck
-mkdir -p project/src && cd project/src [enter/↑/↓/ctrl+c]
-```
-
-```console
-$ git push
-fatal: The current branch main has no upstream branch.
-...
-
-$ fuck
-git push --set-upstream origin main [enter/↑/↓/ctrl+c]
+› mkdir -p project/src && cd project/src  [enter · ↑↓ · ctrl+c]
 ```
 
 ```console
@@ -321,7 +275,7 @@ $ echo "hello'
 zsh: unmatched "
 
 $ fuck
-echo "hello" [enter/↑/↓/ctrl+c]
+› echo "hello"  [enter · ↑↓ · ctrl+c]
 ```
 
 Common options:
@@ -329,14 +283,14 @@ Common options:
 | Option                               | Meaning                                                                                                                                                                   |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `-y`, `--yes`, `--yeah`, `--hard`    | execute the first suggestion without asking                                                                                                                               |
-| `-r`, `--repeat`                     | if the corrected command fails, run go-fuck again                                                                                                                         |
+| `-r`, `--repeat`                     | re-run go-fuck if the corrected command fails                                                                                                                         |
 | `--force-command CMD`                | fix `CMD` instead of the previous command                                                                                                                                 |
 | `--json`                             | print the suggestions as JSON and exit (useful for scripts and editors; call go-fuck directly rather than through the alias)                                              |
 | `-d`, `--debug`                      | print debug information to stderr                                                                                                                                         |
-| `-v`, `--version`                    | print build and environment details (a banner with a gradient logo in a terminal, a single line when piped; `NO_COLOR` or `no_colors` disables the colors)                |
+| `-v`, `--version`                    | print version/build information: a themed banner in a terminal, one line when piped; `--debug --version` adds the config path, instant mode, fzf and alias state                |
 | `-h`, `--help`                       | print the full option list                                                                                                                                                |
-| `--setup`                            | add the alias to the detected shell's configuration file (bash, zsh, fish, tcsh, PowerShell); combine with `--enable-experimental-instant-mode` to configure instant mode |
-| `--enable-experimental-instant-mode` | print the initialization code of the experimental instant mode (bash/zsh on Linux and macOS, PowerShell on Windows)                                                       |
+| `--setup`                            | write the alias to the detected shell's configuration file (bash, zsh, fish, tcsh, PowerShell) |
+| `--enable-experimental-instant-mode` | alias initialization flag: with `--alias` or `--setup`, configure the experimental instant mode (bash/zsh on Linux and macOS, PowerShell on Windows)                                                       |
 
 ## How it works
 
@@ -345,6 +299,7 @@ Common options:
 3. go-fuck determines the command that failed, expands shell aliases and **re-runs the command**
    with a short timeout (`wait_command`, three seconds by default; commands listed in
    `slow_commands` get `wait_slow_command`, fifteen seconds by default) to capture its output.
+   Instant mode skips this step and reads the output from the terminal log instead.
 4. Every enabled rule is tried in priority order. A matching rule returns one or more corrected
    commands, which are sorted by priority and offered in the confirmation prompt.
 5. When you accept a suggestion, go-fuck applies the rule's side effect (if any), optionally writes
@@ -352,8 +307,8 @@ Common options:
 6. The shell function evaluates that output, so the corrected command runs in your shell exactly as
    if you had typed it.
 
-The re-run is why go-fuck works with any shell and any command: it does not need a terminal logger or
-shell plugin, at the cost of running the failed command a second time.
+The re-run is why the default mode works with any shell and any command without a terminal logger;
+the cost is running the failed command a second time, which is what instant mode avoids.
 
 ## Instant mode
 
@@ -395,26 +350,19 @@ Limitations:
 
 - The shell profile runs twice per terminal start: once in the terminal shell and once in the
   logged subshell. Slow profiles delay the first prompt twice.
-- Changing `PS1` after the alias initialization breaks the command detection in the log. On
-  Windows the alias wraps the `prompt` function, so the instant mode line has to be the last
-  prompt definition in the profile.
-- The prompt marker is wrapped in the shell's non-printing sequence (bash `\[...\]`, zsh
-  `%{...%}`) so that themes which redraw a multi line prompt keep the cursor at the right
-  column. A theme that rewrites the prompt after the instant mode line can still break the
-  alignment; disable instant mode if the prompt looks wrong.
-- Full screen programs such as `vim` or `tmux` can confuse the log; fall back to the regular
-  mode if a suggestion looks wrong.
-- On Windows the terminal size is polled, so a resized window reaches the logged shell with a
-  short delay.
-- The log keeps the newest 1 MiB of terminal output, matching the reference ring buffer.
-- The reference implementation renders the log with pyte. On Linux and macOS go-fuck strips ANSI
-  escape sequences and applies carriage return overwrites; on Windows the ConPTY stream is rendered
-  with a small screen model that supports cursor addressing, erase sequences, scrolling and the two
-  column width of CJK and emoji characters. Full screen programs can still differ from a real
-  terminal.
+- Changing the prompt after the alias initialization can break command detection or alignment. On
+  Windows the instant mode line has to be the last prompt definition in the profile; disable instant
+  mode if the prompt looks wrong.
+- Full screen programs such as `vim` or `tmux` can confuse the log; fall back to the regular mode
+  if a suggestion looks wrong.
+- On Windows the terminal size is polled, so a resized window reaches the logged shell with a short
+  delay.
+- The log keeps the newest 1 MiB of terminal output. The renderer is simpler than the reference
+  implementation's pyte emulation: ANSI stripping and carriage return overwrites on Linux and macOS,
+  a small screen model for the ConPTY stream on Windows, so full screen programs can still differ.
 
-The `instant_mode` setting and `GOFUCK_INSTANT_MODE=true` are read automatically inside the
-logged shell; there is no need to set them manually.
+The logged shell exports `GOFUCK_INSTANT_MODE=true`, which enables the `instant_mode` setting
+automatically; there is no need to set it manually.
 
 ## Machine readable output
 
@@ -512,7 +460,7 @@ All fields:
 | `wait_slow_command`             | integer           | `15`                                                         | Seconds to wait for the output of commands listed in `slow_commands`.                                                                                                   |
 | `slow_commands`                 | array of strings  | `["lein", "react-native", "gradle", "./gradlew", "vagrant"]` | Commands that are expected to be slow to re-run.                                                                                                                        |
 | `repeat`                        | boolean           | `false`                                                      | If the corrected command fails, run go-fuck again.                                                                                                                      |
-| `instant_mode`                  | boolean           | `false`                                                      | Read the previous command output from the shell logger terminal log instead of re-running the command. See [Instant mode](#instant-mode).                               |
+| `instant_mode`                  | boolean           | `false`                                                      | Inside the logged shell, read the previous output from the terminal log instead of re-running the command; the instant mode alias sets this automatically. See [Instant mode](#instant-mode). |
 | `num_close_matches`             | integer           | `3`                                                          | Maximum number of close matches suggested for misspelled commands.                                                                                                      |
 | `env`                           | object of string  | `{"LC_ALL": "C", "LANG": "C", "GIT_TRACE": "1"}`             | Environment variables added when the failed command is re-run.                                                                                                          |
 | `excluded_search_path_prefixes` | array of strings  | `[]`                                                         | `PATH` prefixes that are skipped when searching for executables.                                                                                                        |
@@ -597,11 +545,11 @@ the selection entirely.
 
 The built-in rules are compiled into the binary, and declarative JSON rules can be loaded from the
 configuration directory (see [Creating custom rules](#creating-custom-rules)). Each rule decides
-whether it applies to a failed command and returns one or more corrected commands. 169 rules are
-ported from the reference implementation; go-fuck also adds rules for tools that thefuck does not
-handle: the GitHub CLI, the GitLab CLI, kubectl, kind, kustomize, uv, cargo, Helm, pnpm, the Go
-toolchain, Node.js, bun, Deno, Docker Compose, just, Poetry, make, the go-task runner and minikube.
-The list below is generated from the compiled rules:
+whether it applies to a failed command and returns one or more corrected commands. There are 193
+built-in rules: 169 ported from the reference implementation plus 24 go-fuck specific rules for tools
+that thefuck does not handle, including the GitHub and GitLab CLIs, kubectl/kind/kustomize, uv,
+cargo, Helm, pnpm, the Go toolchain, Node.js, bun, Deno, Docker Compose, just, Poetry, make, the
+go-task runner and minikube. The list below is generated from the compiled rules:
 
 <!-- RULES_LIST_START -->
 - `adb_unknown_command`
@@ -897,41 +845,22 @@ external commands.
 go-fuck is a reimplementation, not a drop-in replacement for every thefuck feature:
 
 - **Complete rule port plus extras.** All 169 rules of the reference implementation are ported,
-  plus go-fuck specific rules for the GitHub CLI, the GitLab CLI, kubectl, kind, kustomize, uv,
-  cargo, Helm, pnpm, the Go toolchain, Node.js, bun, Deno, Docker Compose, just, Poetry, make, the
-  go-task runner and minikube; the list above is authoritative. The porting conventions are documented in
-  [PORTING.md](PORTING.md).
-- **Instant mode covers Linux, macOS and Windows.** The experimental instant mode reads the
-  previous command output from a terminal log instead of re-running the command. It is implemented
-  for bash and zsh on Linux and macOS and for PowerShell on Windows (hosted on ConPTY); other
-  platforms and shells warn and fall back to the regular alias. The reference implementation
-  emulates the terminal with pyte to render the log; go-fuck uses a simplified renderer (ANSI
-  stripping on Linux and macOS, a small screen model for the ConPTY stream on Windows), which can
-  differ for full screen programs.
-- **Shell logger.** `-l`/`--shell-logger` starts a shell under a pseudo terminal and logs its
-  output. It is available on Linux and macOS (POSIX pseudo terminals) and on Windows (ConPTY);
-  other platforms report that the shell logger is not supported.
-- **In-memory memoization instead of an on-disk cache.** go-fuck is a short-lived process, so
-  rule results are memoized only for the duration of one invocation. Thefuck's `@cache` persisted
-  values between runs.
-- **Rules are compiled in, with declarative JSON extensions.** The ported rule set is compiled into
-  the binary. Additional rules can be dropped as JSON files into the configuration directory (see
-  [Creating custom rules](#creating-custom-rules)); there is no Python rule API, no third-party rule
-  package format and no way for a custom rule to run code or side effects.
-- **No Python-apt database.** thefuck's `apt_get` rule uses the database installed by
-  `python-commandnotfound`. go-fuck has no Python runtime, so the apt rules are ported without that
-  database.
-- **Settings use JSON.** Settings live in `settings.json` instead of `settings.py`, and the
-  legacy `THEFUCK_*` environment variables are still understood alongside the new `GOFUCK_*` ones.
-- **fzf integration is an extra.** thefuck has no fuzzy finder integration; `GOFUCK_FZF=true` /
-  `"fzf": true` opts in to using fzf as the selection prompt.
-- **Optional AI fallback.** thefuck has no model based fallback. go-fuck can ask an OpenAI
-  compatible endpoint for a correction when no rule matched; it is opt-in, disabled by default and
-  only sends the failed command and its output tail.
-- **Explicit alias setup.** thefuck's `fuck` entry point detects a missing alias on the first run,
-  prints instructions and configures the shell automatically on the second run. go-fuck uses the
-  explicit `--setup` command instead, which reports what it changed and is safe to run again; it
-  also configures every installed PowerShell flavor.
+  plus 24 go-fuck specific rules; the list in [Rules](#rules) is authoritative. Porting conventions
+  are documented in [PORTING.md](PORTING.md).
+- **Instant mode covers Linux, macOS and Windows.** It reads the previous command output from a
+  terminal log instead of re-running the command: bash and zsh on Linux and macOS, PowerShell on
+  Windows (ConPTY); other shells and platforms fall back to the regular alias.
+- **In-memory memoization instead of an on-disk cache.** Rule results are cached only for one
+  invocation, while thefuck's `@cache` persisted values between runs.
+- **Compiled rules with declarative JSON extensions.** There is no Python rule API or third-party
+  rule package format; custom rules are JSON files that cannot run code or side effects.
+- **No Python-apt database.** The apt rules are ported without the database installed by
+  `python-commandnotfound`.
+- **JSON settings and environment compatibility.** Settings live in `settings.json` instead of
+  `settings.py`; the legacy `THEFUCK_*` environment variables are still accepted next to
+  `GOFUCK_*`.
+- **Explicit alias setup.** Instead of thefuck's first-run detection, go-fuck uses `--setup`, which
+  reports what it changed, is safe to run again and configures every installed PowerShell flavor.
 
 ## Contributing
 
