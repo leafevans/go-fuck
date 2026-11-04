@@ -14,6 +14,8 @@ mode remains opt-in.
 go-fuck replays the command to capture its error output, matches a rule against it and executes the
 corrected command once you confirm the suggestion.
 
+![go-fuck correcting a failed git push](docs/example.gif)
+
 ```console
 $ git push
 fatal: The current branch main has no upstream branch.
@@ -359,6 +361,8 @@ The experimental instant mode reads the output of the previous command from a te
 of re-running the command. This is useful for slow, interactive or side effecting commands. It is
 implemented for **bash and zsh on Linux and macOS** and for **PowerShell on Windows**; other shells
 and platforms warn and fall back to the regular alias.
+
+![instant mode reading the previous output from the terminal log](docs/example-instant-mode.gif)
 
 Enable it by adding the experimental flag to the alias initialization in your shell configuration.
 On bash, zsh and Windows PowerShell `go-fuck --setup --enable-experimental-instant-mode` writes that
