@@ -6,6 +6,10 @@
 
 A blazingly fast reimplementation of [thefuck](https://github.com/nvbn/thefuck) in Go.
 
+**Project status:** go-fuck is stable as of **1.0.0**. The settings file and the `--json` output
+are covered by compatibility guarantees (see [UPGRADING.md](UPGRADING.md)); the experimental instant
+mode remains opt-in.
+
 `go-fuck` fixes the command you just typed and got wrong. Run the `fuck` alias after a failure and
 go-fuck replays the command to capture its error output, matches a rule against it and executes the
 corrected command once you confirm the suggestion.
