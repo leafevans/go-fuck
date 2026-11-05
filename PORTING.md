@@ -6,13 +6,13 @@ follow the conventions strictly so that all rules stay consistent.
 
 ## Layout
 
-* One rule per file: `internal/rules/<rule_name>.go`.
-* One test file per rule: `internal/rules/<rule_name>_test.go`.
-* The rule name must be identical to the Python module name (for example
+- One rule per file: `internal/rules/<rule_name>.go`.
+- One test file per rule: `internal/rules/<rule_name>_test.go`.
+- The rule name must be identical to the Python module name (for example
   `git_push`).
-* Never edit shared files (`registry.go`, `testhelpers_test.go`,
+- Never edit shared files (`registry.go`, `testhelpers_test.go`,
   `README.md`, `go.mod`) unless the task explicitly asks for it.
-* Never run `git` commands. The Team Lead commits.
+- Never run `git` commands. The Team Lead commits.
 
 ## Rule anatomy
 
@@ -66,58 +66,58 @@ Defaults applied by `types.NewRule`: `EnabledByDefault = true`,
 
 ## API mapping
 
-| Python (thefuck)                              | Go (go-fuck)                                              |
-| --------------------------------------------- | --------------------------------------------------------- |
-| `command.script`                             | `command.Script`                                          |
-| `command.output`                             | `command.Output`                                          |
-| `command.script_parts`                       | `command.ScriptParts()`                                   |
-| `command.update(script=x)`                    | `command.WithScript(x)`                                   |
-| `command.update(output=x)`                    | `command.WithOutput(x)`                                   |
-| `settings.wait_command`                       | `conf.Current().WaitCommand`                              |
-| `settings.get('key')`                         | `conf.Current().String("key", default)`                   |
-| `shell.and_(a, b)`                            | `shells.Current().And(a, b)`                              |
-| `shell.or_(a, b)`                             | `shells.Current().Or(a, b)`                               |
-| `shell.quote(x)`                              | `shells.Current().Quote(x)`                               |
-| `shell.split_command(x)`                      | `shells.Current().SplitCommand(x)`                        |
-| `is_app(command, 'git')`                      | `utils.IsApp(command, 0, "git")`                          |
-| `for_app('cd')` (match only)                  | `utils.ForApp([]string{"cd"}, 0, matchFn)`                |
-| `for_app('cd', at_least=2)`                   | `utils.ForApp([]string{"cd"}, 2, matchFn)`                |
-| `for_app(...)` on `get_new_command`           | `utils.ForAppNew([]string{"cd"}, 0, newCommandFn)`        |
-| `@git_support` on match                       | `specific.GitSupportMatch(matchFn)`                       |
-| `@git_support` on get_new_command             | `specific.GitSupportNew(newCommandFn)`                    |
-| `@sudo_support` on match                      | `specific.SudoSupportMatch(matchFn)`                      |
-| `@sudo_support` on get_new_command            | `specific.SudoSupportNew(newCommandFn)`                    |
-| `which('brew')`                               | `utils.Which("brew") != ""`                               |
-| `apt_available` / `brew_available` / ...      | `specific.AptAvailable()` / `specific.BrewAvailable()` / ... |
-| `get_brew_path_prefix()`                      | `specific.GetBrewPathPrefix()`                            |
-| `get_pkgfile(cmd)`, `archlinux_env()`        | `specific.GetPkgFile(cmd)`, `specific.ArchlinuxEnv()`    |
-| `get_scripts()` (npm)                         | `specific.NpmGetScripts()`                                |
-| `get_all_executables()`                       | `utils.GetAllExecutables()`                               |
-| `get_valid_history_without_current(cmd)`      | `utils.GetValidHistoryWithoutCurrent(cmd)`                 |
-| `get_alias()`                                 | `conf.Alias()`                                            |
-| `get_all_matched_commands(out, 'Did you mean')` | `utils.GetAllMatchedCommands(out, "Did you mean")`       |
-| `replace_argument(script, a, b)`              | `utils.ReplaceArgument(script, a, b)`                     |
-| `replace_command(cmd, broken, matched)`       | `utils.ReplaceCommand(cmd, broken, matched)`               |
-| `get_close_matches(word, options)`            | `utils.GetCloseMatches(word, options, 0, 0.6)`             |
-| `get_closest(word, options)`                  | `utils.GetClosestDefault(word, options)`                  |
-| `get_closest(..., fallback_to_first=False)`   | `utils.GetClosest(word, options, 0.6, false)`             |
-| `memoize`                                    | `utils.Memoize(fn)` / `utils.Memoize1(fn)`               |
-| `cache('~/.bashrc')(fn)`                      | `utils.Memoize(fn)` (see deviation note below)            |
-| `@default_settings({...})`                    | `conf.Current().String("key", default)`                    |
+| Python (thefuck)                                | Go (go-fuck)                                                 |
+| ----------------------------------------------- | ------------------------------------------------------------ |
+| `command.script`                                | `command.Script`                                             |
+| `command.output`                                | `command.Output`                                             |
+| `command.script_parts`                          | `command.ScriptParts()`                                      |
+| `command.update(script=x)`                      | `command.WithScript(x)`                                      |
+| `command.update(output=x)`                      | `command.WithOutput(x)`                                      |
+| `settings.wait_command`                         | `conf.Current().WaitCommand`                                 |
+| `settings.get('key')`                           | `conf.Current().String("key", default)`                      |
+| `shell.and_(a, b)`                              | `shells.Current().And(a, b)`                                 |
+| `shell.or_(a, b)`                               | `shells.Current().Or(a, b)`                                  |
+| `shell.quote(x)`                                | `shells.Current().Quote(x)`                                  |
+| `shell.split_command(x)`                        | `shells.Current().SplitCommand(x)`                           |
+| `is_app(command, 'git')`                        | `utils.IsApp(command, 0, "git")`                             |
+| `for_app('cd')` (match only)                    | `utils.ForApp([]string{"cd"}, 0, matchFn)`                   |
+| `for_app('cd', at_least=2)`                     | `utils.ForApp([]string{"cd"}, 2, matchFn)`                   |
+| `for_app(...)` on `get_new_command`             | `utils.ForAppNew([]string{"cd"}, 0, newCommandFn)`           |
+| `@git_support` on match                         | `specific.GitSupportMatch(matchFn)`                          |
+| `@git_support` on get_new_command               | `specific.GitSupportNew(newCommandFn)`                       |
+| `@sudo_support` on match                        | `specific.SudoSupportMatch(matchFn)`                         |
+| `@sudo_support` on get_new_command              | `specific.SudoSupportNew(newCommandFn)`                      |
+| `which('brew')`                                 | `utils.Which("brew") != ""`                                  |
+| `apt_available` / `brew_available` / ...        | `specific.AptAvailable()` / `specific.BrewAvailable()` / ... |
+| `get_brew_path_prefix()`                        | `specific.GetBrewPathPrefix()`                               |
+| `get_pkgfile(cmd)`, `archlinux_env()`           | `specific.GetPkgFile(cmd)`, `specific.ArchlinuxEnv()`        |
+| `get_scripts()` (npm)                           | `specific.NpmGetScripts()`                                   |
+| `get_all_executables()`                         | `utils.GetAllExecutables()`                                  |
+| `get_valid_history_without_current(cmd)`        | `utils.GetValidHistoryWithoutCurrent(cmd)`                   |
+| `get_alias()`                                   | `conf.Alias()`                                               |
+| `get_all_matched_commands(out, 'Did you mean')` | `utils.GetAllMatchedCommands(out, "Did you mean")`           |
+| `replace_argument(script, a, b)`                | `utils.ReplaceArgument(script, a, b)`                        |
+| `replace_command(cmd, broken, matched)`         | `utils.ReplaceCommand(cmd, broken, matched)`                 |
+| `get_close_matches(word, options)`              | `utils.GetCloseMatches(word, options, 0, 0.6)`               |
+| `get_closest(word, options)`                    | `utils.GetClosestDefault(word, options)`                     |
+| `get_closest(..., fallback_to_first=False)`     | `utils.GetClosest(word, options, 0.6, false)`                |
+| `memoize`                                       | `utils.Memoize(fn)` / `utils.Memoize1(fn)`                   |
+| `cache('~/.bashrc')(fn)`                        | `utils.Memoize(fn)` (see deviation note below)               |
+| `@default_settings({...})`                      | `conf.Current().String("key", default)`                      |
 
 Notes:
 
-* `utils.GetCloseMatches` takes the cutoff as the last argument because Go has
+- `utils.GetCloseMatches` takes the cutoff as the last argument because Go has
   no default arguments. Python's default cutoff is `0.6`.
-* `utils.ForApp` is generic: pass a match function returning `bool` or a
+- `utils.ForApp` is generic: pass a match function returning `bool` or a
   correction function returning a single value. Multi-value results need
   `utils.ForAppNew`.
-* Python's on-disk result cache (`@cache`) is replaced by in-process
+- Python's on-disk result cache (`@cache`) is replaced by in-process
   memoization. go-fuck is a short-lived process, so the cache only saves
   duplicate work inside one invocation. This is a documented deviation.
-* `thefuck`'s `six`, `pathlib`, `urllib` and `shutil` usages map to the Go
+- `thefuck`'s `six`, `pathlib`, `urllib` and `shutil` usages map to the Go
   standard library (`os`, `net/url`, `os/exec`, `path/filepath`, ...).
-* If a rule depends on a Python-only library, reimplement the behavior with an
+- If a rule depends on a Python-only library, reimplement the behavior with an
   equivalent command or make the rule disabled by default. Add a comment that
   starts with `// Deviation:` explaining the difference.
 
@@ -167,14 +167,14 @@ and `t.Run` subtests.
 
 Use the helpers from `internal/rules/testhelpers_test.go`:
 
-* `resetTestState(t)` – call at the beginning of every test; resets settings,
+- `resetTestState(t)` – call at the beginning of every test; resets settings,
   shell and caches.
-* `testCommand(script, output)` – creates a command with a known output.
-* `assertMatch(t, rule, script, output)`, `assertNotMatch(...)` – check
+- `testCommand(script, output)` – creates a command with a known output.
+- `assertMatch(t, rule, script, output)`, `assertNotMatch(...)` – check
   `match`.
-* `assertNewCommands(t, rule, script, output, want)` – checks the corrected
+- `assertNewCommands(t, rule, script, output, want)` – checks the corrected
   commands returned by `get_new_command`.
-* Executable stubs: create them with `t.TempDir()` and `os.WriteFile`, then point
+- Executable stubs: create them with `t.TempDir()` and `os.WriteFile`, then point
   `PATH` at the directory with `t.Setenv("PATH", dir)` and call
   `utils.ResetCaches()`. On Windows the `.exe` suffix is required by
   `exec.LookPath`, so create both names when the test needs to find the tool.
@@ -207,13 +207,13 @@ function variables instead.
 
 ## Definition of done
 
-* The Go file exists and is registered with the exact Python rule name.
-* `match` and `get_new_command` behave like the Python implementation for all
+- The Go file exists and is registered with the exact Python rule name.
+- `match` and `get_new_command` behave like the Python implementation for all
   cases covered by the Python tests.
-* The Python test cases are ported and pass.
-* `gofmt`, `go vet` and `go build ./...` are clean.
-* All comments and identifiers are in English.
-* The rule name appears in `README.md` (the README rule list is generated by
+- The Python test cases are ported and pass.
+- `gofmt`, `go vet` and `go build ./...` are clean.
+- All comments and identifiers are in English.
+- The rule name appears in `README.md` (the README rule list is generated by
   the Team Lead; do not edit the README yourself).
 
 ## Rules beyond thefuck
@@ -225,8 +225,8 @@ conventions as the ported rules and are listed in `expectedExtraRuleNames` in
 files, the test files and the README rule list stay in sync. When adding such a
 rule:
 
-* pick a descriptive name that thefuck does not use,
-* add it to `expectedExtraRuleNames`,
-* add `<name>.go` and `<name>_test.go`,
-* regenerate the README rule list with `go run ./tools/gen-rule-list`,
-* mention the tool and the corrected behavior in `README.md`.
+- pick a descriptive name that thefuck does not use,
+- add it to `expectedExtraRuleNames`,
+- add `<name>.go` and `<name>_test.go`,
+- regenerate the README rule list with `go run ./tools/gen-rule-list`,
+- mention the tool and the corrected behavior in `README.md`.

@@ -280,17 +280,17 @@ $ fuck
 
 Common options:
 
-| Option                               | Meaning                                                                                                                                                                   |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `-y`, `--yes`, `--yeah`, `--hard`    | execute the first suggestion without asking                                                                                                                               |
-| `-r`, `--repeat`                     | re-run go-fuck if the corrected command fails                                                                                                                         |
-| `--force-command CMD`                | fix `CMD` instead of the previous command                                                                                                                                 |
-| `--json`                             | print the suggestions as JSON and exit (useful for scripts and editors; call go-fuck directly rather than through the alias)                                              |
-| `-d`, `--debug`                      | print debug information to stderr                                                                                                                                         |
-| `-v`, `--version`                    | print version/build information: a themed banner in a terminal, one line when piped; `--debug --version` adds the config path, instant mode, fzf and alias state                |
-| `-h`, `--help`                       | print the full option list                                                                                                                                                |
-| `--setup`                            | write the alias to the detected shell's configuration file (bash, zsh, fish, tcsh, PowerShell) |
-| `--enable-experimental-instant-mode` | alias initialization flag: with `--alias` or `--setup`, configure the experimental instant mode (bash/zsh on Linux and macOS, PowerShell on Windows)                                                       |
+| Option                               | Meaning                                                                                                                                                          |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `-y`, `--yes`, `--yeah`, `--hard`    | execute the first suggestion without asking                                                                                                                      |
+| `-r`, `--repeat`                     | re-run go-fuck if the corrected command fails                                                                                                                    |
+| `--force-command CMD`                | fix `CMD` instead of the previous command                                                                                                                        |
+| `--json`                             | print the suggestions as JSON and exit (useful for scripts and editors; call go-fuck directly rather than through the alias)                                     |
+| `-d`, `--debug`                      | print debug information to stderr                                                                                                                                |
+| `-v`, `--version`                    | print version/build information: a themed banner in a terminal, one line when piped; `--debug --version` adds the config path, instant mode, fzf and alias state |
+| `-h`, `--help`                       | print the full option list                                                                                                                                       |
+| `--setup`                            | write the alias to the detected shell's configuration file (bash, zsh, fish, tcsh, PowerShell)                                                                   |
+| `--enable-experimental-instant-mode` | alias initialization flag: with `--alias` or `--setup`, configure the experimental instant mode (bash/zsh on Linux and macOS, PowerShell on Windows)             |
 
 ## How it works
 
@@ -445,30 +445,30 @@ A minimal file that customizes a few values:
 
 All fields:
 
-| Key                             | Type              | Default                                                      | Meaning                                                                                                                                                                 |
-| ------------------------------- | ----------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `rules`                         | array of strings  | `["All rules enabled"]`                                      | Rules that are enabled. The sentinel value `"All rules enabled"` enables every rule that is enabled by default; list explicit rule names to enable exactly those rules. |
-| `exclude_rules`                 | array of strings  | `[]`                                                         | Rules that are never loaded, even when enabled.                                                                                                                         |
-| `wait_command`                  | integer           | `3`                                                          | Seconds to wait for the output of the re-run command.                                                                                                                   |
-| `require_confirmation`          | boolean           | `true`                                                       | Ask before executing a corrected command.                                                                                                                               |
-| `fzf`                           | boolean           | `false`                                                      | Use [fzf](https://github.com/junegunn/fzf) as the selection prompt when it is installed. Falls back to the built-in prompt automatically.                               |
-| `no_colors`                     | boolean           | `false`                                                      | Disable colored output.                                                                                                                                                 |
-| `debug`                         | boolean           | `false`                                                      | Print debug information to stderr.                                                                                                                                      |
-| `priority`                      | object of integer | `{}`                                                         | Per-rule priority overrides. Lower values are tried first; the built-in default is `1000`.                                                                              |
-| `history_limit`                 | integer           | `0`                                                          | Maximum number of shell history lines that are read. `0` means no limit.                                                                                                |
-| `alter_history`                 | boolean           | `true`                                                       | Write the corrected command back to the shell history.                                                                                                                  |
-| `wait_slow_command`             | integer           | `15`                                                         | Seconds to wait for the output of commands listed in `slow_commands`.                                                                                                   |
-| `slow_commands`                 | array of strings  | `["lein", "react-native", "gradle", "./gradlew", "vagrant"]` | Commands that are expected to be slow to re-run.                                                                                                                        |
-| `repeat`                        | boolean           | `false`                                                      | If the corrected command fails, run go-fuck again.                                                                                                                      |
+| Key                             | Type              | Default                                                      | Meaning                                                                                                                                                                                       |
+| ------------------------------- | ----------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rules`                         | array of strings  | `["All rules enabled"]`                                      | Rules that are enabled. The sentinel value `"All rules enabled"` enables every rule that is enabled by default; list explicit rule names to enable exactly those rules.                       |
+| `exclude_rules`                 | array of strings  | `[]`                                                         | Rules that are never loaded, even when enabled.                                                                                                                                               |
+| `wait_command`                  | integer           | `3`                                                          | Seconds to wait for the output of the re-run command.                                                                                                                                         |
+| `require_confirmation`          | boolean           | `true`                                                       | Ask before executing a corrected command.                                                                                                                                                     |
+| `fzf`                           | boolean           | `false`                                                      | Use [fzf](https://github.com/junegunn/fzf) as the selection prompt when it is installed. Falls back to the built-in prompt automatically.                                                     |
+| `no_colors`                     | boolean           | `false`                                                      | Disable colored output.                                                                                                                                                                       |
+| `debug`                         | boolean           | `false`                                                      | Print debug information to stderr.                                                                                                                                                            |
+| `priority`                      | object of integer | `{}`                                                         | Per-rule priority overrides. Lower values are tried first; the built-in default is `1000`.                                                                                                    |
+| `history_limit`                 | integer           | `0`                                                          | Maximum number of shell history lines that are read. `0` means no limit.                                                                                                                      |
+| `alter_history`                 | boolean           | `true`                                                       | Write the corrected command back to the shell history.                                                                                                                                        |
+| `wait_slow_command`             | integer           | `15`                                                         | Seconds to wait for the output of commands listed in `slow_commands`.                                                                                                                         |
+| `slow_commands`                 | array of strings  | `["lein", "react-native", "gradle", "./gradlew", "vagrant"]` | Commands that are expected to be slow to re-run.                                                                                                                                              |
+| `repeat`                        | boolean           | `false`                                                      | If the corrected command fails, run go-fuck again.                                                                                                                                            |
 | `instant_mode`                  | boolean           | `false`                                                      | Inside the logged shell, read the previous output from the terminal log instead of re-running the command; the instant mode alias sets this automatically. See [Instant mode](#instant-mode). |
-| `num_close_matches`             | integer           | `3`                                                          | Maximum number of close matches suggested for misspelled commands.                                                                                                      |
-| `env`                           | object of string  | `{"LC_ALL": "C", "LANG": "C", "GIT_TRACE": "1"}`             | Environment variables added when the failed command is re-run.                                                                                                          |
-| `excluded_search_path_prefixes` | array of strings  | `[]`                                                         | `PATH` prefixes that are skipped when searching for executables.                                                                                                        |
-| `ai`                            | boolean           | `false`                                                      | Enable the optional AI fallback when no rule matched. See [AI fallback](#ai-fallback-optional).                                                                         |
-| `ai_endpoint`                   | string            | `""`                                                         | OpenAI compatible API base URL, for example `https://api.openai.com/v1`.                                                                                                |
-| `ai_model`                      | string            | `""`                                                         | Chat completion model used by the AI fallback.                                                                                                                          |
-| `ai_timeout`                    | integer           | `10`                                                         | Seconds to wait for the AI endpoint.                                                                                                                                    |
-| `settings`                      | object            | `{} in the default file`                                     | Rule-specific string settings, read by rules with `conf.Current().String(key, default)`.                                                                                |
+| `num_close_matches`             | integer           | `3`                                                          | Maximum number of close matches suggested for misspelled commands.                                                                                                                            |
+| `env`                           | object of string  | `{"LC_ALL": "C", "LANG": "C", "GIT_TRACE": "1"}`             | Environment variables added when the failed command is re-run.                                                                                                                                |
+| `excluded_search_path_prefixes` | array of strings  | `[]`                                                         | `PATH` prefixes that are skipped when searching for executables.                                                                                                                              |
+| `ai`                            | boolean           | `false`                                                      | Enable the optional AI fallback when no rule matched. See [AI fallback](#ai-fallback-optional).                                                                                               |
+| `ai_endpoint`                   | string            | `""`                                                         | OpenAI compatible API base URL, for example `https://api.openai.com/v1`.                                                                                                                      |
+| `ai_model`                      | string            | `""`                                                         | Chat completion model used by the AI fallback.                                                                                                                                                |
+| `ai_timeout`                    | integer           | `10`                                                         | Seconds to wait for the AI endpoint.                                                                                                                                                          |
+| `settings`                      | object            | `{} in the default file`                                     | Rule-specific string settings, read by rules with `conf.Current().String(key, default)`.                                                                                                      |
 
 ### Environment variables
 
@@ -552,6 +552,7 @@ cargo, Helm, pnpm, the Go toolchain, Node.js, bun, Deno, Docker Compose, just, P
 go-task runner and minikube. The list below is generated from the compiled rules:
 
 <!-- RULES_LIST_START -->
+
 - `adb_unknown_command`
 - `ag_literal`
 - `apt_get`
@@ -745,6 +746,7 @@ go-task runner and minikube. The list below is generated from the compiled rules
 - `yarn_command_replaced`
 - `yarn_help`
 - `yum_invalid_operation`
+
 <!-- RULES_LIST_END -->
 
 Regenerate it after adding or renaming a rule:
