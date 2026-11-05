@@ -194,10 +194,13 @@ var expectedRuleNames = []string{
 // they are not part of the thefuck rule set.
 var expectedExtraRuleNames = []string{
 	"bun_script_not_found",
+	"bundle_unknown_command",
 	"cargo_unknown_argument",
 	"cargo_unknown_command",
+	"choco_unknown_command",
 	"deno_task_not_found",
 	"docker_compose_unknown_service",
+	"dotnet_unknown_command",
 	"gh_unknown_command",
 	"gh_unknown_flag",
 	"glab_unknown_command",
@@ -214,6 +217,7 @@ var expectedExtraRuleNames = []string{
 	"node_missing_module",
 	"pnpm_command_not_found",
 	"poetry_unknown_command",
+	"rustup_unknown_subcommand",
 	"task_unknown_task",
 	"uv_unknown_argument",
 	"uv_unknown_subcommand",

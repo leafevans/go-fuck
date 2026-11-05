@@ -545,11 +545,12 @@ the selection entirely.
 
 The built-in rules are compiled into the binary, and declarative JSON rules can be loaded from the
 configuration directory (see [Creating custom rules](#creating-custom-rules)). Each rule decides
-whether it applies to a failed command and returns one or more corrected commands. There are 193
-built-in rules: 169 ported from the reference implementation plus 24 go-fuck specific rules for tools
+whether it applies to a failed command and returns one or more corrected commands. There are 197
+built-in rules: 169 ported from the reference implementation plus 28 go-fuck specific rules for tools
 that thefuck does not handle, including the GitHub and GitLab CLIs, kubectl/kind/kustomize, uv,
 cargo, Helm, pnpm, the Go toolchain, Node.js, bun, Deno, Docker Compose, just, Poetry, make, the
-go-task runner and minikube. The list below is generated from the compiled rules:
+go-task runner, minikube, Bundler, Chocolatey, the .NET CLI and rustup. The list below is generated
+from the compiled rules:
 
 <!-- RULES_LIST_START -->
 - `adb_unknown_command`
@@ -569,6 +570,7 @@ go-task runner and minikube. The list below is generated from the compiled rules
 - `brew_unknown_command`
 - `brew_update_formula`
 - `bun_script_not_found`
+- `bundle_unknown_command`
 - `cargo`
 - `cargo_no_command`
 - `cargo_unknown_argument`
@@ -580,6 +582,7 @@ go-task runner and minikube. The list below is generated from the compiled rules
 - `cd_parent`
 - `chmod_x`
 - `choco_install`
+- `choco_unknown_command`
 - `composer_not_command`
 - `conda_mistype`
 - `cp_create_destination`
@@ -595,6 +598,7 @@ go-task runner and minikube. The list below is generated from the compiled rules
 - `docker_image_being_used_by_container`
 - `docker_login`
 - `docker_not_command`
+- `dotnet_unknown_command`
 - `dry`
 - `fab_command_not_found`
 - `fix_alt_space`
@@ -716,6 +720,7 @@ go-task runner and minikube. The list below is generated from the compiled rules
 - `remove_trailing_cedilla`
 - `rm_dir`
 - `rm_root`
+- `rustup_unknown_subcommand`
 - `scm_correction`
 - `sed_unterminated_s`
 - `sl_ls`
