@@ -40,15 +40,13 @@ No configuration or JSON migration is required:
 
 Upgrade with the channel you installed go-fuck from:
 
-| Channel | Command |
-| --- | --- |
-| Homebrew | `brew upgrade go-fuck` |
-| Scoop | `scoop update go-fuck` |
-| AUR | `yay -Syu` or `paru -Syu` |
-| Go toolchain | `go install github.com/leafevans/go-fuck/cmd/go-fuck@latest` |
-| Prebuilt archives | download the new archive and replace the binary |
-
-The winget submission is still under review and is not an official channel yet.
+| Channel           | Command                                                      |
+| ----------------- | ------------------------------------------------------------ |
+| Homebrew          | `brew upgrade go-fuck`                                       |
+| Scoop             | `scoop update go-fuck`                                       |
+| AUR               | `yay -Syu` or `paru -Syu`                                    |
+| Go toolchain      | `go install github.com/leafevans/go-fuck/cmd/go-fuck@latest` |
+| Prebuilt archives | download the new archive and replace the binary              |
 
 `go-fuck --setup` is idempotent; it does not have to be run again after upgrading.
 

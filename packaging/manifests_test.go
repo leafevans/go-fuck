@@ -14,9 +14,6 @@ import (
 var manifestFiles = []string{
 	"Formula/go-fuck.rb",
 	"bucket/go-fuck.json",
-	"packaging/winget/leafevans.gof.yaml",
-	"packaging/winget/leafevans.gof.installer.yaml",
-	"packaging/winget/leafevans.gof.locale.en-US.yaml",
 	"packaging/aur/PKGBUILD",
 	"packaging/aur/.SRCINFO",
 }
@@ -205,72 +202,6 @@ func check(root string) error {
 		}
 		urls[asset] = rawURL
 		hashes[hash] = true
-	}
-
-	wingetDir := filepath.Join(root, "packaging", "winget")
-	wingetFiles := map[string]string{
-		"version":   "leafevans.gof.yaml",
-		"installer": "leafevans.gof.installer.yaml",
-		"locale":    "leafevans.gof.locale.en-US.yaml",
-	}
-	winget := map[string]string{}
-	for name, file := range wingetFiles {
-		data, err := os.ReadFile(filepath.Join(wingetDir, file))
-		if err != nil {
-			return fmt.Errorf("read winget %s manifest: %w", name, err)
-		}
-		winget[name] = string(data)
-		if versions := fieldValues(winget[name], "PackageVersion: "); len(versions) != 1 || versions[0] != version {
-			add("winget %s manifest version is %q, formula version is %q", name, versions, version)
-		}
-	}
-
-	installerURLs := fieldValues(winget["installer"], "InstallerUrl: ")
-	installerHashes := fieldValues(winget["installer"], "InstallerSha256: ")
-	if len(installerURLs) != 2 {
-		add("winget installer references %d archives, want 2", len(installerURLs))
-	}
-	if len(installerHashes) != 2 {
-		add("winget installer declares %d checksums, want 2", len(installerHashes))
-	}
-	windowsAssets := []string{"windows_amd64", "windows_arm64"}
-	for index, rawURL := range installerURLs {
-		asset := ""
-		if index < len(windowsAssets) {
-			asset = windowsAssets[index]
-		}
-		parsed, err := assetOf(rawURL, version, "zip")
-		if err != nil {
-			add("winget: %v", err)
-		} else if parsed != asset {
-			add("winget references %q, want %q", parsed, asset)
-		}
-		if index < len(installerHashes) {
-			hash := installerHashes[index]
-			if !validHash(hash) {
-				add("winget checksum %q is not a SHA-256 value", hash)
-			}
-			hashes[hash] = true
-		}
-		urls[asset] = rawURL
-	}
-
-	if notes := fieldValues(winget["locale"], "ReleaseNotesUrl: "); len(notes) != 1 || !strings.HasSuffix(notes[0], "/v"+version) {
-		add("winget release notes URL %q does not point at v%s", notes, version)
-	}
-
-	// winget-pkgs requires a professional command name, so the package is
-	// published as leafevans.gof and installs the gof command.
-	for name, content := range winget {
-		if ids := fieldValues(content, "PackageIdentifier: "); len(ids) != 1 || ids[0] != "leafevans.gof" {
-			add("winget %s PackageIdentifier = %q, want leafevans.gof", name, ids)
-		}
-	}
-	if aliases := fieldValues(winget["installer"], "PortableCommandAlias: "); len(aliases) != 1 || aliases[0] != "gof" {
-		add("winget PortableCommandAlias = %q, want gof", aliases)
-	}
-	if monikers := fieldValues(winget["locale"], "Moniker: "); len(monikers) != 1 || monikers[0] != "gof" {
-		add("winget Moniker = %q, want gof", monikers)
 	}
 
 	aurDir := filepath.Join(root, "packaging", "aur")

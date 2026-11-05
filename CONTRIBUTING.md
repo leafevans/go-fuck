@@ -24,24 +24,24 @@ go test ./... -count=1
 
 ## Make targets
 
-| Target | Description |
-| --- | --- |
-| `make` / `make help` | print the list of targets |
-| `make build` | build `go-fuck` (`go-fuck.exe` on Windows) |
-| `make test` | run the test suite |
-| `make test-race` | run the test suite with the race detector (needs a C compiler) |
-| `make cover` | run the test suite with coverage and print the total |
-| `make bench` | run the benchmarks (`go test ./internal/... -run '^$' -bench . -benchmem`) |
-| `make vet` | run `go vet` |
-| `make fmt` | format all Go files with `gofmt -s -w` |
-| `make fmt-check` | fail when a Go file is not formatted |
-| `make lint` | run `golangci-lint` with `.golangci.yml` |
-| `make install` | run `go install ./cmd/go-fuck` |
-| `make clean` | remove the binary and the GoReleaser output |
-| `make packaging` | regenerate Homebrew/Scoop/winget manifests for `VERSION` from `CHECKSUMS` |
-| `make packaging-check` | validate that the committed distribution manifests are consistent |
-| `make rules-list` | regenerate the rule list in `README.md` |
-| `make rules-list-check` | fail when the `README.md` rule list is out of date |
+| Target                  | Description                                                                |
+| ----------------------- | -------------------------------------------------------------------------- |
+| `make` / `make help`    | print the list of targets                                                  |
+| `make build`            | build `go-fuck` (`go-fuck.exe` on Windows)                                 |
+| `make test`             | run the test suite                                                         |
+| `make test-race`        | run the test suite with the race detector (needs a C compiler)             |
+| `make cover`            | run the test suite with coverage and print the total                       |
+| `make bench`            | run the benchmarks (`go test ./internal/... -run '^$' -bench . -benchmem`) |
+| `make vet`              | run `go vet`                                                               |
+| `make fmt`              | format all Go files with `gofmt -s -w`                                     |
+| `make fmt-check`        | fail when a Go file is not formatted                                       |
+| `make lint`             | run `golangci-lint` with `.golangci.yml`                                   |
+| `make install`          | run `go install ./cmd/go-fuck`                                             |
+| `make clean`            | remove the binary and the GoReleaser output                                |
+| `make packaging`        | regenerate Homebrew/Scoop manifests for `VERSION` from `CHECKSUMS`        |
+| `make packaging-check`  | validate that the committed distribution manifests are consistent          |
+| `make rules-list`       | regenerate the rule list in `README.md`                                    |
+| `make rules-list-check` | fail when the `README.md` rule list is out of date                         |
 
 The recipes avoid POSIX-only commands so that they work on Windows as well: small helper programs in
 `tools/` replace shell tricks such as `rm -rf` and `test -z "$(gofmt -l .)"`. If make is not
@@ -59,16 +59,16 @@ go run ./tools/gen-rule-list
 
 ## Project layout
 
-| Path | Contents |
-| --- | --- |
-| `cmd/go-fuck` | the command's `main` package |
-| `internal/` | implementation packages (rules, shells, settings, UI, ...) |
-| `internal/rules/` | one file and one test file per correction rule |
-| `tools/` | small helper programs used by the Makefile and CI |
-| `scripts/` | `cmd.exe` and PowerShell shims |
-| `.github/workflows/` | CI and release workflows |
-| `PORTING.md` | how the rules are ported from thefuck |
-| `README.md` | user documentation; the rule list is generated |
+| Path                 | Contents                                                   |
+| -------------------- | ---------------------------------------------------------- |
+| `cmd/go-fuck`        | the command's `main` package                               |
+| `internal/`          | implementation packages (rules, shells, settings, UI, ...) |
+| `internal/rules/`    | one file and one test file per correction rule             |
+| `tools/`             | small helper programs used by the Makefile and CI          |
+| `scripts/`           | `cmd.exe` and PowerShell shims                             |
+| `.github/workflows/` | CI and release workflows                                   |
+| `PORTING.md`         | how the rules are ported from thefuck                      |
+| `README.md`          | user documentation; the rule list is generated             |
 
 ## Code style
 

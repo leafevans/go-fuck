@@ -123,24 +123,6 @@ func TestScoopManifest(t *testing.T) {
 	}
 }
 
-func TestWingetManifests(t *testing.T) {
-	rel := loadTestRelease(t)
-	version := wingetVersionManifest(rel)
-	if !strings.Contains(version, "PackageVersion: 0.2.0") {
-		t.Fatalf("winget version manifest is incomplete:\n%s", version)
-	}
-	installer := wingetInstallerManifest(rel)
-	for _, want := range []string{"go-fuck_0.2.0_windows_amd64.zip", testHash(4), testHash(5)} {
-		if !strings.Contains(installer, want) {
-			t.Fatalf("winget installer manifest does not contain %q:\n%s", want, installer)
-		}
-	}
-	locale := wingetLocaleManifest(rel)
-	if !strings.Contains(locale, "PackageVersion: 0.2.0") || !strings.Contains(locale, "releases/tag/v0.2.0") {
-		t.Fatalf("winget locale manifest is incomplete:\n%s", locale)
-	}
-}
-
 func TestAURPKGBUILD(t *testing.T) {
 	rel := loadTestRelease(t)
 	checksum := testHash(6)
