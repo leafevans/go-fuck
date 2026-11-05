@@ -552,7 +552,6 @@ cargo, Helm, pnpm, the Go toolchain, Node.js, bun, Deno, Docker Compose, just, P
 go-task runner and minikube. The list below is generated from the compiled rules:
 
 <!-- RULES_LIST_START -->
-
 - `adb_unknown_command`
 - `ag_literal`
 - `apt_get`
@@ -746,7 +745,6 @@ go-task runner and minikube. The list below is generated from the compiled rules
 - `yarn_command_replaced`
 - `yarn_help`
 - `yum_invalid_operation`
-
 <!-- RULES_LIST_END -->
 
 Regenerate it after adding or renaming a rule:
