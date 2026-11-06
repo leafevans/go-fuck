@@ -100,6 +100,25 @@ func TestLogLinesErasesTheLine(t *testing.T) {
 	}
 }
 
+// TestLogLinesKeepsTheMarkerAcrossPromptRedraws checks that the instant mode
+// prompt marker survives the erase and redraw sequences that PSReadLine writes
+// while it edits the command line.
+func TestLogLinesKeepsTheMarkerAcrossPromptRedraws(t *testing.T) {
+	data := sizeRecord(80, 30) +
+		consts.UserCommandMark + "PS> git brnch" + "\x1b[K" + "\r\x1b[K" +
+		consts.UserCommandMark + "PS> git brnch\r\n" +
+		"git: 'brnch' is not a git command. See 'git --help'.\r\n" +
+		consts.UserCommandMark + "PS> "
+
+	output, ok := LastOutput(writeRenderedLog(t, data), "git brnch")
+	if !ok {
+		t.Fatal("LastOutput() did not find the command")
+	}
+	if want := "git: 'brnch' is not a git command. See 'git --help'."; output != want {
+		t.Fatalf("LastOutput() = %q, want %q", output, want)
+	}
+}
+
 // TestLogLinesHandlesResize checks that a resize record updates the viewport.
 func TestLogLinesHandlesResize(t *testing.T) {
 	data := sizeRecord(40, 4) + "one\r\ntwo\r\nthree\r\nfour\r\n" +

@@ -23,6 +23,10 @@ esac
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 
+# marker is the invisible prompt marker of the experimental instant mode. The
+# logged shell alias prints it before every prompt.
+marker=$(printf '\xe2\x80\x8b')
+
 fail() {
   echo "shell integration: $*" >&2
   exit 1
@@ -73,6 +77,41 @@ check_instant_alias() {
   esac
 }
 
+# check_marked_alias verifies the marked alias of the logged instant mode shell.
+#
+# The marked alias is the alias inside the logged shell: it prepends the
+# invisible prompt marker to PS1 so that go-fuck can locate the output of the
+# last command in the terminal log. The checks generate the marked alias for a
+# logged shell, verify that the shell parses it and check that the marker is
+# present, then evaluate the alias with a realistic prompt and verify that the
+# alias function is defined.
+check_marked_alias() {
+  shell=$1
+  case "$shell" in
+    bash)
+      env GOFUCK_INSTANT_MODE=True TF_SHELL=bash "$bin" --alias --enable-experimental-instant-mode >"$work/marked-bash"
+      grep -q "$marker" "$work/marked-bash" ||
+        fail "the bash marked alias does not contain the prompt marker"
+      bash -n "$work/marked-bash" || fail "bash cannot parse the marked alias"
+      # A bira-like multi line prompt with ANSI colors.
+      prompt='\[\e[0;32m\]╭─\[\e[0m\]\[\e[1;34m\]\u@\h\[\e[0m\] \[\e[0;32m\]\w\[\e[0m\]\n\[\e[0;32m\]╰─$ \[\e[0m\]'
+      bash --norc -c 'PS1="$1"; eval "$(<"$2")"; type fuck >/dev/null' _ "$prompt" "$work/marked-bash" ||
+        fail "bash cannot evaluate the marked alias with a bira-like prompt"
+      ;;
+    zsh)
+      env GOFUCK_INSTANT_MODE=True TF_SHELL=zsh "$bin" --alias --enable-experimental-instant-mode >"$work/marked-zsh"
+      grep -q "$marker" "$work/marked-zsh" ||
+        fail "the zsh marked alias does not contain the prompt marker"
+      zsh -n "$work/marked-zsh" || fail "zsh cannot parse the marked alias"
+      # A powerlevel-like prompt with %F colors.
+      prompt='%F{green}╭─%f%F{cyan}%n@%m%f %F{blue}%~%f
+%F{green}╰─$ %f'
+      zsh -f -c 'PROMPT="$1"; eval "$(cat "$2")"; type fuck >/dev/null' _ "$prompt" "$work/marked-zsh" ||
+        fail "zsh cannot evaluate the marked alias with a powerlevel-like prompt"
+      ;;
+  esac
+}
+
 check_setup() {
   shell=$1
   config=$2
@@ -97,6 +136,8 @@ check_alias fish
 check_alias tcsh
 check_instant_alias bash
 check_instant_alias zsh
+check_marked_alias bash
+check_marked_alias zsh
 check_setup bash .bashrc
 check_setup zsh .zshrc
 check_setup fish .config/fish/config.fish
