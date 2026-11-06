@@ -34,16 +34,16 @@ func uvUnknownSubcommandNewCommand(command *types.Command) ([]string, error) {
 	}
 	broken := match[1]
 
-	corrected := []string{}
+	suggestions := []string{}
 	for _, line := range strings.Split(command.Output, newline) {
 		if !strings.Contains(line, "tip:") || !strings.Contains(line, "similar subcommand") {
 			continue
 		}
 		for _, quoted := range uvQuotedSuggestion.FindAllStringSubmatch(line, -1) {
-			corrected = append(corrected, utils.ReplaceArgument(command.Script, broken, quoted[1]))
+			suggestions = append(suggestions, quoted[1])
 		}
 	}
-	return corrected, nil
+	return utils.ReplaceArguments(command.Script, broken, utils.SortBySimilarity(broken, suggestions)), nil
 }
 
 func init() {

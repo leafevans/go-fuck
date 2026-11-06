@@ -46,9 +46,18 @@ func gitCheckoutParseBranches(commandOutput string) []string {
 	return branches
 }
 
-// gitCheckoutMatch reports whether git failed because the branch or file is
-// unknown.
+// gitCheckoutMatch reports whether git checkout failed because the branch or
+// file is unknown.
+//
+// Deviation: the reference implementation matches any git command whose output
+// contains the pathspec error, so it also fires for "git commit <file>" and
+// competes with the git_add rule there. go-fuck limits this rule to the
+// checkout command it is named after.
 func gitCheckoutMatch(command *types.Command) bool {
+	parts := command.ScriptParts()
+	if len(parts) < 2 || parts[1] != "checkout" {
+		return false
+	}
 	return strings.Contains(command.Output, "did not match any file(s) known to git") &&
 		!strings.Contains(command.Output, "Did you forget to 'git add'?")
 }

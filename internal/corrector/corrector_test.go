@@ -119,3 +119,18 @@ func TestGetRulesDoesNotMutateRegisteredRules(t *testing.T) {
 		}
 	}
 }
+
+func TestFilterUnchanged(t *testing.T) {
+	command := types.NewCommand("git status", "")
+	sideEffect := func(*types.Command, string) error { return nil }
+	candidates := []*types.CorrectedCommand{
+		{Script: "git status"},
+		{Script: "git status", SideEffect: sideEffect},
+		{Script: "git status --short"},
+	}
+
+	got := filterUnchanged(command, candidates)
+	if len(got) != 2 || got[0] != candidates[1] || got[1] != candidates[2] {
+		t.Fatalf("filterUnchanged() = %q, want the side-effect and changed suggestions", got)
+	}
+}

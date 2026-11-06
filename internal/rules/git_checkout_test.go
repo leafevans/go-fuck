@@ -23,8 +23,8 @@ func TestRuleGitCheckout(t *testing.T) {
 	t.Cleanup(func() { gitCheckoutBranches = original })
 
 	assertMatch(t, rule, "git checkout unknown", gitCheckoutDidNotMatch("unknown", false))
-	assertMatch(t, rule, "git commit unknown", gitCheckoutDidNotMatch("unknown", false))
 
+	assertNotMatch(t, rule, "git commit unknown", gitCheckoutDidNotMatch("unknown", false))
 	assertNotMatch(t, rule, "git submodule update unknown", gitCheckoutDidNotMatch("unknown", true))
 	assertNotMatch(t, rule, "git checkout known", "")
 	assertNotMatch(t, rule, "git commit known", "")
@@ -69,12 +69,8 @@ func TestRuleGitCheckout(t *testing.T) {
 		want     []string
 	}{
 		{"", "git checkout unknown", "unknown", []string{"git checkout -b unknown"}},
-		{"", "git commit unknown", "unknown",
-			[]string{"git branch unknown && git commit unknown"}},
 		{"  test-random-branch-123", "git checkout tst-rdm-brnch-123", "tst-rdm-brnch-123",
 			[]string{"git checkout test-random-branch-123", "git checkout -b tst-rdm-brnch-123"}},
-		{"  test-random-branch-123", "git commit tst-rdm-brnch-123", "tst-rdm-brnch-123",
-			[]string{"git commit test-random-branch-123"}},
 	}
 	for _, testCase := range commandCases {
 		branches := testCase.branches

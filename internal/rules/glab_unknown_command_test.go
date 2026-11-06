@@ -34,7 +34,7 @@ func TestRuleGlabUnknownCommand(t *testing.T) {
 	if err != nil {
 		t.Fatalf("rule %q returned an error: %v", rule.Name, err)
 	}
-	want := []string{"glab ci", "glab label"}
+	want := []string{"glab label", "glab ci"}
 	if len(got) != len(want) {
 		t.Fatalf("rule %q returned %q, want %q", rule.Name, got, want)
 	}

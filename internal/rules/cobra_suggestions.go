@@ -72,7 +72,7 @@ func cobraUnknownCommandNewCommand(command *types.Command) ([]string, error) {
 	if broken == "" {
 		return nil, nil
 	}
-	return utils.ReplaceArguments(command.Script, broken, suggestions), nil
+	return utils.ReplaceArguments(command.Script, broken, utils.SortBySimilarity(broken, suggestions)), nil
 }
 
 // newCobraUnknownCommandRule registers the standard unknown command rule of a

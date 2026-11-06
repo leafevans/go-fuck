@@ -14,6 +14,19 @@ func SequenceRatio(a, b string) float64 {
 	return ratioRunes([]rune(a), []rune(b))
 }
 
+// SortBySimilarity returns a copy of candidates sorted by decreasing
+// similarity to word. Candidates with equal similarity keep their original
+// order. It is used to rank the suggestions that a tool prints before they are
+// offered to the user.
+func SortBySimilarity(word string, candidates []string) []string {
+	sorted := make([]string, len(candidates))
+	copy(sorted, candidates)
+	sort.SliceStable(sorted, func(left, right int) bool {
+		return SequenceRatio(word, sorted[left]) > SequenceRatio(word, sorted[right])
+	})
+	return sorted
+}
+
 // ratioRunes returns the similarity of two rune slices.
 func ratioRunes(left, right []rune) float64 {
 	length := len(left) + len(right)

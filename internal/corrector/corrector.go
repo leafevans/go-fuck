@@ -95,7 +95,22 @@ func GetCorrectedCommands(command *types.Command) []*types.CorrectedCommand {
 		if !rule.IsMatch(command) {
 			continue
 		}
-		corrected = append(corrected, rule.GetCorrectedCommands(command)...)
+		corrected = append(corrected, filterUnchanged(command, rule.GetCorrectedCommands(command))...)
 	}
 	return OrganizeCommands(corrected)
+}
+
+// filterUnchanged drops suggestions that are identical to the failed command
+// and have no side effect. A rule can echo the original command when a tool
+// output does not contain the data it expected; such a suggestion cannot help
+// the user and would only add noise to the selection prompt.
+func filterUnchanged(command *types.Command, corrected []*types.CorrectedCommand) []*types.CorrectedCommand {
+	filtered := make([]*types.CorrectedCommand, 0, len(corrected))
+	for _, candidate := range corrected {
+		if candidate.SideEffect == nil && candidate.Script == command.Script {
+			continue
+		}
+		filtered = append(filtered, candidate)
+	}
+	return filtered
 }

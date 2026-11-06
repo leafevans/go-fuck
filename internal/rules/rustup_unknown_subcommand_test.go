@@ -61,7 +61,7 @@ func TestRuleRustupUnknownSubcommand(t *testing.T) {
 		{"rustup component ad", rustupComponentUnknownOutput(), []string{"rustup component add"}},
 		{"rustup +stable component ad", rustupComponentUnknownOutput(), []string{"rustup +stable component add"}},
 		{"rustup toolchain uninstal", rustupToolchainUnknownOutput(),
-			[]string{"rustup toolchain list", "rustup toolchain install", "rustup toolchain uninstall"}},
+			[]string{"rustup toolchain uninstall", "rustup toolchain install", "rustup toolchain list"}},
 	}
 	for _, testCase := range commandCases {
 		t.Run("new_command/"+testCase.script, func(t *testing.T) {

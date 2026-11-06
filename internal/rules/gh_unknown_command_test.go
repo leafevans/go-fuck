@@ -50,7 +50,7 @@ func TestRuleGhUnknownCommand(t *testing.T) {
 		output string
 		want   []string
 	}{
-		{"gh prr", ghUnknownCommandOutput(), []string{"gh org", "gh pr"}},
+		{"gh prr", ghUnknownCommandOutput(), []string{"gh pr", "gh org"}},
 		{"gh repo creat", ghUnknownSubcommandOutput(), []string{"gh repo create"}},
 	}
 	for _, testCase := range commandCases {

@@ -43,7 +43,7 @@ func TestRuleUvUnknownSubcommand(t *testing.T) {
 	}{
 		{"uv runn", uvUnknownSubcommandOutput(), []string{"uv run"}},
 		{"uv pip instol", uvUnknownNestedSubcommandOutput(),
-			[]string{"uv pip uninstall", "uv pip list", "uv pip install"}},
+			[]string{"uv pip install", "uv pip uninstall", "uv pip list"}},
 	}
 	for _, testCase := range commandCases {
 		t.Run("new_command/"+testCase.script, func(t *testing.T) {
