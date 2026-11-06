@@ -39,6 +39,22 @@ Commands:
   add                                    Add a NuGet source.
 `
 
+// dotnetToolUnknownArgumentLocalized is the Chinese output of the .NET CLI.
+// The suggestion header stays English, while the "Unrecognized command or
+// argument" line is localized, so the rule must not depend on that line.
+const dotnetToolUnknownArgumentLocalized = `'instal' was not matched. Did you mean one of the following?
+install
+
+未识别命令或参数“'instal'”.
+
+用法:
+  dotnet tool [command] [options]
+
+命令:
+  install <packageId>   安装全局或本地工具。
+  uninstall <PACKAGE_ID> 卸载全局或本地工具。
+`
+
 // dotnetUnknownArgumentNoSuggestions is printed when the misspelled argument
 // has no close match.
 const dotnetUnknownArgumentNoSuggestions = `'zzz' was not matched. Did you mean one of the following?
@@ -59,6 +75,7 @@ func TestRuleDotnetUnknownArgument(t *testing.T) {
 	assertMatch(t, rule, "dotnet tool instal", dotnetToolUnknownArgument)
 	assertMatch(t, rule, "dotnet workload instal", dotnetToolUnknownArgument)
 	assertMatch(t, rule, "dotnet nuget foo", dotnetNugetUnknownArgument)
+	assertMatch(t, rule, "dotnet tool instal", dotnetToolUnknownArgumentLocalized)
 
 	assertNotMatch(t, rule, "dotnet tool install", "")
 	assertNotMatch(t, rule, "dotnet buidl", "Could not execute because the specified command or file was not found.")
@@ -66,6 +83,8 @@ func TestRuleDotnetUnknownArgument(t *testing.T) {
 	assertNotMatch(t, rule, "git tool instal", dotnetToolUnknownArgument)
 
 	assertNewCommands(t, rule, "dotnet tool instal", dotnetToolUnknownArgument,
+		[]string{"dotnet tool install"})
+	assertNewCommands(t, rule, "dotnet tool instal", dotnetToolUnknownArgumentLocalized,
 		[]string{"dotnet tool install"})
 	assertNewCommands(t, rule, "dotnet workload instal", dotnetToolUnknownArgument,
 		[]string{"dotnet workload install"})

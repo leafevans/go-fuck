@@ -33,6 +33,40 @@ Config info can be viewed via: npm help config
 npm@2.14.7 /opt/node/lib/node_modules/npm
 `
 
+// npmWrongCommandModernOutput is the npm 7 and newer output for an unknown
+// command. It no longer contains the command list; npm points at "npm help".
+const npmWrongCommandModernOutput = `Unknown command: "isntall"
+
+To see a list of supported npm commands, run:
+  npm help
+`
+
+// npmWrongCommandModernHelpOutput is the "npm help" output with the commands
+// that npm 7 and newer list.
+const npmWrongCommandModernHelpOutput = `npm <command>
+
+Usage:
+
+npm install        install all the dependencies in your project
+npm install <foo>  add the <foo> dependency to your project
+
+All commands:
+
+    access, adduser, audit, bugs, cache, ci, completion,
+    config, dedupe, deprecate, diff, dist-tag, docs, doctor,
+    edit, exec, explain, explore, find-dupes, fund, get, help,
+    help-search, init, install, install-ci-test, install-test,
+    link, ll, login, logout, ls, org, outdated, owner, pack,
+    ping, pkg, prefix, profile, prune, publish, query, rebuild,
+    repo, restart, root, run, sbom, search, set, shrinkwrap,
+    star, stars, start, stop, team, test, token, trust,
+    undeprecate, uninstall, unpublish, unstar, update, version,
+    view, whoami
+
+Specify configs in the ini-formatted file:
+    /home/user/.npmrc
+`
+
 func TestRuleNpmWrongCommand(t *testing.T) {
 	resetTestState(t)
 
@@ -40,6 +74,19 @@ func TestRuleNpmWrongCommand(t *testing.T) {
 	if rule == nil {
 		t.Fatal("npm_wrong_command rule is not registered")
 	}
+
+	originalHelp := npmWrongCommandHelpCommands
+	npmWrongCommandHelpCommands = func() []string {
+		return npmWrongCommandParseHelp(npmWrongCommandModernHelpOutput)
+	}
+	t.Cleanup(func() { npmWrongCommandHelpCommands = originalHelp })
+
+	// npm 7 and newer no longer embed the command list in the error output.
+	assertMatch(t, rule, "npm isntall", npmWrongCommandModernOutput)
+	assertNotMatch(t, rule, "npm", npmWrongCommandModernOutput)
+	assertNotMatch(t, rule, "test isntall", npmWrongCommandModernOutput)
+	assertNewCommands(t, rule, "npm isntall -g gulp", npmWrongCommandModernOutput,
+		[]string{"npm install -g gulp"})
 
 	for _, script := range []string{
 		"npm urgrdae",

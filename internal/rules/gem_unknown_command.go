@@ -38,10 +38,16 @@ func gemUnknownCommandParseCommands(output string) []string {
 }
 
 // gemUnknownCommandMatch reports whether gem did not recognize the command.
+//
+// RubyGems 3 and older raise Gem::CommandLineError; RubyGems 4 raises
+// Gem::UnknownCommandError instead.
 func gemUnknownCommandMatch(command *types.Command) bool {
-	return strings.Contains(command.Output,
-		"ERROR:  While executing gem ... (Gem::CommandLineError)") &&
-		strings.Contains(command.Output, "Unknown command")
+	output := command.Output
+	if !strings.Contains(output, "Unknown command") {
+		return false
+	}
+	return strings.Contains(output, "Gem::CommandLineError") ||
+		strings.Contains(output, "Gem::UnknownCommandError")
 }
 
 // gemUnknownCommandNewCommand suggests the closest valid gem commands.
@@ -50,7 +56,8 @@ func gemUnknownCommandNewCommand(command *types.Command) ([]string, error) {
 	if match == nil {
 		return nil, nil
 	}
-	return utils.ReplaceCommand(command, match[1], gemUnknownCommandGemCommands()), nil
+	// Windows output ends the line with CRLF; the capture must not keep the CR.
+	return utils.ReplaceCommand(command, strings.TrimSpace(match[1]), gemUnknownCommandGemCommands()), nil
 }
 
 func init() {

@@ -40,6 +40,18 @@ func TestRuleGitAdd(t *testing.T) {
 
 	assertNotMatch(t, rule, "git commit unknown", "")
 
+	// git 2.4x and newer omit the trailing period; some commands use "fatal:".
+	modernOutput := func(target string) string {
+		return "error: pathspec '" + target + "' did not match any file(s) known to git\n"
+	}
+	fatalOutput := func(target string) string {
+		return "fatal: pathspec '" + target + "' did not match any files\n"
+	}
+	assertMatch(t, rule, "git commit known", modernOutput("known"))
+	assertMatch(t, rule, "git commit known", fatalOutput("known"))
+	assertNewCommands(t, rule, "git commit known", modernOutput("known"),
+		[]string{"git add -- known && git commit known"})
+
 	commandCases := []struct {
 		script string
 		want   string

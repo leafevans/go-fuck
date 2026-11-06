@@ -9,8 +9,10 @@ import (
 	"github.com/leafevans/go-fuck/internal/utils"
 )
 
-// npmMissingScriptPattern extracts the misspelled script name from npm output.
-var npmMissingScriptPattern = regexp.MustCompile(`.*missing script: (.*)\n`)
+// npmMissingScriptPattern extracts the misspelled script name from npm
+// output. npm 6 and older print "npm ERR! missing script: wach"; npm 7 and
+// newer print 'npm error Missing script: "wach"'.
+var npmMissingScriptPattern = regexp.MustCompile(`(?i)missing script: "?([^"\n]+)"?`)
 
 // npmMissingScriptRunPartPrefix is the prefix of the npm arguments that run a
 // script ("run", "ru", "run-script", ...).
@@ -25,7 +27,7 @@ func npmMissingScriptMatch(command *types.Command) bool {
 			break
 		}
 	}
-	return hasRunPart && strings.Contains(command.Output, "npm ERR! missing script: ")
+	return hasRunPart && npmMissingScriptPattern.MatchString(command.Output)
 }
 
 // npmMissingScriptNewCommand suggests the npm scripts that are close to the

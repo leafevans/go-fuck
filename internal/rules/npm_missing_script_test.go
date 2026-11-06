@@ -24,6 +24,16 @@ npm ERR!     /home/nvbn/exp/code_view/client_web/npm-debug.log
 `
 }
 
+// npmMissingScriptModernOutput returns the npm 7 and newer output that reports
+// a missing script.
+func npmMissingScriptModernOutput(script string) string {
+	return "npm error Missing script: \"" + script + "\"\n" +
+		"npm error\n" +
+		"npm error To see a list of scripts, run:\n" +
+		"npm error   npm run\n" +
+		"npm error A complete log of this run can be found in: /home/user/.npm/_logs/debug.log\n"
+}
+
 // npmMissingScriptStubScripts replaces the npm scripts with the fixture values.
 func npmMissingScriptStubScripts(t *testing.T) {
 	t.Helper()
@@ -67,6 +77,12 @@ func TestRuleNpmMissingScript(t *testing.T) {
 	assertNotMatch(t, rule, "npm wach", npmMissingScriptOutput("wach"))
 	assertNotMatch(t, rule, "vim live-tes", npmMissingScriptOutput("live-tes"))
 	assertNotMatch(t, rule, "npm run-script sahare", "")
+
+	// npm 7 and newer use the "npm error Missing script: \"name\"" format.
+	assertMatch(t, rule, "npm run dvelop", npmMissingScriptModernOutput("dvelop"))
+	assertNotMatch(t, rule, "npm dvelop", npmMissingScriptModernOutput("dvelop"))
+	npmMissingScriptAssertFirstCommand(t, "npm run dvelop",
+		npmMissingScriptModernOutput("dvelop"), "npm run develop")
 
 	npmMissingScriptAssertFirstCommand(t, "npm ru wach-tests",
 		npmMissingScriptOutput("wach-tests"), "npm ru watch-test")

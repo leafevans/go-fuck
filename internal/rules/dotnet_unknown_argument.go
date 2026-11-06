@@ -15,9 +15,11 @@ import (
 //	'instal' was not matched. Did you mean one of the following?
 var dotnetUnknownArgumentHeader = "was not matched. Did you mean one of the following?"
 
-// dotnetUnrecognizedArgument matches the misspelled argument error line, for
-// example: Unrecognized command or argument 'instal'.
-var dotnetUnrecognizedArgument = regexp.MustCompile(`Unrecognized command or argument '([^']*)'\.`)
+// dotnetUnknownArgumentBroken matches the misspelled argument on the header
+// line, for example: 'instal' was not matched. The "Unrecognized command or
+// argument" line below it is localized, so it must not be used to extract the
+// argument.
+var dotnetUnknownArgumentBroken = regexp.MustCompile("'([^']*)' was not matched")
 
 // dotnetUnknownArgumentSuggestions returns the suggestions printed after the
 // "was not matched" header line.
@@ -47,7 +49,7 @@ func dotnetUnknownArgumentMatch(command *types.Command) bool {
 	if !strings.Contains(command.Output, dotnetUnknownArgumentHeader) {
 		return false
 	}
-	if dotnetUnrecognizedArgument.FindStringSubmatch(command.Output) == nil {
+	if dotnetUnknownArgumentBroken.FindStringSubmatch(command.Output) == nil {
 		return false
 	}
 	return len(dotnetUnknownArgumentSuggestions(command.Output)) > 0
@@ -56,7 +58,7 @@ func dotnetUnknownArgumentMatch(command *types.Command) bool {
 // dotnetUnknownArgumentNewCommand replaces the misspelled nested command with
 // each suggestion printed by the .NET CLI.
 func dotnetUnknownArgumentNewCommand(command *types.Command) ([]string, error) {
-	match := dotnetUnrecognizedArgument.FindStringSubmatch(command.Output)
+	match := dotnetUnknownArgumentBroken.FindStringSubmatch(command.Output)
 	if match == nil {
 		return nil, nil
 	}

@@ -2,6 +2,7 @@ package rules
 
 import (
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -10,6 +11,14 @@ import (
 func gemUnknownCommandOutput(command string) string {
 	return "\nERROR:  While executing gem ... (Gem::CommandLineError)\n" +
 		"    Unknown command " + command + "\n"
+}
+
+// gemUnknownCommandModernOutput returns the output of RubyGems 4 for an
+// unknown command. The error class and the suggestion line changed.
+func gemUnknownCommandModernOutput(command string) string {
+	return "\nERROR:  While executing gem ... (Gem::UnknownCommandError)\n" +
+		"    Unknown command " + command + "\n" +
+		"Did you mean?  \"install\"\n"
 }
 
 const gemUnknownCommandHelpOutput = `
@@ -79,6 +88,10 @@ func TestRuleGemUnknownCommand(t *testing.T) {
 
 	assertMatch(t, rule, "gem isntall jekyll", gemUnknownCommandOutput("isntall"))
 	assertMatch(t, rule, "gem last --local", gemUnknownCommandOutput("last"))
+	assertMatch(t, rule, "gem instll jekyll", gemUnknownCommandModernOutput("instll"))
+	// The captured output of a real command has CRLF line endings on Windows.
+	assertMatch(t, rule, "gem instll jekyll",
+		strings.ReplaceAll(gemUnknownCommandModernOutput("instll"), "\n", "\r\n"))
 	assertNotMatch(t, rule, "gem install jekyll", "")
 	assertNotMatch(t, rule, "git log", gemUnknownCommandOutput("log"))
 
@@ -89,6 +102,7 @@ func TestRuleGemUnknownCommand(t *testing.T) {
 	}{
 		{"gem isntall jekyll", gemUnknownCommandOutput("isntall"), "gem install jekyll"},
 		{"gem last --local", gemUnknownCommandOutput("last"), "gem list --local"},
+		{"gem instll jekyll", gemUnknownCommandModernOutput("instll"), "gem install jekyll"},
 	}
 	for _, testCase := range newCommandCases {
 		got, err := rule.GetNewCommand(testCommand(testCase.script, testCase.output))
