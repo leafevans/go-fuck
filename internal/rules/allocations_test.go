@@ -1,3 +1,9 @@
+// The race detector instruments every memory access and therefore adds
+// allocations that have nothing to do with the rule engine. Disable the
+// allocation budgets under -race; the normal test jobs on every platform and
+// the coverage job still run them.
+//go:build !race
+
 package rules
 
 import (
