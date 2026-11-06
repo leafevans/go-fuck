@@ -83,6 +83,28 @@ jobs:
           name: coverage-profile
           path: coverage.out
 
+  benchmark:
+    name: Benchmarks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: stable
+          cache: true
+      - name: Run benchmarks
+        shell: bash
+        run: |
+          set -o pipefail
+          go test ./internal/... -run '^$' -bench . -benchmem -count=1 | tee benchmark.txt
+      - name: Upload the benchmark results
+        uses: actions/upload-artifact@v5
+        with:
+          name: benchmarks
+          path: benchmark.txt
+
   rules-list:
     name: Rule list
     runs-on: ubuntu-latest
