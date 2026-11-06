@@ -1,0 +1,53 @@
+# Scheduled fuzzing: run the native fuzz targets for a short time every night
+# and keep any crashers as a workflow artifact.
+name: Fuzz
+
+on:
+  schedule:
+    - cron: "23 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Cancel an older run when a new one starts so scheduled runs do not pile up.
+concurrency:
+  group: fuzz-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fuzz:
+    name: Fuzz ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - pkg: ./internal/argumentparser
+            target: FuzzParse
+          - pkg: ./internal/customrules
+            target: FuzzCustomRulePipeline
+          - pkg: ./internal/instant
+            target: FuzzSanitize
+          - pkg: ./internal/instant
+            target: FuzzStripOSC
+          - pkg: ./internal/shells
+            target: FuzzSplit
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: stable
+          cache: true
+      - name: Fuzz ${{ matrix.target }}
+        run: go test ${{ matrix.pkg }} -run '^$' -fuzz '^${{ matrix.target }}$' -fuzztime=60s
+      - name: Upload crashers
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: fuzz-crashers-${{ matrix.target }}
+          path: "**/testdata/fuzz/**"
+          if-no-files-found: ignore

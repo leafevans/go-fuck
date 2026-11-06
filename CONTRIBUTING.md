@@ -32,6 +32,7 @@ go test ./... -count=1
 | `make test-race`        | run the test suite with the race detector (needs a C compiler)             |
 | `make cover`            | run the test suite with coverage and print the total                       |
 | `make bench`            | run the benchmarks (`go test ./internal/... -run '^$' -bench . -benchmem`) |
+| `make fuzz`             | run each native fuzz target for 20s as a local smoke test                  |
 | `make vet`              | run `go vet`                                                               |
 | `make fmt`              | format all Go files with `gofmt -s -w`                                     |
 | `make fmt-check`        | fail when a Go file is not formatted                                       |
@@ -42,6 +43,9 @@ go test ./... -count=1
 | `make packaging-check`  | validate that the committed distribution manifests are consistent          |
 | `make rules-list`       | regenerate the rule list in `README.md`                                    |
 | `make rules-list-check` | fail when the `README.md` rule list is out of date                         |
+
+The same fuzz targets also run daily in CI, in the `Fuzz` workflow. The test suite also guards the
+allocation count of the rule-matching hot path, and CI publishes benchmark results as a build artifact.
 
 The recipes avoid POSIX-only commands so that they work on Windows as well: small helper programs in
 `tools/` replace shell tricks such as `rm -rf` and `test -z "$(gofmt -l .)"`. If make is not
