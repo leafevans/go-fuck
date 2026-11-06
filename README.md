@@ -545,12 +545,12 @@ the selection entirely.
 
 The built-in rules are compiled into the binary, and declarative JSON rules can be loaded from the
 configuration directory (see [Creating custom rules](#creating-custom-rules)). Each rule decides
-whether it applies to a failed command and returns one or more corrected commands. There are 197
-built-in rules: 169 ported from the reference implementation plus 28 go-fuck specific rules for tools
+whether it applies to a failed command and returns one or more corrected commands. There are 200
+built-in rules: 169 ported from the reference implementation plus 31 go-fuck specific rules for tools
 that thefuck does not handle, including the GitHub and GitLab CLIs, kubectl/kind/kustomize, uv,
 cargo, Helm, pnpm, the Go toolchain, Node.js, bun, Deno, Docker Compose, just, Poetry, make, the
-go-task runner, minikube, Bundler, Chocolatey, the .NET CLI and rustup. The list below is generated
-from the compiled rules:
+go-task runner, minikube, Bundler, Chocolatey, the .NET CLI, rustup and the Dart and Flutter
+command-line tools. The list below is generated from the compiled rules:
 
 <!-- RULES_LIST_START -->
 - `adb_unknown_command`
@@ -588,6 +588,7 @@ from the compiled rules:
 - `cp_create_destination`
 - `cp_omitting_directory`
 - `cpp11`
+- `dart_unknown_command`
 - `deno_task_not_found`
 - `dirty_untar`
 - `dirty_unzip`
@@ -598,11 +599,13 @@ from the compiled rules:
 - `docker_image_being_used_by_container`
 - `docker_login`
 - `docker_not_command`
+- `dotnet_unknown_argument`
 - `dotnet_unknown_command`
 - `dry`
 - `fab_command_not_found`
 - `fix_alt_space`
 - `fix_file`
+- `flutter_unknown_command`
 - `gem_unknown_command`
 - `gh_unknown_command`
 - `gh_unknown_flag`
