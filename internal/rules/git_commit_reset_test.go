@@ -8,6 +8,9 @@ func TestRuleGitCommitReset(t *testing.T) {
 	if rule == nil {
 		t.Fatal("git_commit_reset rule is not registered")
 	}
+	if rule.Priority != 1500 {
+		t.Errorf("git_commit_reset priority = %d, want 1500", rule.Priority)
+	}
 
 	matchCases := []struct {
 		script string

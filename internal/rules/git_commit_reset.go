@@ -17,7 +17,13 @@ func gitCommitResetNewCommand(command *types.Command) ([]string, error) {
 }
 
 func init() {
-	register(types.NewRule("git_commit_reset",
+	rule := types.NewRule("git_commit_reset",
 		specific.GitSupportMatch(gitCommitResetMatch),
-		specific.GitSupportNew(gitCommitResetNewCommand)))
+		specific.GitSupportNew(gitCommitResetNewCommand))
+	// Deviation: the reference implementation gives this rule the default
+	// priority, so it is suggested before any concrete fix. Resetting the last
+	// commit is only a guess when a commit fails and is destructive; concrete
+	// rules must be offered first.
+	rule.Priority = 1500
+	register(rule)
 }
