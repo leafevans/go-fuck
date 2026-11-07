@@ -545,12 +545,13 @@ the selection entirely.
 
 The built-in rules are compiled into the binary, and declarative JSON rules can be loaded from the
 configuration directory (see [Creating custom rules](#creating-custom-rules)). Each rule decides
-whether it applies to a failed command and returns one or more corrected commands. There are 200
-built-in rules: 169 ported from the reference implementation plus 31 go-fuck specific rules for tools
-that thefuck does not handle, including the GitHub and GitLab CLIs, kubectl/kind/kustomize, uv,
-cargo, Helm, pnpm, the Go toolchain, Node.js, bun, Deno, Docker Compose, just, Poetry, make, the
-go-task runner, minikube, Bundler, Chocolatey, the .NET CLI, rustup and the Dart and Flutter
-command-line tools. The list below is generated from the compiled rules:
+whether it applies to a failed command and returns one or more corrected commands. There are 204
+built-in rules: 169 ported from the reference implementation plus 35 go-fuck specific rules for
+failures that thefuck does not handle, including the GitHub and GitLab CLIs, kubectl/kind/kustomize,
+uv, cargo, Helm, pnpm, npm peer dependency conflicts, the Go toolchain and go.sum, Node.js, bun, Deno,
+Docker Compose, just, Poetry, make, the go-task runner, minikube, Bundler, Chocolatey, the .NET CLI,
+rustup, the Dart and Flutter command-line tools, divergent git pulls and git's safe.directory check.
+The list below is generated from the compiled rules:
 
 <!-- RULES_LIST_START -->
 - `adb_unknown_command`
@@ -625,6 +626,7 @@ command-line tools. The list below is generated from the compiled rules:
 - `git_commit_reset`
 - `git_diff_no_index`
 - `git_diff_staged`
+- `git_dubious_ownership`
 - `git_fix_stash`
 - `git_flag_after_filename`
 - `git_help_aliased`
@@ -636,6 +638,7 @@ command-line tools. The list below is generated from the compiled rules:
 - `git_not_command`
 - `git_pull`
 - `git_pull_clone`
+- `git_pull_divergent`
 - `git_pull_uncommitted_changes`
 - `git_push`
 - `git_push_different_branch_names`
@@ -656,6 +659,7 @@ command-line tools. The list below is generated from the compiled rules:
 - `glab_unknown_command`
 - `go_install_version`
 - `go_missing_module`
+- `go_missing_sum`
 - `go_run`
 - `go_unknown_command`
 - `go_unknown_flag`
@@ -698,6 +702,7 @@ command-line tools. The list below is generated from the compiled rules:
 - `no_such_file`
 - `node_missing_module`
 - `npm_missing_script`
+- `npm_peer_dependency_conflict`
 - `npm_run_script`
 - `npm_wrong_command`
 - `omnienv_no_such_command`
@@ -853,7 +858,7 @@ external commands.
 go-fuck is a reimplementation, not a drop-in replacement for every thefuck feature:
 
 - **Complete rule port plus extras.** All 169 rules of the reference implementation are ported,
-  plus 24 go-fuck specific rules; the list in [Rules](#rules) is authoritative. Porting conventions
+  plus 35 go-fuck specific rules; the list in [Rules](#rules) is authoritative. Porting conventions
   are documented in [PORTING.md](PORTING.md).
 - **Instant mode covers Linux, macOS and Windows.** It reads the previous command output from a
   terminal log instead of re-running the command: bash and zsh on Linux and macOS, PowerShell on
