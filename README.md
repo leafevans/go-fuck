@@ -545,13 +545,14 @@ the selection entirely.
 
 The built-in rules are compiled into the binary, and declarative JSON rules can be loaded from the
 configuration directory (see [Creating custom rules](#creating-custom-rules)). Each rule decides
-whether it applies to a failed command and returns one or more corrected commands. There are 204
-built-in rules: 169 ported from the reference implementation plus 35 go-fuck specific rules for
+whether it applies to a failed command and returns one or more corrected commands. There are 211
+built-in rules: 169 ported from the reference implementation plus 42 go-fuck specific rules for
 failures that thefuck does not handle, including the GitHub and GitLab CLIs, kubectl/kind/kustomize,
-uv, cargo, Helm, pnpm, npm peer dependency conflicts, the Go toolchain and go.sum, Node.js, bun, Deno,
-Docker Compose, just, Poetry, make, the go-task runner, minikube, Bundler, Chocolatey, the .NET CLI,
-rustup, the Dart and Flutter command-line tools, divergent git pulls and git's safe.directory check.
-The list below is generated from the compiled rules:
+uv, cargo, Helm, pnpm, npm peer dependency conflicts and lock file mismatches, the Go toolchain and
+go.sum, Node.js, bun, Deno, Docker Compose, just, Poetry, make, the go-task runner, minikube,
+Bundler, Chocolatey, the .NET CLI, rustup, the Dart and Flutter command-line tools, git switch and
+safe.directory corrections and divergent, clobbered or blocked git operations. The list below is
+generated from the compiled rules:
 
 <!-- RULES_LIST_START -->
 - `adb_unknown_command`
@@ -612,6 +613,7 @@ The list below is generated from the compiled rules:
 - `gh_unknown_flag`
 - `git_add`
 - `git_add_force`
+- `git_amend_initial_commit`
 - `git_bisect_usage`
 - `git_branch_0flag`
 - `git_branch_delete`
@@ -627,6 +629,7 @@ The list below is generated from the compiled rules:
 - `git_diff_no_index`
 - `git_diff_staged`
 - `git_dubious_ownership`
+- `git_fetch_clobber_tag`
 - `git_fix_stash`
 - `git_flag_after_filename`
 - `git_help_aliased`
@@ -635,6 +638,7 @@ The list below is generated from the compiled rules:
 - `git_main_master`
 - `git_merge`
 - `git_merge_unrelated`
+- `git_merge_unstaged`
 - `git_not_command`
 - `git_pull`
 - `git_pull_clone`
@@ -647,6 +651,7 @@ The list below is generated from the compiled rules:
 - `git_push_without_commits`
 - `git_rebase_merge_dir`
 - `git_rebase_no_changes`
+- `git_rebase_unstaged`
 - `git_remote_delete`
 - `git_remote_seturl_add`
 - `git_rm_local_modifications`
@@ -654,6 +659,8 @@ The list below is generated from the compiled rules:
 - `git_rm_staged`
 - `git_stash`
 - `git_stash_pop`
+- `git_switch_existing_branch`
+- `git_switch_unknown_branch`
 - `git_tag_force`
 - `git_two_dashes`
 - `glab_unknown_command`
@@ -701,6 +708,7 @@ The list below is generated from the compiled rules:
 - `no_command`
 - `no_such_file`
 - `node_missing_module`
+- `npm_ci_lock_mismatch`
 - `npm_missing_script`
 - `npm_peer_dependency_conflict`
 - `npm_run_script`
@@ -858,7 +866,7 @@ external commands.
 go-fuck is a reimplementation, not a drop-in replacement for every thefuck feature:
 
 - **Complete rule port plus extras.** All 169 rules of the reference implementation are ported,
-  plus 35 go-fuck specific rules; the list in [Rules](#rules) is authoritative. Porting conventions
+  plus 42 go-fuck specific rules; the list in [Rules](#rules) is authoritative. Porting conventions
   are documented in [PORTING.md](PORTING.md).
 - **Instant mode covers Linux, macOS and Windows.** It reads the previous command output from a
   terminal log instead of re-running the command: bash and zsh on Linux and macOS, PowerShell on
