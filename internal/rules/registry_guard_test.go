@@ -234,6 +234,10 @@ var expectedExtraRuleNames = []string{
 	"pnpm_command_not_found",
 	"pnpm_frozen_lockfile",
 	"poetry_unknown_command",
+	"powershell_cd_unquoted_path",
+	"powershell_missing_directory",
+	"powershell_mkdir_existing",
+	"powershell_remove_recurse",
 	"rustup_unknown_subcommand",
 	"task_unknown_task",
 	"uv_locked_lockfile",
@@ -254,17 +258,18 @@ func allExpectedRuleNames() []string {
 // registryGuardHelperFiles lists the files of this package that do not
 // implement or test a single rule. They are skipped by the file guards.
 var registryGuardHelperFiles = map[string]bool{
-	"registry.go":            true,
-	"allocations_test.go":    true,
-	"testhelpers_test.go":    true,
-	"readme_test.go":         true,
-	"registry_guard_test.go": true,
-	"benchmark_test.go":      true,
-	"clap_suggestions.go":    true,
-	"cobra_suggestions.go":   true,
-	"dart_suggestions.go":    true,
-	"custom.go":              true,
-	"custom_test.go":         true,
+	"registry.go":               true,
+	"allocations_test.go":       true,
+	"testhelpers_test.go":       true,
+	"readme_test.go":            true,
+	"registry_guard_test.go":    true,
+	"benchmark_test.go":         true,
+	"clap_suggestions.go":       true,
+	"cobra_suggestions.go":      true,
+	"dart_suggestions.go":       true,
+	"powershell_suggestions.go": true,
+	"custom.go":                 true,
+	"custom_test.go":            true,
 }
 
 // ruleNamePattern matches the characters that a rule name may contain. Rule
