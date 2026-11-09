@@ -26,9 +26,15 @@ func gitRebaseMergeDirNewCommand(command *types.Command) ([]string, error) {
 		"git rebase --abort",
 		"git rebase --skip",
 	}
-	lines := strings.Split(command.Output, "\n")
-	if len(lines) >= 4 {
-		commandList = append(commandList, strings.TrimSpace(lines[len(lines)-4]))
+	// The removal command is looked up by its prefix instead of its position,
+	// because the captured output may carry extra empty lines (for example
+	// when the command was re-run by PowerShell).
+	for _, line := range strings.Split(command.Output, "\n") {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "rm -fr") {
+			commandList = append(commandList, line)
+			break
+		}
 	}
 	return utils.GetCloseMatches(command.Script, commandList, 4, 0), nil
 }

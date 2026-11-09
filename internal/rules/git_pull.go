@@ -15,22 +15,31 @@ func gitPullMatch(command *types.Command) bool {
 		strings.Contains(command.Output, "set-upstream")
 }
 
+// gitPullUpstreamPrefix starts the line with the suggested upstream command.
+const gitPullUpstreamPrefix = "git branch --set-upstream-to"
+
 // gitPullNewCommand sets the upstream branch suggested by git and retries the
 // pull.
+//
+// The suggested command is looked up by its prefix instead of its position,
+// because the captured output may carry extra empty lines (for example when
+// the command was re-run by PowerShell).
 func gitPullNewCommand(command *types.Command) ([]string, error) {
-	lines := strings.Split(command.Output, "\n")
-	if len(lines) < 3 {
-		return nil, nil
+	for _, line := range strings.Split(command.Output, "\n") {
+		line = strings.TrimSpace(line)
+		if !strings.HasPrefix(line, gitPullUpstreamPrefix) {
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) == 0 {
+			return nil, nil
+		}
+		branch := fields[len(fields)-1]
+		setUpstream := strings.ReplaceAll(line, "<remote>", "origin")
+		setUpstream = strings.ReplaceAll(setUpstream, "<branch>", branch)
+		return []string{shells.Current().And(setUpstream, command.Script)}, nil
 	}
-
-	// git prints the suggested "git branch --set-upstream-to" command three
-	// lines above the end of the output.
-	line := strings.TrimSpace(lines[len(lines)-3])
-	fields := strings.Split(line, " ")
-	branch := fields[len(fields)-1]
-	setUpstream := strings.ReplaceAll(line, "<remote>", "origin")
-	setUpstream = strings.ReplaceAll(setUpstream, "<branch>", branch)
-	return []string{shells.Current().And(setUpstream, command.Script)}, nil
+	return nil, nil
 }
 
 func init() {

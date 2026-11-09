@@ -68,3 +68,22 @@ func TestRuleGitRebaseMergeDir(t *testing.T) {
 		}
 	})
 }
+
+// TestRuleGitRebaseMergeDirToleratesTrailingLines guards that the removal
+// command is found by its prefix, because a re-run through PowerShell may
+// append empty lines to the captured output.
+func TestRuleGitRebaseMergeDirToleratesTrailingLines(t *testing.T) {
+	resetTestState(t)
+	rule := Get("git_rebase_merge_dir")
+	if rule == nil {
+		t.Fatal("git_rebase_merge_dir rule is not registered")
+	}
+
+	output := gitRebaseMergeDirOutput() + "\n\n\n"
+	assertNewCommands(t, rule, "git rebase master", output, []string{
+		"git rebase --abort",
+		"git rebase --skip",
+		"git rebase --continue",
+		"rm -fr \"/foo/bar/baz/egg/.git/rebase-merge\"",
+	})
+}
