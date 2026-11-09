@@ -111,11 +111,12 @@ func encodePowerShellCommand(command string) string {
 // PowerShell serializes its error stream as CLIXML when the stream is
 // redirected instead of attached to a console, and CLIXML breaks the message
 // text into tagged fragments that the rules cannot match. Merging every stream
-// inside the shell and converting the records to text keeps the human readable
-// message.
+// inside the shell and printing the exception message of the error records
+// keeps the human readable message and drops the positional details that
+// PowerShell adds to formatted errors.
 func powerShellReRunScript(command string) string {
-	return "$ProgressPreference = 'SilentlyContinue'; & { " + command +
-		" } *>&1 | Out-String -Width 4096"
+	return "$ProgressPreference = 'SilentlyContinue'; try { & { " + command +
+		" } *>&1 | ForEach-Object { if ($_ -is [System.Management.Automation.ErrorRecord]) { $_.Exception.Message } else { $_ } } } catch { $_.Exception.Message }"
 }
 
 // shellCommand builds a command that is executed by the shell that started

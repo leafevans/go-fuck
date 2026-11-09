@@ -172,7 +172,9 @@ func TestShellCommandIgnoresMissingPowerShellEnv(t *testing.T) {
 }
 func TestPowerShellReRunScript(t *testing.T) {
 	got := powerShellReRunScript("cd C:\\missing")
-	want := "$ProgressPreference = 'SilentlyContinue'; & { cd C:\\missing } *>&1 | Out-String -Width 4096"
+	want := "$ProgressPreference = 'SilentlyContinue'; try { & { cd C:\\missing }" +
+		" *>&1 | ForEach-Object { if ($_ -is [System.Management.Automation.ErrorRecord])" +
+		" { $_.Exception.Message } else { $_ } } } catch { $_.Exception.Message }"
 	if got != want {
 		t.Fatalf("powerShellReRunScript() = %q, want %q", got, want)
 	}
