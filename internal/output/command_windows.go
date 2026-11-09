@@ -15,28 +15,25 @@ import (
 	"github.com/leafevans/go-fuck/internal/system"
 )
 
-// powerShellExecutable returns the PowerShell executable that started go-fuck,
-// or an empty string when the process tree does not contain one.
-func powerShellExecutable(ancestors []string) string {
-	for _, name := range ancestors {
-		switch strings.ToLower(filepath.Base(name)) {
-		case "pwsh.exe":
-			return "pwsh.exe"
-		case "powershell.exe":
-			return "powershell.exe"
-		}
-	}
-	return ""
-}
-
-// powerShellName returns the PowerShell executable name of path, or an empty
-// string when path does not point at a PowerShell executable.
+// powerShellName returns the canonical name of a PowerShell executable, or an
+// empty string when path does not point at one.
 func powerShellName(path string) string {
 	switch strings.ToLower(filepath.Base(path)) {
 	case "pwsh.exe":
 		return "pwsh.exe"
 	case "powershell.exe":
 		return "powershell.exe"
+	}
+	return ""
+}
+
+// powerShellExecutable returns the PowerShell executable that is present in the
+// process ancestors, or an empty string when there is none.
+func powerShellExecutable(ancestors []string) string {
+	for _, name := range ancestors {
+		if executable := powerShellName(name); executable != "" {
+			return executable
+		}
 	}
 	return ""
 }
