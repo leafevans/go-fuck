@@ -96,8 +96,11 @@ func TestAndOr(t *testing.T) {
 	}
 
 	powershell := NewPowershell()
-	if got := powershell.And("a", "b"); got != "(a) -and (b)" {
+	if got := powershell.And("a", "b"); got != "a; if ($?) { b }" {
 		t.Fatalf("PowerShell And() = %q", got)
+	}
+	if got := powershell.Or("a", "b"); got != "a; if (-not $?) { b }" {
+		t.Fatalf("PowerShell Or() = %q", got)
 	}
 }
 

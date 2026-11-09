@@ -19,6 +19,8 @@ import (
 // session, when there is no history yet, so go-fuck is invoked when either
 // history or arguments are available.
 const powershellAliasTemplate = `function %[1]s {
+    $env:TF_SHELL = "powershell";
+    try { $env:GOFUCK_SHELL = (Get-Process -Id $PID).Path } catch { };
     $history = (Get-History -Count 1).CommandLine;
     if (-not [string]::IsNullOrWhiteSpace($history) -or $args.Count -gt 0) {
         $goFuckArgs = @($args);
@@ -117,13 +119,33 @@ func (p *Powershell) InstantModeAlias(aliasName string) string {
 	return fmt.Sprintf(powershellInstantInitTemplate, consts.ExecutableName(), logPath)
 }
 
-// And joins commands with the PowerShell AND operator.
+// And joins commands so that the next command runs only after the previous one
+// succeeded.
+//
+// PowerShell had no command separator with AND semantics before version 7, and
+// the logical -and operator evaluates the truthiness of a command output
+// instead of its exit code, so every command is guarded by $? instead.
 func (p *Powershell) And(commands ...string) string {
-	joined := make([]string, len(commands))
-	for i, command := range commands {
-		joined[i] = "(" + command + ")"
+	return powershellChain(commands, "if ($?) { %s }")
+}
+
+// Or joins commands so that the next command runs only after the previous one
+// failed.
+func (p *Powershell) Or(commands ...string) string {
+	return powershellChain(commands, "if (-not $?) { %s }")
+}
+
+// powershellChain joins commands with the given guard template, nesting the
+// guards from the last command to the first one.
+func powershellChain(commands []string, template string) string {
+	if len(commands) == 0 {
+		return ""
 	}
-	return strings.Join(joined, " -and ")
+	joined := commands[len(commands)-1]
+	for index := len(commands) - 2; index >= 0; index-- {
+		joined = commands[index] + "; " + fmt.Sprintf(template, joined)
+	}
+	return joined
 }
 
 // HowToConfigure describes how to configure the alias for PowerShell.
