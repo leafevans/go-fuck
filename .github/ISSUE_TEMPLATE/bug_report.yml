@@ -1,0 +1,84 @@
+name: Bug report
+description: A rule suggests the wrong command, or a real failure is not corrected
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. A good report contains the failed command,
+        the output go-fuck saw and the suggestion it made.
+
+        Run `go-fuck --version` and paste the output below. If the rule did not
+        match at all, re-run the failing command and then go-fuck with
+        `--debug --json`: the JSON contains the output that go-fuck captured and
+        the rules it tried.
+
+        Remove passwords, tokens, private host names and other sensitive data
+        before you paste output.
+  - type: input
+    id: version
+    attributes:
+      label: go-fuck version
+      description: "The output of `go-fuck --version`."
+      placeholder: go-fuck 1.8.0 using Go go1.27.3 and PowerShell
+    validations:
+      required: true
+  - type: input
+    id: operating-system
+    attributes:
+      label: Operating system
+      placeholder: Windows 11 25H2, Ubuntu 24.04, macOS 15.2
+    validations:
+      required: true
+  - type: dropdown
+    id: shell
+    attributes:
+      label: Shell
+      options:
+        - Windows PowerShell 5.1
+        - PowerShell 7
+        - bash
+        - zsh
+        - fish
+        - tcsh
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: command
+    attributes:
+      label: Failed command
+      description: The command that failed, for example `git switch feture`.
+      placeholder: git switch feture
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Command output
+      description: The output that go-fuck captured, or the `--debug --json` output.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggestion that go-fuck made
+      description: What go-fuck offered, and why it is wrong.
+      render: text
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected suggestion
+      description: What go-fuck should have offered, if you know.
+      render: text
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched the existing issues and this bug is not reported yet.
+          required: true
+        - label: I removed sensitive data from the output above.
+          required: true

@@ -1,0 +1,12 @@
+# Keep the GitHub Actions used by CI, fuzzing and the release workflow up to
+# date. The project itself has no module dependencies.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      actions:
+        patterns:
+          - "*"

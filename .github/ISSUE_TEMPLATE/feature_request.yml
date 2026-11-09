@@ -1,0 +1,51 @@
+name: Feature request
+description: Suggest a new rule, a new tool integration or another improvement
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        go-fuck prefers real, reproducible output over guesses: the best request
+        contains the exact output of a failing command and the correction you
+        expect. See the rule conventions in [CONTRIBUTING.md](https://github.com/leafevans/go-fuck/blob/main/CONTRIBUTING.md).
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Which failure is not corrected today, and how often does it happen?
+    validations:
+      required: true
+  - type: input
+    id: tool
+    attributes:
+      label: Tool and version
+      description: The tool that produces the output, for example `npm 11.14.1`.
+  - type: textarea
+    id: output
+    attributes:
+      label: Example output
+      description: The exact output of the failing command. Remove sensitive data.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed correction
+      description: The command go-fuck should suggest.
+      render: text
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: Other corrections or workarounds you considered.
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched the existing issues and the README rule list first.
+          required: true
+        - label: The output above was captured from a real run of the tool.
+          required: true

@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Contributing guide
+    url: https://github.com/leafevans/go-fuck/blob/main/CONTRIBUTING.md
+    about: Development setup, the checks CI runs and the conventions
+  - name: Porting guide
+    url: https://github.com/leafevans/go-fuck/blob/main/PORTING.md
+    about: How rules are ported from thefuck, and how a new rule is written
