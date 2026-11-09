@@ -70,13 +70,12 @@ try {
 
     # An unquoted path with a space is quoted again.
     New-Item -ItemType Directory -Path (Join-Path $root "Program Files") | Out-Null
+    Set-Content -LiteralPath (Join-Path $root "Program Files\marker.txt") -Value "x"
     $suggestion = Get-Suggestion ("cd " + $root + "\Program Files")
     Assert "cd quotes the path" ($suggestion -match "\x27") $suggestion
     if ($suggestion -ne "") {
         Invoke-Expression $suggestion | Out-Null
-        $location = (Get-Location).Path.TrimEnd("\")
-        $expected = (Join-Path $root "Program Files").TrimEnd("\")
-        Assert "cd enters the directory" ($location -eq $expected) ($location + " != " + $expected)
+        Assert "cd enters the directory" (Test-Path -LiteralPath "marker.txt") "marker.txt is not in the current directory"
         Set-Location $root
     }
 
