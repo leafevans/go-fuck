@@ -50,7 +50,9 @@ func TestGetOutputMergesConfiguredEnvironment(t *testing.T) {
 
 	var command string
 	if runtime.GOOS == "windows" {
-		command = "echo %GOFUCK_TEST_ENV%"
+		// The command is run through cmd.exe explicitly so that the test does
+		// not depend on the shell that re-runs it.
+		command = "cmd /c echo %GOFUCK_TEST_ENV%"
 	} else {
 		command = "echo $GOFUCK_TEST_ENV"
 	}

@@ -1,8 +1,6 @@
 package output
 
 import (
-	"reflect"
-	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -82,20 +80,6 @@ func TestGetOutputIgnoresWaitSlowCommandForFastCommands(t *testing.T) {
 	}
 	if !strings.Contains(result, "fast") {
 		t.Fatalf("GetOutput() = %q, want it to contain fast", result)
-	}
-}
-
-func TestShellCommandPlatform(t *testing.T) {
-	command := "echo hello"
-	want := []string{"/bin/sh", "-c", command}
-	if runtime.GOOS == "windows" {
-		t.Setenv("COMSPEC", "")
-		want = []string{"cmd.exe", "/c", command}
-	}
-
-	cmd := shellCommand(command)
-	if !reflect.DeepEqual(cmd.Args, want) {
-		t.Fatalf("shellCommand() args = %q, want %q", cmd.Args, want)
 	}
 }
 

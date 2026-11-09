@@ -310,6 +310,11 @@ Common options:
 The re-run is why the default mode works with any shell and any command without a terminal logger;
 the cost is running the failed command a second time, which is what instant mode avoids.
 
+On Windows the command is re-run with the PowerShell flavor that started go-fuck, so PowerShell
+native commands and syntax produce their real error messages instead of an unrelated cmd.exe
+"not recognized" error. Processes that were not started from PowerShell, and processes whose alias
+does not report the shell through `GOFUCK_SHELL`, keep the cmd.exe behavior.
+
 ## Instant mode
 
 The experimental instant mode reads the output of the previous command from a terminal log instead
