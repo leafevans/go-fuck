@@ -97,8 +97,9 @@ rule runs, which a native binary does not need.
 
 ## Requirements
 
-- **Go 1.23 or newer** to build from source. Older Go toolchains can produce macOS binaries that
-  macOS 26 refuses to start; use a current toolchain.
+- **Go 1.23 or newer** to build from source. Go 1.22 and older do not emit the `LC_UUID` load
+  command that macOS 26 requires for binaries that use networking (golang/go#68678), so the macOS
+  binaries built with them refuse to start; use a current toolchain.
 - **No runtime dependencies.** The compiled binary is self-contained.
 - A supported shell for the alias: bash, zsh, fish, tcsh or PowerShell. On Windows, PowerShell is
   recommended; a `cmd.exe` shim is provided as well.
@@ -572,13 +573,13 @@ the selection entirely.
 
 The built-in rules are compiled into the binary, and declarative JSON rules can be loaded from the
 configuration directory (see [Creating custom rules](#creating-custom-rules)). Each rule decides
-whether it applies to a failed command and returns one or more corrected commands. There are 220
-built-in rules: 169 ported from the reference implementation plus 51 go-fuck specific rules for
+whether it applies to a failed command and returns one or more corrected commands. There are 225
+built-in rules: 169 ported from the reference implementation plus 56 go-fuck specific rules for
 failures that thefuck does not handle, including the GitHub and GitLab CLIs, kubectl/kind/kustomize,
 uv, cargo, Helm, pnpm, the npm, pnpm, yarn and uv lock file checks, the Go toolchain and go.sum,
 Node.js, bun, Deno, Docker Compose, just, Poetry, make, the go-task runner, minikube, Bundler,
-Chocolatey, the .NET CLI, rustup, the Dart and Flutter command-line tools, the PowerShell file
-operation corrections, git switch and safe.directory corrections and divergent, clobbered or blocked
+Chocolatey, the .NET CLI, rustup toolchains, the Dart and Flutter command-line tools, the uv and Cargo
+project setup corrections, the PowerShell file operation corrections, git switch and safe.directory corrections and divergent, clobbered or blocked
 git operations. The list below is generated from the compiled rules:
 
 <!-- RULES_LIST_START -->
@@ -601,6 +602,7 @@ git operations. The list below is generated from the compiled rules:
 - `bun_script_not_found`
 - `bundle_unknown_command`
 - `cargo`
+- `cargo_missing_manifest`
 - `cargo_no_command`
 - `cargo_unknown_argument`
 - `cargo_unknown_command`
@@ -759,6 +761,7 @@ git operations. The list below is generated from the compiled rules:
 - `powershell_missing_directory`
 - `powershell_mkdir_existing`
 - `powershell_remove_recurse`
+- `powershell_set_location`
 - `prove_recursively`
 - `python_command`
 - `python_execute`
@@ -770,6 +773,7 @@ git operations. The list below is generated from the compiled rules:
 - `remove_trailing_cedilla`
 - `rm_dir`
 - `rm_root`
+- `rustup_toolchain_missing`
 - `rustup_unknown_subcommand`
 - `scm_correction`
 - `sed_unterminated_s`
@@ -790,6 +794,8 @@ git operations. The list below is generated from the compiled rules:
 - `unknown_command`
 - `unsudo`
 - `uv_locked_lockfile`
+- `uv_missing_project`
+- `uv_pip_no_venv`
 - `uv_unknown_argument`
 - `uv_unknown_subcommand`
 - `vagrant_up`
@@ -902,7 +908,7 @@ external commands.
 go-fuck is a reimplementation, not a drop-in replacement for every thefuck feature:
 
 - **Complete rule port plus extras.** All 169 rules of the reference implementation are ported,
-  plus 51 go-fuck specific rules; the list in [Rules](#rules) is authoritative. Porting conventions
+  plus 56 go-fuck specific rules; the list in [Rules](#rules) is authoritative. Porting conventions
   are documented in [PORTING.md](PORTING.md).
 - **Instant mode covers Linux, macOS and Windows.** It reads the previous command output from a
   terminal log instead of re-running the command: bash and zsh on Linux and macOS, PowerShell on
