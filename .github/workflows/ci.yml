@@ -48,8 +48,27 @@ jobs:
             throw "the PowerShell alias was not defined"
           }
 
-  race:
-    name: Race detector
+  powershell:
+    name: PowerShell integration
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: stable
+          cache: true
+      - name: Build
+        run: go build -trimpath -o go-fuck.exe ./cmd/go-fuck
+      - name: Check with Windows PowerShell 5.1
+        shell: powershell
+        run: ./.github/scripts/powershell-integration.ps1 -Exe ./go-fuck.exe
+      - name: Check with PowerShell 7
+        shell: pwsh
+        run: ./.github/scripts/powershell-integration.ps1 -Exe ./go-fuck.exe
+
+  race:    name: Race detector
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -76,7 +95,7 @@ jobs:
       - name: Measure coverage
         run: go test ./... -count=1 -coverprofile=coverage.out
       - name: Enforce the coverage minimum
-        run: go run ./tools/coveragecheck -profile coverage.out -min 80
+        run: go run ./tools/coveragecheck -profile coverage.out -min 82
       - name: Upload the coverage profile
         uses: actions/upload-artifact@v7
         with:

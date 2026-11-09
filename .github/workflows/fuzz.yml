@@ -34,6 +34,8 @@ jobs:
             target: FuzzStripOSC
           - pkg: ./internal/shells
             target: FuzzSplit
+          - pkg: ./internal/rules
+            target: FuzzRules
     steps:
       - name: Checkout
         uses: actions/checkout@v7
