@@ -11,26 +11,26 @@
 class GoFuck < Formula
   desc "Blazingly fast reimplementation of thefuck in Go"
   homepage "https://github.com/leafevans/go-fuck"
-  version "1.8.0"
+  version "1.8.1"
   license "MIT"
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/leafevans/go-fuck/releases/download/v1.8.0/go-fuck_1.8.0_darwin_arm64.tar.gz"
-      sha256 "05bda4925cc4d4559dde9ecb487d180c8c4af8fc9cb43e6edd5b2b496903af80"
+      url "https://github.com/leafevans/go-fuck/releases/download/v1.8.1/go-fuck_1.8.1_darwin_arm64.tar.gz"
+      sha256 "657912281d3ee46452e9003f96f51e59dd22bdb59a01863f185b32454b924cd8"
     else
-      url "https://github.com/leafevans/go-fuck/releases/download/v1.8.0/go-fuck_1.8.0_darwin_amd64.tar.gz"
-      sha256 "11167b0794057b46d3f1463d24d982a948f175dd7a4102c5ccf178ccd42b9bbc"
+      url "https://github.com/leafevans/go-fuck/releases/download/v1.8.1/go-fuck_1.8.1_darwin_amd64.tar.gz"
+      sha256 "052b4dfbd4ef5d0a07988ac0aa0882d0b68f0a5b4409dad40d318b9913479403"
     end
   end
 
   on_linux do
     if Hardware::CPU.arm?
-      url "https://github.com/leafevans/go-fuck/releases/download/v1.8.0/go-fuck_1.8.0_linux_arm64.tar.gz"
-      sha256 "d75a35b4ff1d6bbf27651a7f63be2767d53b9cd0bb45e497eb5f3ee9e19c0356"
+      url "https://github.com/leafevans/go-fuck/releases/download/v1.8.1/go-fuck_1.8.1_linux_arm64.tar.gz"
+      sha256 "62911268da97d4260251e9c2688e734991432be71526724bcf8623ecaff2f197"
     else
-      url "https://github.com/leafevans/go-fuck/releases/download/v1.8.0/go-fuck_1.8.0_linux_amd64.tar.gz"
-      sha256 "46d6dad03f4aa4dc9b17f246959f6792aa133346f219a61a1a51f7957a1d56c4"
+      url "https://github.com/leafevans/go-fuck/releases/download/v1.8.1/go-fuck_1.8.1_linux_amd64.tar.gz"
+      sha256 "93874dd0d64bb4e79cc8fe6a90cd529fd8f8ca06ead7c1011e471a234b890f15"
     end
   end
 
