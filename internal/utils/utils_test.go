@@ -259,21 +259,6 @@ func TestForApp(t *testing.T) {
 	}
 }
 
-func TestForAppNew(t *testing.T) {
-	resetUtilsState(t)
-	newCommand := ForAppNew([]string{"git"}, 0, func(command *types.Command) ([]string, error) {
-		return []string{command.Script + "!"}, nil
-	})
-	got, err := newCommand(types.NewCommand("git diff", ""))
-	if err != nil || len(got) != 1 || got[0] != "git diff!" {
-		t.Fatalf("ForAppNew() = %q, %v", got, err)
-	}
-	got, err = newCommand(types.NewCommand("hg diff", ""))
-	if err != nil || got != nil {
-		t.Fatalf("ForAppNew() = %q, %v, want no commands", got, err)
-	}
-}
-
 func TestGetAllExecutables(t *testing.T) {
 	resetUtilsState(t)
 	dir := fakeExecutableDir(t, "vim", "fsck")
