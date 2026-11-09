@@ -560,7 +560,6 @@ safe.directory corrections and divergent, clobbered or blocked git operations. T
 generated from the compiled rules:
 
 <!-- RULES_LIST_START -->
-
 - `adb_unknown_command`
 - `ag_literal`
 - `apt_get`
@@ -777,7 +776,6 @@ generated from the compiled rules:
 - `yarn_frozen_lockfile`
 - `yarn_help`
 - `yum_invalid_operation`
-
 <!-- RULES_LIST_END -->
 
 Regenerate it after adding or renaming a rule:
