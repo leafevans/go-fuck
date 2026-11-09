@@ -29,12 +29,8 @@ func gitRebaseMergeDirNewCommand(command *types.Command) ([]string, error) {
 	// The removal command is looked up by its prefix instead of its position,
 	// because the captured output may carry extra empty lines (for example
 	// when the command was re-run by PowerShell).
-	for _, line := range strings.Split(command.Output, "\n") {
-		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "rm -fr") {
-			commandList = append(commandList, line)
-			break
-		}
+	if line, found := utils.FindLineByPrefix(command.Output, "rm -fr"); found {
+		commandList = append(commandList, line)
 	}
 	return utils.GetCloseMatches(command.Script, commandList, 4, 0), nil
 }

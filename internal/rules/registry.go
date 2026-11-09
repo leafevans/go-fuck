@@ -15,11 +15,11 @@ import (
 // problems.
 var (
 	// newline is the line separator.
-	newline = string(rune(10))
+	newline = "\n"
 	// backslash is used to escape shell characters.
-	backslash = string(rune(92))
+	backslash = "\\"
 	// doubleQuote is the double quote character.
-	doubleQuote = string(rune(34))
+	doubleQuote = "\""
 )
 
 var (

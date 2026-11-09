@@ -39,7 +39,7 @@ func pnpmCommandNotFoundNewCommand(command *types.Command) ([]string, error) {
 	for _, match := range matches {
 		suggestions = append(suggestions, match[1])
 	}
-	return utils.ReplaceArguments(command.Script, broken, utils.SortBySimilarity(broken, suggestions)), nil
+	return utils.ReplaceArgumentsSorted(command.Script, broken, suggestions), nil
 }
 
 func init() {

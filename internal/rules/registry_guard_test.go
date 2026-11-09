@@ -260,6 +260,7 @@ var registryGuardHelperFiles = map[string]bool{
 	"readme_test.go":         true,
 	"registry_guard_test.go": true,
 	"benchmark_test.go":      true,
+	"clap_suggestions.go":    true,
 	"cobra_suggestions.go":   true,
 	"dart_suggestions.go":    true,
 	"custom.go":              true,

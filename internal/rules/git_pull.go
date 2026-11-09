@@ -6,6 +6,7 @@ import (
 	"github.com/leafevans/go-fuck/internal/shells"
 	"github.com/leafevans/go-fuck/internal/specific"
 	"github.com/leafevans/go-fuck/internal/types"
+	"github.com/leafevans/go-fuck/internal/utils"
 )
 
 // gitPullMatch reports whether git pull failed because the current branch has
@@ -25,21 +26,18 @@ const gitPullUpstreamPrefix = "git branch --set-upstream-to"
 // because the captured output may carry extra empty lines (for example when
 // the command was re-run by PowerShell).
 func gitPullNewCommand(command *types.Command) ([]string, error) {
-	for _, line := range strings.Split(command.Output, "\n") {
-		line = strings.TrimSpace(line)
-		if !strings.HasPrefix(line, gitPullUpstreamPrefix) {
-			continue
-		}
-		fields := strings.Fields(line)
-		if len(fields) == 0 {
-			return nil, nil
-		}
-		branch := fields[len(fields)-1]
-		setUpstream := strings.ReplaceAll(line, "<remote>", "origin")
-		setUpstream = strings.ReplaceAll(setUpstream, "<branch>", branch)
-		return []string{shells.Current().And(setUpstream, command.Script)}, nil
+	line, found := utils.FindLineByPrefix(command.Output, gitPullUpstreamPrefix)
+	if !found {
+		return nil, nil
 	}
-	return nil, nil
+	fields := strings.Fields(line)
+	if len(fields) == 0 {
+		return nil, nil
+	}
+	branch := fields[len(fields)-1]
+	setUpstream := strings.ReplaceAll(line, "<remote>", "origin")
+	setUpstream = strings.ReplaceAll(setUpstream, "<branch>", branch)
+	return []string{shells.Current().And(setUpstream, command.Script)}, nil
 }
 
 func init() {
