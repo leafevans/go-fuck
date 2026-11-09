@@ -1,6 +1,7 @@
 # go-fuck
 
 [![CI](https://github.com/leafevans/go-fuck/actions/workflows/ci.yml/badge.svg)](https://github.com/leafevans/go-fuck/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/leafevans/go-fuck/actions/workflows/codeql.yml/badge.svg)](https://github.com/leafevans/go-fuck/actions/workflows/codeql.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/leafevans/go-fuck.svg)](https://pkg.go.dev/github.com/leafevans/go-fuck)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
