@@ -74,8 +74,9 @@ try {
     Assert "cd quotes the path" ($suggestion -match "\x27") $suggestion
     if ($suggestion -ne "") {
         Invoke-Expression $suggestion | Out-Null
-        $location = (Get-Location).Path
-        Assert "cd enters the directory" ($location -eq (Join-Path $root "Program Files")) $location
+        $location = (Get-Location).Path.TrimEnd("\")
+        $expected = (Join-Path $root "Program Files").TrimEnd("\")
+        Assert "cd enters the directory" ($location -eq $expected) ($location + " != " + $expected)
         Set-Location $root
     }
 
