@@ -287,12 +287,32 @@ Common options:
 | `-y`, `--yes`, `--yeah`, `--hard`    | execute the first suggestion without asking                                                                                                                      |
 | `-r`, `--repeat`                     | re-run go-fuck if the corrected command fails                                                                                                                    |
 | `--force-command CMD`                | fix `CMD` instead of the previous command                                                                                                                        |
+| `--doctor`                           | print a diagnostic report: detected shell, alias, settings file, history and optional integrations; `--doctor --json` prints it as JSON                          |
+| `--list-rules`                       | print the names of the built-in rules and exit (useful for the `rules`, `exclude_rules` and `priority` settings)                                                  |
 | `--json`                             | print the suggestions as JSON and exit (useful for scripts and editors; call go-fuck directly rather than through the alias)                                     |
 | `-d`, `--debug`                      | print debug information to stderr                                                                                                                                |
 | `-v`, `--version`                    | print version/build information: a themed banner in a terminal, one line when piped; `--debug --version` adds the config path, instant mode, fzf and alias state |
 | `-h`, `--help`                       | print the full option list                                                                                                                                       |
 | `--setup`                            | write the alias to the detected shell's configuration file (bash, zsh, fish, tcsh, PowerShell)                                                                   |
 | `--enable-experimental-instant-mode` | alias initialization flag: with `--alias` or `--setup`, configure the experimental instant mode (bash/zsh on Linux and macOS, PowerShell on Windows)             |
+
+### Troubleshooting
+
+If `fuck` does nothing, or go-fuck cannot find the command that failed, run the diagnostic report:
+
+```console
+$ go-fuck --doctor
+```
+
+It checks the detected shell, the alias in the shell configuration file, the settings file, the
+command history and the optional integrations (fzf, instant mode and the AI fallback). Warnings
+include the command that fixes them, and `--doctor --json` prints the same report as JSON.
+
+To list the rule names accepted by the `rules`, `exclude_rules` and `priority` settings, run:
+
+```console
+$ go-fuck --list-rules
+```
 
 ## How it works
 

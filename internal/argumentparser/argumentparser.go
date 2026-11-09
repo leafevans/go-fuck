@@ -25,6 +25,10 @@ type Args struct {
 	Setup bool
 	// Debug enables debug output.
 	Debug bool
+	// Doctor reports whether --doctor was requested.
+	Doctor bool
+	// ListRules reports whether --list-rules was requested.
+	ListRules bool
 	// Yes executes the corrected command without confirmation.
 	Yes bool
 	// Repeat re-runs go-fuck when the corrected command fails.
@@ -70,6 +74,10 @@ func Parse(argv []string) (*Args, error) {
 			args.Setup = true
 		case arg == "-d" || arg == "--debug":
 			args.Debug = true
+		case arg == "--doctor":
+			args.Doctor = true
+		case arg == "--list-rules":
+			args.ListRules = true
 		case arg == "-y" || arg == "--yes" || arg == "--yeah" || arg == "--hard":
 			args.Yes = true
 		case arg == "-r" || arg == "--repeat":
@@ -147,6 +155,8 @@ var helpOptions = []helpOption{
 	{"--enable-experimental-instant-mode", "enable experimental instant mode, use on your own risk"},
 	{"-h, --help", "show this help message and exit"},
 	{"-d, --debug", "enable debug output"},
+	{"--doctor", "print a diagnostic report of the shell integration"},
+	{"--list-rules", "print the names of the built-in rules and exit"},
 	{"--force-command FORCE_COMMAND", "fix this command instead of the previous one"},
 	{"--json", "print the suggestions as JSON and exit"},
 	{"-y, --yes, --yeah, --hard", "execute fixed command without confirmation"},
@@ -166,7 +176,7 @@ func Usage() string {
 // usageText returns the usage line, optionally styled with the ember theme.
 func usageText(styled bool) string {
 	rest := consts.ExecutableName() + " [-v] [-a [ALIAS]] [-l SHELL_LOGGER] [--setup] " +
-		"[--enable-experimental-instant-mode] [-h] [-d] " +
+		"[--enable-experimental-instant-mode] [-h] [-d] [--doctor] [--list-rules] " +
 		"[--force-command FORCE_COMMAND] [--json] [-y | -r] [command ...]"
 	if !styled {
 		return "usage: " + rest
