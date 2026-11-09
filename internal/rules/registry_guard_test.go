@@ -270,6 +270,7 @@ var registryGuardHelperFiles = map[string]bool{
 	"powershell_suggestions.go": true,
 	"custom.go":                 true,
 	"custom_test.go":            true,
+	"fuzz_test.go":              true,
 }
 
 // ruleNamePattern matches the characters that a rule name may contain. Rule

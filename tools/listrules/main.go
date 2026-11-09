@@ -19,6 +19,13 @@ import (
 )
 
 func main() {
+	for _, name := range ruleNames() {
+		fmt.Println(name)
+	}
+}
+
+// ruleNames returns the sorted names of all registered rules.
+func ruleNames() []string {
 	// Rule registration does not depend on the settings, but loading the
 	// defaults keeps the output identical to what the real command sees.
 	conf.Reset()
@@ -29,8 +36,5 @@ func main() {
 		names = append(names, rule.Name)
 	}
 	sort.Strings(names)
-
-	for _, name := range names {
-		fmt.Println(name)
-	}
+	return names
 }
