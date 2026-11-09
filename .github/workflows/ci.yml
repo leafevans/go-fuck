@@ -68,7 +68,8 @@ jobs:
         shell: pwsh
         run: ./.github/scripts/powershell-integration.ps1 -Exe ./go-fuck.exe
 
-  race:    name: Race detector
+  race:
+    name: Race detector
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
