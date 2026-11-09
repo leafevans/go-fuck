@@ -112,6 +112,11 @@ the test helpers, is [PORTING.md](PORTING.md). The short version:
 5. Regenerate the rule list with `make rules-list` and commit the `README.md` change.
 6. Do not edit files shared by several rules (`registry.go`, `testhelpers_test.go`) unless the
    change applies to every rule.
+7. Reuse the shared helpers instead of copying parsing code: `cobra_suggestions.go` for Cobra's
+   "Did you mean this?" block, `clap_suggestions.go` for the "tip: a similar subcommand exists"
+   output of uv, cargo and rustup, and `dart_suggestions.go` for the Dart and Flutter suggestion
+   block. The matching helpers live in `internal/utils`; prefer `ReplaceArgumentsSorted` and
+   `FindLineByPrefix` over open coded loops.
 
 ## Testing
 
