@@ -70,7 +70,11 @@ const (
 
 // UserCommandMark is an invisible marker printed before a suggested command.
 // Instant mode uses it to locate commands in the terminal log.
-const UserCommandMark = "​​​​​​​​​​"
+//
+// The mark is a sequence of zero-width spaces (U+200B). Several of them are
+// used so that a single zero-width space in the captured output is never
+// mistaken for the marker.
+const UserCommandMark = "\u200b\u200b\u200b\u200b\u200b\u200b\u200b\u200b\u200b\u200b"
 
 // Tunables that mirror the original implementation.
 const (

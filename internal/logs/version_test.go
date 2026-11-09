@@ -87,7 +87,7 @@ func TestRenderBannerTrueColor(t *testing.T) {
 	setBannerEnvironment(t, "xterm-256color", "truecolor", "", "")
 
 	banner := renderBanner(bannerInfo(), false)
-	if !strings.Contains(banner, "[38;2;") {
+	if !strings.Contains(banner, "\x1b[38;2;") {
 		t.Fatalf("banner does not contain 24 bit color sequences")
 	}
 }
@@ -98,10 +98,10 @@ func TestRenderBanner256Colors(t *testing.T) {
 	setBannerEnvironment(t, "xterm-256color", "", "", "")
 
 	banner := renderBanner(bannerInfo(), false)
-	if !strings.Contains(banner, "[38;5;") {
+	if !strings.Contains(banner, "\x1b[38;5;") {
 		t.Fatalf("banner does not contain 256 color sequences")
 	}
-	if strings.Contains(banner, "[38;2;") {
+	if strings.Contains(banner, "\x1b[38;2;") {
 		t.Fatalf("256 color banner must not use 24 bit colors")
 	}
 }
@@ -115,7 +115,7 @@ func TestRenderBannerBasicColors(t *testing.T) {
 	if !strings.Contains(banner, foreRed) {
 		t.Fatalf("banner does not use the 16 color fallback")
 	}
-	if strings.Contains(banner, "[38;") {
+	if strings.Contains(banner, "\x1b[38;") {
 		t.Fatalf("16 color banner must not use extended color sequences")
 	}
 }
@@ -126,7 +126,7 @@ func TestRenderBannerNoColorEnvironment(t *testing.T) {
 	setBannerEnvironment(t, "xterm-256color", "truecolor", "", "1")
 
 	banner := renderBanner(bannerInfo(), false)
-	if strings.Contains(banner, "[") {
+	if strings.Contains(banner, "\x1b[") {
 		t.Fatalf("NO_COLOR banner contains escape sequences")
 	}
 	if !strings.Contains(banner, "182 rules") {
@@ -141,7 +141,7 @@ func TestRenderBannerNoColorSetting(t *testing.T) {
 	conf.Current().NoColors = true
 
 	banner := renderBanner(bannerInfo(), false)
-	if strings.Contains(banner, "[") {
+	if strings.Contains(banner, "\x1b[") {
 		t.Fatalf("no_colors banner contains escape sequences")
 	}
 }

@@ -30,12 +30,6 @@ linters:
       # git_clone_missing rule, not a prose typo.
       ignore-rules:
         - recognised
-    staticcheck:
-      # ST1018 is disabled because consts.UserCommandMark is an intentionally
-      # invisible Unicode marker.
-      checks:
-        - all
-        - -ST1018
     revive:
       rules:
         - name: blank-imports
