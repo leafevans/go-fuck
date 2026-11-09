@@ -207,6 +207,7 @@ var expectedExtraRuleNames = []string{
 	"gh_unknown_command",
 	"gh_unknown_flag",
 	"git_amend_initial_commit",
+	"git_checkout_unstaged",
 	"git_dubious_ownership",
 	"git_fetch_clobber_tag",
 	"git_merge_unstaged",
@@ -228,13 +229,17 @@ var expectedExtraRuleNames = []string{
 	"minikube_unknown_command",
 	"node_missing_module",
 	"npm_ci_lock_mismatch",
+	"npm_ci_missing_lockfile",
 	"npm_peer_dependency_conflict",
 	"pnpm_command_not_found",
+	"pnpm_frozen_lockfile",
 	"poetry_unknown_command",
 	"rustup_unknown_subcommand",
 	"task_unknown_task",
+	"uv_locked_lockfile",
 	"uv_unknown_argument",
 	"uv_unknown_subcommand",
+	"yarn_frozen_lockfile",
 }
 
 // allExpectedRuleNames returns the reference rules plus the go-fuck specific

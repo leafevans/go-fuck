@@ -546,11 +546,11 @@ the selection entirely.
 The built-in rules are compiled into the binary, and declarative JSON rules can be loaded from the
 configuration directory (see [Creating custom rules](#creating-custom-rules)). Each rule decides
 whether it applies to a failed command and returns one or more corrected commands. There are 211
-built-in rules: 169 ported from the reference implementation plus 42 go-fuck specific rules for
+built-in rules: 169 ported from the reference implementation plus 47 go-fuck specific rules for
 failures that thefuck does not handle, including the GitHub and GitLab CLIs, kubectl/kind/kustomize,
-uv, cargo, Helm, pnpm, npm peer dependency conflicts and lock file mismatches, the Go toolchain and
-go.sum, Node.js, bun, Deno, Docker Compose, just, Poetry, make, the go-task runner, minikube,
-Bundler, Chocolatey, the .NET CLI, rustup, the Dart and Flutter command-line tools, git switch and
+uv, cargo, Helm, pnpm, the npm, pnpm, yarn and uv lock file checks, the Go toolchain and go.sum,
+Node.js, bun, Deno, Docker Compose, just, Poetry, make, the go-task runner, minikube, Bundler,
+Chocolatey, the .NET CLI, rustup, the Dart and Flutter command-line tools, git switch and
 safe.directory corrections and divergent, clobbered or blocked git operations. The list below is
 generated from the compiled rules:
 
@@ -621,6 +621,7 @@ generated from the compiled rules:
 - `git_branch_exists`
 - `git_branch_list`
 - `git_checkout`
+- `git_checkout_unstaged`
 - `git_clone_git_clone`
 - `git_clone_missing`
 - `git_commit_add`
@@ -709,6 +710,7 @@ generated from the compiled rules:
 - `no_such_file`
 - `node_missing_module`
 - `npm_ci_lock_mismatch`
+- `npm_ci_missing_lockfile`
 - `npm_missing_script`
 - `npm_peer_dependency_conflict`
 - `npm_run_script`
@@ -723,6 +725,7 @@ generated from the compiled rules:
 - `pip_install`
 - `pip_unknown_command`
 - `pnpm_command_not_found`
+- `pnpm_frozen_lockfile`
 - `poetry_unknown_command`
 - `port_already_in_use`
 - `prove_recursively`
@@ -755,6 +758,7 @@ generated from the compiled rules:
 - `tsuru_not_command`
 - `unknown_command`
 - `unsudo`
+- `uv_locked_lockfile`
 - `uv_unknown_argument`
 - `uv_unknown_subcommand`
 - `vagrant_up`
@@ -764,6 +768,7 @@ generated from the compiled rules:
 - `yarn_alias`
 - `yarn_command_not_found`
 - `yarn_command_replaced`
+- `yarn_frozen_lockfile`
 - `yarn_help`
 - `yum_invalid_operation`
 <!-- RULES_LIST_END -->
@@ -866,7 +871,7 @@ external commands.
 go-fuck is a reimplementation, not a drop-in replacement for every thefuck feature:
 
 - **Complete rule port plus extras.** All 169 rules of the reference implementation are ported,
-  plus 42 go-fuck specific rules; the list in [Rules](#rules) is authoritative. Porting conventions
+  plus 47 go-fuck specific rules; the list in [Rules](#rules) is authoritative. Porting conventions
   are documented in [PORTING.md](PORTING.md).
 - **Instant mode covers Linux, macOS and Windows.** It reads the previous command output from a
   terminal log instead of re-running the command: bash and zsh on Linux and macOS, PowerShell on
