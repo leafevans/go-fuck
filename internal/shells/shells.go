@@ -40,8 +40,6 @@ type Shell interface {
 	// FromShell prepares a command before it is fixed, for example by
 	// expanding shell aliases.
 	FromShell(command string) string
-	// ToShell prepares a corrected command for execution in the shell.
-	ToShell(command string) string
 	// And joins commands with the shell's AND operator.
 	And(commands ...string) string
 	// Or joins commands with the shell's OR operator.

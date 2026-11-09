@@ -114,11 +114,6 @@ func (g *Generic) FromShell(script string) string {
 	return g.expandAliases(script, g.GetAliases())
 }
 
-// ToShell prepares a corrected command for execution.
-func (g *Generic) ToShell(script string) string {
-	return script
-}
-
 // AppAlias returns the alias definition for a POSIX compatible shell.
 func (g *Generic) AppAlias(aliasName string) string {
 	return "alias " + aliasName + "='eval " + dquote + "$(TF_ALIAS=" + aliasName +
