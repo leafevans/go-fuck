@@ -83,3 +83,26 @@ func TestGetOutputTimeout(t *testing.T) {
 		t.Fatalf("GetOutput() took %s, the command was not killed on timeout", elapsed)
 	}
 }
+
+// TestNormalizeOutput guards that the captured output is normalized to LF,
+// because Windows tools print CRLF and the rules anchor expressions to the end
+// of a line.
+func TestNormalizeOutput(t *testing.T) {
+	testCases := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{"empty", "", ""},
+		{"unix", "a\nb\n", "a\nb\n"},
+		{"crlf", "a\r\nb\r\n", "a\nb\n"},
+		{"lone carriage return", "progress 10%\rprogress 20%\ndone\r\n", "progress 10%progress 20%\ndone\n"},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			if got := normalizeOutput(testCase.in); got != testCase.want {
+				t.Fatalf("normalizeOutput(%q) = %q, want %q", testCase.in, got, testCase.want)
+			}
+		})
+	}
+}

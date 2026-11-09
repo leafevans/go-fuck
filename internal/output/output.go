@@ -36,7 +36,21 @@ func GetOutput(script, expanded string) (string, bool) {
 			logs.Debug("No instant mode log path is set, re-running the command")
 		}
 	}
-	return rerun(expanded)
+	commandOutput, ok := rerun(expanded)
+	if !ok {
+		return "", false
+	}
+	return normalizeOutput(commandOutput), true
+}
+
+// normalizeOutput removes the carriage returns from the captured output.
+//
+// Tools on Windows print CRLF line endings while the rules are written against
+// LF, and a stray carriage return breaks expressions that are anchored to the
+// end of a line. The instant mode log is already sanitized the same way.
+func normalizeOutput(commandOutput string) string {
+	commandOutput = strings.ReplaceAll(commandOutput, "\r\n", "\n")
+	return strings.ReplaceAll(commandOutput, "\r", "")
 }
 
 // rerun runs the command and captures its output.
