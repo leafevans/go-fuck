@@ -39,7 +39,7 @@ go test ./... -count=1
 | `make lint`             | run `golangci-lint` with `.golangci.yml`                                   |
 | `make install`          | run `go install ./cmd/go-fuck`                                             |
 | `make clean`            | remove the binary and the GoReleaser output                                |
-| `make packaging`        | regenerate Homebrew/Scoop manifests for `VERSION` from `CHECKSUMS`        |
+| `make packaging`        | regenerate Homebrew/Scoop manifests for `VERSION` from `CHECKSUMS`         |
 | `make packaging-check`  | validate that the committed distribution manifests are consistent          |
 | `make rules-list`       | regenerate the rule list in `README.md`                                    |
 | `make rules-list-check` | fail when the `README.md` rule list is out of date                         |
