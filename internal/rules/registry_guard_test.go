@@ -195,6 +195,7 @@ var expectedRuleNames = []string{
 var expectedExtraRuleNames = []string{
 	"bun_script_not_found",
 	"bundle_unknown_command",
+	"cargo_missing_bin",
 	"cargo_missing_manifest",
 	"cargo_unknown_argument",
 	"cargo_unknown_command",
@@ -229,6 +230,7 @@ var expectedExtraRuleNames = []string{
 	"make_unknown_target",
 	"minikube_unknown_command",
 	"node_missing_module",
+	"node_script_not_found",
 	"npm_ci_lock_mismatch",
 	"npm_ci_missing_lockfile",
 	"npm_peer_dependency_conflict",
@@ -246,6 +248,7 @@ var expectedExtraRuleNames = []string{
 	"uv_locked_lockfile",
 	"uv_missing_project",
 	"uv_pip_no_venv",
+	"uv_script_not_found",
 	"uv_unknown_argument",
 	"uv_unknown_subcommand",
 	"yarn_frozen_lockfile",

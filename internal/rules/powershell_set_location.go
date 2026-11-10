@@ -17,10 +17,10 @@ var powerShellPathMissing = func(path string) bool {
 	return err != nil
 }
 
-// powerShellSetLocationMatch reports whether Set-Location failed because the
-// directory is missing.
+// powerShellSetLocationMatch reports whether Set-Location or Push-Location
+// failed because the directory is missing.
 func powerShellSetLocationMatch(command *types.Command) bool {
-	if !powerShellCommandIs(command, "Set-Location", "sl", "chdir") {
+	if !powerShellCommandIs(command, "Set-Location", "sl", "chdir", "Push-Location", "pushd") {
 		return false
 	}
 	match := powerShellSetLocationPath.FindStringSubmatch(command.Output)

@@ -25,11 +25,15 @@ func TestRulePowerShellSetLocation(t *testing.T) {
 	assertMatch(t, rule, "Set-Location \x27/root/missing\x27", powerShellSetLocationOutput)
 	assertMatch(t, rule, "sl \x27/root/missing\x27", powerShellSetLocationOutput)
 	assertMatch(t, rule, "chdir \x27/root/missing\x27", powerShellSetLocationOutput)
+	assertMatch(t, rule, "Push-Location \x27/root/missing\x27", powerShellSetLocationOutput)
+	assertMatch(t, rule, "pushd \x27/root/missing\x27", powerShellSetLocationOutput)
 	assertNotMatch(t, rule, "cd \x27/root/missing\x27", powerShellSetLocationOutput)
 	assertNotMatch(t, rule, "Set-Location \x27/root/missing\x27", "")
 
 	assertNewCommands(t, rule, "Set-Location \x27/root/missing\x27", powerShellSetLocationOutput,
 		[]string{"mkdir -Force \x27/root/missing\x27 && Set-Location \x27/root/missing\x27"})
+	assertNewCommands(t, rule, "pushd \x27/root/missing\x27", powerShellSetLocationOutput,
+		[]string{"mkdir -Force \x27/root/missing\x27 && pushd \x27/root/missing\x27"})
 
 	stubPowerShellPathMissing(t, false)
 	assertNotMatch(t, rule, "Set-Location \x27/root/missing\x27", powerShellSetLocationOutput)
