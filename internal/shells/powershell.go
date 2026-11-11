@@ -14,22 +14,33 @@ import (
 // powershellAliasTemplate defines the alias function for PowerShell.
 //
 // Get-History only returns the previous command, so the alias passes it to
-// go-fuck for the normal correction flow. Explicit arguments (for example -h
-// or --version) must also work when the alias is the first command of a
-// session, when there is no history yet, so go-fuck is invoked when either
-// history or arguments are available.
+// go-fuck for the normal correction flow. The history is passed through the
+// TF_HISTORY environment variable instead of a command line argument:
+// Windows PowerShell 5.1 does not escape embedded quotes when it passes an
+// argument to a native executable, so a command such as
+// git commit -m "hello world" would reach go-fuck mangled. Environment values
+// are transferred verbatim. Explicit arguments (for example -h or --version)
+// must also work when the alias is the first command of a session, when there
+// is no history yet, so go-fuck is invoked when either history or arguments
+// are available.
 const powershellAliasTemplate = `function %[1]s {
     $env:TF_SHELL = "powershell";
     try { $env:GOFUCK_SHELL = (Get-Process -Id $PID).Path } catch { };
     $history = (Get-History -Count 1).CommandLine;
-    if (-not [string]::IsNullOrWhiteSpace($history) -or $args.Count -gt 0) {
-        $goFuckArgs = @($args);
-        if (-not [string]::IsNullOrWhiteSpace($history)) { $goFuckArgs += $history; }
-        $fuck = $(%[2]s @goFuckArgs);
-        if (-not [string]::IsNullOrWhiteSpace($fuck)) {
-            if ($fuck.StartsWith("echo")) { $fuck = $fuck.Substring(5); }
-            else { iex "$fuck"; }
+    $previousHistory = $env:TF_HISTORY;
+    try {
+        if (-not [string]::IsNullOrWhiteSpace($history)) { $env:TF_HISTORY = $history; }
+        else { Remove-Item Env:TF_HISTORY -ErrorAction SilentlyContinue; }
+        if (-not [string]::IsNullOrWhiteSpace($history) -or $args.Count -gt 0) {
+            $fuck = $(%[2]s @args);
+            if (-not [string]::IsNullOrWhiteSpace($fuck)) {
+                if ($fuck.StartsWith("echo")) { $fuck = $fuck.Substring(5); }
+                else { iex "$fuck"; }
+            }
         }
+    } finally {
+        if ($null -eq $previousHistory) { Remove-Item Env:TF_HISTORY -ErrorAction SilentlyContinue }
+        else { $env:TF_HISTORY = $previousHistory }
     }
     [Console]::ResetColor()
 }`

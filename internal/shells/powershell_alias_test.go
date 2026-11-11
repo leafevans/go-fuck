@@ -10,30 +10,39 @@ import (
 )
 
 // writeGoFuckStub writes a fake go-fuck command into dir. Every invocation
-// appends its arguments to the file named by GOFUCK_ARGS_FILE.
+// appends the arguments and the TF_HISTORY value to GOFUCK_ARGS_FILE.
 func writeGoFuckStub(t *testing.T, dir string) {
 	t.Helper()
-
 	var (
 		path    string
 		content string
 	)
 	if runtime.GOOS == "windows" {
 		path = filepath.Join(dir, "go-fuck.cmd")
-		content = "@echo off\r\necho %* >> \"%GOFUCK_ARGS_FILE%\"\r\n"
+		content = "@echo off\r\n" +
+			">> \"%GOFUCK_ARGS_FILE%\" echo ARGS:%*\r\n" +
+			">> \"%GOFUCK_ARGS_FILE%\" echo HISTORY:%TF_HISTORY%\r\n"
 	} else {
 		path = filepath.Join(dir, "go-fuck")
-		content = "#!/bin/sh\nprintf '%s\\n' \"$*\" >> \"$GOFUCK_ARGS_FILE\"\n"
+		content = "#!/bin/sh\n" +
+			"printf 'ARGS:%s\\n' \"$*\" >> \"$GOFUCK_ARGS_FILE\"\n" +
+			"printf 'HISTORY:%s\\n' \"${TF_HISTORY-}\" >> \"$GOFUCK_ARGS_FILE\"\n"
 	}
 	if err := os.WriteFile(path, []byte(content), 0o755); err != nil {
 		t.Fatalf("write the go-fuck stub: %v", err)
 	}
 }
 
+// aliasInvocation is one invocation of the fake go-fuck command.
+type aliasInvocation struct {
+	args    string
+	history string
+}
+
 // runPowershellAlias sources the generated PowerShell alias and runs commands
-// with PowerShell. It returns the arguments that the fake go-fuck command was
-// called with, one entry per invocation.
-func runPowershellAlias(t *testing.T, prelude, commands string) []string {
+// with PowerShell. It returns the recorded invocations of the fake go-fuck
+// command.
+func runPowershellAlias(t *testing.T, prelude, commands string) []aliasInvocation {
 	t.Helper()
 
 	powershell := aliasSyntaxPowerShellPath()
@@ -78,10 +87,17 @@ func runPowershellAlias(t *testing.T, prelude, commands string) []string {
 		t.Fatalf("read the recorded go-fuck arguments: %v", err)
 	}
 
-	recorded := []string{}
+	recorded := []aliasInvocation{}
+	current := aliasInvocation{}
 	for _, line := range strings.Split(string(data), "\n") {
-		if line = strings.TrimSpace(line); line != "" {
-			recorded = append(recorded, line)
+		line = strings.TrimSpace(line)
+		switch {
+		case strings.HasPrefix(line, "ARGS:"):
+			current.args = strings.TrimPrefix(line, "ARGS:")
+		case strings.HasPrefix(line, "HISTORY:"):
+			current.history = strings.TrimPrefix(line, "HISTORY:")
+			recorded = append(recorded, current)
+			current = aliasInvocation{}
 		}
 	}
 	return recorded
@@ -96,22 +112,41 @@ func TestPowershellAliasPassesArgumentsWithoutHistory(t *testing.T) {
 	recorded := runPowershellAlias(t,
 		"function Get-History { param($Count) $null }",
 		"fuck --version")
-	if len(recorded) != 1 || recorded[0] != "--version" {
-		t.Fatalf("go-fuck arguments = %q, want [--version]", recorded)
+	if len(recorded) != 1 || strings.TrimSpace(recorded[0].args) != "--version" || recorded[0].history != "" {
+		t.Fatalf("go-fuck invocation = %+v, want --version without history", recorded)
 	}
 }
 
 // TestPowershellAliasUsesHistoryWithoutArguments checks that the regular flow
-// still passes the previous command when no explicit arguments are given.
+// passes the previous command through TF_HISTORY when no explicit arguments
+// are given.
 func TestPowershellAliasUsesHistoryWithoutArguments(t *testing.T) {
 	resetShellsState(t)
 
 	recorded := runPowershellAlias(t,
 		"function Get-History { param($Count) [pscustomobject]@{ CommandLine = 'git status' } }",
 		"fuck")
-	// cmd.exe keeps the quotes that PowerShell adds around an argument with a
-	// space; the shell here only cares that the command reached go-fuck.
-	if len(recorded) != 1 || strings.Trim(recorded[0], "\"") != "git status" {
-		t.Fatalf("go-fuck arguments = %q, want [git status]", recorded)
+	if len(recorded) != 1 || strings.TrimSpace(recorded[0].args) != "" || recorded[0].history != "git status" {
+		t.Fatalf("go-fuck invocation = %+v, want the history through TF_HISTORY", recorded)
+	}
+}
+
+// TestPowershellAliasHistoryKeepsQuotes checks that a command with embedded
+// quotes reaches go-fuck unchanged. Windows PowerShell 5.1 mangles quoted
+// arguments when they are passed on the command line, so the alias has to use
+// TF_HISTORY.
+func TestPowershellAliasHistoryKeepsQuotes(t *testing.T) {
+	resetShellsState(t)
+
+	recorded := runPowershellAlias(t,
+		"function Get-History { param($Count) [pscustomobject]@{ CommandLine = ('git commit -m ' + [char]34 + 'hello world' + [char]34) } }",
+		"fuck")
+	if len(recorded) != 1 || strings.TrimSpace(recorded[0].args) != "" {
+		t.Fatalf("go-fuck invocation = %+v, want no command line arguments", recorded)
+	}
+	quote := string(rune(34))
+	want := "git commit -m " + quote + "hello world" + quote
+	if recorded[0].history != want {
+		t.Fatalf("TF_HISTORY = %q, want %q", recorded[0].history, want)
 	}
 }

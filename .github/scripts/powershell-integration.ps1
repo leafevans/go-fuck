@@ -79,6 +79,36 @@ try {
         Set-Location $root
     }
 
+    # A history command with embedded quotes has to reach go-fuck verbatim.
+    # Windows PowerShell 5.1 mangles quoted arguments passed to native
+    # executables, so the alias passes the history through TF_HISTORY. Use a
+    # stub for go-fuck so this check does not need an interactive prompt.
+    $stubDir = Join-Path $root "stub"
+    New-Item -ItemType Directory -Path $stubDir | Out-Null
+    $stub = Join-Path $stubDir "go-fuck.cmd"
+    Set-Content -LiteralPath $stub -Value @"
+@echo off
+>> "%GOFUCK_ARGS_FILE%" echo ARGS:%*
+>> "%GOFUCK_ARGS_FILE%" echo HISTORY:%TF_HISTORY%
+"@
+    function Get-History {
+        param($Count)
+        [pscustomobject]@{ CommandLine = ('git commit -m ' + [char]34 + 'hello world' + [char]34) }
+    }
+    $previousPath = $env:PATH
+    $previousArgsFile = $env:GOFUCK_ARGS_FILE
+    $env:PATH = $stubDir + ";" + $previousPath
+    $env:GOFUCK_ARGS_FILE = Join-Path $root "stub-args.txt"
+    Invoke-Expression ((& $Exe --alias) | Out-String)
+    fuck
+    $recorded = Get-Content -LiteralPath $env:GOFUCK_ARGS_FILE -Raw
+    $quoted = 'git commit -m ' + [char]34 + 'hello world' + [char]34
+    Assert "quoted history is passed verbatim" ($recorded -match [regex]::Escape($quoted)) $recorded
+    Remove-Item -Path Function:Get-History -ErrorAction SilentlyContinue
+    $env:PATH = $previousPath
+    if ($null -eq $previousArgsFile) { Remove-Item Env:GOFUCK_ARGS_FILE -ErrorAction SilentlyContinue }
+    else { $env:GOFUCK_ARGS_FILE = $previousArgsFile }
+
     # The version output uses the detected shell. cmd.exe merges the two streams
     # without turning the native stderr lines into PowerShell error records.
     $version = cmd /c "`"$Exe`" --version 2>&1"
