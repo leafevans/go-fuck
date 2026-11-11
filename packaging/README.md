@@ -94,6 +94,27 @@ To update the package for a release:
     git push
     ```
 
+## Local updater
+
+`scripts/update-go-fuck.ps1` (Windows, and WSL unless `-SkipWsl` is passed) and
+`scripts/update-go-fuck.sh` (Linux and macOS) download a release, verify the
+SHA256 checksums and replace a locally installed binary:
+
+```powershell
+./scripts/update-go-fuck.ps1                 # latest release, Windows and WSL
+./scripts/update-go-fuck.ps1 -Version 2.11.0 # a specific release
+./scripts/update-go-fuck.ps1 -SkipWsl
+```
+
+```bash
+./scripts/update-go-fuck.sh                   # latest release
+./scripts/update-go-fuck.sh 2.11.0 ~/.local/bin
+```
+
+The WSL part of the PowerShell script runs `update-go-fuck.sh`, so keep the two
+files next to each other. The updater is a convenience for local installs; the
+Homebrew, Scoop and AUR packages update through their own package managers.
+
 ## Release checklist
 
 When publishing a new release `vX.Y.Z`:
