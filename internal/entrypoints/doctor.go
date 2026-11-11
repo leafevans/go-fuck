@@ -260,6 +260,12 @@ func doctorInstantCheck() doctorCheck {
 
 	logPath := instant.LogPath()
 	if logPath == "" {
+		if path, problem := doctorInstantProfileProblem(); problem {
+			check.Status = doctorWarn
+			check.Message = "the instant mode line is not the last prompt definition"
+			check.Hint = "move the instant mode line to the end of " + path
+			return check
+		}
 		check.Status = doctorInfo
 		check.Message = "available, not enabled (opt-in)"
 		check.Hint = "go-fuck --setup --enable-experimental-instant-mode"
@@ -287,6 +293,42 @@ func doctorInstantCheck() doctorCheck {
 	check.Status = doctorOK
 	check.Message = "enabled (logged shell)"
 	return check
+}
+
+// doctorInstantProfileProblem reports a PowerShell profile where another prompt
+// definition follows the instant mode line. Such a definition hides the prompt
+// marker, so the log reader can no longer split the terminal log into command
+// calls.
+func doctorInstantProfileProblem() (string, bool) {
+	if runtime.GOOS != "windows" || shells.Current().Name() != "powershell" {
+		return "", false
+	}
+	for _, path := range powerShellProfiles() {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+		lines := strings.Split(string(data), "\n")
+		instantLine := -1
+		for index, line := range lines {
+			if strings.Contains(line, "--enable-experimental-instant-mode") {
+				instantLine = index
+			}
+		}
+		if instantLine < 0 {
+			continue
+		}
+		for _, line := range lines[instantLine+1:] {
+			lower := strings.ToLower(strings.TrimSpace(line))
+			if strings.HasPrefix(lower, "function prompt") ||
+				strings.HasPrefix(lower, "function global:prompt") ||
+				strings.Contains(lower, "$function:prompt") ||
+				strings.Contains(lower, "set-item function:prompt") {
+				return path, true
+			}
+		}
+	}
+	return "", false
 }
 
 // doctorLogHasMarker reports whether the instant mode log contains the prompt

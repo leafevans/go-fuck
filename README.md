@@ -303,8 +303,10 @@ $ go-fuck --doctor
 ```
 
 It checks the detected shell, the alias in the shell configuration file, the settings file, the
-command history and the optional integrations (fzf and instant mode). Warnings
-include the command that fixes them, and `--doctor --json` prints the same report as JSON.
+command history and the optional integrations (fzf and instant mode). For instant mode it validates
+the logged shell's terminal log and warns when the instant mode line is no longer the last prompt
+definition in the PowerShell profile. Warnings include the command that fixes them, and
+`--doctor --json` prints the same report as JSON.
 
 To list the rule names accepted by the `rules`, `exclude_rules` and `priority` settings, run:
 
