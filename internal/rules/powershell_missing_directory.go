@@ -11,13 +11,18 @@ import (
 // powerShellMissingPath matches the destination path of a failed copy.
 var powerShellMissingPath = regexp.MustCompile(`Could not find a part of the path '([^']*)'`)
 
-// powerShellCopyCommands are the PowerShell commands that copy or move items.
-var powerShellCopyCommands = []string{"cp", "copy", "cpi", "copy-item", "mv", "move", "mi", "move-item"}
+// powerShellMissingDirectoryCommands are the PowerShell commands that write a
+// file, copy an item or move an item.
+var powerShellMissingDirectoryCommands = []string{
+	"cp", "copy", "cpi", "copy-item",
+	"mv", "move", "mi", "move-item",
+	"set-content", "add-content", "out-file", "new-item",
+}
 
-// powerShellMissingDirectoryMatch reports whether a copy or move failed because
-// a directory of the destination does not exist.
+// powerShellMissingDirectoryMatch reports whether a command failed because a
+// directory of the destination does not exist.
 func powerShellMissingDirectoryMatch(command *types.Command) bool {
-	return powerShellCommandIs(command, powerShellCopyCommands...) &&
+	return powerShellCommandIs(command, powerShellMissingDirectoryCommands...) &&
 		strings.Contains(command.Output, "Could not find a part of the path")
 }
 

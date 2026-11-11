@@ -9,10 +9,19 @@ import (
 // powerShellExistingItem matches the existing item that New-Item reports.
 var powerShellExistingItem = regexp.MustCompile(`An item with the specified name (.+) already exists\.`)
 
+// powerShellNewItemDirectory matches a New-Item call that creates a directory.
+var powerShellNewItemDirectory = regexp.MustCompile(`(?i)-(itemtype|type)\s+directory`)
+
 // powerShellMkdirExistingMatch reports whether mkdir failed because the
 // directory already exists.
 func powerShellMkdirExistingMatch(command *types.Command) bool {
-	if !powerShellCommandIs(command, "mkdir", "md") {
+	if powerShellCommandIs(command, "new-item") {
+		// New-Item -Force overwrites files, so only directory creation is
+		// retried.
+		if !powerShellNewItemDirectory.MatchString(command.Script) {
+			return false
+		}
+	} else if !powerShellCommandIs(command, "mkdir", "md") {
 		return false
 	}
 	match := powerShellExistingItem.FindStringSubmatch(command.Output)
