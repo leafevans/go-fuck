@@ -1,6 +1,9 @@
 package rules
 
-import "testing"
+import (
+	"runtime"
+	"testing"
+)
 
 const (
 	// goMissingFilePathOutput is the go output for a file argument that the
@@ -24,7 +27,6 @@ func TestRuleGoMissingFile(t *testing.T) {
 	assertMatch(t, rule, "go vet main.g", goMissingFilePathOutput)
 	assertMatch(t, rule, "go test -run TestX main.g", goMissingFilePathOutput)
 	assertMatch(t, rule, "go run mian.go", goMissingFileAttributeOutput)
-	assertMatch(t, rule, "go run .\\mian.go", "GetFileAttributesEx .\\mian.go: The system cannot find the file specified.\n")
 	assertNotMatch(t, rule, "go run main.g", "")
 	assertNotMatch(t, rule, "cargo run main.g", goMissingFilePathOutput)
 	assertNotMatch(t, rule, "go run main.g", "stat C:\\repo\\main.g: directory not found\n")
@@ -45,7 +47,13 @@ func TestRuleGoMissingFile(t *testing.T) {
 		[]string{"go test -run TestX main.go"})
 	assertNewCommands(t, rule, "go run mian.go", goMissingFileAttributeOutput,
 		[]string{"go run main.go"})
-	assertNewCommands(t, rule, "go run .\\mian.go",
-		"GetFileAttributesEx .\\mian.go: The system cannot find the file specified.\n",
-		[]string{"go run .\\main.go"})
+
+	// A relative directory prefix is a Windows path, so this case only runs on
+	// Windows.
+	if runtime.GOOS == "windows" {
+		output := "GetFileAttributesEx .\\mian.go: The system cannot find the file specified.\n"
+		assertMatch(t, rule, "go run .\\mian.go", output)
+		assertNewCommands(t, rule, "go run .\\mian.go", output,
+			[]string{"go run .\\main.go"})
+	}
 }

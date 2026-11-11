@@ -12,11 +12,11 @@ import (
 // goMissingFilePackage matches the Go toolchain error for an argument that is
 // not provided by any required module. A mistyped file name without its .go
 // suffix is treated as a package path and ends up here.
-var goMissingFilePackage = regexp.MustCompile("(?m)no required module provides package ([^\\s;]+); to add it:")
+var goMissingFilePackage = regexp.MustCompile(`(?m)no required module provides package ([^\s;]+); to add it:`)
 
 // goMissingFileAttribute matches the Windows error the Go toolchain prints when
 // the file argument of a command does not exist.
-var goMissingFileAttribute = regexp.MustCompile("(?m)GetFileAttributesEx (.+?): The system cannot find the file specified\\.")
+var goMissingFileAttribute = regexp.MustCompile(`(?m)GetFileAttributesEx (.+?): The system cannot find the file specified\.`)
 
 // goMissingFileMatch reports whether a go command failed because a file
 // argument is mistyped and another file in the same directory is close to it.
