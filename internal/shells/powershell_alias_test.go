@@ -21,12 +21,14 @@ func writeGoFuckStub(t *testing.T, dir string) {
 		path = filepath.Join(dir, "go-fuck.cmd")
 		content = "@echo off\r\n" +
 			">> \"%GOFUCK_ARGS_FILE%\" echo ARGS:%*\r\n" +
-			">> \"%GOFUCK_ARGS_FILE%\" echo HISTORY:%TF_HISTORY%\r\n"
+			">> \"%GOFUCK_ARGS_FILE%\" echo HISTORY:%TF_HISTORY%\r\n" +
+			"if defined GOFUCK_STUB_OUTPUT type \"%GOFUCK_STUB_OUTPUT%\"\r\n"
 	} else {
 		path = filepath.Join(dir, "go-fuck")
 		content = "#!/bin/sh\n" +
 			"printf 'ARGS:%s\\n' \"$*\" >> \"$GOFUCK_ARGS_FILE\"\n" +
-			"printf 'HISTORY:%s\\n' \"${TF_HISTORY-}\" >> \"$GOFUCK_ARGS_FILE\"\n"
+			"printf 'HISTORY:%s\\n' \"${TF_HISTORY-}\" >> \"$GOFUCK_ARGS_FILE\"\n" +
+			"if [ -n \"${GOFUCK_STUB_OUTPUT-}\" ]; then cat \"$GOFUCK_STUB_OUTPUT\"; fi\n"
 	}
 	if err := os.WriteFile(path, []byte(content), 0o755); err != nil {
 		t.Fatalf("write the go-fuck stub: %v", err)
@@ -39,10 +41,10 @@ type aliasInvocation struct {
 	history string
 }
 
-// runPowershellAlias sources the generated PowerShell alias and runs commands
-// with PowerShell. It returns the recorded invocations of the fake go-fuck
-// command.
-func runPowershellAlias(t *testing.T, prelude, commands string) []aliasInvocation {
+// runPowershellAliasRaw sources the generated PowerShell alias, runs commands
+// with PowerShell and returns the combined output together with the path of the
+// recorded arguments file.
+func runPowershellAliasRaw(t *testing.T, prelude, commands string) ([]byte, string) {
 	t.Helper()
 
 	powershell := aliasSyntaxPowerShellPath()
@@ -78,7 +80,16 @@ func runPowershellAlias(t *testing.T, prelude, commands string) []aliasInvocatio
 	if err != nil {
 		t.Fatalf("PowerShell failed to run the alias: %v\n%s", err, output)
 	}
+	return output, argsFile
+}
 
+// runPowershellAlias sources the generated PowerShell alias and runs commands
+// with PowerShell. It returns the recorded invocations of the fake go-fuck
+// command.
+func runPowershellAlias(t *testing.T, prelude, commands string) []aliasInvocation {
+	t.Helper()
+
+	_, argsFile := runPowershellAliasRaw(t, prelude, commands)
 	data, err := os.ReadFile(argsFile)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -148,5 +159,27 @@ func TestPowershellAliasHistoryKeepsQuotes(t *testing.T) {
 	want := "git commit -m " + quote + "hello world" + quote
 	if recorded[0].history != want {
 		t.Fatalf("TF_HISTORY = %q, want %q", recorded[0].history, want)
+	}
+}
+
+// TestPowershellAliasRunsMultilineCorrection checks that a corrected command
+// that spans several lines is captured as one value and executed as a whole.
+// PowerShell turns the lines of the captured output into an array, so the alias
+// has to join them before it looks at the value.
+func TestPowershellAliasRunsMultilineCorrection(t *testing.T) {
+	resetShellsState(t)
+
+	correctedPath := filepath.Join(t.TempDir(), "corrected.txt")
+	corrected := "Write-Output alias-first\r\nWrite-Output alias-second\r\n"
+	if err := os.WriteFile(correctedPath, []byte(corrected), 0o600); err != nil {
+		t.Fatalf("write the corrected command: %v", err)
+	}
+	t.Setenv("GOFUCK_STUB_OUTPUT", correctedPath)
+
+	output, _ := runPowershellAliasRaw(t,
+		"function Get-History { param($Count) [pscustomobject]@{ CommandLine = 'git status' } }",
+		"fuck")
+	if !strings.Contains(string(output), "alias-first") || !strings.Contains(string(output), "alias-second") {
+		t.Fatalf("PowerShell output = %q, want both lines of the corrected command", output)
 	}
 }

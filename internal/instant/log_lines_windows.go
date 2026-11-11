@@ -94,6 +94,12 @@ type terminal struct {
 	screen  []screenLine
 	history []string
 
+	// wrapped marks the rows whose text continues on the next row because the
+	// line was wider than the terminal. historyWrapped is the same flag for the
+	// rows that moved into the scrollback.
+	wrapped        []bool
+	historyWrapped []bool
+
 	cursorX int
 	cursorY int
 
@@ -107,10 +113,12 @@ type terminal struct {
 
 // alternateScreen is the saved main screen of an alternate screen session.
 type alternateScreen struct {
-	screen     []screenLine
-	historyLen int
-	cursorX    int
-	cursorY    int
+	screen            []screenLine
+	wrapped           []bool
+	historyLen        int
+	historyWrappedLen int
+	cursorX           int
+	cursorY           int
 }
 
 // newTerminal returns an empty terminal with the given size.
@@ -121,7 +129,11 @@ func newTerminal(columns, rows int) *terminal {
 	if rows < 1 {
 		rows = defaultRenderRows
 	}
-	return &terminal{columns: columns, screen: make([]screenLine, rows)}
+	return &terminal{
+		columns: columns,
+		screen:  make([]screenLine, rows),
+		wrapped: make([]bool, rows),
+	}
 }
 
 // resize changes the size of the terminal. Rows that no longer fit are moved
@@ -133,10 +145,13 @@ func (t *terminal) resize(columns, rows int) {
 	t.columns = columns
 	for len(t.screen) > rows {
 		t.history = append(t.history, lineText(t.screen[0]))
+		t.historyWrapped = append(t.historyWrapped, t.wrapped[0])
 		t.screen = t.screen[1:]
+		t.wrapped = t.wrapped[1:]
 	}
 	for len(t.screen) < rows {
 		t.screen = append(t.screen, nil)
+		t.wrapped = append(t.wrapped, false)
 	}
 	if t.cursorY >= rows {
 		t.cursorY = rows - 1
@@ -206,6 +221,7 @@ func (t *terminal) put(character rune) {
 		return
 	}
 	if t.cursorX >= t.columns || width == 2 && t.cursorX+1 >= t.columns {
+		t.wrapped[t.cursorY] = true
 		t.cursorX = 0
 		t.lineFeed()
 	}
@@ -273,21 +289,63 @@ func (t *terminal) scroll() {
 		return
 	}
 	t.history = append(t.history, lineText(t.screen[0]))
+	t.historyWrapped = append(t.historyWrapped, t.wrapped[0])
 	copy(t.screen, t.screen[1:])
 	t.screen[len(t.screen)-1] = nil
+	copy(t.wrapped, t.wrapped[1:])
+	t.wrapped[len(t.wrapped)-1] = false
 }
 
 // lines returns the scrollback followed by the visible screen.
+//
+// Rows that the screen model wrapped because they were wider than the terminal
+// are joined again: the rules match the text of a command or an error message,
+// not the physical rows of the terminal.
 func (t *terminal) lines() []string {
 	lines := make([]string, 0, len(t.history)+len(t.screen))
+	wrapped := make([]bool, 0, len(t.history)+len(t.screen))
 	lines = append(lines, t.history...)
+	wrapped = append(wrapped, t.historyWrapped...)
 	for _, line := range t.screen {
 		lines = append(lines, lineText(line))
 	}
-	for len(lines) > 0 && lines[len(lines)-1] == "" {
-		lines = lines[:len(lines)-1]
+	wrapped = append(wrapped, t.wrapped...)
+
+	joined := make([]string, 0, len(lines))
+	for index := 0; index < len(lines); index++ {
+		text := lines[index]
+		for index+1 < len(lines) && wrapsToNextRow(lines[index], wrapped[index], t.columns) {
+			index++
+			text += lines[index]
+		}
+		joined = append(joined, text)
 	}
-	return lines
+	for len(joined) > 0 && joined[len(joined)-1] == "" {
+		joined = joined[:len(joined)-1]
+	}
+	return joined
+}
+
+// cellWidth returns the number of terminal columns that text occupies.
+func cellWidth(text string) int {
+	width := 0
+	for _, character := range text {
+		width += runeWidth(character)
+	}
+	return width
+}
+
+// wrapsToNextRow reports whether the rendered row continues on the next row.
+//
+// The screen model knows when it wrapped a row itself, but ConPTY re-emits the
+// wrapped text of the child console with an explicit line break and often
+// leaves the last column empty, so a row that is one column short of the
+// terminal width also continues on the next row.
+func wrapsToNextRow(line string, wrapped bool, columns int) bool {
+	if wrapped {
+		return true
+	}
+	return columns > 1 && cellWidth(line) >= columns-1
 }
 
 // lineText returns the text of a screen line without the continuation cells
@@ -440,12 +498,15 @@ func (t *terminal) enterAlternateScreen() {
 		return
 	}
 	t.alternate = &alternateScreen{
-		screen:     t.screen,
-		historyLen: len(t.history),
-		cursorX:    t.cursorX,
-		cursorY:    t.cursorY,
+		screen:            t.screen,
+		wrapped:           t.wrapped,
+		historyLen:        len(t.history),
+		historyWrappedLen: len(t.historyWrapped),
+		cursorX:           t.cursorX,
+		cursorY:           t.cursorY,
 	}
 	t.screen = make([]screenLine, len(t.screen))
+	t.wrapped = make([]bool, len(t.wrapped))
 	t.cursorX, t.cursorY = 0, 0
 }
 
@@ -464,8 +525,19 @@ func (t *terminal) leaveAlternateScreen() {
 		screen = append(screen, nil)
 	}
 	t.screen = screen
+	wrapped := t.alternate.wrapped
+	if len(wrapped) > rows {
+		wrapped = wrapped[:rows]
+	}
+	for len(wrapped) < rows {
+		wrapped = append(wrapped, false)
+	}
+	t.wrapped = wrapped
 	if len(t.history) > t.alternate.historyLen {
 		t.history = t.history[:t.alternate.historyLen]
+	}
+	if len(t.historyWrapped) > t.alternate.historyWrappedLen {
+		t.historyWrapped = t.historyWrapped[:t.alternate.historyWrappedLen]
 	}
 	t.cursorX = clamp(t.alternate.cursorX, 0, t.columns-1)
 	t.cursorY = clamp(t.alternate.cursorY, 0, len(t.screen)-1)
@@ -573,8 +645,10 @@ func (t *terminal) insertLines(count int) {
 		count = rows - t.cursorY
 	}
 	copy(t.screen[t.cursorY+count:], t.screen[t.cursorY:rows-count])
+	copy(t.wrapped[t.cursorY+count:], t.wrapped[t.cursorY:rows-count])
 	for index := 0; index < count; index++ {
 		t.screen[t.cursorY+index] = nil
+		t.wrapped[t.cursorY+index] = false
 	}
 }
 
@@ -588,8 +662,10 @@ func (t *terminal) deleteLines(count int) {
 		count = rows - t.cursorY
 	}
 	copy(t.screen[t.cursorY:], t.screen[t.cursorY+count:])
+	copy(t.wrapped[t.cursorY:], t.wrapped[t.cursorY+count:])
 	for index := rows - count; index < rows; index++ {
 		t.screen[index] = nil
+		t.wrapped[index] = false
 	}
 }
 
@@ -605,6 +681,8 @@ func (t *terminal) scrollDown(count int) {
 	for index := 0; index < count && len(t.screen) > 0; index++ {
 		copy(t.screen[1:], t.screen[:len(t.screen)-1])
 		t.screen[0] = nil
+		copy(t.wrapped[1:], t.wrapped[:len(t.wrapped)-1])
+		t.wrapped[0] = false
 	}
 }
 

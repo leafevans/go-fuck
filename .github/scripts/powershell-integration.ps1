@@ -109,6 +109,21 @@ try {
     if ($null -eq $previousArgsFile) { Remove-Item Env:GOFUCK_ARGS_FILE -ErrorAction SilentlyContinue }
     else { $env:GOFUCK_ARGS_FILE = $previousArgsFile }
 
+    # A command typed over several lines (a backtick continuation) is one
+    # Get-History entry. The value has to reach go-fuck as a whole and the
+    # multi line correction has to run afterwards.
+    Set-Content -Path "multiline.txt" -Value "multiline-content"
+    $env:TF_HISTORY = "Get-Content " + [char]96 + [Environment]::NewLine + "multiline.tx" + [Environment]::NewLine
+    $json = & $Exe --json 2>$null | Out-String
+    $parsed = $json | ConvertFrom-Json
+    $multiSuggestion = if ($null -eq $parsed.suggestions -or $parsed.suggestions.Count -eq 0) { "" } else { $parsed.suggestions[0].command }
+    Assert "multi line history is corrected" ($multiSuggestion -match "multiline\.txt") $multiSuggestion
+    if ($multiSuggestion -ne "") {
+        $multiOutput = Invoke-Expression $multiSuggestion | Out-String
+        Assert "multi line correction runs" ($multiOutput -match "multiline-content") $multiOutput
+    }
+    Remove-Item Env:TF_HISTORY -ErrorAction SilentlyContinue
+
     # The version output uses the detected shell. cmd.exe merges the two streams
     # without turning the native stderr lines into PowerShell error records.
     $version = cmd /c "`"$Exe`" --version 2>&1"

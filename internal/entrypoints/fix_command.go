@@ -10,6 +10,7 @@ import (
 	"github.com/leafevans/go-fuck/internal/consts"
 	"github.com/leafevans/go-fuck/internal/corrector"
 	"github.com/leafevans/go-fuck/internal/logs"
+	"github.com/leafevans/go-fuck/internal/shells"
 	"github.com/leafevans/go-fuck/internal/types"
 	"github.com/leafevans/go-fuck/internal/ui"
 	"github.com/leafevans/go-fuck/internal/utils"
@@ -79,6 +80,14 @@ func getRawCommand(args *argumentparser.Args) []string {
 		return args.Command
 	}
 
+	// The PowerShell alias passes the previous entry of Get-History as a single
+	// value, and PowerShell keeps a command that was typed over several lines
+	// as one entry with embedded line breaks. Splitting it into lines would
+	// return only the last line of a block or backtick continuation.
+	if shells.Current().Name() == "powershell" {
+		return powerShellRawCommand(history)
+	}
+
 	lines := strings.Split(history, string(rune(10)))
 	alias := conf.Alias()
 
@@ -90,4 +99,27 @@ func getRawCommand(args *argumentparser.Args) []string {
 		}
 	}
 	return nil
+}
+
+// powerShellRawCommand returns the command to fix from the history value of the
+// PowerShell alias.
+//
+// Unlike the POSIX aliases, the PowerShell alias does not pass a slice of the
+// history: it passes the previous Get-History entry. A command typed over
+// several lines (a block or a backtick continuation) is a single entry that
+// contains line breaks, so the value is used as it is. A trailing line break
+// is trimmed because PowerShell keeps it for multi line entries.
+func powerShellRawCommand(history string) []string {
+	command := strings.TrimRight(history, "\r\n")
+	if command == "" {
+		return nil
+	}
+	// The previous command can be a call to the alias itself, for example when
+	// the alias is invoked twice in a row.
+	if !strings.Contains(command, string(rune(10))) {
+		if utils.SequenceRatio(conf.Alias(), command) >= consts.DiffWithAlias {
+			return nil
+		}
+	}
+	return []string{command}
 }

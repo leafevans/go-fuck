@@ -103,6 +103,24 @@ func TestLastOutputMultilinePrompt(t *testing.T) {
 	}
 }
 
+func TestLastOutputPowerShellContinuation(t *testing.T) {
+	// A command continued with a trailing backtick is echoed over the main and
+	// the continuation prompt of PowerShell.
+	log := prompt("PS> Get-Content `") + "\r\n" +
+		">> missing.tx\r\n" +
+		">> \r\n" +
+		"Get-Content : Cannot find path 'C:\\tmp\\missing.tx' because it does not exist.\r\n" +
+		prompt("PS> ")
+
+	got, ok := LastOutput(writeLog(t, log), "Get-Content `\nmissing.tx")
+	if !ok {
+		t.Fatal("LastOutput() did not find a backtick continued command")
+	}
+	if want := "Cannot find path"; !strings.Contains(got, want) {
+		t.Fatalf("LastOutput() = %q, want it to contain %q", got, want)
+	}
+}
+
 func TestLastOutputEmptyOutput(t *testing.T) {
 	log := prompt("$ true") + "\r\n" + prompt("$ ")
 	got, ok := LastOutput(writeLog(t, log), "true")

@@ -162,12 +162,13 @@ func TestLogLinesWideCharacterCursorPositioning(t *testing.T) {
 	}
 }
 
-// TestLogLinesWrapsWideCharactersAtTheRightEdge checks that a wide character
-// which does not fit into the remaining columns starts the next line.
-func TestLogLinesWrapsWideCharactersAtTheRightEdge(t *testing.T) {
+// TestLogLinesJoinsWrappedWideCharacters checks that a wide character which
+// does not fit into the remaining columns starts the next row and that the
+// wrapped rows are joined again into one logical line.
+func TestLogLinesJoinsWrappedWideCharacters(t *testing.T) {
 	data := sizeRecord(5, 3) + "中文中文"
 	lines := renderedNonEmptyLines(data)
-	want := []string{"中文", "中文"}
+	want := []string{"中文中文"}
 	if len(lines) != len(want) {
 		t.Fatalf("logLines() = %q, want %q", lines, want)
 	}
@@ -175,6 +176,19 @@ func TestLogLinesWrapsWideCharactersAtTheRightEdge(t *testing.T) {
 		if lines[index] != expected {
 			t.Fatalf("logLines()[%d] = %q, want %q (all: %q)", index, lines[index], expected, lines)
 		}
+	}
+}
+
+// TestLogLinesJoinsWrappedOutputRows checks that ConPTY rows which continue on
+// the next row are joined again. ConPTY emits the wrapped text of the child
+// console with an explicit line break and leaves the last column empty, so the
+// rules see the logical line of an error message instead of terminal rows.
+func TestLogLinesJoinsWrappedOutputRows(t *testing.T) {
+	data := sizeRecord(20, 30) + "0123456789012345678\r\ncontinues\r\n"
+	lines := renderedNonEmptyLines(data)
+	want := "0123456789012345678continues"
+	if len(lines) != 1 || lines[0] != want {
+		t.Fatalf("logLines() = %q, want %q", lines, want)
 	}
 }
 

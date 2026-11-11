@@ -377,9 +377,11 @@ terminal.
 
 The mode is covered by end-to-end tests: an interactive bash runs on a pseudo terminal on Linux and
 macOS, and Windows PowerShell runs on a pseudo console on Windows; the tests feed a command, check
-the terminal log and read the output back. Multi line commands, such as PSReadLine's Shift+Enter
-input, are matched line by line. When instant mode is enabled, `go-fuck --doctor` also validates the
-active terminal log (readable, not empty, prompt marker present).
+the terminal log and read the output back. Commands typed over several lines (a PowerShell block or
+backtick continuation, PSReadLine's Shift+Enter input or a pasted command) are treated as one history
+entry, and output rows that the terminal wrapped are joined again before the rules see them. When
+instant mode is enabled, `go-fuck --doctor` also validates the active terminal log (readable, not
+empty, prompt marker present).
 
 Limitations:
 
@@ -397,6 +399,9 @@ Limitations:
 - The log keeps the newest 1 MiB of terminal output. The renderer is simpler than the reference
   implementation's pyte emulation: ANSI stripping and carriage return overwrites on Linux and macOS,
   a small screen model for the ConPTY stream on Windows, so full screen programs can still differ.
+- Long output rows are joined again because the console wrapped them. On Windows a row that is one
+  column short of the terminal width is treated as wrapped, so a line that happens to be exactly that
+  wide and is followed by a newline can be merged with the next line.
 
 The logged shell exports `GOFUCK_INSTANT_MODE=true`, which enables the `instant_mode` setting
 automatically; there is no need to set it manually.

@@ -115,3 +115,27 @@ func TestGetRawCommandHistorySkipsExecutableLookalikes(t *testing.T) {
 	t.Setenv("TF_HISTORY", "myaliasx")
 	assertRawCommand(t, getRawCommand(&argumentparser.Args{}), nil)
 }
+
+func TestGetRawCommandPowerShellMultilineHistory(t *testing.T) {
+	resetRawCommandState(t, t.TempDir())
+	shells.Set(shells.NewPowershell())
+
+	// A backtick continuation is stored as one history entry with embedded
+	// line breaks and a trailing line break.
+	t.Setenv("TF_HISTORY", "Get-Content `\nmissing.tx\n")
+	assertRawCommand(t, getRawCommand(&argumentparser.Args{}),
+		[]string{"Get-Content `\nmissing.tx"})
+
+	// A block is stored the same way.
+	t.Setenv("TF_HISTORY", "if ($true) {\nWrite-Output hi\n}\n")
+	assertRawCommand(t, getRawCommand(&argumentparser.Args{}),
+		[]string{"if ($true) {\nWrite-Output hi\n}"})
+
+	// A single line entry keeps working, including a trailing line break.
+	t.Setenv("TF_HISTORY", "git status\r\n")
+	assertRawCommand(t, getRawCommand(&argumentparser.Args{}), []string{"git status"})
+
+	// A previous call to the alias itself is not a command to fix.
+	t.Setenv("TF_HISTORY", "fuck\n")
+	assertRawCommand(t, getRawCommand(&argumentparser.Args{}), nil)
+}

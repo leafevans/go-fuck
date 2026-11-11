@@ -32,7 +32,7 @@ const powershellAliasTemplate = `function %[1]s {
         if (-not [string]::IsNullOrWhiteSpace($history)) { $env:TF_HISTORY = $history; }
         else { Remove-Item Env:TF_HISTORY -ErrorAction SilentlyContinue; }
         if (-not [string]::IsNullOrWhiteSpace($history) -or $args.Count -gt 0) {
-            $fuck = $(%[2]s @args);
+            $fuck = ($(%[2]s @args) -join [Environment]::NewLine);
             if (-not [string]::IsNullOrWhiteSpace($fuck)) {
                 if ($fuck.StartsWith("echo")) { $fuck = $fuck.Substring(5); }
                 else { iex "$fuck"; }
