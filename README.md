@@ -94,9 +94,10 @@ rule runs, which a native binary does not need.
 
 ## Requirements
 
-- **Go 1.23 or newer** to build from source. Go 1.22 and older do not emit the `LC_UUID` load
-  command that macOS 26 requires for binaries that use networking (golang/go#68678), so the macOS
-  binaries built with them refuse to start; use a current toolchain.
+- **Go 1.27 or newer** to build from source. The JSON documents (settings, custom rules,
+  `--json`, `--doctor --json`) are handled by `encoding/json/v2`, which was stabilized in Go 1.27.
+  `GOTOOLCHAIN=auto`, the default of current toolchains, downloads Go 1.27 automatically when
+  needed; prebuilt release archives and package manager installs do not need Go at all.
 - **No runtime dependencies.** The compiled binary is self-contained.
 - A supported shell for the alias: bash, zsh, fish, tcsh or PowerShell. On Windows, PowerShell is
   recommended; a `cmd.exe` shim is provided as well.

@@ -72,6 +72,27 @@ the generated shell initialization lines are unchanged. This release also adds e
 the terminal logger on Linux, macOS and Windows and makes `go-fuck --doctor` validate the active
 instant mode log.
 
+## Upgrading from 2.13 to 2.14.0
+
+go-fuck now uses `encoding/json/v2` for every JSON document and therefore needs **Go 1.27 or newer**
+to build from source. The prebuilt release archives, Homebrew, Scoop and AUR packages are unaffected,
+and `go install github.com/leafevans/go-fuck/cmd/go-fuck@latest` keeps working because
+`GOTOOLCHAIN=auto` (the default) downloads Go 1.27 when the installed toolchain is older. Only
+builds with `GOTOOLCHAIN=local` and an older Go need an upgrade.
+
+The settings and `--json` contracts keep their keys, meaning and `schema_version: 1`, but
+`settings.json` is parsed with the stricter v2 rules:
+
+- **Member names are case-sensitive.** A hand-written key such as `"Rules"` used to match `rules`
+  because v1 compared names case-insensitively; it is now treated as an unknown key and ignored.
+  Files written by `go-fuck` use the documented lower-case names and are unaffected.
+- **Duplicate keys are rejected.** A file with the same key twice is reported and not applied; v1
+  silently kept the last value. Remove the duplicate to upgrade.
+- **Invalid UTF-8 is rejected** instead of being replaced with U+FFFD.
+- Unknown keys are still ignored, and the `--json` document keeps its fields and layout. The
+  encoder no longer escapes `<`, `>` and `&` as `\u003c`, `\u003e` and `\u0026` inside strings;
+  both forms are valid JSON and decode to the same values.
+
 ## Future releases
 
 - **Patch** releases contain bug fixes and documentation changes.

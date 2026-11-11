@@ -12,7 +12,8 @@
 package conf
 
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
+	json "encoding/json/v2"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -267,7 +268,7 @@ func (s *Settings) writeDefaultFile(path string) error {
 		"excluded_search_path_prefixes": s.ExcludedSearchPathPrefixes,
 		"settings":                      map[string]any{},
 	}
-	data, err := json.MarshalIndent(schema, "", "  ")
+	data, err := json.Marshal(schema, jsontext.WithIndent("  "))
 	if err != nil {
 		return fmt.Errorf("encode default settings: %w", err)
 	}

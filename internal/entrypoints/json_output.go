@@ -1,7 +1,8 @@
 package entrypoints
 
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
+	json "encoding/json/v2"
 	"os"
 	"unicode/utf8"
 
@@ -41,7 +42,7 @@ type jsonResult struct {
 	// when the command printed nothing.
 	Output string `json:"output,omitempty"`
 	// OutputTruncated reports whether Output was cut at jsonOutputLimit bytes.
-	OutputTruncated bool `json:"output_truncated,omitempty"`
+	OutputTruncated bool `json:"output_truncated,omitzero"`
 	// Suggestions are the corrected commands, in the order in which they would
 	// be offered.
 	Suggestions []jsonSuggestion `json:"suggestions"`
@@ -70,9 +71,13 @@ func printJSON(command *types.Command, corrected []*types.CorrectedCommand) int 
 		})
 	}
 
-	encoder := json.NewEncoder(os.Stdout)
-	encoder.SetIndent("", "  ")
-	if err := encoder.Encode(result); err != nil {
+	data, err := json.Marshal(result, jsontext.WithIndent("  "))
+	if err != nil {
+		logs.Exception("Can't write the JSON output", err)
+		return 1
+	}
+	data = append(data, '\n')
+	if _, err := os.Stdout.Write(data); err != nil {
 		logs.Exception("Can't write the JSON output", err)
 		return 1
 	}

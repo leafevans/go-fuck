@@ -15,7 +15,8 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
+	"encoding/json/jsontext"
+	json "encoding/json/v2"
 	"flag"
 	"fmt"
 	"io"
@@ -221,7 +222,7 @@ func scoopManifest(r *release) ([]byte, error) {
 			},
 		},
 	}
-	return json.MarshalIndent(manifest, "", "  ")
+	return json.Marshal(manifest, jsontext.WithIndent("  "))
 }
 
 // aurPKGBUILDTemplate is the PKGBUILD of the AUR package. The release

@@ -1,7 +1,7 @@
 package customrules
 
 import (
-	"encoding/json"
+	json "encoding/json/v2"
 	"slices"
 	"testing"
 

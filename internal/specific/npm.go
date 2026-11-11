@@ -1,7 +1,7 @@
 package specific
 
 import (
-	"encoding/json"
+	json "encoding/json/v2"
 	"os"
 	"os/exec"
 	"regexp"

@@ -1,7 +1,8 @@
 package entrypoints
 
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
+	json "encoding/json/v2"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -345,7 +346,7 @@ func doctorLogHasMarker(path string) bool {
 func doctor(args *argumentparser.Args) int {
 	report := collectDoctorReport()
 	if args.JSON {
-		encoded, err := json.MarshalIndent(report, "", "  ")
+		encoded, err := json.Marshal(report, jsontext.WithIndent("  "))
 		if err != nil {
 			fmt.Fprintln(os.Stderr, consts.ExecutableName()+": cannot encode the report: "+err.Error())
 			return 1
