@@ -250,6 +250,7 @@ var expectedExtraRuleNames = []string{
 	"poetry_unknown_command",
 	"powershell_cd_unquoted_path",
 	"powershell_missing_directory",
+	"powershell_missing_file",
 	"powershell_mkdir_existing",
 	"powershell_remove_recurse",
 	"powershell_set_location",

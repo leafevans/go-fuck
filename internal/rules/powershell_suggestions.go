@@ -76,3 +76,22 @@ var powerShellItemIsDirectory = func(path string) bool {
 	info, err := os.Stat(path)
 	return err == nil && info.IsDir()
 }
+
+// powerShellItemExists reports whether path exists.
+var powerShellItemExists = func(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
+}
+
+// powerShellDirectoryEntries returns the names in dir.
+var powerShellDirectoryEntries = func(dir string) ([]string, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+	names := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		names = append(names, entry.Name())
+	}
+	return names, nil
+}
