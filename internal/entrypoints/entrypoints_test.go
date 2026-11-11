@@ -191,7 +191,7 @@ func TestMainInstantModeAlias(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("Main() = %d, want 0", code)
 	}
-	if !strings.Contains(stdout, consts.UserCommandMark) || !strings.Contains(stdout, "function fuck") {
+	if !strings.Contains(stdout, "__gofuck_mark=$'") || !strings.Contains(stdout, "function fuck") {
 		t.Fatalf("logged shell alias is missing the prompt marker or the alias: %q", stdout)
 	}
 }

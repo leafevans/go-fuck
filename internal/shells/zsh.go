@@ -54,7 +54,7 @@ func (z *Zsh) AppAlias(aliasName string) string {
 // go-fuck can find the command output in the terminal log.
 func (z *Zsh) InstantModeAlias(aliasName string) string {
 	if instantModeEnabled() {
-		return instantModeMarkedAlias(z.AppAlias(aliasName), "%{", "%}")
+		return instantModeMarkedAlias(z.AppAlias(aliasName), "%{", "%}", zshInstantModeMarkHook)
 	}
 	return instantModeInitAlias()
 }
@@ -107,3 +107,15 @@ func zshParseHistoryLine(line string) string {
 func zshVersion() string {
 	return runOutput("zsh", "-c", "echo $ZSH_VERSION")
 }
+
+// zshInstantModeMarkHook re-adds the prompt marker before every prompt.
+//
+// The hook is appended to precmd_functions, so it runs after the user prompt
+// functions that rebuild PS1 (starship, powerlevel10k, ...).
+const zshInstantModeMarkHook = `__gofuck_mark_prompt() {
+    case "$PS1" in
+        *"$__gofuck_mark"*) ;;
+        *) PS1="%{${__gofuck_mark}%}$PS1" ;;
+    esac
+}
+precmd_functions+=(__gofuck_mark_prompt)`

@@ -385,9 +385,10 @@ Limitations:
 
 - The shell profile runs twice per terminal start: once in the terminal shell and once in the
   logged subshell. Slow profiles delay the first prompt twice.
-- Changing the prompt after the alias initialization can break command detection or alignment. On
-  Windows the instant mode line has to be the last prompt definition in the profile; disable instant
-  mode if the prompt looks wrong.
+- Prompt frameworks that rebuild `PS1` before every prompt (starship, powerlevel10k, ...) keep
+  working, because the marker is re-added after the prompt functions run. A prompt definition added
+  after the instant mode line can still hide the marker; on Windows the instant mode line has to be
+  the last prompt definition in the profile.
 - Full screen programs such as `vim` or `tmux` use the alternate screen, whose content is not
   part of the log; the previous screen is restored when they exit. If the terminal is closed while
   such a program is still running, the end of the log may be missing.

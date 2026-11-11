@@ -37,13 +37,38 @@ func instantModeInitAlias() string {
 // instantModeMarkedAlias prefixes PS1 with the invisible prompt marker so that
 // the log reader can split the terminal log into command calls.
 //
+// The marker is built from an ANSI-C quoted octal literal instead of being
+// embedded in the generated code, because the raw zero width characters are not
+// portable through every shell configuration file.
+//
 // The marker is wrapped in the shell's non-printing sequence (bash \[...\],
 // zsh %{...%}) so that the prompt width accounting ignores it. A carriage
 // return after the marker resets the terminal column in case the terminal
 // renders the zero width marker as a cell, which would otherwise indent the
 // first prompt line by one column.
-func instantModeMarkedAlias(appAlias, promptStart, promptEnd string) string {
-	return "export PS1=\"" + promptStart + consts.UserCommandMark + "\r" + promptEnd + "$PS1\";\n" + appAlias
+//
+// hook is shell code that re-adds the marker before every prompt. Prompt
+// frameworks such as starship or powerlevel10k rebuild PS1 on every prompt,
+// which would otherwise drop the marker.
+func instantModeMarkedAlias(appAlias, promptStart, promptEnd, hook string) string {
+	return "__gofuck_mark=" + instantModeMarkerLiteral() + ";\n" +
+		"export PS1=\"" + promptStart + "${__gofuck_mark}" + promptEnd + "$PS1\";\n" +
+		hook + "\n" + appAlias
+}
+
+// instantModeMarkerLiteral returns the prompt marker as a POSIX shell ANSI-C
+// quoted literal (the zero width user command mark followed by a carriage
+// return).
+func instantModeMarkerLiteral() string {
+	var builder strings.Builder
+	builder.WriteString("$'")
+	for _, character := range consts.UserCommandMark {
+		for _, value := range []byte(string(character)) {
+			fmt.Fprintf(&builder, "\\%03o", value)
+		}
+	}
+	builder.WriteString("\\r'")
+	return builder.String()
 }
 
 // instantModeLogPath returns a fresh temporary path for the terminal log.

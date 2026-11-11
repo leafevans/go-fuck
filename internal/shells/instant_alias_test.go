@@ -31,15 +31,19 @@ func TestBashInstantModeMarkedAlias(t *testing.T) {
 	isolateInstantMode(t)
 	t.Setenv(consts.InstantModeEnv, "true")
 	alias := NewBash().InstantModeAlias("fuck")
-	if !strings.Contains(alias, consts.UserCommandMark) {
-		t.Fatalf("logged shell alias does not mark the prompt: %q", alias)
+	if strings.Contains(alias, consts.UserCommandMark) {
+		t.Fatalf("generated alias must not embed the raw marker characters: %q", alias)
 	}
-	wantMarked := "PS1=\"\\[" + consts.UserCommandMark + "\r\\]$PS1\""
-	if !strings.Contains(alias, wantMarked) {
-		t.Fatalf("bash prompt marker is not wrapped as a non printing sequence: %q", alias)
-	}
-	if !strings.Contains(alias, "function fuck") {
-		t.Fatalf("logged shell alias is missing the alias function: %q", alias)
+	for _, want := range []string{
+		"__gofuck_mark=$'",
+		`PS1="\[${__gofuck_mark}\]$PS1"`,
+		"__gofuck_mark_prompt",
+		"PROMPT_COMMAND",
+		"function fuck",
+	} {
+		if !strings.Contains(alias, want) {
+			t.Fatalf("bash marked alias does not contain %q: %q", want, alias)
+		}
 	}
 }
 
@@ -55,12 +59,19 @@ func TestZshInstantModeMarkedAlias(t *testing.T) {
 	isolateInstantMode(t)
 	t.Setenv(consts.LegacyInstantModeEnv, "true")
 	alias := NewZsh().InstantModeAlias("fuck")
-	if !strings.Contains(alias, consts.UserCommandMark) || !strings.Contains(alias, "fuck () {") {
-		t.Fatalf("logged shell alias is incomplete: %q", alias)
+	if strings.Contains(alias, consts.UserCommandMark) {
+		t.Fatalf("generated alias must not embed the raw marker characters: %q", alias)
 	}
-	wantMarked := "PS1=\"%{" + consts.UserCommandMark + "\r%}$PS1\""
-	if !strings.Contains(alias, wantMarked) {
-		t.Fatalf("zsh prompt marker is not wrapped as a non printing sequence: %q", alias)
+	for _, want := range []string{
+		"__gofuck_mark=$'",
+		`PS1="%{${__gofuck_mark}%}$PS1"`,
+		"__gofuck_mark_prompt",
+		"precmd_functions",
+		"fuck () {",
+	} {
+		if !strings.Contains(alias, want) {
+			t.Fatalf("zsh marked alias does not contain %q: %q", want, alias)
+		}
 	}
 }
 

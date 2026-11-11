@@ -51,7 +51,7 @@ func (b *Bash) AppAlias(aliasName string) string {
 // go-fuck can find the command output in the terminal log.
 func (b *Bash) InstantModeAlias(aliasName string) string {
 	if instantModeEnabled() {
-		return instantModeMarkedAlias(b.AppAlias(aliasName), "\\[", "\\]")
+		return instantModeMarkedAlias(b.AppAlias(aliasName), "\\[", "\\]", bashInstantModeMarkHook)
 	}
 	return instantModeInitAlias()
 }
@@ -103,3 +103,22 @@ func bashHistoryFile() string {
 func bashVersion() string {
 	return runOutput("bash", "-c", "echo $BASH_VERSION")
 }
+
+// bashInstantModeMarkHook re-adds the prompt marker before every prompt.
+//
+// The hook is appended to PROMPT_COMMAND, so it runs after the user prompt
+// functions that rebuild PS1 (starship, powerline, ...). PROMPT_COMMAND may be
+// a string or, since bash 5.1, an array; both forms are extended.
+const bashInstantModeMarkHook = `__gofuck_mark_prompt() {
+    case "$PS1" in
+        *"$__gofuck_mark"*) ;;
+        *) PS1="\[${__gofuck_mark}\]$PS1" ;;
+    esac
+}
+if [[ "${PROMPT_COMMAND[*]-}" != *__gofuck_mark_prompt* ]]; then
+    if [[ "$(declare -p PROMPT_COMMAND 2>/dev/null)" == "declare -a"* ]]; then
+        PROMPT_COMMAND+=(__gofuck_mark_prompt)
+    else
+        PROMPT_COMMAND="${PROMPT_COMMAND:+${PROMPT_COMMAND};}__gofuck_mark_prompt"
+    fi
+fi`
