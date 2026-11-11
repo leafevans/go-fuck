@@ -22,4 +22,10 @@ func TestRuleGoMissingModule(t *testing.T) {
 
 	assertNewCommands(t, rule, "go build ./...", goMissingModuleOutput(),
 		[]string{"go get github.com/definitely/not-a-real-package-xyz && go build ./..."})
+
+	// A mistyped file argument is left to go_missing_file instead of being added
+	// as a module.
+	stubGoDirectoryEntries(t, []string{"main.go"})
+	assertNewCommands(t, rule, "go run main.g",
+		"no required module provides package main.g; to add it:\n\tgo get main.g\n", nil)
 }

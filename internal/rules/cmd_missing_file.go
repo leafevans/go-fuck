@@ -8,12 +8,13 @@ import (
 
 // cmdMissingFileCommands are the cmd.exe commands that read or move an
 // existing file.
-var cmdMissingFileCommands = []string{"copy", "move", "del", "erase", "type", "more", "ren", "rename"}
+var cmdMissingFileCommands = []string{"attrib", "copy", "move", "del", "erase", "type", "more", "ren", "rename"}
 
 // cmdMissingFileErrors are the cmd.exe errors for a missing file.
 var cmdMissingFileErrors = []string{
 	"The system cannot find the file specified.",
 	"Could Not Find ",
+	"File not found - ",
 }
 
 // cmdMissingFileMatch reports whether a command failed because a file it names

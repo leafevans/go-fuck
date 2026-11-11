@@ -13,6 +13,9 @@ func TestRuleGoRun(t *testing.T) {
 
 	t.Run("not match", func(t *testing.T) {
 		assertNotMatch(t, rule, "go run foo.go", "")
+		assertNotMatch(t, rule, "go run main.g", "")
+		assertNotMatch(t, rule, "go run ./foo", "")
+		assertNotMatch(t, rule, "go run foo bar", "")
 		assertNotMatch(t, rule, "go build foo", "")
 	})
 

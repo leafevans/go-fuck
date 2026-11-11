@@ -26,7 +26,15 @@ func goMissingModuleMatch(command *types.Command) bool {
 func goMissingModuleNewCommand(command *types.Command) ([]string, error) {
 	packages := []string{}
 	for _, match := range goMissingPackage.FindAllStringSubmatch(command.Output, -1) {
-		packages = append(packages, strings.TrimSpace(match[1]))
+		pkg := strings.TrimSpace(match[1])
+		// A mistyped file argument is corrected by go_missing_file; adding it as
+		// a module would only fetch a package that does not exist.
+		if !strings.ContainsAny(pkg, "/\\") {
+			if _, isFileTypo := goFileTypoCorrection(pkg); isFileTypo {
+				continue
+			}
+		}
+		packages = append(packages, pkg)
 	}
 	if len(packages) == 0 {
 		return nil, nil

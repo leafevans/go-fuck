@@ -43,9 +43,18 @@ func TestRuleCmdMissingFile(t *testing.T) {
 	assertNotMatch(t, rule, "type config.tx", "The system cannot find the path specified.\n")
 	assertNotMatch(t, rule, "del *.none", "Could Not Find C:\\root\\*.none\n")
 	assertNotMatch(t, rule, "copy *.none dest.txt", cmdFileNotFoundOutput)
+	assertMatch(t, rule, "attrib +r config.tx", "File not found - config.tx\n")
+	assertMatch(t, rule, "attrib -h config.tx", "File not found - config.tx\n")
+	assertMatch(t, rule, "attrib config.tx", "File not found - config.tx\n")
+	assertMatch(t, rule, "attrib /s config.tx", "File not found - config.tx\n")
+	assertNotMatch(t, rule, "attrib +r config.txt", "File not found - config.txt\n")
 
 	assertNewCommands(t, rule, "type config.tx", cmdFileNotFoundOutput,
 		[]string{"type config.txt"})
+	assertNewCommands(t, rule, "attrib +r config.tx", "File not found - config.tx\n",
+		[]string{"attrib +r config.txt"})
+	assertNewCommands(t, rule, "attrib -h config.tx", "File not found - config.tx\n",
+		[]string{"attrib -h config.txt"})
 	assertNewCommands(t, rule, "copy config.tx dest.txt", cmdFileNotFoundOutput,
 		[]string{"copy config.txt dest.txt"})
 	assertNewCommands(t, rule, "ren config.tx new.txt", cmdFileNotFoundOutput,

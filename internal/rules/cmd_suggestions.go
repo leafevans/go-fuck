@@ -112,7 +112,7 @@ func cmdFirstRawArgument(script string) (raw, value string) {
 			index++
 		}
 		raw = script[start:index]
-		if strings.HasPrefix(raw, "/") || strings.HasPrefix(raw, "-") {
+		if strings.HasPrefix(raw, "/") || strings.HasPrefix(raw, "-") || strings.HasPrefix(raw, "+") {
 			continue
 		}
 		return raw, raw

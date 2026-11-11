@@ -228,6 +228,7 @@ var expectedExtraRuleNames = []string{
 	"git_switch_unknown_branch",
 	"glab_unknown_command",
 	"go_install_version",
+	"go_missing_file",
 	"go_missing_module",
 	"go_missing_package",
 	"go_missing_sum",
