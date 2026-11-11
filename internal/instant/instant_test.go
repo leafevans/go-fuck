@@ -241,3 +241,29 @@ func TestLogLinesDropAlternateScreenContent(t *testing.T) {
 		}
 	}
 }
+
+func TestLastOutputMultilineCommand(t *testing.T) {
+	log := prompt("$ Get-ChildItem |") + "\r\n" +
+		"    Select-Object Name\r\n" +
+		"output line\r\n" +
+		prompt("$ ")
+
+	got, ok := LastOutput(writeLog(t, log), "Get-ChildItem |\n    Select-Object Name")
+	if !ok {
+		t.Fatal("LastOutput() did not find the multi line command")
+	}
+	if want := "output line"; got != want {
+		t.Fatalf("LastOutput() = %q, want %q", got, want)
+	}
+}
+
+func TestLastOutputMultilineCommandFallsBackToNextCommand(t *testing.T) {
+	log := prompt("$ Get-ChildItem |") + "\r\n" +
+		"    Select-Object Name\r\n" +
+		"output line\r\n" +
+		prompt("$ ")
+
+	if _, ok := LastOutput(writeLog(t, log), "Get-ChildItem -Path ."); ok {
+		t.Fatal("LastOutput() found a different multi line command")
+	}
+}

@@ -375,8 +375,9 @@ terminal.
 
 The mode is covered by end-to-end tests: an interactive bash runs on a pseudo terminal on Linux and
 macOS, and Windows PowerShell runs on a pseudo console on Windows; the tests feed a command, check
-the terminal log and read the output back. When instant mode is enabled, `go-fuck --doctor` also
-validates the active terminal log (readable, not empty, prompt marker present).
+the terminal log and read the output back. Multi line commands, such as PSReadLine's Shift+Enter
+input, are matched line by line. When instant mode is enabled, `go-fuck --doctor` also validates the
+active terminal log (readable, not empty, prompt marker present).
 
 Limitations:
 

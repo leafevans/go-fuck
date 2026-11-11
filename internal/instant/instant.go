@@ -93,7 +93,63 @@ func (c logCall) echoIndex(script string, parts []string) int {
 			return index
 		}
 	}
+	if index := multilineEchoIndex(lines, trimmed); index >= 0 {
+		return index
+	}
 	return wrappedEchoIndex(lines, trimmed)
+}
+
+// multilineEchoIndex returns the index of the last prompt block line that
+// echoes a command typed over several lines (for example PSReadLine with
+// Shift+Enter, or a pasted multi line command).
+//
+// The search is bounded to the beginning of the prompt block, and every non
+// empty command line has to appear in order, which keeps output lines from
+// being mistaken for the echo.
+func multilineEchoIndex(lines []string, command string) int {
+	commandLines := strings.Split(command, "\n")
+	if len(commandLines) < 2 {
+		return -1
+	}
+	parts := make([]string, 0, len(commandLines))
+	for _, line := range commandLines {
+		line = strings.TrimSpace(line)
+		if line != "" {
+			parts = append(parts, line)
+		}
+	}
+	if len(parts) < 2 {
+		return -1
+	}
+	const maxPromptLines = 16
+	last := maxPromptLines
+	if len(lines) < last {
+		last = len(lines)
+	}
+	for start := 0; start < last; start++ {
+		index := start
+		matched := 0
+		lastMatch := -1
+		for _, part := range parts {
+			found := -1
+			for ; index < last; index++ {
+				if strings.Contains(sanitize(lines[index]), part) {
+					found = index
+					index++
+					break
+				}
+			}
+			if found < 0 {
+				break
+			}
+			matched++
+			lastMatch = found
+		}
+		if matched == len(parts) {
+			return lastMatch
+		}
+	}
+	return -1
 }
 
 // instantMaxEchoLines bounds the number of prompt block lines that are joined
