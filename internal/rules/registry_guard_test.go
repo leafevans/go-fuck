@@ -205,6 +205,8 @@ var expectedExtraRuleNames = []string{
 	"choco_unknown_command",
 	"cmd_cd_mkdir",
 	"cmd_missing_directory",
+	"cmd_missing_file",
+	"cmd_pushd_mkdir",
 	"cmd_rmdir_nonempty",
 	"dart_unknown_command",
 	"deno_task_not_found",
