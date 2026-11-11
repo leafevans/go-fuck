@@ -229,6 +229,7 @@ var expectedExtraRuleNames = []string{
 	"glab_unknown_command",
 	"go_install_version",
 	"go_missing_module",
+	"go_missing_package",
 	"go_missing_sum",
 	"go_mod_init",
 	"go_unknown_flag",
