@@ -83,7 +83,7 @@ func TestDoctorJSON(t *testing.T) {
 		names[check.Name] = true
 	}
 	for _, want := range []string{
-		"version", "binary", "shell", "alias", "config", "history", "fzf", "instant", "ai",
+		"version", "binary", "shell", "alias", "config", "history", "fzf", "instant",
 	} {
 		if !names[want] {
 			t.Fatalf("the report has no %q check: %+v", want, report.Checks)

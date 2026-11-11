@@ -50,9 +50,6 @@ func fixCommand(args *argumentparser.Args) int {
 	}
 
 	corrected := corrector.GetCorrectedCommands(command)
-	if len(corrected) == 0 {
-		corrected = aiFallback(command)
-	}
 
 	if args.JSON {
 		return printJSON(command, corrected)

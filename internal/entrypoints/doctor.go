@@ -143,7 +143,6 @@ func doctorChecks(report doctorReport, shell doctorShellState) []doctorCheck {
 	checks = append(checks, doctorHistoryCheck(shell))
 	checks = append(checks, doctorFzfCheck())
 	checks = append(checks, doctorInstantCheck())
-	checks = append(checks, doctorAICheck())
 	return checks
 }
 
@@ -263,29 +262,6 @@ func doctorInstantCheck() doctorCheck {
 		check.Status = doctorInfo
 		check.Message = "available, not enabled (experimental)"
 		check.Hint = "go-fuck --setup --enable-experimental-instant-mode"
-	}
-	return check
-}
-
-// doctorAICheck reports whether the optional AI fallback is configured.
-func doctorAICheck() doctorCheck {
-	settings := conf.Current()
-	check := doctorCheck{Name: "ai"}
-	switch {
-	case !settings.AIEnabled:
-		check.Status = doctorInfo
-		check.Message = "disabled (optional)"
-	case settings.AIEndpoint == "":
-		check.Status = doctorWarn
-		check.Message = "enabled but no endpoint is configured"
-		check.Hint = "set ai_endpoint in the settings file"
-	case os.Getenv("GOFUCK_AI_API_KEY") == "" && os.Getenv("OPENAI_API_KEY") == "":
-		check.Status = doctorWarn
-		check.Message = "enabled but no API key was found"
-		check.Hint = "set GOFUCK_AI_API_KEY"
-	default:
-		check.Status = doctorOK
-		check.Message = fmt.Sprintf("enabled (%s, model %s)", settings.AIEndpoint, settings.AIModel)
 	}
 	return check
 }

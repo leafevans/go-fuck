@@ -43,12 +43,11 @@ $ fuck
 10. [Settings](#settings)
 11. [Confirmation keys](#confirmation-keys)
 12. [Rules](#rules)
-13. [AI fallback](#ai-fallback-optional)
-14. [Creating custom rules](#creating-custom-rules)
-15. [Differences from thefuck](#differences-from-thefuck)
-16. [Contributing](#contributing)
-17. [License](#license)
-18. [Acknowledgements](#acknowledgements)
+13. [Creating custom rules](#creating-custom-rules)
+14. [Differences from thefuck](#differences-from-thefuck)
+15. [Contributing](#contributing)
+16. [License](#license)
+17. [Acknowledgements](#acknowledgements)
 
 ## Why Go
 
@@ -92,8 +91,6 @@ rule runs, which a native binary does not need.
   `GOFUCK_*` prefix and the legacy `THEFUCK_*` prefix, rule priorities, disabled rules and
   per-rule settings.
 - Custom rules as compiled Go rules or declarative JSON files in the configuration directory.
-- An optional AI fallback for commands that no rule matches (disabled by default; see
-  [AI fallback](#ai-fallback-optional)).
 
 ## Requirements
 
@@ -306,7 +303,7 @@ $ go-fuck --doctor
 ```
 
 It checks the detected shell, the alias in the shell configuration file, the settings file, the
-command history and the optional integrations (fzf, instant mode and the AI fallback). Warnings
+command history and the optional integrations (fzf and instant mode). Warnings
 include the command that fixes them, and `--doctor --json` prints the same report as JSON.
 
 To list the rule names accepted by the `rules`, `exclude_rules` and `priority` settings, run:
@@ -492,10 +489,6 @@ All fields:
 | `num_close_matches`             | integer           | `3`                                                          | Maximum number of close matches suggested for misspelled commands.                                                                                                                            |
 | `env`                           | object of string  | `{"LC_ALL": "C", "LANG": "C", "GIT_TRACE": "1"}`             | Environment variables added when the failed command is re-run.                                                                                                                                |
 | `excluded_search_path_prefixes` | array of strings  | `[]`                                                         | `PATH` prefixes that are skipped when searching for executables.                                                                                                                              |
-| `ai`                            | boolean           | `false`                                                      | Enable the optional AI fallback when no rule matched. See [AI fallback](#ai-fallback-optional).                                                                                               |
-| `ai_endpoint`                   | string            | `""`                                                         | OpenAI compatible API base URL, for example `https://api.openai.com/v1`.                                                                                                                      |
-| `ai_model`                      | string            | `""`                                                         | Chat completion model used by the AI fallback.                                                                                                                                                |
-| `ai_timeout`                    | integer           | `10`                                                         | Seconds to wait for the AI endpoint.                                                                                                                                                          |
 | `settings`                      | object            | `{} in the default file`                                     | Rule-specific string settings, read by rules with `conf.Current().String(key, default)`.                                                                                                      |
 
 ### Environment variables
@@ -524,10 +517,6 @@ legacy `THEFUCK_*` variable is applied last and wins.
 | `INSTANT_MODE`                  | boolean                                  | `GOFUCK_INSTANT_MODE=false`                    | `instant_mode`                                                      |
 | `NUM_CLOSE_MATCHES`             | integer                                  | `GOFUCK_NUM_CLOSE_MATCHES=5`                   | `num_close_matches`                                                 |
 | `EXCLUDED_SEARCH_PATH_PREFIXES` | colon separated list                     | `GOFUCK_EXCLUDED_SEARCH_PATH_PREFIXES='/snap'` | `excluded_search_path_prefixes`                                     |
-| `AI`                            | boolean                                  | `GOFUCK_AI=true`                               | `ai`                                                                |
-| `AI_ENDPOINT`                   | string                                   | `GOFUCK_AI_ENDPOINT=https://api.openai.com/v1` | `ai_endpoint`                                                       |
-| `AI_MODEL`                      | string                                   | `GOFUCK_AI_MODEL=gpt-4o-mini`                  | `ai_model`                                                          |
-| `AI_TIMEOUT`                    | integer seconds                          | `GOFUCK_AI_TIMEOUT=20`                         | `ai_timeout`                                                        |
 
 The `env` map can only be set in `settings.json`. Booleans accept `true` and `false`
 (case-insensitive).
@@ -573,8 +562,8 @@ the selection entirely.
 
 The built-in rules are compiled into the binary, and declarative JSON rules can be loaded from the
 configuration directory (see [Creating custom rules](#creating-custom-rules)). Each rule decides
-whether it applies to a failed command and returns one or more corrected commands. There are 232
-built-in rules: 169 ported from the reference implementation plus 63 go-fuck specific rules for
+whether it applies to a failed command and returns one or more corrected commands. There are 233
+built-in rules: 169 ported from the reference implementation plus 64 go-fuck specific rules for
 failures that thefuck does not handle, including the GitHub and GitLab CLIs, kubectl/kind/kustomize,
 uv, cargo, Helm, pnpm, the npm, pnpm, yarn and uv lock file checks, the Go toolchain and go.sum,
 Node.js, bun, Deno, Docker Compose, just, Poetry, make, the go-task runner, minikube, Bundler,
@@ -617,6 +606,7 @@ git operations. The list below is generated from the compiled rules:
 - `choco_install`
 - `choco_unknown_command`
 - `cmd_cd_mkdir`
+- `cmd_missing_directory`
 - `cmd_rmdir_nonempty`
 - `composer_not_command`
 - `conda_mistype`
@@ -826,33 +816,6 @@ make rules-list-check          # fail when README.md is out of date
 
 The same names can be used in the `rules`, `exclude_rules` and `priority` settings.
 
-## AI fallback (optional)
-
-When no built-in or custom rule matches, go-fuck can ask an OpenAI compatible chat completion
-endpoint for a correction. The fallback is disabled by default and sends the failed command and the
-tail of its output (up to 4,000 bytes) to the configured endpoint:
-
-```json
-{
-    "ai": true,
-    "ai_endpoint": "https://api.openai.com/v1",
-    "ai_model": "gpt-4o-mini",
-    "ai_timeout": 10
-}
-```
-
-The API key is read from the `GOFUCK_AI_API_KEY` environment variable (or `OPENAI_API_KEY` when it
-is not set) and is never stored in `settings.json`. The same values can be set with `GOFUCK_AI`,
-`GOFUCK_AI_ENDPOINT`, `GOFUCK_AI_MODEL` and `GOFUCK_AI_TIMEOUT`.
-
-A returned command is offered exactly like a rule suggestion, so the normal confirmation prompt
-applies (`-y` skips it). Request failures and timeouts are reported as a warning and go-fuck falls
-back to "No fucks given". The fallback runs only when no rule matched, so the common path is not
-affected.
-
-> **Privacy:** only enable the fallback if you are fine with sending failed commands and their
-> output to the configured endpoint.
-
 ## Creating custom rules
 
 There are two ways to add a rule.
@@ -915,7 +878,7 @@ external commands.
 go-fuck is a reimplementation, not a drop-in replacement for every thefuck feature:
 
 - **Complete rule port plus extras.** All 169 rules of the reference implementation are ported,
-  plus 63 go-fuck specific rules; the list in [Rules](#rules) is authoritative. Porting conventions
+  plus 64 go-fuck specific rules; the list in [Rules](#rules) is authoritative. Porting conventions
   are documented in [PORTING.md](PORTING.md).
 - **Instant mode covers Linux, macOS and Windows.** It reads the previous command output from a
   terminal log instead of re-running the command: bash and zsh on Linux and macOS, PowerShell on

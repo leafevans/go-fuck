@@ -50,6 +50,20 @@ Upgrade with the channel you installed go-fuck from:
 
 `go-fuck --setup` is idempotent; it does not have to be run again after upgrading.
 
+## Upgrading from 1.x to 2.0.0
+
+The optional AI fallback was removed. The built-in rules are the only correction source again: the
+fallback required sending the failed command and its output to a third-party endpoint, and the
+extra round trip added latency to exactly the cases where no rule matched.
+
+- The settings keys `ai`, `ai_endpoint`, `ai_model` and `ai_timeout` are ignored. Existing
+  `settings.json` files stay valid; the keys can be deleted.
+- The environment variables `GOFUCK_AI`, `GOFUCK_AI_ENDPOINT`, `GOFUCK_AI_MODEL`,
+  `GOFUCK_AI_TIMEOUT`, `GOFUCK_AI_API_KEY` and `OPENAI_API_KEY` are no longer read.
+- No replacement is needed: when no rule matches, go-fuck reports "No fucks given" as before.
+- The `--json` contract, the command line flags and the shell setup are unchanged (the
+  `schema_version` stays `1`), so no migration is required.
+
 ## Future releases
 
 - **Patch** releases contain bug fixes and documentation changes.

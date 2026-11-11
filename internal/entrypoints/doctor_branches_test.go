@@ -125,35 +125,6 @@ func TestDoctorFzfCheck(t *testing.T) {
 	}
 }
 
-func TestDoctorAICheck(t *testing.T) {
-	t.Cleanup(conf.Reset)
-	settings := conf.Default()
-	conf.Set(settings)
-	if got := doctorAICheck(); got.Status != doctorInfo {
-		t.Fatalf("disabled AI check = %+v, want info", got)
-	}
-
-	settings.AIEnabled = true
-	conf.Set(settings)
-	if got := doctorAICheck(); got.Status != doctorWarn {
-		t.Fatalf("AI check without endpoint = %+v, want warn", got)
-	}
-
-	settings.AIEndpoint = "https://api.example.com/v1"
-	settings.AIModel = "example"
-	conf.Set(settings)
-	t.Setenv("GOFUCK_AI_API_KEY", "")
-	t.Setenv("OPENAI_API_KEY", "")
-	if got := doctorAICheck(); got.Status != doctorWarn {
-		t.Fatalf("AI check without key = %+v, want warn", got)
-	}
-
-	t.Setenv("GOFUCK_AI_API_KEY", "secret")
-	if got := doctorAICheck(); got.Status != doctorOK {
-		t.Fatalf("configured AI check = %+v, want ok", got)
-	}
-}
-
 func TestDoctorReportFailsWithoutExecutable(t *testing.T) {
 	resetEntrypointsState(t)
 	original := doctorExecutable
