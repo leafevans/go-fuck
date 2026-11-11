@@ -194,3 +194,20 @@ func TestSanitizeRemovesMarkerAndControls(t *testing.T) {
 		t.Fatalf("sanitize() = %q, want %q", got, want)
 	}
 }
+
+func TestWrappedEchoIndex(t *testing.T) {
+	call := logCall{prompt: prompt("$ git"), lines: []string{" push"}}
+	if got := call.echoIndex("git push", []string{"git", "push"}); got != 1 {
+		t.Fatalf("echoIndex() = %d, want 1", got)
+	}
+}
+
+func TestGroupCallsTrimsCarriageReturn(t *testing.T) {
+	calls := groupCalls([]string{prompt("$ ") + "\r", "output\r"})
+	if len(calls) != 1 {
+		t.Fatalf("groupCalls() returned %d calls, want 1", len(calls))
+	}
+	if strings.Contains(calls[0].prompt, "\r") {
+		t.Fatalf("prompt still contains a carriage return: %q", calls[0].prompt)
+	}
+}

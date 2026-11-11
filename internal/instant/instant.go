@@ -93,6 +93,45 @@ func (c logCall) echoIndex(script string, parts []string) int {
 			return index
 		}
 	}
+	return wrappedEchoIndex(lines, trimmed)
+}
+
+// instantMaxEchoLines bounds the number of prompt block lines that are joined
+// when a long command is wrapped at the terminal width.
+const instantMaxEchoLines = 8
+
+// wrappedEchoIndex finds a command that the terminal wrapped over several
+// lines. The joined text is only trusted when the command ends exactly at the
+// end of its line, so that an output line which merely contains the command is
+// not mistaken for the echoed command.
+func wrappedEchoIndex(lines []string, command string) int {
+	if command == "" || len(lines) < 2 {
+		return -1
+	}
+	var joined strings.Builder
+	ends := make([]int, 0, instantMaxEchoLines)
+	for index, line := range lines {
+		if index >= instantMaxEchoLines {
+			break
+		}
+		joined.WriteString(sanitize(line))
+		ends = append(ends, joined.Len())
+	}
+	text := joined.String()
+	offset := strings.Index(text, command)
+	if offset < 0 {
+		return -1
+	}
+	end := offset + len(command)
+	for index, lineEnd := range ends {
+		if lineEnd < end {
+			continue
+		}
+		if strings.TrimSpace(text[end:lineEnd]) != "" {
+			return -1
+		}
+		return index
+	}
 	return -1
 }
 
@@ -128,7 +167,7 @@ func (c logCall) output(from int) string {
 func groupCalls(lines []string) []logCall {
 	calls := []logCall{}
 	for _, line := range lines {
-		line = strings.TrimSuffix(line, "\\r")
+		line = strings.TrimSuffix(line, "\r")
 		if strings.Contains(line, consts.UserCommandMark) {
 			calls = append(calls, logCall{prompt: line})
 			continue

@@ -206,3 +206,21 @@ func TestLogLinesSkipsOSC(t *testing.T) {
 		t.Fatalf("logLines() = %q, want file one", lines)
 	}
 }
+
+// TestLogLinesWrappedCommand checks that a command that is wider than the
+// terminal and therefore wrapped by the screen model is still found.
+func TestLogLinesWrappedCommand(t *testing.T) {
+	command := "Write-Output averylongargumentname"
+	data := sizeRecord(20, 30) +
+		consts.UserCommandMark + "PS> " + command + "\r\n" +
+		"done\r\n" +
+		consts.UserCommandMark + "PS> "
+
+	output, ok := LastOutput(writeRenderedLog(t, data), command)
+	if !ok {
+		t.Fatal("LastOutput() did not find the wrapped command")
+	}
+	if want := "done"; output != want {
+		t.Fatalf("LastOutput() = %q, want %q", output, want)
+	}
+}
