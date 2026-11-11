@@ -23,9 +23,9 @@ esac
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 
-# marker is the invisible prompt marker of the experimental instant mode. The
-# logged shell alias prints it before every prompt.
-marker=$(printf '\xe2\x80\x8b')
+# marker_literal is the octal escaped form of the invisible prompt marker that
+# the generated marked alias assigns to __gofuck_mark.
+marker_literal='\342\200\213'
 
 fail() {
   echo "shell integration: $*" >&2
@@ -90,8 +90,10 @@ check_marked_alias() {
   case "$shell" in
     bash)
       env GOFUCK_INSTANT_MODE=True TF_SHELL=bash "$bin" --alias --enable-experimental-instant-mode >"$work/marked-bash"
-      grep -q "$marker" "$work/marked-bash" ||
-        fail "the bash marked alias does not contain the prompt marker"
+      grep -qF '__gofuck_mark=' "$work/marked-bash" ||
+        fail "the bash marked alias does not define the prompt marker"
+      grep -qF "$marker_literal" "$work/marked-bash" ||
+        fail "the bash marked alias does not contain the encoded prompt marker"
       bash -n "$work/marked-bash" || fail "bash cannot parse the marked alias"
       # A bira-like multi line prompt with ANSI colors.
       prompt='\[\e[0;32m\]╭─\[\e[0m\]\[\e[1;34m\]\u@\h\[\e[0m\] \[\e[0;32m\]\w\[\e[0m\]\n\[\e[0;32m\]╰─$ \[\e[0m\]'
@@ -100,8 +102,10 @@ check_marked_alias() {
       ;;
     zsh)
       env GOFUCK_INSTANT_MODE=True TF_SHELL=zsh "$bin" --alias --enable-experimental-instant-mode >"$work/marked-zsh"
-      grep -q "$marker" "$work/marked-zsh" ||
-        fail "the zsh marked alias does not contain the prompt marker"
+      grep -qF '__gofuck_mark=' "$work/marked-zsh" ||
+        fail "the zsh marked alias does not define the prompt marker"
+      grep -qF "$marker_literal" "$work/marked-zsh" ||
+        fail "the zsh marked alias does not contain the encoded prompt marker"
       zsh -n "$work/marked-zsh" || fail "zsh cannot parse the marked alias"
       # A powerlevel-like prompt with %F colors.
       prompt='%F{green}╭─%f%F{cyan}%n@%m%f %F{blue}%~%f
