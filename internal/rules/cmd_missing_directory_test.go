@@ -29,6 +29,7 @@ func TestRuleCmdMissingDirectory(t *testing.T) {
 	assertNotMatch(t, rule, "copy file.txt nodir\\file.txt", "")
 	assertNotMatch(t, rule, "del file.txt", cmdMissingDirectoryOutput)
 	assertNotMatch(t, rule, "copy file.txt file2.txt", cmdMissingDirectoryOutput)
+	assertNotMatch(t, rule, "copy file.txt \\\\server\\share\\file.txt", cmdMissingDirectoryOutput)
 
 	assertNewCommands(t, rule, "copy file.txt nodir\\file.txt", cmdMissingDirectoryOutput,
 		[]string{"mkdir \"nodir\" && copy file.txt nodir\\file.txt"})

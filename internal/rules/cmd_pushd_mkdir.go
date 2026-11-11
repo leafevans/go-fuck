@@ -32,7 +32,8 @@ func cmdPushdMkdirMatch(command *types.Command) bool {
 	if !strings.Contains(command.Output, cmdPushdPathNotFound) {
 		return false
 	}
-	return cmdPushdDirectory(command) != ""
+	directory := cmdPushdDirectory(command)
+	return directory != "" && !strings.HasPrefix(directory, "\\\\")
 }
 
 // cmdPushdMkdirNewCommand creates the directory and changes into it.

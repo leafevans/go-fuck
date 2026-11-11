@@ -27,7 +27,7 @@ func cmdMissingDirectoryMatch(command *types.Command) bool {
 		return false
 	}
 	directory := cmdParentDirectory(destination)
-	return directory != "" && cmdDirectoryMissing(directory)
+	return directory != "" && !strings.HasPrefix(directory, "\\\\") && cmdDirectoryMissing(directory)
 }
 
 // cmdMissingDirectoryNewCommand creates the missing directory and retries.

@@ -147,7 +147,18 @@ func cmdClosestFile(argument string) string {
 	if err != nil {
 		return ""
 	}
-	closest := utils.GetClosest(filepath.Base(argument), names, 0.6, false)
+	base := filepath.Base(argument)
+	// Windows paths are case insensitive, so an exact match with a different
+	// case is the best correction even when the similarity is low.
+	for _, name := range names {
+		if strings.EqualFold(name, base) {
+			if dir == "." {
+				return name
+			}
+			return filepath.Join(dir, name)
+		}
+	}
+	closest := utils.GetClosest(base, names, 0.6, false)
 	if closest == "" {
 		return ""
 	}

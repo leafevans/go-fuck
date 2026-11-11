@@ -33,7 +33,7 @@ func cmdMissingFileMatch(command *types.Command) bool {
 		return false
 	}
 	_, argument := cmdFirstRawArgument(command.Script)
-	if argument == "" {
+	if argument == "" || strings.ContainsAny(argument, "*?") {
 		return false
 	}
 	return !cmdFileExists(argument)

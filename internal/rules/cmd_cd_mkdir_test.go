@@ -18,6 +18,7 @@ func TestRuleCmdCDMkdir(t *testing.T) {
 	assertNotMatch(t, rule, "cd C:\\missing", "")
 	assertNotMatch(t, rule, "copy file.txt nodir\\file.txt", cmdPathNotFoundOutput)
 	assertNotMatch(t, rule, "cd", cmdPathNotFoundOutput)
+	assertNotMatch(t, rule, "cd \\\\server\\share", cmdPathNotFoundOutput)
 
 	assertNewCommands(t, rule, "cd C:\\missing", cmdPathNotFoundOutput,
 		[]string{"mkdir \"C:\\missing\" && cd /d \"C:\\missing\""})

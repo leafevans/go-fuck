@@ -38,8 +38,11 @@ func TestRuleCmdMissingFile(t *testing.T) {
 	assertMatch(t, rule, "ren config.tx new.txt", cmdFileNotFoundOutput)
 	assertMatch(t, rule, "type \"my config.tx\"", cmdFileNotFoundOutput)
 	assertNotMatch(t, rule, "type config.txt", cmdFileNotFoundOutput)
+	assertMatch(t, rule, "type CONFIG.TX", cmdFileNotFoundOutput)
 	assertNotMatch(t, rule, "where config.tx", cmdFileNotFoundOutput)
 	assertNotMatch(t, rule, "type config.tx", "The system cannot find the path specified.\n")
+	assertNotMatch(t, rule, "del *.none", "Could Not Find C:\\root\\*.none\n")
+	assertNotMatch(t, rule, "copy *.none dest.txt", cmdFileNotFoundOutput)
 
 	assertNewCommands(t, rule, "type config.tx", cmdFileNotFoundOutput,
 		[]string{"type config.txt"})

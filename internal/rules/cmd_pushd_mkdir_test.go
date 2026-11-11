@@ -14,6 +14,7 @@ func TestRuleCmdPushdMkdir(t *testing.T) {
 	assertNotMatch(t, rule, "pushd C:\\missing", "")
 	assertNotMatch(t, rule, "cd C:\\missing", cmdPushdPathNotFound)
 	assertNotMatch(t, rule, "pushd", cmdPushdPathNotFound)
+	assertNotMatch(t, rule, "pushd \\\\server\\share", cmdPushdPathNotFound)
 
 	assertNewCommands(t, rule, "pushd C:\\missing", cmdPushdPathNotFound,
 		[]string{"mkdir \"C:\\missing\" && pushd \"C:\\missing\""})

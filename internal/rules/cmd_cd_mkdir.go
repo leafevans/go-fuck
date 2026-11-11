@@ -41,7 +41,8 @@ func cmdCDMkdirMatch(command *types.Command) bool {
 	if !strings.Contains(command.Output, cmdPathNotFoundError) {
 		return false
 	}
-	return cmdCDDirectory(command) != ""
+	directory := cmdCDDirectory(command)
+	return directory != "" && !strings.HasPrefix(directory, "\\\\")
 }
 
 // cmdCDMkdirNewCommand creates the directory and changes into it.
