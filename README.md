@@ -385,8 +385,9 @@ Limitations:
 - Changing the prompt after the alias initialization can break command detection or alignment. On
   Windows the instant mode line has to be the last prompt definition in the profile; disable instant
   mode if the prompt looks wrong.
-- Full screen programs such as `vim` or `tmux` can confuse the log; fall back to the regular mode
-  if a suggestion looks wrong.
+- Full screen programs such as `vim` or `tmux` use the alternate screen, whose content is not
+  part of the log; the previous screen is restored when they exit. If the terminal is closed while
+  such a program is still running, the end of the log may be missing.
 - On Windows the terminal size is polled, so a resized window reaches the logged shell with a short
   delay.
 - The log keeps the newest 1 MiB of terminal output. The renderer is simpler than the reference

@@ -6,7 +6,7 @@ import "strings"
 
 // logLines splits the terminal log written by the POSIX shell logger into text
 // lines. The POSIX pseudo terminal writes newlines as plain text, so the log
-// can be split directly.
+// can be split directly after the alternate screen content is dropped.
 func logLines(data string) []string {
-	return strings.Split(data, "\n")
+	return strings.Split(stripAlternateScreen(data), "\n")
 }

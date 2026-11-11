@@ -224,3 +224,28 @@ func TestLogLinesWrappedCommand(t *testing.T) {
 		t.Fatalf("LastOutput() = %q, want %q", output, want)
 	}
 }
+
+// TestLogLinesIgnoresAlternateScreenContent checks that a full screen program
+// (vim, tmux, ...) does not leak its screen into the log and that the previous
+// screen is restored afterwards.
+func TestLogLinesIgnoresAlternateScreenContent(t *testing.T) {
+	data := sizeRecord(80, 30) +
+		consts.UserCommandMark + "PS> vim file.txt\r\n" +
+		"before\r\n" +
+		"\x1b[?1049h" +
+		"VIM: full screen content\r\n" +
+		"\x1b[?1049l" +
+		"after\r\n" +
+		consts.UserCommandMark + "PS> "
+
+	lines := logLines(data)
+	joined := strings.Join(lines, "\n")
+	if strings.Contains(joined, "VIM: full screen content") {
+		t.Fatalf("logLines() kept the alternate screen content: %q", lines)
+	}
+	for _, want := range []string{"before", "after"} {
+		if !strings.Contains(joined, want) {
+			t.Fatalf("logLines() = %q, want it to contain %q", lines, want)
+		}
+	}
+}

@@ -211,3 +211,33 @@ func TestGroupCallsTrimsCarriageReturn(t *testing.T) {
 		t.Fatalf("prompt still contains a carriage return: %q", calls[0].prompt)
 	}
 }
+
+func TestStripAlternateScreen(t *testing.T) {
+	input := "before\n" + "\x1b[?1049h" + "full screen\n" + "\x1b[?1049l" + "after\n"
+	got := stripAlternateScreen(input)
+	if strings.Contains(got, "full screen") {
+		t.Fatalf("stripAlternateScreen() kept the alternate screen content: %q", got)
+	}
+	if !strings.Contains(got, "before") || !strings.Contains(got, "after") {
+		t.Fatalf("stripAlternateScreen() = %q, want before and after", got)
+	}
+	if got := stripAlternateScreen("plain text\n"); got != "plain text\n" {
+		t.Fatalf("stripAlternateScreen() = %q, want the input unchanged", got)
+	}
+}
+
+func TestLogLinesDropAlternateScreenContent(t *testing.T) {
+	data := prompt("$ vim file.txt") + "\n" +
+		"before\n" +
+		"\x1b[?1049h" + "VIM: full screen content\n" + "\x1b[?1049l" +
+		"after\n" + prompt("$ ")
+	joined := strings.Join(logLines(data), "\n")
+	if strings.Contains(joined, "VIM: full screen content") {
+		t.Fatalf("logLines() kept the alternate screen content: %q", joined)
+	}
+	for _, want := range []string{"before", "after"} {
+		if !strings.Contains(joined, want) {
+			t.Fatalf("logLines() = %q, want it to contain %q", joined, want)
+		}
+	}
+}

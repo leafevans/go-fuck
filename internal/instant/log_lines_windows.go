@@ -99,6 +99,18 @@ type terminal struct {
 
 	savedX int
 	savedY int
+
+	// alternate keeps the main screen while a full screen program such as vim
+	// or tmux is active, so that its screen contents do not corrupt the log.
+	alternate *alternateScreen
+}
+
+// alternateScreen is the saved main screen of an alternate screen session.
+type alternateScreen struct {
+	screen     []screenLine
+	historyLen int
+	cursorX    int
+	cursorY    int
 }
 
 // newTerminal returns an empty terminal with the given size.
@@ -359,6 +371,11 @@ func (t *terminal) control(raw string, final byte) {
 	}
 	numbers := parseParameters(raw)
 
+	if private && (final == 'h' || final == 'l') {
+		t.setPrivateModes(numbers, final == 'h')
+		return
+	}
+
 	switch final {
 	case 'A':
 		t.cursorY = clamp(t.cursorY-parameter(numbers, 0, 1), 0, len(t.screen)-1)
@@ -398,6 +415,61 @@ func (t *terminal) control(raw string, final byte) {
 	case 'T':
 		t.scrollDown(parameter(numbers, 0, 1))
 	}
+}
+
+// setPrivateModes applies the private mode parameters that the screen model
+// understands. Other private modes are ignored.
+func (t *terminal) setPrivateModes(numbers []int, enabled bool) {
+	for _, mode := range numbers {
+		switch mode {
+		case 47, 1047, 1049:
+			if enabled {
+				t.enterAlternateScreen()
+			} else {
+				t.leaveAlternateScreen()
+			}
+		}
+	}
+}
+
+// enterAlternateScreen saves the main screen and starts a blank alternate
+// screen. Full screen programs run there; their content is discarded when they
+// exit, like the terminal restores the main screen.
+func (t *terminal) enterAlternateScreen() {
+	if t.alternate != nil {
+		return
+	}
+	t.alternate = &alternateScreen{
+		screen:     t.screen,
+		historyLen: len(t.history),
+		cursorX:    t.cursorX,
+		cursorY:    t.cursorY,
+	}
+	t.screen = make([]screenLine, len(t.screen))
+	t.cursorX, t.cursorY = 0, 0
+}
+
+// leaveAlternateScreen restores the main screen and drops the alternate screen
+// content, including lines it may have scrolled into the scrollback.
+func (t *terminal) leaveAlternateScreen() {
+	if t.alternate == nil {
+		return
+	}
+	rows := len(t.screen)
+	screen := t.alternate.screen
+	if len(screen) > rows {
+		screen = screen[:rows]
+	}
+	for len(screen) < rows {
+		screen = append(screen, nil)
+	}
+	t.screen = screen
+	if len(t.history) > t.alternate.historyLen {
+		t.history = t.history[:t.alternate.historyLen]
+	}
+	t.cursorX = clamp(t.alternate.cursorX, 0, t.columns-1)
+	t.cursorY = clamp(t.alternate.cursorY, 0, len(t.screen)-1)
+	t.alternate = nil
 }
 
 // eraseDisplay applies an ED sequence.
