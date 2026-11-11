@@ -33,6 +33,12 @@ brew audit --strict leafevans/go-fuck/go-fuck
 brew install --formula Formula/go-fuck.rb   # local smoke test
 ```
 
+The formula is Ruby and follows Homebrew's style: double quoted strings and no
+frozen string literal comment (homebrew-core excludes `Formula/**` from that
+cop). The repository `.rubocop.yml` configures editors accordingly, so Ruby LSP
+does not apply the RuboCop defaults (single quotes, frozen literal comment) to
+the formula; `brew style` passes its own configuration and is not affected.
+
 ## Scoop
 
 The repository is also a Scoop bucket: users run

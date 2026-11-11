@@ -1,0 +1,19 @@
+# RuboCop configuration for the generated Homebrew formula.
+#
+# Homebrew styles formulae with double quoted strings and without a frozen
+# string literal comment (homebrew-core excludes Formula/** from the
+# Style/FrozenStringLiteralComment cop). Without this file, editors fall back
+# to the RuboCop defaults, which suggest the opposite. Only the string literal
+# cops are enabled so that this file stays a style hint for the formula.
+#
+# `brew style` passes its own configuration and ignores this file.
+AllCops:
+  DisabledByDefault: true
+
+Style/StringLiterals:
+  Enabled: true
+  EnforcedStyle: double_quotes
+
+Style/StringLiteralsInInterpolation:
+  Enabled: true
+  EnforcedStyle: double_quotes
