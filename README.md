@@ -569,8 +569,8 @@ the selection entirely.
 
 The built-in rules are compiled into the binary, and declarative JSON rules can be loaded from the
 configuration directory (see [Creating custom rules](#creating-custom-rules)). Each rule decides
-whether it applies to a failed command and returns one or more corrected commands. There are 233
-built-in rules: 169 ported from the reference implementation plus 64 go-fuck specific rules for
+whether it applies to a failed command and returns one or more corrected commands. There are 235
+built-in rules: 169 ported from the reference implementation plus 66 go-fuck specific rules for
 failures that thefuck does not handle, including the GitHub and GitLab CLIs, kubectl/kind/kustomize,
 uv, cargo, Helm, pnpm, the npm, pnpm, yarn and uv lock file checks, the Go toolchain and go.sum,
 Node.js, bun, Deno, Docker Compose, just, Poetry, make, the go-task runner, minikube, Bundler,
@@ -598,7 +598,9 @@ git operations. The list below is generated from the compiled rules:
 - `bun_script_not_found`
 - `bundle_unknown_command`
 - `cargo`
+- `cargo_missing_bench_target`
 - `cargo_missing_bin`
+- `cargo_missing_example_target`
 - `cargo_missing_manifest`
 - `cargo_missing_test_target`
 - `cargo_no_command`
@@ -885,7 +887,7 @@ external commands.
 go-fuck is a reimplementation, not a drop-in replacement for every thefuck feature:
 
 - **Complete rule port plus extras.** All 169 rules of the reference implementation are ported,
-  plus 64 go-fuck specific rules; the list in [Rules](#rules) is authoritative. Porting conventions
+  plus 66 go-fuck specific rules; the list in [Rules](#rules) is authoritative. Porting conventions
   are documented in [PORTING.md](PORTING.md).
 - **Instant mode covers Linux, macOS and Windows.** It reads the previous command output from a
   terminal log instead of re-running the command: bash and zsh on Linux and macOS, PowerShell on

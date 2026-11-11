@@ -195,7 +195,9 @@ var expectedRuleNames = []string{
 var expectedExtraRuleNames = []string{
 	"bun_script_not_found",
 	"bundle_unknown_command",
+	"cargo_missing_bench_target",
 	"cargo_missing_bin",
+	"cargo_missing_example_target",
 	"cargo_missing_manifest",
 	"cargo_missing_test_target",
 	"cargo_unknown_argument",
