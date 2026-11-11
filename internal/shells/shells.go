@@ -20,7 +20,7 @@ type Configuration struct {
 	// CanConfigureAutomatically reports whether go-fuck may append the alias to
 	// the configuration file without user interaction.
 	CanConfigureAutomatically bool
-	// InstantContent is the configuration line of the experimental instant
+	// InstantContent is the configuration line of the instant
 	// mode, or empty when the shell does not support instant mode.
 	InstantContent string
 }
@@ -33,7 +33,7 @@ type Shell interface {
 	FriendlyName() string
 	// AppAlias returns the shell code that defines the alias.
 	AppAlias(aliasName string) string
-	// InstantModeAlias returns the alias used by the experimental instant mode.
+	// InstantModeAlias returns the alias used by the instant mode.
 	InstantModeAlias(aliasName string) string
 	// GetAliases returns alias name to value mapping.
 	GetAliases() map[string]string

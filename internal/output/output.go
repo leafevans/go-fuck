@@ -1,8 +1,8 @@
 // Package output obtains the output of a command that failed.
 //
 // Like the original implementation, go-fuck re-runs the failed command with a
-// short timeout to capture its output. In the experimental instant mode the
-// output is read from the terminal log written by the shell logger instead, so
+// short timeout to capture its output. In the instant mode the output is read
+// from the terminal log written by the shell logger instead, so
 // the command is not executed a second time.
 package output
 

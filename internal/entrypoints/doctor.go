@@ -248,22 +248,55 @@ func doctorFzfCheck() doctorCheck {
 	return check
 }
 
-// doctorInstantCheck reports whether the experimental instant mode is active.
+// doctorInstantCheck reports the state of the instant mode and validates the
+// terminal log when a logged shell is active.
 func doctorInstantCheck() doctorCheck {
 	check := doctorCheck{Name: "instant"}
-	switch {
-	case !instant.Supported():
+	if !instant.Supported() {
 		check.Status = doctorInfo
 		check.Message = "not supported on this platform"
-	case instant.LogPath() != "":
-		check.Status = doctorOK
-		check.Message = "enabled (logged shell)"
-	default:
-		check.Status = doctorInfo
-		check.Message = "available, not enabled (experimental)"
-		check.Hint = "go-fuck --setup --enable-experimental-instant-mode"
+		return check
 	}
+
+	logPath := instant.LogPath()
+	if logPath == "" {
+		check.Status = doctorInfo
+		check.Message = "available, not enabled (opt-in)"
+		check.Hint = "go-fuck --setup --enable-experimental-instant-mode"
+		return check
+	}
+
+	info, err := os.Stat(logPath)
+	if err != nil {
+		check.Status = doctorWarn
+		check.Message = "enabled, but the terminal log is not readable"
+		check.Hint = "restart the shell after running go-fuck --setup"
+		return check
+	}
+	if info.Size() == 0 {
+		check.Status = doctorInfo
+		check.Message = "enabled (logged shell, no output yet)"
+		return check
+	}
+	if !doctorLogHasMarker(logPath) {
+		check.Status = doctorWarn
+		check.Message = "enabled, but the terminal log has no prompt marker"
+		check.Hint = "restart the shell and keep the instant mode line as the last prompt definition"
+		return check
+	}
+	check.Status = doctorOK
+	check.Message = "enabled (logged shell)"
 	return check
+}
+
+// doctorLogHasMarker reports whether the instant mode log contains the prompt
+// marker that the log reader splits command calls at.
+func doctorLogHasMarker(path string) bool {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return false
+	}
+	return strings.Contains(string(data), consts.UserCommandMark)
 }
 
 // doctor runs the --doctor command.

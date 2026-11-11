@@ -53,7 +53,7 @@ type Settings struct {
 	SlowCommands []string `json:"slow_commands"`
 	// Repeat re-runs go-fuck if the corrected command fails again.
 	Repeat bool `json:"repeat"`
-	// InstantMode enables the experimental instant mode.
+	// InstantMode enables the instant mode.
 	InstantMode bool `json:"instant_mode"`
 	// Fzf uses the fzf fuzzy finder for the confirmation prompt when fzf is
 	// available. It is ignored when the executable cannot be found.

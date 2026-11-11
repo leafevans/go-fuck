@@ -1,4 +1,4 @@
-// Package instant implements the experimental instant mode.
+// Package instant implements the instant mode.
 //
 // In instant mode the shell alias starts a logged shell: the shell logger
 // copies the terminal output of that shell into a ring buffer, and go-fuck

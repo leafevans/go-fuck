@@ -42,7 +42,7 @@ func SetExecutableName(raw string) {
 // It is a variable so that release builds can override it at link time:
 //
 //	go build -ldflags "-X github.com/leafevans/go-fuck/internal/consts.Version=v1.2.3"
-var Version = "2.1.0"
+var Version = "2.2.0"
 
 // Rule defaults.
 const (
@@ -102,7 +102,7 @@ const (
 // path.
 const ShellLoggerSocketEnv = "SHELL_LOGGER_SOCKET"
 
-// Environment variables of the experimental instant mode.
+// Environment variables of the instant mode.
 const (
 	// InstantModeEnv is set by the instant mode alias inside the logged shell.
 	InstantModeEnv = "GOFUCK_INSTANT_MODE"

@@ -47,7 +47,7 @@ func (z *Zsh) AppAlias(aliasName string) string {
 		consts.ArgumentPlaceholder, alterHistory)
 }
 
-// InstantModeAlias returns the alias of the experimental instant mode.
+// InstantModeAlias returns the alias of the instant mode.
 //
 // In a normal shell it returns the code that starts the logged shell. Inside
 // the logged shell it returns the regular alias with a prompt marker so that

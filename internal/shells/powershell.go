@@ -34,7 +34,7 @@ const powershellAliasTemplate = `function %[1]s {
     [Console]::ResetColor()
 }`
 
-// powershellInstantInitTemplate starts the logged shell of the experimental
+// powershellInstantInitTemplate starts the logged shell of the
 // instant mode.
 //
 // The code is evaluated by the PowerShell profile and replaces the current
@@ -100,7 +100,7 @@ func (p *Powershell) AppAlias(aliasName string) string {
 	return fmt.Sprintf(powershellAliasTemplate, aliasName, consts.ExecutableName())
 }
 
-// InstantModeAlias returns the alias of the experimental instant mode.
+// InstantModeAlias returns the alias of the instant mode.
 //
 // In a normal PowerShell it returns the code that starts the logged shell.
 // Inside the logged shell it returns the regular alias together with a prompt

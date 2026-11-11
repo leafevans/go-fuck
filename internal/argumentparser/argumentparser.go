@@ -33,7 +33,8 @@ type Args struct {
 	Yes bool
 	// Repeat re-runs go-fuck when the corrected command fails.
 	Repeat bool
-	// EnableExperimentalInstantMode requests the experimental instant mode.
+	// EnableExperimentalInstantMode requests the instant mode. The flag name is
+	// kept for compatibility.
 	EnableExperimentalInstantMode bool
 	// Alias is the alias name requested with --alias.
 	Alias string
@@ -152,7 +153,7 @@ var helpOptions = []helpOption{
 	{"-a, --alias [ALIAS]", "[custom-alias-name] prints alias for current shell"},
 	{"--setup", "configure the shell alias in the shell configuration file"},
 	{"-l, --shell-logger SHELL_LOGGER", "log shell output to the file"},
-	{"--enable-experimental-instant-mode", "enable experimental instant mode, use on your own risk"},
+	{"--enable-experimental-instant-mode", "enable instant mode for the alias initialization"},
 	{"-h, --help", "show this help message and exit"},
 	{"-d, --debug", "enable debug output"},
 	{"--doctor", "print a diagnostic report of the shell integration"},

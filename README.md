@@ -9,8 +9,8 @@
 A blazingly fast reimplementation of [thefuck](https://github.com/nvbn/thefuck) in Go.
 
 **Project status:** go-fuck is stable as of **1.0.0**. The settings file and the `--json` output
-are covered by compatibility guarantees (see [UPGRADING.md](UPGRADING.md)); the experimental instant
-mode remains opt-in.
+are covered by compatibility guarantees (see [UPGRADING.md](UPGRADING.md)); the instant mode
+remains opt-in.
 
 `go-fuck` fixes the command you just typed and got wrong. Run the `fuck` alias after a failure and
 go-fuck replays the command to capture its error output, matches a rule against it and executes the
@@ -185,7 +185,7 @@ shell, so the setup is the same everywhere and always matches the installed bina
 command that reloads it. Running it again is safe: when the line is already present go-fuck reports
 that the shell is already configured and leaves the file untouched.
 
-Pass `--enable-experimental-instant-mode` to configure the experimental [instant mode](#instant-mode)
+Pass `--enable-experimental-instant-mode` to configure [instant mode](#instant-mode)
 instead of the regular alias; shells without instant mode support warn and fall back to the regular
 alias.
 
@@ -292,7 +292,7 @@ Common options:
 | `-v`, `--version`                    | print version/build information: a themed banner in a terminal, one line when piped; `--debug --version` adds the config path, instant mode, fzf and alias state |
 | `-h`, `--help`                       | print the full option list                                                                                                                                       |
 | `--setup`                            | write the alias to the detected shell's configuration file (bash, zsh, fish, tcsh, PowerShell)                                                                   |
-| `--enable-experimental-instant-mode` | alias initialization flag: with `--alias` or `--setup`, configure the experimental instant mode (bash/zsh on Linux and macOS, PowerShell on Windows)             |
+| `--enable-experimental-instant-mode` | alias initialization flag: with `--alias` or `--setup`, configure the instant mode (bash/zsh on Linux and macOS, PowerShell on Windows)             |
 
 ### Troubleshooting
 
@@ -337,14 +337,14 @@ does not report the shell through `GOFUCK_SHELL`, keep the cmd.exe behavior.
 
 ## Instant mode
 
-The experimental instant mode reads the output of the previous command from a terminal log instead
+Instant mode reads the output of the previous command from a terminal log instead
 of re-running the command. This is useful for slow, interactive or side effecting commands. It is
 implemented for **bash and zsh on Linux and macOS** and for **PowerShell on Windows**; other shells
 and platforms warn and fall back to the regular alias.
 
 ![instant mode reading the previous output from the terminal log](docs/example-instant-mode.gif)
 
-Enable it by adding the experimental flag to the alias initialization in your shell configuration.
+Enable it by passing the instant mode flag to the alias initialization in your shell configuration.
 On bash, zsh and Windows PowerShell `go-fuck --setup --enable-experimental-instant-mode` writes that
 line to your configuration file for you.
 
@@ -362,6 +362,8 @@ Windows (Windows PowerShell 5.1 and PowerShell 7):
 iex "$(go-fuck --alias --enable-experimental-instant-mode)"
 ```
 
+The flag name contains `experimental` for historical reasons.
+
 Restart the shell. The initialization replaces the terminal shell with a logged subshell: commands
 keep working as usual, but go-fuck reads their output from the terminal log, so `fuck` does not
 execute the failed command a second time. The log is a temporary file that is removed when the
@@ -370,6 +372,11 @@ logged shell exits.
 On Windows the logged shell runs on a pseudo console (ConPTY), which requires Windows 10 version
 1809 or newer. When ConPTY is not available, the regular alias is installed instead of closing the
 terminal.
+
+The mode is covered by end-to-end tests: an interactive bash runs on a pseudo terminal on Linux and
+macOS, and Windows PowerShell runs on a pseudo console on Windows; the tests feed a command, check
+the terminal log and read the output back. When instant mode is enabled, `go-fuck --doctor` also
+validates the active terminal log (readable, not empty, prompt marker present).
 
 Limitations:
 

@@ -7,7 +7,7 @@ import (
 	"github.com/leafevans/go-fuck/internal/logs"
 )
 
-// shellLogger runs the experimental instant mode shell logger.
+// shellLogger runs the instant mode shell logger.
 //
 // The shell logger replaces the current shell with a logged shell; it only
 // returns when that shell exits.

@@ -21,7 +21,7 @@ Starting with **1.0.0**:
   The document is written to stdout and diagnostics stay on stderr.
 - **Command line.** The flags and behavior documented in the README keep working. A breaking change
   requires a major version.
-- **Instant mode.** The experimental instant mode stays opt-in and may change during the 1.x series.
+- **Instant mode.** Instant mode is opt-in and documented in [README.md](README.md#instant-mode).
 - **Versioning.** Releases follow [Semantic Versioning](https://semver.org/); the policy is described
   in [CONTRIBUTING.md](CONTRIBUTING.md#release-and-versioning).
 
@@ -35,8 +35,8 @@ No configuration or JSON migration is required:
 - The command line flags and the shell setup are unchanged.
 - The release version changes from `0.x.y` to `1.0.0`; `go-fuck --version` prints the new
   version.
-- The experimental instant mode is unchanged; it still needs the
-  `--enable-experimental-instant-mode` flag.
+- The instant mode is unchanged; it still needs the `--enable-experimental-instant-mode` flag
+  (the flag name is historical).
 
 Upgrade with the channel you installed go-fuck from:
 
@@ -63,6 +63,14 @@ extra round trip added latency to exactly the cases where no rule matched.
 - No replacement is needed: when no rule matches, go-fuck reports "No fucks given" as before.
 - The `--json` contract, the command line flags and the shell setup are unchanged (the
   `schema_version` stays `1`), so no migration is required.
+
+## Upgrading from 2.1 to 2.2.0
+
+No migration is required. Instant mode is now documented as an opt-in feature instead of an
+experimental one; the `--enable-experimental-instant-mode` flag name is kept for compatibility and
+the generated shell initialization lines are unchanged. This release also adds end-to-end tests for
+the terminal logger on Linux, macOS and Windows and makes `go-fuck --doctor` validate the active
+instant mode log.
 
 ## Future releases
 
