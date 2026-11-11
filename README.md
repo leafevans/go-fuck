@@ -523,7 +523,7 @@ legacy `THEFUCK_*` variable is applied last and wins.
 | `REPEAT`                        | boolean                                  | `GOFUCK_REPEAT=true`                           | `repeat`                                                            |
 | `INSTANT_MODE`                  | boolean                                  | `GOFUCK_INSTANT_MODE=false`                    | `instant_mode`                                                      |
 | `NUM_CLOSE_MATCHES`             | integer                                  | `GOFUCK_NUM_CLOSE_MATCHES=5`                   | `num_close_matches`                                                 |
-| `EXCLUDED_SEARCH_PATH_PREFIXES` | colon separated list                     | `GOFUCK_EXCLUDED_SEARCH_PATH_PREFIXES='/snap'` | `excluded_search_path_prefixes`                                     |
+| `EXCLUDED_SEARCH_PATH_PREFIXES` | list separated by the OS path list separator (`:` on Linux/macOS, `;` on Windows) | `GOFUCK_EXCLUDED_SEARCH_PATH_PREFIXES='/snap:/mnt'` (Linux/macOS), `'C:\\Tools;C:\\Other'` (Windows) | `excluded_search_path_prefixes` |
 
 The `env` map can only be set in `settings.json`. Booleans accept `true` and `false`
 (case-insensitive).

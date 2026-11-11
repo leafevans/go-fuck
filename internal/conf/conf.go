@@ -360,7 +360,7 @@ func (s *Settings) loadEnv() {
 		s.boolFromEnv(prefix, "INSTANT_MODE", &s.InstantMode)
 		s.boolFromEnv(prefix, "FZF", &s.Fzf)
 		s.intFromEnv(prefix, "NUM_CLOSE_MATCHES", &s.NumCloseMatches)
-		s.sliceFromEnv(prefix, "EXCLUDED_SEARCH_PATH_PREFIXES", &s.ExcludedSearchPathPrefixes)
+		s.pathSliceFromEnv(prefix, "EXCLUDED_SEARCH_PATH_PREFIXES", &s.ExcludedSearchPathPrefixes)
 	}
 }
 
@@ -390,6 +390,15 @@ func (s *Settings) intFromEnv(prefix, suffix string, dst *int) {
 func (s *Settings) sliceFromEnv(prefix, suffix string, dst *[]string) {
 	if value, ok := envValue(prefix, suffix); ok {
 		*dst = strings.Split(value, ":")
+	}
+}
+
+// pathSliceFromEnv applies a path list environment variable. The separator is
+// the OS path list separator because a colon is part of a Windows path
+// (C:\Program Files) and would split it into fragments.
+func (s *Settings) pathSliceFromEnv(prefix, suffix string, dst *[]string) {
+	if value, ok := envValue(prefix, suffix); ok {
+		*dst = strings.Split(value, string(os.PathListSeparator))
 	}
 }
 

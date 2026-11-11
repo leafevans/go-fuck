@@ -1,6 +1,7 @@
 package output
 
 import (
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -114,5 +115,34 @@ func TestMergedEnvOverridesExistingVariables(t *testing.T) {
 	value, _ = envValue(environment, "GOFUCK_MERGE_TEST")
 	if value != "old" {
 		t.Fatalf("mergedEnv() GOFUCK_MERGE_TEST = %q without overrides, want old", value)
+	}
+}
+
+func TestMergedEnvWindowsCaseInsensitiveOverride(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("Windows environment variable names are case insensitive")
+	}
+	t.Setenv("GOFUCK_MERGE_CASE", "old")
+	environment := mergedEnv(map[string]string{"gofuck_merge_case": "new"})
+	value, count := envValue(environment, "GOFUCK_MERGE_CASE")
+	if value != "new" || count != 1 {
+		t.Fatalf("mergedEnv() GOFUCK_MERGE_CASE = %q (count %d), want new (count 1)", value, count)
+	}
+	if value, count := envValue(environment, "gofuck_merge_case"); value != "" || count != 0 {
+		t.Fatalf("mergedEnv() kept the differently cased override: %q (count %d)", value, count)
+	}
+}
+
+func TestMergedEnvKeepsCaseSensitiveVariablesOnUnix(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix environment variable names are case sensitive")
+	}
+	t.Setenv("GOFUCK_MERGE_CASE", "old")
+	environment := mergedEnv(map[string]string{"gofuck_merge_case": "new"})
+	if value, count := envValue(environment, "GOFUCK_MERGE_CASE"); value != "old" || count != 1 {
+		t.Fatalf("mergedEnv() GOFUCK_MERGE_CASE = %q (count %d), want old (count 1)", value, count)
+	}
+	if value, count := envValue(environment, "gofuck_merge_case"); value != "new" || count != 1 {
+		t.Fatalf("mergedEnv() gofuck_merge_case = %q (count %d), want new (count 1)", value, count)
 	}
 }

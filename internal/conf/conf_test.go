@@ -3,6 +3,7 @@ package conf
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -321,5 +322,31 @@ func TestShellFromEnv(t *testing.T) {
 	t.Setenv("TF_SHELL", "zsh")
 	if got := ShellFromEnv(); got != "zsh" {
 		t.Fatalf("ShellFromEnv() = %q, want zsh", got)
+	}
+}
+
+func TestLoadExcludedSearchPathPrefixesSeparator(t *testing.T) {
+	isolateConfig(t)
+	prefixes := []string{"/snap", "/mnt"}
+	if runtime.GOOS == "windows" {
+		// A colon is part of these paths, so they must not be split on it.
+		prefixes = []string{`C:\Tools`, `C:\Other`}
+	}
+	t.Setenv("GOFUCK_EXCLUDED_SEARCH_PATH_PREFIXES",
+		strings.Join(prefixes, string(os.PathListSeparator)))
+
+	settings, err := Load(nil)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if len(settings.ExcludedSearchPathPrefixes) != len(prefixes) {
+		t.Fatalf("ExcludedSearchPathPrefixes = %q, want %q",
+			settings.ExcludedSearchPathPrefixes, prefixes)
+	}
+	for index, prefix := range prefixes {
+		if settings.ExcludedSearchPathPrefixes[index] != prefix {
+			t.Fatalf("ExcludedSearchPathPrefixes[%d] = %q, want %q", index,
+				settings.ExcludedSearchPathPrefixes[index], prefix)
+		}
 	}
 }

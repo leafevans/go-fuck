@@ -9,8 +9,8 @@ package output
 import (
 	"bytes"
 	"context"
-	"maps"
 	"os"
+	"runtime"
 	"slices"
 	"strings"
 	"time"
@@ -97,8 +97,14 @@ func rerun(expanded string) (string, bool) {
 		return result, true
 	case <-ctx.Done():
 		killTree(cmd)
-		err := <-done
-		logs.Debug("Command killed after the timeout: %v", err)
+		select {
+		case err := <-done:
+			logs.Debug("Command killed after the timeout: %v", err)
+		case <-time.After(2 * time.Second):
+			// A process that escaped the killed process tree can keep the
+			// output pipe open; do not block go-fuck on it.
+			logs.Debug("Command did not exit after the timeout, ignoring its output")
+		}
 		logs.Debug("Execution timed out!")
 		return "", false
 	}
@@ -107,15 +113,33 @@ func rerun(expanded string) (string, bool) {
 // mergedEnv merges the configured environment over the current environment.
 func mergedEnv(overrides map[string]string) []string {
 	environment := map[string]string{}
+	keys := map[string]string{}
 	for _, entry := range os.Environ() {
 		if key, value, found := strings.Cut(entry, "="); found {
 			environment[key] = value
+			keys[envKey(key)] = key
 		}
 	}
-	maps.Copy(environment, overrides)
+	for key, value := range overrides {
+		if existing, ok := keys[envKey(key)]; ok {
+			environment[existing] = value
+			continue
+		}
+		environment[key] = value
+		keys[envKey(key)] = key
+	}
 	merged := make([]string, 0, len(environment))
 	for key, value := range environment {
 		merged = append(merged, key+"="+value)
 	}
 	return merged
+}
+
+// envKey normalizes an environment variable name for the platform. Windows
+// environment variable names are case insensitive.
+func envKey(key string) string {
+	if runtime.GOOS == "windows" {
+		return strings.ToLower(key)
+	}
+	return key
 }
