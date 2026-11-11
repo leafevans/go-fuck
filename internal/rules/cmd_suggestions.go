@@ -185,3 +185,9 @@ func cmdFirstWord(script string) string {
 	}
 	return trimmed
 }
+
+// cmdPathIsDirectory reports whether path exists and is a directory.
+var cmdPathIsDirectory = func(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && info.IsDir()
+}

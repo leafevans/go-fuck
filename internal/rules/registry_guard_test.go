@@ -206,6 +206,7 @@ var expectedExtraRuleNames = []string{
 	"cmd_cd_mkdir",
 	"cmd_missing_directory",
 	"cmd_missing_file",
+	"cmd_mkdir_existing",
 	"cmd_pushd_mkdir",
 	"cmd_rmdir_nonempty",
 	"dart_unknown_command",
