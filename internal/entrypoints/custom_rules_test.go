@@ -7,13 +7,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/leafevans/go-fuck/internal/conf"
 	"github.com/leafevans/go-fuck/internal/logs"
 	"github.com/leafevans/go-fuck/internal/rules"
 )
 
 func TestLoadCustomRules(t *testing.T) {
-	configDir := resetEntrypointsState(t)
-	rulesDir := filepath.Join(configDir, "go-fuck", "rules")
+	resetEntrypointsState(t)
+	rulesDir := filepath.Join(conf.UserDir(), "rules")
 	if err := os.MkdirAll(rulesDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
