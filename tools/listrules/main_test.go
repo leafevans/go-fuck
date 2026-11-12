@@ -35,10 +35,6 @@ func TestPrintRules(t *testing.T) {
 	if len(lines) != rules.Count() {
 		t.Fatalf("printRules() wrote %d lines, want %d", len(lines), rules.Count())
 	}
-	if lines[0] != "adb" && lines[0] > "adb" {
-		// Only check that the first line is not empty; the exact first rule is
-		// not part of the contract.
-	}
 	if !sort.StringsAreSorted(lines) {
 		t.Fatal("printRules() output is not sorted")
 	}
