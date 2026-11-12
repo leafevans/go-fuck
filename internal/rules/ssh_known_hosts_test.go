@@ -3,7 +3,6 @@ package rules
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 )
@@ -68,9 +67,6 @@ func TestRuleSSHKnownHosts(t *testing.T) {
 	})
 
 	t.Run("side effect", func(t *testing.T) {
-		if runtime.GOOS == "windows" {
-			t.Skip("skipping on Windows like the original test")
-		}
 		command := testCommand("ssh user@host", errorOutput)
 		if err := rule.SideEffect(command, ""); err != nil {
 			t.Fatalf("side effect returned an error: %v", err)

@@ -632,7 +632,13 @@ func (t *terminal) insertCharacters(count int) {
 	for index := range blanks {
 		blanks[index] = ' '
 	}
-	t.screen[t.cursorY] = append(append(line[:t.cursorX], blanks...), line[t.cursorX:]...)
+	// Build a new line: appending to line[:cursorX] in place would overwrite
+	// the characters that are about to be shifted to the right.
+	inserted := make(screenLine, 0, len(line)+count)
+	inserted = append(inserted, line[:t.cursorX]...)
+	inserted = append(inserted, blanks...)
+	inserted = append(inserted, line[t.cursorX:]...)
+	t.screen[t.cursorY] = inserted
 }
 
 // insertLines inserts count blank lines at the cursor.

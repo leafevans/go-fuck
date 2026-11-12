@@ -22,8 +22,10 @@ var sshKnownHostsPatterns = []*regexp.Regexp{
 
 // sshKnownHostsOffendingPatterns match the lines that name the offending key.
 var sshKnownHostsOffendingPatterns = []*regexp.Regexp{
-	regexp.MustCompile(`Offending (key for IP|\S+ key) in ([^:]+):(\d+)`),
-	regexp.MustCompile(`Matching host key in ([^:]+):(\d+)`),
+	// The path is greedy so that a Windows drive letter (C:\...) is kept as
+	// part of the path instead of being treated as the line separator.
+	regexp.MustCompile(`Offending (key for IP|\S+ key) in (.+):(\d+)`),
+	regexp.MustCompile(`Matching host key in (.+):(\d+)`),
 }
 
 // sshKnownHostsOffending describes one known_hosts line that must be removed.
