@@ -96,6 +96,7 @@ var expectedRuleNames = []string{
 	"git_push_without_commits",
 	"git_rebase_merge_dir",
 	"git_rebase_no_changes",
+	"git_remote_already_exists",
 	"git_remote_delete",
 	"git_remote_seturl_add",
 	"git_rm_local_modifications",
