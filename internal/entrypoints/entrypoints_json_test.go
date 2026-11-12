@@ -4,6 +4,7 @@ import (
 	json "encoding/json/v2"
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/leafevans/go-fuck/internal/types"
 )
@@ -109,6 +110,64 @@ func TestPrintJSONIncludesCommandOutput(t *testing.T) {
 	}
 	if result.OutputTruncated {
 		t.Fatalf("OutputTruncated = true, want false")
+	}
+}
+
+func TestPrintJSONReplacesInvalidUTF8(t *testing.T) {
+	// Captured command output can contain arbitrary bytes. encoding/json/v2
+	// rejects invalid UTF-8 instead of replacing it like v1 did, so printJSON
+	// has to sanitize the strings before encoding them.
+	invalid := string([]byte{'a', 0xff, 0xfe, 'b'})
+	command := types.NewCommand(invalid, invalid)
+	suggestion := &types.CorrectedCommand{Script: invalid, Priority: 1000}
+
+	code, stdout, _ := captureOutput(t, func() int {
+		return printJSON(command, []*types.CorrectedCommand{suggestion})
+	})
+	if code != 0 {
+		t.Fatalf("printJSON() = %d, want 0", code)
+	}
+	if !utf8.ValidString(stdout) {
+		t.Fatalf("stdout is not valid UTF-8: %q", stdout)
+	}
+
+	var result jsonTestResult
+	if err := json.Unmarshal([]byte(stdout), &result); err != nil {
+		t.Fatalf("stdout is not valid JSON: %v\n%s", err, stdout)
+	}
+	if result.Command != "a\uFFFDb" {
+		t.Fatalf("Command = %q, want the invalid bytes replaced", result.Command)
+	}
+	if result.Output != "a\uFFFDb" {
+		t.Fatalf("Output = %q, want the invalid bytes replaced", result.Output)
+	}
+	if len(result.Suggestions) != 1 || result.Suggestions[0].Command != "a\uFFFDb" {
+		t.Fatalf("Suggestions = %+v, want the invalid bytes replaced", result.Suggestions)
+	}
+}
+
+func TestPrintJSONTruncatesInvalidUTF8Output(t *testing.T) {
+	// The replacement characters may make the sanitized output longer than the
+	// original limit, so the result has to be capped again.
+	output := strings.Repeat(string([]byte{0xff}), jsonOutputLimit+128)
+	command := types.NewCommand("noisy", output)
+	code, stdout, _ := captureOutput(t, func() int { return printJSON(command, nil) })
+	if code != 0 {
+		t.Fatalf("printJSON() = %d, want 0", code)
+	}
+
+	var result jsonTestResult
+	if err := json.Unmarshal([]byte(stdout), &result); err != nil {
+		t.Fatalf("stdout is not valid JSON: %v%s", err, stdout)
+	}
+	if !result.OutputTruncated {
+		t.Fatal("OutputTruncated = false, want true")
+	}
+	if len(result.Output) > jsonOutputLimit {
+		t.Fatalf("len(Output) = %d, want at most %d", len(result.Output), jsonOutputLimit)
+	}
+	if !strings.Contains(result.Output, string(utf8.RuneError)) {
+		t.Fatalf("Output = %q, want replacement characters", result.Output)
 	}
 }
 

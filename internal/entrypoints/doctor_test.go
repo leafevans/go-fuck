@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/leafevans/go-fuck/internal/conf"
 	"github.com/leafevans/go-fuck/internal/consts"
@@ -117,6 +118,35 @@ func TestDoctorFailsOnInvalidSettings(t *testing.T) {
 	}
 	if !strings.Contains(stdout, "invalid settings file") {
 		t.Fatalf("doctor output %q does not report the invalid settings file", stdout)
+	}
+}
+
+func TestSanitizeDoctorReportReplacesInvalidUTF8(t *testing.T) {
+	invalid := string([]byte{0xff, 0xfe})
+	report := doctorReport{
+		Version:   invalid,
+		GoVersion: invalid,
+		Platform:  invalid,
+		Binary:    invalid,
+		Shell:     invalid,
+		Checks: []doctorCheck{{
+			Name:    invalid,
+			Status:  doctorWarn,
+			Message: invalid,
+			Hint:    invalid,
+		}},
+	}
+
+	sanitizeDoctorReport(&report)
+	values := []string{report.Version, report.GoVersion, report.Platform, report.Binary, report.Shell,
+		report.Checks[0].Name, report.Checks[0].Message, report.Checks[0].Hint}
+	for index, value := range values {
+		if !utf8.ValidString(value) {
+			t.Fatalf("sanitized value %d is not valid UTF-8: %q", index, value)
+		}
+		if !strings.Contains(value, string(utf8.RuneError)) {
+			t.Fatalf("sanitized value %d = %q, want replacement characters", index, value)
+		}
 	}
 }
 

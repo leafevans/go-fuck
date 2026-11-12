@@ -91,7 +91,8 @@ The settings and `--json` contracts keep their keys, meaning and `schema_version
 - **Invalid UTF-8 is rejected** instead of being replaced with U+FFFD.
 - Unknown keys are still ignored, and the `--json` document keeps its fields and layout. The
   encoder no longer escapes `<`, `>` and `&` as `\u003c`, `\u003e` and `\u0026` inside strings;
-  both forms are valid JSON and decode to the same values.
+  both forms are valid JSON and decode to the same values. Invalid UTF-8 bytes in captured command
+  output are replaced with U+FFFD before encoding, so `--json` always emits a valid document.
 
 ## Future releases
 

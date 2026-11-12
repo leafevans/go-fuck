@@ -4,6 +4,7 @@ import (
 	"encoding/json/jsontext"
 	json "encoding/json/v2"
 	"os"
+	"strings"
 	"unicode/utf8"
 
 	"github.com/leafevans/go-fuck/internal/logs"
@@ -58,30 +59,51 @@ func printJSON(command *types.Command, corrected []*types.CorrectedCommand) int 
 		Suggestions:   make([]jsonSuggestion, 0, len(corrected)),
 	}
 	if command != nil {
-		result.Command = command.Script
+		result.Command = validUTF8(command.Script)
 		if command.HasOutput() {
-			result.Output, result.OutputTruncated = truncateJSONOutput(command.Output)
+			result.Output, result.OutputTruncated = truncatedOutput(command.Output)
 		}
 	}
 	for _, suggestion := range corrected {
 		result.Suggestions = append(result.Suggestions, jsonSuggestion{
-			Command:    suggestion.Script,
+			Command:    validUTF8(suggestion.Script),
 			Priority:   suggestion.Priority,
 			SideEffect: suggestion.SideEffect != nil,
 		})
 	}
 
-	data, err := json.Marshal(result, jsontext.WithIndent("  "))
-	if err != nil {
+	if err := json.MarshalWrite(os.Stdout, result, jsontext.WithIndent("  ")); err != nil {
 		logs.Exception("Can't write the JSON output", err)
 		return 1
 	}
-	data = append(data, '\n')
-	if _, err := os.Stdout.Write(data); err != nil {
+	if _, err := os.Stdout.WriteString("\n"); err != nil {
 		logs.Exception("Can't write the JSON output", err)
 		return 1
 	}
 	return 0
+}
+
+// validUTF8 replaces invalid UTF-8 byte sequences with the Unicode replacement
+// character.
+//
+// Captured command output may contain arbitrary bytes, while encoding/json/v2
+// rejects invalid UTF-8 instead of replacing it silently like v1 did. The
+// --json document must stay valid UTF-8 and must not fail because the failed
+// command printed binary data.
+func validUTF8(value string) string {
+	return strings.ToValidUTF8(value, "\uFFFD")
+}
+
+// truncatedOutput limits command output to jsonOutputLimit bytes and makes the
+// result valid UTF-8. The boolean reports whether the output was truncated.
+func truncatedOutput(output string) (string, bool) {
+	output, truncated := truncateJSONOutput(output)
+	output = validUTF8(output)
+	if len(output) > jsonOutputLimit {
+		output, _ = truncateJSONOutput(output)
+		truncated = true
+	}
+	return output, truncated
 }
 
 // truncateJSONOutput limits output to jsonOutputLimit bytes without splitting a

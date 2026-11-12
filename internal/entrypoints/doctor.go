@@ -345,6 +345,7 @@ func doctorLogHasMarker(path string) bool {
 // doctor runs the --doctor command.
 func doctor(args *argumentparser.Args) int {
 	report := collectDoctorReport()
+	sanitizeDoctorReport(&report)
 	if args.JSON {
 		encoded, err := json.Marshal(report, jsontext.WithIndent("  "))
 		if err != nil {
@@ -361,6 +362,22 @@ func doctor(args *argumentparser.Args) int {
 		}
 	}
 	return 0
+}
+
+// sanitizeDoctorReport makes the strings of the report valid UTF-8 so that
+// --doctor --json stays valid even when the environment contains arbitrary
+// bytes, for example in a shell path or a config path.
+func sanitizeDoctorReport(report *doctorReport) {
+	report.Version = validUTF8(report.Version)
+	report.GoVersion = validUTF8(report.GoVersion)
+	report.Platform = validUTF8(report.Platform)
+	report.Binary = validUTF8(report.Binary)
+	report.Shell = validUTF8(report.Shell)
+	for index := range report.Checks {
+		report.Checks[index].Name = validUTF8(report.Checks[index].Name)
+		report.Checks[index].Message = validUTF8(report.Checks[index].Message)
+		report.Checks[index].Hint = validUTF8(report.Checks[index].Hint)
+	}
 }
 
 // printDoctorReport prints the report for humans.
