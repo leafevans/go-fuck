@@ -222,7 +222,11 @@ func scoopManifest(r *release) ([]byte, error) {
 			},
 		},
 	}
-	return json.Marshal(manifest, jsontext.WithIndent("  "))
+	data, err := json.Marshal(manifest, jsontext.WithIndent("  "), json.Deterministic(true))
+	if err != nil {
+		return nil, err
+	}
+	return append(data, '\n'), nil
 }
 
 // aurPKGBUILDTemplate is the PKGBUILD of the AUR package. The release

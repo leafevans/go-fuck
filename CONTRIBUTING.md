@@ -192,7 +192,9 @@ chore(ci): test on Go 1.27 and stable
 
 Releases are cut by pushing a `vX.Y.Z` tag; the Release workflow runs GoReleaser, and the
 distribution manifests are regenerated from the release checksums afterwards (see
-[packaging/README.md](packaging/README.md)).
+[packaging/README.md](packaging/README.md)). `scripts/update-manifests.ps1 -Version X.Y.Z` downloads
+the release assets, runs `tools/update-packaging`, checks the packaging tests and, with
+`-Commit`, commits the regenerated files. The AUR files are pushed separately.
 
 The project is still in `0.x` while the behavior and the settings format are finalized. The first
 official release is `1.0.0`; from then on the project follows

@@ -131,7 +131,10 @@ When publishing a new release `vX.Y.Z`:
     Scoop manifest and (with `-aur-source`) the AUR `PKGBUILD` and
     `.SRCINFO` with a fresh `pkgrel=1`, in one step. Review the diff and
     commit it (also possible through `make packaging VERSION=X.Y.Z
-CHECKSUMS=checksums.txt AUR_SOURCE=go-fuck-X.Y.Z.tar.gz`).
+CHECKSUMS=checksums.txt AUR_SOURCE=go-fuck-X.Y.Z.tar.gz`). The whole download
+and regeneration step is wrapped by
+`scripts/update-manifests.ps1 -Version X.Y.Z`; pass `-Commit` to commit the
+regenerated files.
 3. Push the regenerated `PKGBUILD` and `.SRCINFO` to
    `ssh://aur@aur.archlinux.org/go-fuck.git` (see the AUR section above).
 4. Run `go run ./tools/gen-rule-list -check` and the full test suite before

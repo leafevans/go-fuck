@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/sha256"
 	json "encoding/json/v2"
 	"fmt"
@@ -55,6 +56,28 @@ func loadTestRelease(t *testing.T) *release {
 		t.Fatalf("loadRelease() error = %v", err)
 	}
 	return rel
+}
+
+func TestScoopManifestIsDeterministic(t *testing.T) {
+	rel := loadTestRelease(t)
+	first, err := scoopManifest(rel)
+	if err != nil {
+		t.Fatalf("scoopManifest() error = %v", err)
+	}
+	second, err := scoopManifest(rel)
+	if err != nil {
+		t.Fatalf("scoopManifest() error = %v", err)
+	}
+	if !bytes.Equal(first, second) {
+		t.Fatal("scoopManifest() is not deterministic")
+	}
+	if !bytes.HasSuffix(first, []byte("\n")) {
+		t.Fatal("scoopManifest() does not end with a newline")
+	}
+	var manifest map[string]any
+	if err := json.Unmarshal(first, &manifest); err != nil {
+		t.Fatalf("scoopManifest() wrote invalid JSON: %v", err)
+	}
 }
 
 func TestLoadRelease(t *testing.T) {
