@@ -113,3 +113,26 @@ func fuzzIsSubsequence(part, whole string) bool {
 	}
 	return index == len(part)
 }
+
+// FuzzLastOutput checks that arbitrary terminal logs and scripts do not panic
+// the log reader and that the rendered output cannot leak the prompt marker.
+func FuzzLastOutput(f *testing.F) {
+	mark := consts.UserCommandMark
+	f.Add(mark+"$ git brnch\r\ngit: 'brnch' is not a git command.\r\n"+mark+"$ ", "git brnch")
+	f.Add(mark+"$ ls\nfile one\n"+mark+"$ ", "ls")
+	f.Add("", "")
+	f.Add(string([]byte{0xff, 0xfe, 0x1b, '[', '3', '1', 'm'}), string([]byte{0xff}))
+	f.Fuzz(func(t *testing.T, logData, script string) {
+		calls := groupCalls(logLines(logData))
+		for _, call := range calls {
+			index := call.echoIndex(script, strings.Fields(script))
+			if index < 0 {
+				continue
+			}
+			output := call.output(index)
+			if strings.Contains(output, mark) {
+				t.Fatalf("rendered output %q leaked the prompt marker", output)
+			}
+		}
+	})
+}

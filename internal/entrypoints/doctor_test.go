@@ -107,6 +107,23 @@ func TestDoctorWarnsAboutMissingAlias(t *testing.T) {
 	}
 }
 
+func TestDoctorWarnsAboutUnknownSettings(t *testing.T) {
+	resetEntrypointsState(t)
+	settingsDir := conf.UserDir()
+	writeTestFile(t, filepath.Join(settingsDir, "settings.json"),
+		`{"rules": ["git_push"], "rule": ["typo"]}`)
+
+	code, stdout, _ := runMain(t, "go-fuck", "--doctor")
+	if code != 0 {
+		t.Fatalf("Main() = %d, want 0", code)
+	}
+	for _, want := range []string{"ignored unknown keys", "rule"} {
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("doctor output %q does not contain %q", stdout, want)
+		}
+	}
+}
+
 func TestDoctorFailsOnInvalidSettings(t *testing.T) {
 	resetEntrypointsState(t)
 	settingsDir := conf.UserDir()

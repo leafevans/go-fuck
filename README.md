@@ -303,8 +303,8 @@ If `fuck` does nothing, or go-fuck cannot find the command that failed, run the 
 $ go-fuck --doctor
 ```
 
-It checks the detected shell, the alias in the shell configuration file, the settings file, the
-command history and the optional integrations (fzf and instant mode). For instant mode it validates
+It checks the detected shell, the alias in the shell configuration file, the settings file (including
+ignored unknown keys), the command history and the optional integrations (fzf and instant mode). For instant mode it validates
 the logged shell's terminal log and warns when the instant mode line is no longer the last prompt
 definition in the PowerShell profile. Warnings include the command that fixes them, and
 `--doctor --json` prints the same report as JSON.
@@ -467,8 +467,10 @@ The file is created with the default settings on first use. JSON does not suppor
 generated file contains an explanatory `_comment` field; it is ignored when the file is loaded.
 
 Unknown keys are ignored, so a settings file written by a newer go-fuck keeps working with an older
-one. Invalid JSON or a value of the wrong type is reported and the file is not applied, so go-fuck
-falls back to the built-in defaults instead of running with a half applied configuration. From 1.0.0
+one. They are reported by `go-fuck --doctor` and by a correction run, so a typo such as `rule` instead of
+`rules` does not go unnoticed. Invalid JSON or a value of the wrong type is reported and the file is not
+applied, so go-fuck falls back to the built-in defaults instead of running with a half applied
+configuration. From 1.0.0
 the keys above and their meaning are frozen; new optional keys may be added in minor releases.
 
 A minimal file that customizes a few values:

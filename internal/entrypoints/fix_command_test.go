@@ -1,14 +1,17 @@
 package entrypoints
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"reflect"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/leafevans/go-fuck/internal/argumentparser"
 	"github.com/leafevans/go-fuck/internal/conf"
+	"github.com/leafevans/go-fuck/internal/logs"
 	"github.com/leafevans/go-fuck/internal/shells"
 	"github.com/leafevans/go-fuck/internal/utils"
 )
@@ -48,6 +51,20 @@ func assertRawCommand(t *testing.T, got, want []string) {
 	t.Helper()
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("getRawCommand() = %q, want %q", got, want)
+	}
+}
+
+func TestWarnUnknownSettings(t *testing.T) {
+	resetEntrypointsState(t)
+	buffer := &bytes.Buffer{}
+	logs.SetOutput(buffer)
+
+	warnUnknownSettings(&conf.Settings{UnknownKeys: []string{"nope", "rule"}})
+	output := buffer.String()
+	for _, want := range []string{"nope", "rule", "ignored"} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("warnUnknownSettings() output = %q, want it to contain %q", output, want)
+		}
 	}
 }
 

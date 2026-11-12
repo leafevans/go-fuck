@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -69,6 +70,9 @@ type Settings struct {
 	ExcludedSearchPathPrefixes []string `json:"excluded_search_path_prefixes"`
 	// UserDir is the directory that stores the user settings file.
 	UserDir string `json:"-"`
+	// UnknownKeys lists the top level keys of the settings file that go-fuck
+	// does not understand. They are ignored; the list is used for diagnostics.
+	UnknownKeys []string `json:"-"`
 
 	// extra holds rule specific settings that are not part of the core
 	// configuration, for example "fixlinecmd".
@@ -218,6 +222,45 @@ type fileSchema struct {
 	Comment                    string             `json:"_comment"`
 }
 
+// knownSettingKeys lists the top level keys of the settings file.
+var knownSettingKeys = map[string]bool{
+	"_comment":                      true,
+	"rules":                         true,
+	"exclude_rules":                 true,
+	"wait_command":                  true,
+	"require_confirmation":          true,
+	"no_colors":                     true,
+	"debug":                         true,
+	"priority":                      true,
+	"history_limit":                 true,
+	"alter_history":                 true,
+	"wait_slow_command":             true,
+	"slow_commands":                 true,
+	"repeat":                        true,
+	"instant_mode":                  true,
+	"fzf":                           true,
+	"num_close_matches":             true,
+	"env":                           true,
+	"excluded_search_path_prefixes": true,
+	"settings":                      true,
+}
+
+// unknownSettingKeys returns the top level keys of data that go-fuck ignores.
+func unknownSettingKeys(data []byte) []string {
+	var object map[string]any
+	if err := json.Unmarshal(data, &object); err != nil {
+		return nil
+	}
+	unknown := make([]string, 0, len(object))
+	for key := range object {
+		if !knownSettingKeys[key] {
+			unknown = append(unknown, key)
+		}
+	}
+	sort.Strings(unknown)
+	return unknown
+}
+
 // loadFile reads the user settings file. A missing file is created with the
 // default settings and is not considered an error.
 func (s *Settings) loadFile() error {
@@ -241,6 +284,7 @@ func (s *Settings) loadFile() error {
 	if err := json.Unmarshal(data, &schema); err != nil {
 		return fmt.Errorf("parse settings file %s: %w", path, err)
 	}
+	s.UnknownKeys = unknownSettingKeys(data)
 	s.applyFile(&schema)
 	return nil
 }

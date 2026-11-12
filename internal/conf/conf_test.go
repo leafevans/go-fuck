@@ -3,6 +3,7 @@ package conf
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"strings"
 	"testing"
@@ -66,6 +67,58 @@ func TestLoadCreatesSettingsFile(t *testing.T) {
 	}
 	if !strings.Contains(string(data), "require_confirmation") {
 		t.Fatalf("unexpected settings file content: %q", data)
+	}
+}
+
+func TestLoadReportsUnknownKeys(t *testing.T) {
+	isolateConfig(t)
+	if err := os.MkdirAll(filepath.Dir(settingsFilePath(t)), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	content := `{
+		"_comment": "comment",
+		"rules": ["git_push"],
+		"rule": ["typo"],
+		"wait_command": 9,
+		"settings": {"fixlinecmd": "x"},
+		"nope": true
+	}`
+	if err := os.WriteFile(settingsFilePath(t), []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	settings, err := Load(nil)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if got := strings.Join(settings.UnknownKeys, ","); got != "nope,rule" {
+		t.Fatalf("UnknownKeys = %q, want %q", got, "nope,rule")
+	}
+	if settings.WaitCommand != 9 || len(settings.Rules) != 1 || settings.Rules[0] != "git_push" {
+		t.Fatalf("known settings were not applied: %+v", settings)
+	}
+}
+
+func TestKnownSettingKeysMatchSchema(t *testing.T) {
+	typ := reflect.TypeOf(fileSchema{})
+	expected := map[string]bool{}
+	for index := 0; index < typ.NumField(); index++ {
+		tag := typ.Field(index).Tag.Get("json")
+		name, _, _ := strings.Cut(tag, ",")
+		if name == "" || name == "-" {
+			continue
+		}
+		expected[name] = true
+	}
+	for name := range expected {
+		if !knownSettingKeys[name] {
+			t.Fatalf("knownSettingKeys is missing the %q field", name)
+		}
+	}
+	for name := range knownSettingKeys {
+		if !expected[name] {
+			t.Fatalf("knownSettingKeys contains %q, which is not a settings field", name)
+		}
 	}
 }
 

@@ -19,9 +19,11 @@ import (
 // fixCommand fixes the previous command and prints the corrected command on
 // standard output.
 func fixCommand(args *argumentparser.Args) int {
-	if _, err := conf.Load(&conf.Args{Yes: args.Yes, Debug: args.Debug, Repeat: args.Repeat}); err != nil {
+	settings, err := conf.Load(&conf.Args{Yes: args.Yes, Debug: args.Debug, Repeat: args.Repeat})
+	if err != nil {
 		logs.Exception("Can't load settings", err)
 	}
+	warnUnknownSettings(settings)
 	loadCustomRules()
 
 	stopTimer := logs.DebugTime("Total")
@@ -62,6 +64,15 @@ func fixCommand(args *argumentparser.Args) int {
 	}
 	selected.Run(command)
 	return 0
+}
+
+// warnUnknownSettings reports top level settings file keys that go-fuck
+// ignores, so a typo such as "rule" instead of "rules" does not go unnoticed.
+func warnUnknownSettings(settings *conf.Settings) {
+	if settings == nil || len(settings.UnknownKeys) == 0 {
+		return
+	}
+	logs.Warn("Unknown settings in settings.json (ignored): " + strings.Join(settings.UnknownKeys, ", "))
 }
 
 // getRawCommand returns the command line that should be fixed.

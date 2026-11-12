@@ -28,6 +28,10 @@ jobs:
             target: FuzzParse
           - pkg: ./internal/customrules
             target: FuzzCustomRulePipeline
+          - pkg: ./internal/entrypoints
+            target: FuzzJSONOutput
+          - pkg: ./internal/instant
+            target: FuzzLastOutput
           - pkg: ./internal/instant
             target: FuzzSanitize
           - pkg: ./internal/instant

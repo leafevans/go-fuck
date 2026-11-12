@@ -55,8 +55,11 @@ bench: ## Run the benchmarks
 fuzz: ## Run each native fuzz target briefly as a local smoke test
 	$(GO) test ./internal/argumentparser -run '^$$' -fuzz '^FuzzParse$$' -fuzztime=20s
 	$(GO) test ./internal/customrules -run '^$$' -fuzz '^FuzzCustomRulePipeline$$' -fuzztime=20s
+	$(GO) test ./internal/entrypoints -run '^$$' -fuzz '^FuzzJSONOutput$$' -fuzztime=20s
+	$(GO) test ./internal/instant -run '^$$' -fuzz '^FuzzLastOutput$$' -fuzztime=20s
 	$(GO) test ./internal/instant -run '^$$' -fuzz '^FuzzSanitize$$' -fuzztime=20s
 	$(GO) test ./internal/instant -run '^$$' -fuzz '^FuzzStripOSC$$' -fuzztime=20s
+	$(GO) test ./internal/rules -run '^$$' -fuzz '^FuzzRules$$' -fuzztime=20s
 	$(GO) test ./internal/shells -run '^$$' -fuzz '^FuzzSplit$$' -fuzztime=20s
 
 vet: ## Run go vet on all packages

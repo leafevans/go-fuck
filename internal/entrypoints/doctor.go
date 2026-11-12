@@ -200,9 +200,16 @@ func doctorSettingsCheck() doctorCheck {
 		check.Message = "no settings file, using the defaults"
 		return check
 	}
-	if _, err := doctorLoadSettings(); err != nil {
+	settings, err := doctorLoadSettings()
+	if err != nil {
 		check.Status = doctorFail
 		check.Message = "invalid settings file: " + err.Error()
+		return check
+	}
+	if settings != nil && len(settings.UnknownKeys) > 0 {
+		check.Status = doctorWarn
+		check.Message = "loaded " + path
+		check.Hint = "ignored unknown keys: " + strings.Join(settings.UnknownKeys, ", ")
 		return check
 	}
 	check.Status = doctorOK
