@@ -60,6 +60,9 @@ type Settings struct {
 	// Fzf uses the fzf fuzzy finder for the confirmation prompt when fzf is
 	// available. It is ignored when the executable cannot be found.
 	Fzf bool `json:"fzf"`
+	// StrictSettings makes unknown top level keys in settings.json an error
+	// instead of an ignored warning.
+	StrictSettings bool `json:"strict_settings"`
 	// NumCloseMatches is the maximum number of suggestions for misspelled
 	// commands.
 	NumCloseMatches int `json:"num_close_matches"`
@@ -215,6 +218,7 @@ type fileSchema struct {
 	Repeat                     *bool              `json:"repeat"`
 	InstantMode                *bool              `json:"instant_mode"`
 	Fzf                        *bool              `json:"fzf"`
+	StrictSettings             *bool              `json:"strict_settings"`
 	NumCloseMatches            *int               `json:"num_close_matches"`
 	Env                        *map[string]string `json:"env"`
 	ExcludedSearchPathPrefixes *[]string          `json:"excluded_search_path_prefixes"`
@@ -239,6 +243,7 @@ var knownSettingKeys = map[string]bool{
 	"repeat":                        true,
 	"instant_mode":                  true,
 	"fzf":                           true,
+	"strict_settings":               true,
 	"num_close_matches":             true,
 	"env":                           true,
 	"excluded_search_path_prefixes": true,
@@ -253,7 +258,7 @@ func unknownSettingKeys(data []byte) []string {
 	}
 	unknown := make([]string, 0, len(object))
 	for key := range object {
-		if !knownSettingKeys[key] {
+		if key != "" && !knownSettingKeys[key] {
 			unknown = append(unknown, key)
 		}
 	}
@@ -280,13 +285,48 @@ func (s *Settings) loadFile() error {
 		return fmt.Errorf("read settings file: %w", err)
 	}
 
-	var schema fileSchema
-	if err := json.Unmarshal(data, &schema); err != nil {
+	schema, unknown, err := parseSettingsFile(data)
+	if err != nil {
 		return fmt.Errorf("parse settings file %s: %w", path, err)
 	}
-	s.UnknownKeys = unknownSettingKeys(data)
-	s.applyFile(&schema)
+	s.UnknownKeys = unknown
+	if strictSettings(schema) && len(unknown) > 0 {
+		return fmt.Errorf("parse settings file %s: unknown settings: %s",
+			path, strings.Join(unknown, ", "))
+	}
+	s.applyFile(schema)
 	return nil
+}
+
+// parseSettingsFile decodes a settings file and returns the unknown top level
+// keys as well.
+func parseSettingsFile(data []byte) (*fileSchema, []string, error) {
+	var schema fileSchema
+	if err := json.Unmarshal(data, &schema); err != nil {
+		return nil, nil, err
+	}
+	return &schema, unknownSettingKeys(data), nil
+}
+
+// strictSettings reports whether unknown settings keys are an error. The
+// setting can be enabled in the file or with an environment variable, so a
+// broken file can still be validated strictly.
+func strictSettings(schema *fileSchema) bool {
+	if schema.StrictSettings != nil && *schema.StrictSettings {
+		return true
+	}
+	return strictSettingsFromEnv()
+}
+
+// strictSettingsFromEnv reports whether GOFUCK_STRICT_SETTINGS or its legacy
+// equivalent enables strict settings validation.
+func strictSettingsFromEnv() bool {
+	for _, prefix := range envPrefixes {
+		if value, ok := envValue(prefix, "STRICT_SETTINGS"); ok && strings.EqualFold(value, "true") {
+			return true
+		}
+	}
+	return false
 }
 
 // writeDefaultFile creates settings.json with the default configuration.
@@ -308,6 +348,7 @@ func (s *Settings) writeDefaultFile(path string) error {
 		"instant_mode":                  s.InstantMode,
 		"fzf":                           s.Fzf,
 		"num_close_matches":             s.NumCloseMatches,
+		"strict_settings":               s.StrictSettings,
 		"env":                           s.Env,
 		"excluded_search_path_prefixes": s.ExcludedSearchPathPrefixes,
 		"settings":                      map[string]any{},
@@ -367,6 +408,9 @@ func (s *Settings) applyFile(f *fileSchema) {
 	if f.Fzf != nil {
 		s.Fzf = *f.Fzf
 	}
+	if f.StrictSettings != nil {
+		s.StrictSettings = *f.StrictSettings
+	}
 	if f.NumCloseMatches != nil {
 		s.NumCloseMatches = *f.NumCloseMatches
 	}
@@ -404,6 +448,7 @@ func (s *Settings) loadEnv() {
 		s.boolFromEnv(prefix, "REPEAT", &s.Repeat)
 		s.boolFromEnv(prefix, "INSTANT_MODE", &s.InstantMode)
 		s.boolFromEnv(prefix, "FZF", &s.Fzf)
+		s.boolFromEnv(prefix, "STRICT_SETTINGS", &s.StrictSettings)
 		s.intFromEnv(prefix, "NUM_CLOSE_MATCHES", &s.NumCloseMatches)
 		s.pathSliceFromEnv(prefix, "EXCLUDED_SEARCH_PATH_PREFIXES", &s.ExcludedSearchPathPrefixes)
 	}

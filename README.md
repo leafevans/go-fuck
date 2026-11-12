@@ -466,9 +466,11 @@ directory returned by Go's `os.UserConfigDir()`:
 The file is created with the default settings on first use. JSON does not support comments, so the
 generated file contains an explanatory `_comment` field; it is ignored when the file is loaded.
 
-Unknown keys are ignored, so a settings file written by a newer go-fuck keeps working with an older
-one. They are reported by `go-fuck --doctor` and by a correction run, so a typo such as `rule` instead of
-`rules` does not go unnoticed. Invalid JSON or a value of the wrong type is reported and the file is not
+Unknown keys are ignored by default, so a settings file written by a newer go-fuck keeps working
+with an older one. They are reported by `go-fuck --doctor` and by a correction run, so a typo such
+as `rule` instead of `rules` does not go unnoticed. Set `strict_settings` (or
+`GOFUCK_STRICT_SETTINGS=true`) to reject unknown keys instead: the file is reported as invalid and
+not applied. Invalid JSON or a value of the wrong type is always reported and the file is not
 applied, so go-fuck falls back to the built-in defaults instead of running with a half applied
 configuration. From 1.0.0
 the keys above and their meaning are frozen; new optional keys may be added in minor releases.
@@ -497,6 +499,7 @@ All fields:
 | `wait_command`                  | integer           | `3`                                                          | Seconds to wait for the output of the re-run command.                                                                                                                                         |
 | `require_confirmation`          | boolean           | `true`                                                       | Ask before executing a corrected command.                                                                                                                                                     |
 | `fzf`                           | boolean           | `false`                                                      | Use [fzf](https://github.com/junegunn/fzf) as the selection prompt when it is installed. Falls back to the built-in prompt automatically.                                                     |
+| `strict_settings`             | boolean           | `false`                                                      | Reject unknown top-level keys as an error instead of ignoring and warning about them.                                                                                                          |
 | `no_colors`                     | boolean           | `false`                                                      | Disable colored output.                                                                                                                                                                       |
 | `debug`                         | boolean           | `false`                                                      | Print debug information to stderr.                                                                                                                                                            |
 | `priority`                      | object of integer | `{}`                                                         | Per-rule priority overrides. Lower values are tried first; the built-in default is `1000`.                                                                                                    |
@@ -526,6 +529,7 @@ legacy `THEFUCK_*` variable is applied last and wins.
 | `WAIT_COMMAND`                  | integer seconds                          | `GOFUCK_WAIT_COMMAND=10`                       | `wait_command`                                                      |
 | `REQUIRE_CONFIRMATION`          | boolean                                  | `GOFUCK_REQUIRE_CONFIRMATION=false`            | `require_confirmation`                                              |
 | `FZF`                           | boolean                                  | `GOFUCK_FZF=true`                              | `fzf`                                                               |
+| `STRICT_SETTINGS`             | boolean                                  | `GOFUCK_STRICT_SETTINGS=true`                | `strict_settings`                                                 |
 | `NO_COLORS`                     | boolean                                  | `GOFUCK_NO_COLORS=true`                        | `no_colors`                                                         |
 | `DEBUG`                         | boolean                                  | `GOFUCK_DEBUG=true`                            | `debug`                                                             |
 | `PRIORITY`                      | `rule=priority` list separated by colons | `GOFUCK_PRIORITY='cd_mkdir=100:git_push=900'`  | `priority`                                                          |
@@ -582,8 +586,8 @@ the selection entirely.
 
 The built-in rules are compiled into the binary, and declarative JSON rules can be loaded from the
 configuration directory (see [Creating custom rules](#creating-custom-rules)). Each rule decides
-whether it applies to a failed command and returns one or more corrected commands. There are 243
-built-in rules: 169 ported from the reference implementation plus 74 go-fuck specific rules for
+whether it applies to a failed command and returns one or more corrected commands. There are 245
+built-in rules: 169 ported from the reference implementation plus 76 go-fuck specific rules for
 failures that thefuck does not handle, including the GitHub and GitLab CLIs, kubectl/kind/kustomize,
 uv, cargo, Helm, pnpm, the npm, pnpm, yarn and uv lock file checks, the Go toolchain and go.sum,
 Node.js, bun, Deno, Docker Compose, just, Poetry, make, the go-task runner, minikube, Bundler,
@@ -668,6 +672,7 @@ git operations. The list below is generated from the compiled rules:
 - `git_branch_delete_checked_out`
 - `git_branch_exists`
 - `git_branch_list`
+- `git_branch_missing`
 - `git_checkout`
 - `git_checkout_unstaged`
 - `git_clone_git_clone`
@@ -712,6 +717,7 @@ git operations. The list below is generated from the compiled rules:
 - `git_switch_existing_branch`
 - `git_switch_unknown_branch`
 - `git_tag_force`
+- `git_tag_missing`
 - `git_two_dashes`
 - `git_unknown_remote`
 - `glab_unknown_command`
@@ -908,7 +914,7 @@ external commands.
 go-fuck is a reimplementation, not a drop-in replacement for every thefuck feature:
 
 - **Complete rule port plus extras.** All 169 rules of the reference implementation are ported,
-  plus 74 go-fuck specific rules; the list in [Rules](#rules) is authoritative. Porting conventions
+  plus 76 go-fuck specific rules; the list in [Rules](#rules) is authoritative. Porting conventions
   are documented in [PORTING.md](PORTING.md).
 - **Instant mode covers Linux, macOS and Windows.** It reads the previous command output from a
   terminal log instead of re-running the command: bash and zsh on Linux and macOS, PowerShell on

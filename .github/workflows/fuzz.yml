@@ -26,6 +26,8 @@ jobs:
         include:
           - pkg: ./internal/argumentparser
             target: FuzzParse
+          - pkg: ./internal/conf
+            target: FuzzSettingsFile
           - pkg: ./internal/customrules
             target: FuzzCustomRulePipeline
           - pkg: ./internal/entrypoints

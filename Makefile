@@ -54,6 +54,7 @@ bench: ## Run the benchmarks
 
 fuzz: ## Run each native fuzz target briefly as a local smoke test
 	$(GO) test ./internal/argumentparser -run '^$$' -fuzz '^FuzzParse$$' -fuzztime=20s
+	$(GO) test ./internal/conf -run '^$$' -fuzz '^FuzzSettingsFile$$' -fuzztime=20s
 	$(GO) test ./internal/customrules -run '^$$' -fuzz '^FuzzCustomRulePipeline$$' -fuzztime=20s
 	$(GO) test ./internal/entrypoints -run '^$$' -fuzz '^FuzzJSONOutput$$' -fuzztime=20s
 	$(GO) test ./internal/instant -run '^$$' -fuzz '^FuzzLastOutput$$' -fuzztime=20s

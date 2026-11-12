@@ -122,6 +122,13 @@ func TestKnownSettingKeysMatchSchema(t *testing.T) {
 	}
 }
 
+func TestUnknownSettingKeysIgnoresEmptyName(t *testing.T) {
+	got := unknownSettingKeys([]byte(`{"": true, "rule": true, "rules": []}`))
+	if len(got) != 1 || got[0] != "rule" {
+		t.Fatalf("unknownSettingKeys() = %q, want [rule]", got)
+	}
+}
+
 func TestLoadFromFile(t *testing.T) {
 	isolateConfig(t)
 	if err := os.MkdirAll(filepath.Dir(settingsFilePath(t)), 0o755); err != nil {
@@ -160,6 +167,65 @@ func TestLoadFromFile(t *testing.T) {
 	}
 	if got := settings.String("fixlinecmd", ""); got == "" {
 		t.Fatal("fixlinecmd setting was not loaded")
+	}
+}
+
+func TestLoadStrictSettingsRejectsUnknownKeys(t *testing.T) {
+	isolateConfig(t)
+	if err := os.MkdirAll(filepath.Dir(settingsFilePath(t)), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	content := `{"strict_settings": true, "wait_command": 9, "rule": ["typo"]}`
+	if err := os.WriteFile(settingsFilePath(t), []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := Load(nil)
+	if err == nil || !strings.Contains(err.Error(), "unknown settings: rule") {
+		t.Fatalf("Load() error = %v, want an unknown settings error", err)
+	}
+	if Current().WaitCommand != 3 {
+		t.Fatalf("WaitCommand = %d, want the default because the file was rejected", Current().WaitCommand)
+	}
+	if got := strings.Join(Current().UnknownKeys, ","); got != "rule" {
+		t.Fatalf("UnknownKeys = %q, want rule", got)
+	}
+}
+
+func TestLoadStrictSettingsFromEnv(t *testing.T) {
+	isolateConfig(t)
+	if err := os.MkdirAll(filepath.Dir(settingsFilePath(t)), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(settingsFilePath(t), []byte(`{"rule": ["typo"]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("GOFUCK_STRICT_SETTINGS", "true")
+
+	if _, err := Load(nil); err == nil || !strings.Contains(err.Error(), "unknown settings: rule") {
+		t.Fatalf("Load() error = %v, want an unknown settings error", err)
+	}
+}
+
+func TestLoadStrictSettingsAcceptsKnownFile(t *testing.T) {
+	isolateConfig(t)
+	if err := os.MkdirAll(filepath.Dir(settingsFilePath(t)), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	content := `{"strict_settings": true, "wait_command": 9}`
+	if err := os.WriteFile(settingsFilePath(t), []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	settings, err := Load(nil)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if settings.WaitCommand != 9 || !settings.StrictSettings {
+		t.Fatalf("unexpected settings: %+v", settings)
+	}
+	if len(settings.UnknownKeys) != 0 {
+		t.Fatalf("UnknownKeys = %q, want none", settings.UnknownKeys)
 	}
 }
 
