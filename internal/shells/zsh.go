@@ -14,7 +14,7 @@ const zshAliasTemplate = `%[1]s () {
     export TF_ALIAS=%[1]s;
     TF_SHELL_ALIASES=$(alias);
     export TF_SHELL_ALIASES;
-    TF_HISTORY="$(fc -ln -10)";
+    TF_HISTORY=$'\x01'"${history[$((HISTCMD-1))]}";
     export TF_HISTORY;
     TF_CMD=$(
         %[2]s %[3]s $@

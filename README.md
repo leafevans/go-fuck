@@ -63,7 +63,7 @@ $ fuck
 ### Benchmarks
 
 The correction hot path and the shell history parser have Go benchmarks
-(`make bench`); they do not depend on the installed tools. Measured on an AMD Ryzen 7 7730U (16 logical CPUs) with Go 1.26:
+(`make bench`); they do not depend on the installed tools. Measured on an AMD Ryzen 7 7730U (16 logical CPUs) with Go 1.27:
 
 | Benchmark                                                          | Result      |
 | ------------------------------------------------------------------ | ----------- |
@@ -71,6 +71,8 @@ The correction hot path and the shell history parser have Go benchmarks
 | Matching every rule against a captured output                      | ~0.18 ms/op |
 | Matching rules when the command output could not be captured       | ~1.4 µs/op  |
 | Parsing a 20,000 line shell history file                           | ~1.3 ms/op  |
+| Restoring a multi-line command from the bash alias history         | ~0.65 µs/op |
+| Restoring a command from the zsh history array                     | ~42 ns/op   |
 
 The rule engine adds roughly 0.2 ms; the wall clock time of a correction is
 dominated by deliberately re-running the failed command. An interpreter based
@@ -238,11 +240,14 @@ go-fuck prints on standard output:
 | ----------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | `TF_SHELL`                    | the alias              | shell name (`bash`, `zsh`, `fish`, `tcsh`, `powershell`); go-fuck uses it instead of guessing from the process tree                      |
 | `TF_ALIAS`                    | the alias              | name of the alias function; used in messages and by the repeat mechanism                                                                 |
-| `TF_HISTORY`                  | the bash and zsh alias | the last ten history lines; go-fuck picks the failed command from them                                                                   |
+| `TF_HISTORY`                  | the bash and zsh alias | the previous history entry, marked so a command typed over several lines stays one value                                                     |
 | `TF_SHELL_ALIASES`            | the bash and zsh alias | the shell aliases, expanded before the command is matched                                                                                |
 | `GOFUCK_ARGUMENT_PLACEHOLDER` | the alias              | separates go-fuck's own arguments from the arguments of the corrected command; the legacy `THEFUCK_ARGUMENT_PLACEHOLDER` is accepted too |
 
-The fish alias passes the previous command explicitly via its `$history[1]` variable. Because
+The bash alias reads the previous entry with `fc` and the zsh alias reads it from the zsh
+history array; both prefix the value with an internal marker so a command typed over several lines is
+restored as one command. Older aliases that export a window of history lines are still supported. The
+fish alias passes the previous command explicitly via its `$history[1]` variable. Because
 `TF_SHELL` is always set by the alias, go-fuck uses the right shell-specific behavior even when the
 process tree is unreliable (containers, `sudo`, wrappers).
 
@@ -586,8 +591,8 @@ the selection entirely.
 
 The built-in rules are compiled into the binary, and declarative JSON rules can be loaded from the
 configuration directory (see [Creating custom rules](#creating-custom-rules)). Each rule decides
-whether it applies to a failed command and returns one or more corrected commands. There are 245
-built-in rules: 169 ported from the reference implementation plus 76 go-fuck specific rules for
+whether it applies to a failed command and returns one or more corrected commands. There are 247
+built-in rules: 169 ported from the reference implementation plus 78 go-fuck specific rules for
 failures that thefuck does not handle, including the GitHub and GitLab CLIs, kubectl/kind/kustomize,
 uv, cargo, Helm, pnpm, the npm, pnpm, yarn and uv lock file checks, the Go toolchain and go.sum,
 Node.js, bun, Deno, Docker Compose, just, Poetry, make, the go-task runner, minikube, Bundler,
@@ -714,12 +719,14 @@ git operations. The list below is generated from the compiled rules:
 - `git_rm_staged`
 - `git_stash`
 - `git_stash_pop`
+- `git_submodule_missing`
 - `git_switch_existing_branch`
 - `git_switch_unknown_branch`
 - `git_tag_force`
 - `git_tag_missing`
 - `git_two_dashes`
 - `git_unknown_remote`
+- `git_worktree_remove_missing`
 - `glab_unknown_command`
 - `go_install_version`
 - `go_missing_file`
@@ -914,7 +921,7 @@ external commands.
 go-fuck is a reimplementation, not a drop-in replacement for every thefuck feature:
 
 - **Complete rule port plus extras.** All 169 rules of the reference implementation are ported,
-  plus 76 go-fuck specific rules; the list in [Rules](#rules) is authoritative. Porting conventions
+  plus 78 go-fuck specific rules; the list in [Rules](#rules) is authoritative. Porting conventions
   are documented in [PORTING.md](PORTING.md).
 - **Instant mode covers Linux, macOS and Windows.** It reads the previous command output from a
   terminal log instead of re-running the command: bash and zsh on Linux and macOS, PowerShell on

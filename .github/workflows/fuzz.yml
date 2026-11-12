@@ -32,6 +32,8 @@ jobs:
             target: FuzzCustomRulePipeline
           - pkg: ./internal/entrypoints
             target: FuzzJSONOutput
+          - pkg: ./internal/entrypoints
+            target: FuzzMarkedRawCommand
           - pkg: ./internal/instant
             target: FuzzLastOutput
           - pkg: ./internal/instant

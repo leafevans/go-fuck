@@ -133,6 +133,51 @@ func TestGetRawCommandHistorySkipsExecutableLookalikes(t *testing.T) {
 	assertRawCommand(t, getRawCommand(&argumentparser.Args{}), nil)
 }
 
+func TestGetRawCommandMarkedBashHistory(t *testing.T) {
+	resetRawCommandState(t, t.TempDir())
+	shells.Set(shells.NewBash())
+
+	t.Setenv("TF_HISTORY", rawCommandMarker+"\t if true; then\necho hi\nfi\n\t fuck")
+	assertRawCommand(t, getRawCommand(&argumentparser.Args{}),
+		[]string{"if true; then\necho hi\nfi"})
+
+	t.Setenv("TF_HISTORY", rawCommandMarker+"\t if true; then\n    echo hi\nfi\n\t fuck")
+	assertRawCommand(t, getRawCommand(&argumentparser.Args{}),
+		[]string{"if true; then\n    echo hi\nfi"})
+
+	// The alias call is not always in the history, for example when it is
+	// ignored by HISTCONTROL.
+	t.Setenv("TF_HISTORY", rawCommandMarker+"\t git status")
+	assertRawCommand(t, getRawCommand(&argumentparser.Args{}), []string{"git status"})
+
+	t.Setenv("TF_HISTORY", rawCommandMarker+"\t git status\n\t fuck --yes")
+	assertRawCommand(t, getRawCommand(&argumentparser.Args{}), []string{"git status"})
+
+	t.Setenv("TF_HISTORY", rawCommandMarker+"\t fuck")
+	assertRawCommand(t, getRawCommand(&argumentparser.Args{}), nil)
+
+	t.Setenv("TF_HISTORY", rawCommandMarker)
+	assertRawCommand(t, getRawCommand(&argumentparser.Args{}), nil)
+}
+
+func TestGetRawCommandMarkedZshHistory(t *testing.T) {
+	resetRawCommandState(t, t.TempDir())
+	shells.Set(shells.NewZsh())
+
+	t.Setenv("TF_HISTORY", rawCommandMarker+"if true; then\necho hi\nfi\n")
+	assertRawCommand(t, getRawCommand(&argumentparser.Args{}),
+		[]string{"if true; then\necho hi\nfi"})
+
+	t.Setenv("TF_HISTORY", rawCommandMarker+"git status")
+	assertRawCommand(t, getRawCommand(&argumentparser.Args{}), []string{"git status"})
+
+	t.Setenv("TF_HISTORY", rawCommandMarker+"fuck --yes")
+	assertRawCommand(t, getRawCommand(&argumentparser.Args{}), nil)
+
+	t.Setenv("TF_HISTORY", rawCommandMarker)
+	assertRawCommand(t, getRawCommand(&argumentparser.Args{}), nil)
+}
+
 func TestGetRawCommandPowerShellMultilineHistory(t *testing.T) {
 	resetRawCommandState(t, t.TempDir())
 	shells.Set(shells.NewPowershell())

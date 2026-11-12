@@ -92,6 +92,13 @@ func getRawCommand(args *argumentparser.Args) []string {
 		return args.Command
 	}
 
+	// The bash and zsh aliases mark the history value and pass only the
+	// previous entry. A command that was typed over several lines must be
+	// returned as one value, not split into lines.
+	if strings.HasPrefix(history, rawCommandMarker) {
+		return markedRawCommand(history)
+	}
+
 	// The PowerShell alias passes the previous entry of Get-History as a single
 	// value, and PowerShell keeps a command that was typed over several lines
 	// as one entry with embedded line breaks. Splitting it into lines would
@@ -111,6 +118,109 @@ func getRawCommand(args *argumentparser.Args) []string {
 		}
 	}
 	return nil
+}
+
+// rawCommandMarker prefixes the history value that the bash and zsh aliases
+// pass. Unlike the older line based history, it marks the value as the
+// previous entry, so multi-line commands can be kept as one value.
+const rawCommandMarker = "\x01"
+
+// markedRawCommand restores the previous command from the value passed by the
+// bash or zsh alias.
+func markedRawCommand(history string) []string {
+	payload := strings.TrimPrefix(history, rawCommandMarker)
+	var commands []string
+	switch shells.Current().Name() {
+	case "bash":
+		commands = bashMarkedRawCommand(payload)
+	case "zsh":
+		commands = zshMarkedRawCommand(payload)
+	default:
+		commands = singleMarkedCommand(payload)
+	}
+	return sanitizeMarkedCommands(commands)
+}
+
+// sanitizeMarkedCommands removes the internal marker from parsed commands so
+// that a history value containing the control character cannot leak it.
+func sanitizeMarkedCommands(commands []string) []string {
+	filtered := commands[:0]
+	for _, command := range commands {
+		command = strings.ReplaceAll(command, rawCommandMarker, "")
+		if command != "" {
+			filtered = append(filtered, command)
+		}
+	}
+	return filtered
+}
+
+// bashMarkedRawCommand extracts the previous command from the output of
+// "fc -ln -2". fc prefixes the first line of every entry with a tab and a
+// space, while continuation lines keep their own indentation. The last entry
+// is usually the alias invocation and is dropped; when the alias call is not
+// in the history, the last entry is the previous command.
+func bashMarkedRawCommand(payload string) []string {
+	lines := strings.Split(payload, "\n")
+	last := -1
+	for i, line := range lines {
+		if strings.HasPrefix(line, "\t ") {
+			last = i
+		}
+	}
+	if last < 0 {
+		return singleMarkedCommand(payload)
+	}
+	lastEntry := trimFCEntry(strings.Join(lines[last:], "\n"))
+	if isAliasLike(lastEntry) {
+		if last == 0 {
+			return nil
+		}
+		previous := trimFCEntry(strings.Join(lines[:last], "\n"))
+		if previous == "" {
+			return nil
+		}
+		return []string{previous}
+	}
+	if lastEntry == "" {
+		return nil
+	}
+	return []string{lastEntry}
+}
+
+// trimFCEntry removes the tab and space that fc adds to the first line of an
+// entry, and the line breaks that command substitution keeps at the end.
+func trimFCEntry(entry string) string {
+	entry = strings.TrimPrefix(entry, "\t ")
+	return strings.TrimRight(entry, "\r\n")
+}
+
+// isAliasLike reports whether a single line command looks like a call to the
+// alias itself.
+func isAliasLike(command string) bool {
+	if strings.Contains(command, "\n") {
+		return false
+	}
+	return utils.SequenceRatio(conf.Alias(), command) >= consts.DiffWithAlias
+}
+
+// zshMarkedRawCommand returns the previous entry that the zsh alias reads from
+// the history array. The value is already the raw command, including line
+// breaks.
+func zshMarkedRawCommand(payload string) []string {
+	command := strings.TrimRight(payload, "\r\n")
+	if command == "" || isAliasLike(command) {
+		return nil
+	}
+	return []string{command}
+}
+
+// singleMarkedCommand returns a marked history value as one command.
+func singleMarkedCommand(payload string) []string {
+	command := strings.TrimRight(payload, "\r\n")
+	if command == "" {
+		return nil
+	}
+	return []string{command}
 }
 
 // powerShellRawCommand returns the command to fix from the history value of the
