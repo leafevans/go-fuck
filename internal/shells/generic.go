@@ -19,14 +19,15 @@ func env(name string) string {
 }
 
 // processAncestorNames returns the executable names of the process ancestors,
-// nearest first.
-func processAncestorNames() []string {
+// nearest first. It is a variable so that tests can inject a process tree.
+var processAncestorNames = func() []string {
 	return system.AncestorNames()
 }
 
 // runOutput runs a command and returns its trimmed standard output. An empty
-// string is returned when the command is unavailable or fails.
-func runOutput(name string, args ...string) string {
+// string is returned when the command is unavailable or fails. It is a variable
+// so that tests can stub shell detection without starting a real shell.
+var runOutput = func(name string, args ...string) string {
 	cmd := exec.Command(name, args...)
 	cmd.Stdin = nil
 	output, err := cmd.Output()
