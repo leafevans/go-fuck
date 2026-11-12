@@ -231,6 +231,7 @@ var expectedExtraRuleNames = []string{
 	"git_switch_unknown_branch",
 	"git_tag_missing",
 	"git_unknown_remote",
+	"git_worktree_branch_used",
 	"git_worktree_remove_missing",
 	"glab_unknown_command",
 	"go_install_version",

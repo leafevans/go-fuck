@@ -12,6 +12,7 @@ import (
 const bashAliasTemplate = `function %[1]s () {
     export TF_SHELL=bash;
     export TF_ALIAS=%[1]s;
+    export TF_ALIAS_VERSION=2;
     export TF_SHELL_ALIASES=$(alias);
     export TF_HISTORY=$'\x01'$(fc -ln -2 2>/dev/null);
     TF_CMD=$(

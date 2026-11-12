@@ -12,6 +12,7 @@ import (
 const zshAliasTemplate = `%[1]s () {
     export TF_SHELL=zsh;
     export TF_ALIAS=%[1]s;
+    export TF_ALIAS_VERSION=2;
     TF_SHELL_ALIASES=$(alias);
     export TF_SHELL_ALIASES;
     TF_HISTORY=$'\x01'"${history[$((HISTCMD-1))]}";

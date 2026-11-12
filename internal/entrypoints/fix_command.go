@@ -26,6 +26,7 @@ func fixCommand(args *argumentparser.Args) int {
 		warnUnknownSettings(settings)
 	}
 	loadCustomRules()
+	warnOutdatedAlias()
 
 	stopTimer := logs.DebugTime("Total")
 	defer stopTimer()
@@ -74,6 +75,26 @@ func warnUnknownSettings(settings *conf.Settings) {
 		return
 	}
 	logs.Warn("Unknown settings in settings.json (ignored): " + strings.Join(settings.UnknownKeys, ", "))
+}
+
+// warnOutdatedAlias warns when a bash or zsh alias still passes the old
+// line-based history value, which cannot restore multi-line commands.
+func warnOutdatedAlias() {
+	if os.Getenv("TF_HISTORY") == "" {
+		return
+	}
+	switch shells.Current().Name() {
+	case "bash", "zsh":
+	default:
+		return
+	}
+	if os.Getenv(consts.AliasVersionEnv) == consts.AliasVersion {
+		return
+	}
+	if strings.HasPrefix(os.Getenv("TF_HISTORY"), rawCommandMarker) {
+		return
+	}
+	logs.Warn("Your shell alias is outdated; run eval \"$(go-fuck --alias)\" to enable multi-line command support.")
 }
 
 // getRawCommand returns the command line that should be fixed.

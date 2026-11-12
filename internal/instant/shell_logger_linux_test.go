@@ -76,3 +76,51 @@ func TestRunLoggedShell(t *testing.T) {
 		t.Fatalf("LastOutput() = %q, %t, want instant-output, true", output, ok)
 	}
 }
+
+// TestRunLoggedShellMultilineCommand checks that a command typed over several
+// lines is still found in the terminal log.
+func TestRunLoggedShellMultilineCommand(t *testing.T) {
+	bash, err := exec.LookPath("bash")
+	if err != nil {
+		t.Skipf("bash is not available: %v", err)
+	}
+
+	dir := t.TempDir()
+	wrapper := filepath.Join(dir, "shell")
+	script := "#!/bin/sh\nexec " + bash + " --noprofile --norc -i\n"
+	if err := os.WriteFile(wrapper, []byte(script), 0o755); err != nil {
+		t.Fatalf("write shell wrapper: %v", err)
+	}
+
+	logPath := filepath.Join(dir, "instant.log")
+	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0o600)
+	if err != nil {
+		t.Fatalf("open log: %v", err)
+	}
+	defer logFile.Close()
+
+	t.Setenv("PS1", consts.UserCommandMark+"$ ")
+	t.Setenv("TERM", "dumb")
+	t.Setenv("HISTFILE", filepath.Join(dir, "history"))
+
+	input := strings.NewReader("if true; then\necho instant-multiline\nfi\nexit\n")
+	finished := make(chan error, 1)
+	go func() {
+		_, err := runLoggedShell(wrapper, input, io.Discard, NewRingWriter(logFile))
+		finished <- err
+	}()
+
+	select {
+	case err := <-finished:
+		if err != nil {
+			t.Fatalf("runLoggedShell() error = %v", err)
+		}
+	case <-time.After(20 * time.Second):
+		t.Fatal("runLoggedShell() did not finish in time")
+	}
+
+	output, ok := LastOutput(logPath, "if true; then\necho instant-multiline\nfi")
+	if !ok || !strings.Contains(output, "instant-multiline") {
+		t.Fatalf("LastOutput() = %q, %t, want the multi-line command output", output, ok)
+	}
+}

@@ -42,7 +42,7 @@ func SetExecutableName(raw string) {
 // It is a variable so that release builds can override it at link time:
 //
 //	go build -ldflags "-X github.com/leafevans/go-fuck/internal/consts.Version=v1.2.3"
-var Version = "2.19.1"
+var Version = "2.20.0"
 
 // Rule defaults.
 const (
@@ -101,6 +101,15 @@ const (
 // ShellLoggerSocketEnv is the environment variable with the shell logger socket
 // path.
 const ShellLoggerSocketEnv = "SHELL_LOGGER_SOCKET"
+
+// AliasVersionEnv is exported by the bash and zsh alias. It lets go-fuck
+// recognize aliases that use the current format.
+const AliasVersionEnv = "TF_ALIAS_VERSION"
+
+// AliasVersion is the current alias format version. Version 2 passes the
+// previous history entry as a single marked value, so multi-line commands are
+// restored correctly.
+const AliasVersion = "2"
 
 // Environment variables of the instant mode.
 const (

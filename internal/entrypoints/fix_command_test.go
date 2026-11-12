@@ -11,6 +11,7 @@ import (
 
 	"github.com/leafevans/go-fuck/internal/argumentparser"
 	"github.com/leafevans/go-fuck/internal/conf"
+	"github.com/leafevans/go-fuck/internal/consts"
 	"github.com/leafevans/go-fuck/internal/logs"
 	"github.com/leafevans/go-fuck/internal/shells"
 	"github.com/leafevans/go-fuck/internal/utils"
@@ -65,6 +66,42 @@ func TestWarnUnknownSettings(t *testing.T) {
 		if !strings.Contains(output, want) {
 			t.Fatalf("warnUnknownSettings() output = %q, want it to contain %q", output, want)
 		}
+	}
+}
+
+func TestWarnOutdatedAlias(t *testing.T) {
+	resetEntrypointsState(t)
+	shells.Set(shells.NewBash())
+	t.Setenv("TF_HISTORY", "git status\nfuck")
+	buffer := &bytes.Buffer{}
+	logs.SetOutput(buffer)
+
+	warnOutdatedAlias()
+	if !strings.Contains(buffer.String(), "outdated") {
+		t.Fatalf("warnOutdatedAlias() output = %q, want an outdated alias warning", buffer.String())
+	}
+
+	t.Setenv("TF_ALIAS_VERSION", consts.AliasVersion)
+	buffer.Reset()
+	warnOutdatedAlias()
+	if buffer.Len() != 0 {
+		t.Fatalf("warnOutdatedAlias() warned for the current alias: %q", buffer.String())
+	}
+
+	t.Setenv("TF_ALIAS_VERSION", "")
+	t.Setenv("TF_HISTORY", rawCommandMarker+"git status")
+	buffer.Reset()
+	warnOutdatedAlias()
+	if buffer.Len() != 0 {
+		t.Fatalf("warnOutdatedAlias() warned for a marked history value: %q", buffer.String())
+	}
+
+	shells.Set(shells.NewGeneric())
+	t.Setenv("TF_HISTORY", "git status")
+	buffer.Reset()
+	warnOutdatedAlias()
+	if buffer.Len() != 0 {
+		t.Fatalf("warnOutdatedAlias() warned for the generic shell: %q", buffer.String())
 	}
 }
 
