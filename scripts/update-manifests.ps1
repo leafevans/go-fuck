@@ -56,7 +56,25 @@ try {
     }
 
     $url = "https://github.com/leafevans/go-fuck/archive/refs/tags/v$version.tar.gz"
-    Invoke-WebRequest -Uri $url -OutFile $archive -TimeoutSec 120
+    $downloaded = $false
+    try {
+        Invoke-WebRequest -Uri $url -OutFile $archive -TimeoutSec 120
+        $downloaded = $true
+    } catch {
+        Write-Verbose "Invoke-WebRequest failed: $($_.Exception.Message)"
+    }
+    if (-not $downloaded) {
+        # Windows PowerShell's Invoke-WebRequest sometimes fails with a closed
+        # TLS connection; curl.exe ships with Windows 10+ and is more robust.
+        $curl = Get-Command curl.exe -ErrorAction SilentlyContinue
+        if (-not $curl) {
+            throw "cannot download $url and curl.exe is not available"
+        }
+        & $curl.Source -fsSL --retry 3 --retry-delay 2 -o $archive $url
+        if ($LASTEXITCODE -ne 0) {
+            throw "failed to download $url"
+        }
+    }
     if (-not (Test-Path -LiteralPath $archive)) {
         throw "failed to download $url"
     }
