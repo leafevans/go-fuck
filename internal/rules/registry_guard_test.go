@@ -227,6 +227,7 @@ var expectedExtraRuleNames = []string{
 	"git_rebase_unstaged",
 	"git_switch_existing_branch",
 	"git_switch_unknown_branch",
+	"git_unknown_remote",
 	"glab_unknown_command",
 	"go_install_version",
 	"go_missing_file",

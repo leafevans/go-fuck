@@ -10,10 +10,18 @@ func TestRuleGitRemoteSeturlAdd(t *testing.T) {
 	}
 
 	t.Run("matches a missing remote", func(t *testing.T) {
+		stubGitRemotes(t, []string{"upstream"})
 		assertMatch(t, rule, "git remote set-url origin url", "fatal: No such remote")
+		assertMatch(t, rule, "git remote set-url origin url", "error: No such remote 'origin'\n")
+	})
+
+	t.Run("does not match a mistyped existing remote", func(t *testing.T) {
+		stubGitRemotes(t, []string{"origin"})
+		assertNotMatch(t, rule, "git remote set-url orign url", "error: No such remote 'orign'\n")
 	})
 
 	t.Run("does not match other commands", func(t *testing.T) {
+		stubGitRemotes(t, nil)
 		cases := []struct {
 			script string
 			output string
@@ -30,6 +38,7 @@ func TestRuleGitRemoteSeturlAdd(t *testing.T) {
 	})
 
 	t.Run("new command adds the remote", func(t *testing.T) {
+		stubGitRemotes(t, nil)
 		assertNewCommands(t, rule,
 			"git remote set-url origin git@github.com:nvbn/thefuck.git", "",
 			[]string{"git remote add origin git@github.com:nvbn/thefuck.git"})

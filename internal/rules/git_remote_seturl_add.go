@@ -11,8 +11,19 @@ import (
 // gitRemoteSeturlAddMatch reports whether git remote set-url was used on a
 // remote that does not exist yet.
 func gitRemoteSeturlAddMatch(command *types.Command) bool {
-	return strings.Contains(command.Script, "set-url") &&
-		strings.Contains(command.Output, "fatal: No such remote")
+	if !strings.Contains(command.Script, "set-url") ||
+		!strings.Contains(command.Output, "No such remote") {
+		return false
+	}
+	// When another configured remote is close to the unknown name, the name was
+	// mistyped: git_unknown_remote corrects it instead of adding a new remote.
+	if missing, ok := gitUnknownRemoteName(command.Output); ok && missing != "" {
+		closest := utils.GetClosest(missing, gitRemoteNamesCommand(), 0.6, false)
+		if closest != "" && closest != missing {
+			return false
+		}
+	}
+	return true
 }
 
 // gitRemoteSeturlAddNewCommand adds the remote instead of updating it.
