@@ -1,19 +1,10 @@
-// Command help prints the documented targets of the Makefile.
-//
-// Make targets are documented with a trailing "## description" comment on
-// their target line. Reading the Makefile with Go keeps the output readable
-// and identical on every platform, without relying on grep, sed or the
-// platform dependent behavior of shell echo built-ins.
-//
-// Usage:
-//
-//	go run ./tools/help
 package main
 
 import (
 	"bufio"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"regexp"
 	"strings"
@@ -31,13 +22,23 @@ type target struct {
 }
 
 func main() {
-	makefile := flag.String("makefile", "Makefile", "path of the Makefile to inspect")
-	flag.Parse()
+	os.Exit(run(os.Args[1:], os.Stdout, os.Stderr))
+}
+
+// run prints the documented Makefile targets and returns the process exit
+// code.
+func run(args []string, stdout, stderr io.Writer) int {
+	flags := flag.NewFlagSet("help", flag.ContinueOnError)
+	flags.SetOutput(stderr)
+	makefile := flags.String("makefile", "Makefile", "path of the Makefile to inspect")
+	if err := flags.Parse(args); err != nil {
+		return 2
+	}
 
 	targets, err := parse(*makefile)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "help:", err)
-		os.Exit(1)
+		fmt.Fprintln(stderr, "help:", err)
+		return 1
 	}
 
 	width := 0
@@ -47,12 +48,14 @@ func main() {
 		}
 	}
 
-	fmt.Println("Usage: make TARGET")
-	fmt.Println()
-	fmt.Println("Targets:")
+	fmt.Fprintln(stdout, "Usage: make TARGET")
+	fmt.Fprintln(stdout)
+	fmt.Fprintln(stdout, "Targets:")
 	for _, t := range targets {
-		fmt.Printf("  %-*s  %s\n", width, t.name, t.description)
+		fmt.Fprintf(stdout, "  %-*s  %s", width, t.name, t.description)
+		fmt.Fprintln(stdout)
 	}
+	return 0
 }
 
 // parse returns the documented targets of a Makefile, in file order.
@@ -79,7 +82,7 @@ func parse(path string) ([]target, error) {
 		return nil, err
 	}
 	if len(targets) == 0 {
-		return nil, fmt.Errorf("no documented targets found in %s", path)
+		return nil, fmt.Errorf("no documented targets in %s", path)
 	}
 	return targets, nil
 }

@@ -198,3 +198,95 @@ func TestFileChecksum(t *testing.T) {
 		t.Fatal("fileChecksum() should fail for a missing file")
 	}
 }
+
+func TestRunRequiresFlags(t *testing.T) {
+	if code := run(nil, &bytes.Buffer{}, &bytes.Buffer{}); code != 2 {
+		t.Fatalf("run() = %d, want 2", code)
+	}
+	if code := run([]string{"-unknown"}, &bytes.Buffer{}, &bytes.Buffer{}); code != 2 {
+		t.Fatalf("run() = %d, want 2 for an invalid flag", code)
+	}
+}
+
+func TestRunBadChecksums(t *testing.T) {
+	stderr := &bytes.Buffer{}
+	code := run([]string{"-version", "0.2.0", "-checksums", filepath.Join(t.TempDir(), "missing")},
+		&bytes.Buffer{}, stderr)
+	if code != 1 {
+		t.Fatalf("run() = %d, want 1", code)
+	}
+	if !strings.Contains(stderr.String(), "update-packaging:") {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
+func TestRunWritesManifests(t *testing.T) {
+	root := t.TempDir()
+	for _, dir := range []string{"Formula", "bucket", filepath.Join("packaging", "aur")} {
+		if err := os.MkdirAll(filepath.Join(root, dir), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	checksums := writeFile(t, "checksums.txt", checksumsContent("0.2.0"))
+	aur := writeFile(t, "go-fuck-0.2.0.tar.gz", "archive contents")
+
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	code := run([]string{
+		"-version", "0.2.0",
+		"-checksums", checksums,
+		"-aur-source", aur,
+		"-root", root,
+	}, stdout, stderr)
+	if code != 0 {
+		t.Fatalf("run() = %d, stderr = %q", code, stderr.String())
+	}
+
+	for _, file := range []string{
+		filepath.Join(root, "Formula", "go-fuck.rb"),
+		filepath.Join(root, "bucket", "go-fuck.json"),
+		filepath.Join(root, "packaging", "aur", "PKGBUILD"),
+		filepath.Join(root, "packaging", "aur", ".SRCINFO"),
+	} {
+		data, err := os.ReadFile(file)
+		if err != nil {
+			t.Fatalf("read %s: %v", file, err)
+		}
+		if !strings.Contains(string(data), "0.2.0") {
+			t.Fatalf("%s does not contain the version: %q", file, string(data))
+		}
+	}
+	if !strings.Contains(stdout.String(), "updated") {
+		t.Fatalf("stdout = %q, want updated lines", stdout.String())
+	}
+}
+
+func TestRunRefusesStaleAUR(t *testing.T) {
+	root := t.TempDir()
+	aurDir := filepath.Join(root, "packaging", "aur")
+	if err := os.MkdirAll(aurDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(aurDir, "PKGBUILD"), []byte("pkgver=0.1.0\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	checksums := writeFile(t, "checksums.txt", checksumsContent("0.2.0"))
+	stderr := &bytes.Buffer{}
+	code := run([]string{"-version", "0.2.0", "-checksums", checksums, "-root", root},
+		&bytes.Buffer{}, stderr)
+	if code != 1 {
+		t.Fatalf("run() = %d, want 1", code)
+	}
+	if !strings.Contains(stderr.String(), "another version") {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
+func TestRunWriteFailure(t *testing.T) {
+	root := writeFile(t, "root", "not a directory")
+	checksums := writeFile(t, "checksums.txt", checksumsContent("0.2.0"))
+	if code := run([]string{"-version", "0.2.0", "-checksums", checksums, "-root", root},
+		&bytes.Buffer{}, &bytes.Buffer{}); code != 1 {
+		t.Fatalf("run() = %d, want 1", code)
+	}
+}

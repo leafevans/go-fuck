@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"strings"
@@ -47,5 +48,36 @@ func TestParseErrors(t *testing.T) {
 	path := writeMakefile(t, "all:\n\t@echo hi\n")
 	if _, err := parse(path); err == nil {
 		t.Fatalf("parse() of a Makefile without documented targets returned no error")
+	}
+}
+
+func TestRunPrintsTargets(t *testing.T) {
+	path := writeMakefile(t, "build: ## Build the go-fuck binary\ntest: ## Run the tests\n")
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	if code := run([]string{"-makefile", path}, stdout, stderr); code != 0 {
+		t.Fatalf("run() = %d, stderr = %q", code, stderr.String())
+	}
+	output := stdout.String()
+	for _, want := range []string{"Usage: make TARGET", "build", "Build the go-fuck binary", "test"} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("run() output = %q, want it to contain %q", output, want)
+		}
+	}
+}
+
+func TestRunErrors(t *testing.T) {
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	if code := run([]string{"-makefile", filepath.Join(t.TempDir(), "missing")}, stdout, stderr); code != 1 {
+		t.Fatalf("run() = %d, want 1", code)
+	}
+	if !strings.Contains(stderr.String(), "help:") {
+		t.Fatalf("stderr = %q, want a help error", stderr.String())
+	}
+
+	stderr.Reset()
+	if code := run([]string{"-unknown"}, stdout, stderr); code != 2 {
+		t.Fatalf("run() = %d, want 2 for an invalid flag", code)
 	}
 }

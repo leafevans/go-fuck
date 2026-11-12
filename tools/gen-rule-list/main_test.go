@@ -1,6 +1,9 @@
 package main
 
 import (
+	"os"
+	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 )
@@ -91,5 +94,44 @@ func TestRewriteErrors(t *testing.T) {
 				t.Errorf("rewrite() error = %q, want it to contain %q", err, test.wantErr)
 			}
 		})
+	}
+}
+
+func TestRunUpdatesAndChecks(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "README.md")
+	content := "# Doc\n\n<!-- RULES_LIST_START -->\n<!-- RULES_LIST_END -->\n"
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := run(path, false); err != nil {
+		t.Fatalf("run(update) error = %v", err)
+	}
+	updated, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(updated), "git_push") {
+		t.Fatalf("updated README does not contain a rule: %q", string(updated))
+	}
+	if err := run(path, true); err != nil {
+		t.Fatalf("run(check) error = %v", err)
+	}
+
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := run(path, true); err == nil || !strings.Contains(err.Error(), "out of date") {
+		t.Fatalf("run(check) error = %v, want out of date", err)
+	}
+	if err := run(filepath.Join(t.TempDir(), "missing"), false); err == nil {
+		t.Fatal("run() of a missing file returned no error")
+	}
+}
+
+func TestRuleNames(t *testing.T) {
+	names := ruleNames()
+	if len(names) == 0 || !sort.StringsAreSorted(names) {
+		t.Fatalf("ruleNames() = %q, want a sorted non-empty list", names)
 	}
 }

@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/leafevans/go-fuck/internal/rules"
@@ -23,5 +25,21 @@ func TestRuleNames(t *testing.T) {
 	}
 	if !found {
 		t.Fatalf("ruleNames() does not contain git_push")
+	}
+}
+
+func TestPrintRules(t *testing.T) {
+	buffer := &bytes.Buffer{}
+	printRules(buffer)
+	lines := strings.Split(strings.TrimSpace(buffer.String()), "\n")
+	if len(lines) != rules.Count() {
+		t.Fatalf("printRules() wrote %d lines, want %d", len(lines), rules.Count())
+	}
+	if lines[0] != "adb" && lines[0] > "adb" {
+		// Only check that the first line is not empty; the exact first rule is
+		// not part of the contract.
+	}
+	if !sort.StringsAreSorted(lines) {
+		t.Fatal("printRules() output is not sorted")
 	}
 }

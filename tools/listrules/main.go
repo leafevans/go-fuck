@@ -1,17 +1,9 @@
-// Command listrules prints the names of all correction rules compiled into
-// go-fuck, one per line and sorted alphabetically.
-//
-// The rule list in README.md is generated from this output by
-// "go run ./tools/gen-rule-list". The command is also useful to discover the
-// rule names accepted by the "rules", "exclude_rules" and "priority" settings.
-//
-// Usage:
-//
-//	go run ./tools/listrules
 package main
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"sort"
 
 	"github.com/leafevans/go-fuck/internal/conf"
@@ -19,8 +11,13 @@ import (
 )
 
 func main() {
+	printRules(os.Stdout)
+}
+
+// printRules writes the sorted rule names to w.
+func printRules(w io.Writer) {
 	for _, name := range ruleNames() {
-		fmt.Println(name)
+		fmt.Fprintln(w, name)
 	}
 }
 

@@ -1,20 +1,10 @@
-// Command coveragecheck reports and optionally enforces the total statement
-// coverage of a Go coverage profile.
-//
-// It delegates the calculation to "go tool cover -func", which is the same
-// implementation that produces the numbers developers see locally, and only
-// parses its total line. This keeps the CI check in sync with the Go toolchain
-// without adding any dependency to the project.
-//
-// Usage:
-//
-//	go run ./tools/coveragecheck -profile coverage.out [-min 80]
 package main
 
 import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strconv"
@@ -29,22 +19,33 @@ var runCoverFunc = func(profile string) (string, error) {
 }
 
 func main() {
-	profile := flag.String("profile", "coverage.out", "path of the profile written by go test -coverprofile")
-	minimum := flag.Float64("min", 0, "minimum total coverage in percent; zero only reports")
-	flag.Parse()
+	os.Exit(run(os.Args[1:], os.Stdout, os.Stderr))
+}
+
+// run reports the total coverage and enforces the minimum. It returns the
+// process exit code.
+func run(args []string, stdout, stderr io.Writer) int {
+	flags := flag.NewFlagSet("coveragecheck", flag.ContinueOnError)
+	flags.SetOutput(stderr)
+	profile := flags.String("profile", "coverage.out", "path of the profile written by go test -coverprofile")
+	minimum := flags.Float64("min", 0, "minimum total coverage in percent; zero only reports")
+	if err := flags.Parse(args); err != nil {
+		return 2
+	}
 
 	percentage, err := totalCoverage(*profile)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "coveragecheck:", err)
-		os.Exit(1)
+		fmt.Fprintln(stderr, "coveragecheck:", err)
+		return 1
 	}
 
-	fmt.Printf("total coverage: %.1f%%\n", percentage)
+	fmt.Fprintf(stdout, "total coverage: %.1f%%\n", percentage)
 	if *minimum > 0 && percentage < *minimum {
-		fmt.Fprintf(os.Stderr, "coveragecheck: %.1f%% is below the required minimum of %.1f%%\n",
+		fmt.Fprintf(stderr, "coveragecheck: %.1f%% is below the required minimum of %.1f%%\n",
 			percentage, *minimum)
-		os.Exit(1)
+		return 1
 	}
+	return 0
 }
 
 // totalCoverage returns the total statement coverage of a profile.
@@ -79,7 +80,7 @@ func parseTotal(output string) (float64, bool) {
 		last := strings.TrimSuffix(fields[len(fields)-1], "%")
 		percentage, err := strconv.ParseFloat(last, 64)
 		if err != nil {
-			return 0, false
+			continue
 		}
 		return percentage, true
 	}

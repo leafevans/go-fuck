@@ -52,28 +52,37 @@ type release struct {
 }
 
 func main() {
-	version := flag.String("version", "", "release version, for example 0.2.0 (a leading v is accepted)")
-	checksums := flag.String("checksums", "", "path of the checksums.txt asset of the release")
-	aurSource := flag.String("aur-source", "", "path of the GitHub tag archive (go-fuck-X.Y.Z.tar.gz) used by the AUR package")
-	root := flag.String("root", ".", "repository root")
-	flag.Parse()
+	os.Exit(run(os.Args[1:], os.Stdout, os.Stderr))
+}
+
+// run rewrites the distribution manifests and returns the process exit code.
+func run(args []string, stdout, stderr io.Writer) int {
+	flags := flag.NewFlagSet("update-packaging", flag.ContinueOnError)
+	flags.SetOutput(stderr)
+	version := flags.String("version", "", "release version, for example 0.2.0 (a leading v is accepted)")
+	checksums := flags.String("checksums", "", "path of the checksums.txt asset of the release")
+	aurSource := flags.String("aur-source", "", "path of the GitHub tag archive (go-fuck-X.Y.Z.tar.gz) used by the AUR package")
+	root := flags.String("root", ".", "repository root")
+	if err := flags.Parse(args); err != nil {
+		return 2
+	}
 
 	if *version == "" || *checksums == "" {
-		fmt.Fprintln(os.Stderr, "usage: update-packaging -version VERSION -checksums CHECKSUMS [-aur-source ARCHIVE]")
-		flag.PrintDefaults()
-		os.Exit(2)
+		fmt.Fprintln(stderr, "usage: update-packaging -version VERSION -checksums CHECKSUMS [-aur-source ARCHIVE]")
+		flags.PrintDefaults()
+		return 2
 	}
 
 	rel, err := loadRelease(*checksums, strings.TrimPrefix(*version, "v"))
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "update-packaging:", err)
-		os.Exit(1)
+		fmt.Fprintln(stderr, "update-packaging:", err)
+		return 1
 	}
 
 	scoop, err := scoopManifest(rel)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "update-packaging:", err)
-		os.Exit(1)
+		fmt.Fprintln(stderr, "update-packaging:", err)
+		return 1
 	}
 
 	files := map[string]string{
@@ -87,14 +96,14 @@ func main() {
 		// silently leave them behind a new release.
 		pkgbuild, err := os.ReadFile(filepath.Join(aurDir, "PKGBUILD"))
 		if err == nil && !strings.Contains(string(pkgbuild), "pkgver="+rel.version+"\n") {
-			fmt.Fprintln(os.Stderr, "update-packaging: packaging/aur is still at another version; pass -aur-source to update it")
-			os.Exit(1)
+			fmt.Fprintln(stderr, "update-packaging: packaging/aur is still at another version; pass -aur-source to update it")
+			return 1
 		}
 	} else {
 		checksum, err := fileChecksum(*aurSource)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "update-packaging:", err)
-			os.Exit(1)
+			fmt.Fprintln(stderr, "update-packaging:", err)
+			return 1
 		}
 		files[filepath.Join(aurDir, "PKGBUILD")] = aurPKGBUILD(rel, checksum)
 		files[filepath.Join(aurDir, ".SRCINFO")] = aurSrcinfo(rel, checksum)
@@ -102,11 +111,12 @@ func main() {
 
 	for _, path := range sortedKeys(files) {
 		if err := os.WriteFile(path, []byte(files[path]), 0o644); err != nil {
-			fmt.Fprintln(os.Stderr, "update-packaging:", err)
-			os.Exit(1)
+			fmt.Fprintln(stderr, "update-packaging:", err)
+			return 1
 		}
-		fmt.Println("updated", path)
+		fmt.Fprintln(stdout, "updated", path)
 	}
+	return 0
 }
 
 // loadRelease parses and validates the checksums of a release.
