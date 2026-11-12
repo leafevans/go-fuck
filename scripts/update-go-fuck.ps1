@@ -23,9 +23,40 @@ param(
 $ErrorActionPreference = "Stop"
 $repo = "leafevans/go-fuck"
 
+# Resolve-LatestVersion finds the newest release tag. The GitHub API is
+# rate limited for unauthenticated requests, so fall back to the redirect of
+# the releases/latest page, which points at /releases/tag/vX.Y.Z.
+function Resolve-LatestVersion {
+    try {
+        $release = Invoke-RestMethod "https://api.github.com/repos/$repo/releases/latest"
+        return $release.tag_name.TrimStart("v")
+    } catch {
+        Write-Verbose "GitHub API request failed; resolving the version from the release redirect"
+        $location = $null
+        try {
+            $request = [System.Net.HttpWebRequest]::Create("https://github.com/$repo/releases/latest")
+            $request.AllowAutoRedirect = $false
+            $request.Method = "HEAD"
+            $request.Timeout = 30000
+            $request.UserAgent = "go-fuck-updater"
+            $response = $request.GetResponse()
+            try {
+                $location = $response.Headers["Location"]
+            } finally {
+                $response.Close()
+            }
+        } catch {
+            Write-Verbose "release redirect failed: $($_.Exception.Message)"
+        }
+        if ($location -match "/tag/v([^/]+)") {
+            return $Matches[1]
+        }
+        throw "cannot resolve the latest go-fuck version"
+    }
+}
+
 if ($Version -eq "latest") {
-    $release = Invoke-RestMethod "https://api.github.com/repos/$repo/releases/latest"
-    $Version = $release.tag_name.TrimStart("v")
+    $Version = Resolve-LatestVersion
 }
 
 $base = "go-fuck_${Version}_windows_amd64"

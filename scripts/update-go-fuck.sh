@@ -16,8 +16,15 @@ version=${1:-latest}
 install_dir=${2:-"$HOME/.local/bin"}
 
 if [ "$version" = "latest" ]; then
-  tag=$(curl -fsSL "https://api.github.com/repos/$repo/releases/latest" |
+  tag=$(curl -fsSL "https://api.github.com/repos/$repo/releases/latest" 2>/dev/null |
     grep -o '"tag_name": *"[^"]*"' | head -n 1 | cut -d'"' -f4)
+  if [ -z "$tag" ]; then
+    # The API is rate limited for unauthenticated requests; the releases/latest
+    # page redirects to /releases/tag/vX.Y.Z.
+    tag=$(curl -fsSI "https://github.com/$repo/releases/latest" 2>/dev/null |
+      awk 'tolower($1) == "location:" { print $2 }' | tr -d '\r' | head -n 1)
+    tag=${tag##*/}
+  fi
   version=${tag#v}
   if [ -z "$version" ]; then
     echo "update-go-fuck: cannot resolve the latest version" >&2
