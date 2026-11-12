@@ -1,19 +1,19 @@
 {
   "$schema": "https://raw.githubusercontent.com/ScoopInstaller/Scoop/master/schema.json",
-  "description": "Blazingly fast reimplementation of thefuck in Go.",
   "homepage": "https://github.com/leafevans/go-fuck",
-  "license": "MIT",
   "architecture": {
-    "arm64": {
-      "url": "https://github.com/leafevans/go-fuck/releases/download/v2.15.0/go-fuck_2.15.0_windows_arm64.zip",
-      "hash": "89fc2527c63fb77c9cbf33d5719765c8a4c3ec921befc6ed7efdaad3112cd2b6"
-    },
     "64bit": {
-      "url": "https://github.com/leafevans/go-fuck/releases/download/v2.15.0/go-fuck_2.15.0_windows_amd64.zip",
-      "hash": "3eb5708406a83b67b1a526a2ef26b35edb8e1fa1363d37248b54968a7c4f5c9f"
+      "url": "https://github.com/leafevans/go-fuck/releases/download/v2.15.1/go-fuck_2.15.1_windows_amd64.zip",
+      "hash": "c625d381ab304cecee464cffee8514a1b84b3cc1eade4e739dd5ace836fbc95b"
+    },
+    "arm64": {
+      "url": "https://github.com/leafevans/go-fuck/releases/download/v2.15.1/go-fuck_2.15.1_windows_arm64.zip",
+      "hash": "1f3edbab51e26d3fd463caa4100fc3d04e4f138f644e86504fbef06a3ff82b2c"
     }
   },
-  "version": "2.15.0",
+  "version": "2.15.1",
+  "description": "Blazingly fast reimplementation of thefuck in Go.",
+  "license": "MIT",
   "bin": "go-fuck.exe",
   "checkver": {
     "github": "https://github.com/leafevans/go-fuck"
