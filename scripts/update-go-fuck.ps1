@@ -47,11 +47,22 @@ try {
     Expand-Archive -LiteralPath (Join-Path $tmp "$base.zip") -DestinationPath (Join-Path $tmp "bin") -Force
     $target = Join-Path $InstallDir "go-fuck.exe"
     New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
+    $backup = $null
     if (Test-Path $target) {
-        Rename-Item -Path $target -NewName "go-fuck.exe.old" -Force
+        # Use a unique backup name: a fixed name can collide with a backup of
+        # an earlier update that is still locked by antivirus or a running
+        # shell, which made the rename fail even after a retry.
+        $backup = Join-Path $InstallDir ("go-fuck.exe.old." + [guid]::NewGuid().ToString("N"))
+        Rename-Item -Path $target -NewName (Split-Path -Path $backup -Leaf) -Force
     }
     Copy-Item (Join-Path $tmp "bin\go-fuck.exe") $target -Force
-    Remove-Item -Force (Join-Path $InstallDir "go-fuck.exe.old") -ErrorAction SilentlyContinue
+    if ($backup) {
+        Remove-Item -LiteralPath $backup -Force -ErrorAction SilentlyContinue
+    }
+    # Clean up backups of earlier updates. A backup can still be locked; that
+    # is harmless, and the next update tries again.
+    Get-ChildItem -Path $InstallDir -Filter "go-fuck.exe.old*" -File -ErrorAction SilentlyContinue |
+        Remove-Item -Force -ErrorAction SilentlyContinue
     Write-Host "go-fuck $Version installed in $InstallDir"
 }
 finally {
