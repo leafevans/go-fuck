@@ -17,6 +17,7 @@ import (
 	"encoding/hex"
 	"encoding/json/jsontext"
 	json "encoding/json/v2"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -64,6 +65,9 @@ func run(args []string, stdout, stderr io.Writer) int {
 	aurSource := flags.String("aur-source", "", "path of the GitHub tag archive (go-fuck-X.Y.Z.tar.gz) used by the AUR package")
 	root := flags.String("root", ".", "repository root")
 	if err := flags.Parse(args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return 0
+		}
 		return 2
 	}
 

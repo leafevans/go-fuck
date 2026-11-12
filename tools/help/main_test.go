@@ -80,4 +80,7 @@ func TestRunErrors(t *testing.T) {
 	if code := run([]string{"-unknown"}, stdout, stderr); code != 2 {
 		t.Fatalf("run() = %d, want 2 for an invalid flag", code)
 	}
+	if code := run([]string{"-h"}, stdout, stderr); code != 0 {
+		t.Fatalf("run(-h) = %d, want 0", code)
+	}
 }

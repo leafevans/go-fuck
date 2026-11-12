@@ -30,6 +30,9 @@ func run(args []string, stdout, stderr io.Writer) int {
 	profile := flags.String("profile", "coverage.out", "path of the profile written by go test -coverprofile")
 	minimum := flags.Float64("min", 0, "minimum total coverage in percent; zero only reports")
 	if err := flags.Parse(args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return 0
+		}
 		return 2
 	}
 

@@ -95,4 +95,7 @@ func TestRunInvalidFlag(t *testing.T) {
 	if code := run([]string{"-unknown"}, &bytes.Buffer{}, &bytes.Buffer{}); code != 2 {
 		t.Fatalf("run() = %d, want 2", code)
 	}
+	if code := run([]string{"-h"}, &bytes.Buffer{}, &bytes.Buffer{}); code != 0 {
+		t.Fatalf("run(-h) = %d, want 0", code)
+	}
 }
