@@ -276,3 +276,36 @@ func dirtyUntarEqualStrings(left, right []string) bool {
 	}
 	return true
 }
+
+func TestDirtyUntarSideEffectSkipsOutsideFiles(t *testing.T) {
+	resetTestState(t)
+	rule := Get("dirty_untar")
+	root := t.TempDir()
+	work := filepath.Join(root, "work")
+	if err := os.Mkdir(work, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	outside := filepath.Join(root, "outside.txt")
+	if err := os.WriteFile(outside, []byte("keep"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(work, "inside.txt"), []byte("remove"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	dirtyUntarWriteArchive(t, filepath.Join(work, "archive.tar"), []dirtyUntarEntry{
+		{name: "../outside.txt", content: "outside"},
+		{name: "inside.txt", content: "inside"},
+	}, false)
+	t.Chdir(work)
+
+	command := testCommand("tar -xf archive.tar", "")
+	if err := rule.SideEffect(command, ""); err != nil {
+		t.Fatalf("side effect returned an error: %v", err)
+	}
+	if _, err := os.Stat(outside); err != nil {
+		t.Fatalf("side effect removed a file outside the working directory: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(work, "inside.txt")); !os.IsNotExist(err) {
+		t.Fatalf("side effect did not remove the extracted file: %v", err)
+	}
+}
