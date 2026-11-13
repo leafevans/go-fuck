@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -39,11 +38,22 @@ func powerShellCatDirectoryMatch(command *types.Command) bool {
 		return false
 	}
 	// The error names the resolved path; only match it when the command line
-	// names the same directory.
-	if !strings.EqualFold(filepath.Base(strings.Trim(parts[1], "\"'")), filepath.Base(path)) {
+	// names the same directory. The path is split on both separators so that a
+	// Windows path is understood on every platform.
+	if !strings.EqualFold(powerShellPathBase(strings.Trim(parts[1], "\"'")), powerShellPathBase(path)) {
 		return false
 	}
 	return powerShellItemIsDirectory(path)
+}
+
+// powerShellPathBase returns the last element of a path, accepting both the
+// Windows and the POSIX separator on every platform.
+func powerShellPathBase(value string) string {
+	value = strings.ReplaceAll(value, "\\", "/")
+	if index := strings.LastIndex(value, "/"); index >= 0 {
+		return value[index+1:]
+	}
+	return value
 }
 
 // powerShellCatDirectoryNewCommand lists the directory instead of reading it.
