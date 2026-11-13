@@ -205,7 +205,10 @@ When publishing a new release `vX.Y.Z`:
 CHECKSUMS=checksums.txt AUR_SOURCE=go-fuck-X.Y.Z.tar.gz`). The whole download
     and regeneration step is wrapped by
     `scripts/update-manifests.ps1 -Version X.Y.Z`; pass `-Commit` to commit the
-    regenerated files.
+    regenerated files. `-PushAur` publishes the AUR package in the same step
+    through Git Bash or WSL, `-AurDryRun` only prints its publish plan, and
+    `-AurAddress IP` passes an explicit address when the DNS-over-HTTPS
+    lookup is blocked.
 3. Publish the regenerated `PKGBUILD` and `.SRCINFO` to the AUR:
     ```bash
     bash scripts/push-aur.sh --version X.Y.Z
@@ -213,7 +216,8 @@ CHECKSUMS=checksums.txt AUR_SOURCE=go-fuck-X.Y.Z.tar.gz`). The whole download
     The script skips the push when the AUR already carries the same files, so
     it is safe to rerun. Add `--direct-ip` when SSH to `aur.archlinux.org` is
     blocked, or `--address IP` when the DNS-over-HTTPS endpoint is blocked too
-    (see [Publishing to the AUR](#publishing-to-the-aur)).
+    (see [Publishing to the AUR](#publishing-to-the-aur)). This step is also
+    run by `scripts/update-manifests.ps1 ... -PushAur`.
 4. Run `go run ./tools/gen-rule-list -check` and the full test suite before
    tagging the follow-up commit.
 5. Check that `go install github.com/leafevans/go-fuck/v2/cmd/go-fuck@latest`

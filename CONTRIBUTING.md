@@ -194,7 +194,8 @@ Releases are cut by pushing a `vX.Y.Z` tag; the Release workflow runs GoReleaser
 distribution manifests are regenerated from the release checksums afterwards (see
 [packaging/README.md](packaging/README.md)). `scripts/update-manifests.ps1 -Version X.Y.Z` downloads
 the release assets, runs `tools/update-packaging`, checks the packaging tests and, with
-`-Commit`, commits the regenerated files. `scripts/push-aur.sh` publishes the AUR package. After the
+`-Commit`, commits the regenerated files; `-PushAur` also publishes the AUR package with
+`scripts/push-aur.sh` (Git Bash or WSL, plus an AUR SSH key). After the
 release, check that `go install github.com/leafevans/go-fuck/v2/cmd/go-fuck@latest` resolves the new
 tag.
 
