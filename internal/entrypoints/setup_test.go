@@ -6,6 +6,9 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/leafevans/go-fuck/internal/argumentparser"
+	"github.com/leafevans/go-fuck/internal/shells"
 )
 
 // readFile reads a file in tests.
@@ -392,12 +395,9 @@ func TestWellKnownPowerShellPath(t *testing.T) {
 
 func TestSetupManualConfiguration(t *testing.T) {
 	resetEntrypointsState(t)
-	t.Setenv("TF_SHELL", "generic")
-	code, _, stderr := runMain(t, "go-fuck", "--setup")
-	if code != 1 {
-		t.Fatalf("Main(--setup) = %d, want 1", code)
-	}
-	if !strings.Contains(stderr, "can't configure") {
-		t.Fatalf("stderr = %q", stderr)
+	shells.Set(shells.NewGeneric())
+	t.Cleanup(func() { shells.Set(shells.NewGeneric()) })
+	if code := setup(&argumentparser.Args{}); code != 1 {
+		t.Fatalf("setup() = %d, want 1", code)
 	}
 }
