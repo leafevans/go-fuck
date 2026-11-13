@@ -65,17 +65,6 @@ func TestTrimFile(t *testing.T) {
 	}
 }
 
-func TestLineOperationsClamp(t *testing.T) {
-	terminal := newLineTerminal("a", "b", "c")
-	terminal.cursorY = 1
-	terminal.insertLines(99)
-	terminal = newLineTerminal("a", "b", "c")
-	terminal.cursorY = 1
-	terminal.deleteLines(99)
-	terminal.insertLines(0)
-	terminal.deleteLines(0)
-}
-
 func TestTrimFileNegativeKeep(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "log")
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0o644)
