@@ -34,6 +34,9 @@ func gradleWrapperMatch(command *types.Command) bool {
 // gradleWrapperNewCommand runs the wrapper script instead.
 func gradleWrapperNewCommand(command *types.Command) ([]string, error) {
 	parts := command.ScriptParts()
+	if len(parts) == 0 {
+		return nil, nil
+	}
 	return []string{"./gradlew " + strings.Join(parts[1:], " ")}, nil
 }
 

@@ -10,7 +10,11 @@ import (
 // brewUninstallMatch reports whether brew could not uninstall all versions of
 // a formula.
 func brewUninstallMatch(command *types.Command) bool {
-	action := command.ScriptParts()[1]
+	parts := command.ScriptParts()
+	if len(parts) < 2 {
+		return false
+	}
+	action := parts[1]
 	return (action == "uninstall" || action == "rm" || action == "remove") &&
 		strings.Contains(command.Output, "brew uninstall --force")
 }
@@ -18,6 +22,9 @@ func brewUninstallMatch(command *types.Command) bool {
 // brewUninstallNewCommand removes all installed versions of the formula.
 func brewUninstallNewCommand(command *types.Command) ([]string, error) {
 	parts := command.ScriptParts()
+	if len(parts) < 2 {
+		return nil, nil
+	}
 	newParts := append([]string{}, parts[:2]...)
 	newParts = append(newParts, "--force")
 	newParts = append(newParts, parts[2:]...)

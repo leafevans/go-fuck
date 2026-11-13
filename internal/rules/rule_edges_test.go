@@ -44,6 +44,7 @@ func TestRuleEdgeCases(t *testing.T) {
 		{"task_unknown_task", "task", ""},
 		{"yarn_alias", "yarn", ""},
 		{"npm_wrong_command", "", ""},
+		{"dry", "", ""},
 		{"gradle_no_task", "gradle", ""},
 		{"missing_space_before_subcommand", "", ""},
 	}

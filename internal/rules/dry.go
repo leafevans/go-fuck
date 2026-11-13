@@ -14,7 +14,11 @@ func dryMatch(command *types.Command) bool {
 
 // dryNewCommand removes the duplicated word.
 func dryNewCommand(command *types.Command) ([]string, error) {
-	return []string{strings.Join(command.ScriptParts()[1:], " ")}, nil
+	parts := command.ScriptParts()
+	if len(parts) < 2 {
+		return nil, nil
+	}
+	return []string{strings.Join(parts[1:], " ")}, nil
 }
 
 func init() {
