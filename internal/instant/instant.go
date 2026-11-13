@@ -269,7 +269,12 @@ func sanitize(line string) string {
 	line = strings.ReplaceAll(line, consts.UserCommandMark, "")
 	line = stripOSC(line)
 	line = ansiCSI.ReplaceAllString(line, "")
-	return ansiControl.ReplaceAllString(line, "")
+	line = ansiControl.ReplaceAllString(line, "")
+	// Removing an escape or control sequence can join the fragments of a
+	// prompt marker that the sequence split (for example, one marker rune,
+	// a DEL byte and nine marker runes). Remove the marker once more after the
+	// stripping pass so the rendered output never leaks it.
+	return strings.ReplaceAll(line, consts.UserCommandMark, "")
 }
 
 // stripOSC removes operating system command sequences (window titles and

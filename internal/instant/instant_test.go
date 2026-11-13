@@ -202,6 +202,20 @@ func TestRingWriterNilFile(t *testing.T) {
 	}
 }
 
+func TestSanitizeRemovesSplitMarker(t *testing.T) {
+	mark := consts.UserCommandMark
+	// Removing the DEL byte joins the two marker fragments into the full
+	// marker; sanitize must remove it after the stripping pass.
+	input := mark[:3] + "\x7f" + mark[3:]
+	got := sanitize(input)
+	if strings.Contains(got, mark) {
+		t.Fatalf("sanitize() left the prompt marker: %q", got)
+	}
+	if got != "" {
+		t.Fatalf("sanitize() = %q, want an empty string", got)
+	}
+}
+
 func TestSanitizeRemovesMarkerAndControls(t *testing.T) {
 	input := prompt("\x1b[32mok\x1b[0m\b!")
 	got := sanitize(input)
