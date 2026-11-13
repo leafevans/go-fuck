@@ -25,6 +25,7 @@ var powerShellMissingFileCommands = []string{
 	"ren", "rename", "rename-item",
 	"cat", "type", "gc", "get-content",
 	"gi", "get-item",
+	"ls", "dir", "gci", "get-childitem",
 }
 
 // powerShellMissingFileMatch reports whether a PowerShell command failed
@@ -117,7 +118,11 @@ func powerShellMissingFile(output string) (string, bool) {
 }
 
 func init() {
-	register(types.NewRule("powershell_missing_file",
+	rule := types.NewRule("powershell_missing_file",
 		powerShellMissingFileMatch,
-		powerShellMissingFileNewCommand))
+		powerShellMissingFileNewCommand)
+	// The closest existing name is a better correction than the generic
+	// suggestions of rules such as ls_lah, so try it first.
+	rule.Priority = 900
+	register(rule)
 }

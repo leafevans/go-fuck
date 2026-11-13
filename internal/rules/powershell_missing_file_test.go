@@ -62,3 +62,24 @@ func TestRulePowerShellMissingFile(t *testing.T) {
 		"Cannot find path '/repo/CONFIG.TX' because it does not exist.\n",
 		[]string{"type config.txt"})
 }
+
+// TestRulePowerShellMissingFileListing checks that listing commands (ls, dir,
+// gci) also get the closest existing name suggested.
+func TestRulePowerShellMissingFileListing(t *testing.T) {
+	resetTestState(t)
+	rule := Get("powershell_missing_file")
+	if rule == nil {
+		t.Fatal("powershell_missing_file rule is not registered")
+	}
+	if rule.Priority != 900 {
+		t.Errorf("powershell_missing_file priority = %d, want 900", rule.Priority)
+	}
+	stubPowerShellMissingFile(t, []string{"config.txt"})
+	output := "Cannot find path '/repo/config.tx' because it does not exist.\n"
+	assertMatch(t, rule, "ls config.tx", output)
+	assertMatch(t, rule, "dir config.tx", output)
+	assertMatch(t, rule, "gci config.tx", output)
+	assertMatch(t, rule, "Get-ChildItem config.tx", output)
+	assertNewCommands(t, rule, "ls config.tx", output, []string{"ls config.txt"})
+	assertNewCommands(t, rule, "Get-ChildItem config.tx", output, []string{"Get-ChildItem config.txt"})
+}
