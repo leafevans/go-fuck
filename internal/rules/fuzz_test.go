@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"os"
 	"testing"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -33,6 +34,25 @@ func FuzzRules(f *testing.F) {
 	if len(registered) == 0 {
 		f.Fatal("no rules are registered")
 	}
+	// Run the target without external tools: some corpus commands would start
+	// gradle, npm or another tool that the CI image happens to have installed,
+	// and waiting for it would burn the fuzz budget or time out the job.
+	previousPath, hadPrevious := os.LookupEnv("PATH")
+	emptyPath, err := os.MkdirTemp("", "go-fuck-fuzz-path")
+	if err != nil {
+		f.Fatalf("create the empty PATH directory: %v", err)
+	}
+	if err := os.Setenv("PATH", emptyPath); err != nil {
+		f.Fatalf("clear PATH: %v", err)
+	}
+	defer func() {
+		if hadPrevious {
+			_ = os.Setenv("PATH", previousPath)
+		} else {
+			_ = os.Unsetenv("PATH")
+		}
+		_ = os.RemoveAll(emptyPath)
+	}()
 	f.Fuzz(func(t *testing.T, script, output string) {
 		command := types.NewCommand(script, output)
 		for _, rule := range registered {

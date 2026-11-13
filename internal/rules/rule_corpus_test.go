@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"os"
 	"strings"
 	"testing"
 
@@ -13,6 +14,28 @@ import (
 type ruleCorpusCase struct {
 	script string
 	output string
+}
+
+// isolateExternalTools makes the external programs that some rules start
+// unavailable for the duration of the test. CI images ship tools such as
+// gradle, npm or gulp, and some of them take minutes to answer the commands
+// the rules run (the Windows CI job hit its ten minute timeout on gradle).
+// With an empty PATH exec.LookPath fails immediately, so the rules return no
+// suggestion instead of starting a tool that is not part of the test.
+func isolateExternalTools(tb testing.TB) {
+	tb.Helper()
+	empty := tb.TempDir()
+	previous, hadPrevious := os.LookupEnv("PATH")
+	if err := os.Setenv("PATH", empty); err != nil {
+		tb.Fatalf("clear PATH: %v", err)
+	}
+	tb.Cleanup(func() {
+		if hadPrevious {
+			_ = os.Setenv("PATH", previous)
+			return
+		}
+		_ = os.Unsetenv("PATH")
+	})
 }
 
 // ruleCorpus returns realistic failing commands with the output of current CLI
@@ -155,6 +178,7 @@ func ruleCorpus() []ruleCorpusCase {
 // normal matching path. A panic in a rule can be recovered by the corrector,
 // but it still means the rule is broken, so it fails the suite instead.
 func TestRuleCorpusDoesNotPanic(t *testing.T) {
+	isolateExternalTools(t)
 	resetTestState(t)
 	registered := All()
 	if len(registered) == 0 {
@@ -184,6 +208,7 @@ func TestRuleCorpusDoesNotPanic(t *testing.T) {
 // Several rules build their suggestions without checking the command shape, so
 // this guards against index out of range panics such as the empty npm script.
 func TestRuleConstructorsDoNotPanic(t *testing.T) {
+	isolateExternalTools(t)
 	resetTestState(t)
 	registered := All()
 	if len(registered) == 0 {
