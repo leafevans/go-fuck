@@ -29,6 +29,14 @@ func stubPowerShellPath(t *testing.T, path string) {
 	t.Cleanup(func() { powerShellPath = original })
 }
 
+// clearShellPathEnv removes the alias environment variable so the tests that
+// expect the process tree fallback are not influenced by a caller that runs the
+// tests from a configured shell.
+func clearShellPathEnv(t *testing.T) {
+	t.Helper()
+	t.Setenv(consts.ShellPathEnv, "")
+}
+
 // decodePowerShellCommand decodes a -EncodedCommand argument.
 func decodePowerShellCommand(t *testing.T, encoded string) string {
 	t.Helper()
@@ -83,6 +91,7 @@ func TestEncodePowerShellCommand(t *testing.T) {
 }
 
 func TestShellCommandUsesPowerShell(t *testing.T) {
+	clearShellPathEnv(t)
 	stubPowerShellAncestor(t, "powershell.exe")
 	stubPowerShellPath(t, "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe")
 	command := "cd C:\\missing"
@@ -96,6 +105,7 @@ func TestShellCommandUsesPowerShell(t *testing.T) {
 }
 
 func TestShellCommandFallsBackWhenPowerShellIsMissing(t *testing.T) {
+	clearShellPathEnv(t)
 	stubPowerShellAncestor(t, "pwsh.exe")
 	stubPowerShellPath(t, "")
 	t.Setenv("COMSPEC", "")
@@ -107,6 +117,7 @@ func TestShellCommandFallsBackWhenPowerShellIsMissing(t *testing.T) {
 }
 
 func TestShellCommandFallsBackToCmd(t *testing.T) {
+	clearShellPathEnv(t)
 	stubPowerShellAncestor(t, "")
 	t.Setenv("COMSPEC", "")
 	cmd := shellCommand("echo hello")
@@ -117,6 +128,7 @@ func TestShellCommandFallsBackToCmd(t *testing.T) {
 }
 
 func TestShellCommandUsesComspec(t *testing.T) {
+	clearShellPathEnv(t)
 	stubPowerShellAncestor(t, "")
 	t.Setenv("COMSPEC", "C:\\Windows\\System32\\cmd.exe")
 	cmd := shellCommand("echo hello")
