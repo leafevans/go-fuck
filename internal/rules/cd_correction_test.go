@@ -63,3 +63,25 @@ func TestRuleCdCorrectionNewCommand(t *testing.T) {
 		assertNewCommands(t, rule, testCase.script, "", []string{testCase.want})
 	}
 }
+
+// TestRuleCdCorrectionExistingFile checks that an existing file is not replaced
+// by a mkdir suggestion: PowerShell reports is as "does not exist" although the
+// file exists and creating a directory with the same name would fail.
+func TestRuleCdCorrectionExistingFile(t *testing.T) {
+	resetTestState(t)
+	rule := Get("cd_correction")
+	if rule == nil {
+		t.Fatal("cd_correction rule is not registered")
+	}
+	existing := filepath.Join(t.TempDir(), "notes.txt")
+	if err := os.WriteFile(existing, []byte("data"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	got, err := rule.GetNewCommand(testCommand("cd "+existing, "Cannot find path '"+existing+"' because it does not exist."))
+	if err != nil {
+		t.Fatalf("GetNewCommand() error = %v", err)
+	}
+	if len(got) != 0 {
+		t.Fatalf("GetNewCommand() = %q, want no suggestion", got)
+	}
+}

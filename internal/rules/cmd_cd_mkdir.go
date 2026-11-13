@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"os"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -42,7 +43,16 @@ func cmdCDMkdirMatch(command *types.Command) bool {
 		return false
 	}
 	directory := cmdCDDirectory(command)
-	return directory != "" && !strings.HasPrefix(directory, "\\\\")
+	if directory == "" || strings.HasPrefix(directory, "\\\\") {
+		return false
+	}
+	// cmd.exe also reports an existing file as a missing path; creating a
+	// directory with the same name would fail, so only offer the correction
+	// when the path is really absent.
+	if _, err := os.Stat(directory); err == nil {
+		return false
+	}
+	return true
 }
 
 // cmdCDMkdirNewCommand creates the directory and changes into it.

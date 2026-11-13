@@ -53,6 +53,14 @@ func cdCorrectionNewCommand(command *types.Command) ([]string, error) {
 	if len(parts) < 2 {
 		return nil, nil
 	}
+	// PowerShell reports an existing file as "does not exist" when
+	// Set-Location is used on it; creating a directory with the same name
+	// would fail, so there is nothing to correct.
+	if target := cdTarget(command); target != "" {
+		if info, err := os.Stat(target); err == nil && !info.IsDir() {
+			return nil, nil
+		}
+	}
 
 	separator := string(os.PathSeparator)
 	path := parts[1]
