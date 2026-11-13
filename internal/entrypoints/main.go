@@ -26,6 +26,7 @@ func dispatch() int {
 
 	args, err := argumentparser.Parse(os.Args)
 	if err != nil {
+		fmt.Fprintln(os.Stderr, consts.ExecutableName()+": "+err.Error())
 		fmt.Fprintln(os.Stderr, argumentparser.Usage())
 		return 2
 	}

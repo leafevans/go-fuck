@@ -52,3 +52,40 @@ func TestUsageAndHelpMentionNewFlags(t *testing.T) {
 		}
 	}
 }
+
+func TestParseOutputFrom(t *testing.T) {
+	consts.SetExecutableName(consts.AppName)
+
+	args, err := Parse([]string{"go-fuck", "--force-command", "git push", "--output-from", "failed.log"})
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+	if args.ForceCommand != "git push" || args.OutputFrom != "failed.log" {
+		t.Fatalf("unexpected args: %+v", args)
+	}
+
+	args, err = Parse([]string{"go-fuck", "--force-command=git push", "--output-from=-"})
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+	if args.OutputFrom != "-" {
+		t.Fatalf("args.OutputFrom = %q, want -", args.OutputFrom)
+	}
+
+	if _, err := Parse([]string{"go-fuck", "--force-command", "git push", "--output-from"}); err == nil {
+		t.Fatal("Parse() accepted --output-from without a value")
+	}
+	if _, err := Parse([]string{"go-fuck", "--output-from", "failed.log"}); err == nil {
+		t.Fatal("Parse() accepted --output-from without --force-command")
+	}
+
+	help := Help()
+	for _, want := range []string{"--output-from FILE", "instead of re-running it"} {
+		if !strings.Contains(help, want) {
+			t.Fatalf("Help() does not contain %q:\n%s", want, help)
+		}
+	}
+	if !strings.Contains(Usage(), "--output-from") {
+		t.Fatalf("Usage() = %q, does not mention --output-from", Usage())
+	}
+}

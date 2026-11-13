@@ -44,6 +44,9 @@ type Args struct {
 	ShellLogger string
 	// ForceCommand is the command to fix when --force-command is given.
 	ForceCommand string
+	// OutputFrom is the file that contains the output of the failed command,
+	// or "-" for standard input. It replaces re-running the command.
+	OutputFrom string
 	// JSON prints the suggestions as JSON instead of running the interactive
 	// selection and the corrected command.
 	JSON bool
@@ -111,6 +114,14 @@ func Parse(argv []string) (*Args, error) {
 			i++
 		case strings.HasPrefix(arg, "--force-command="):
 			args.ForceCommand = strings.TrimPrefix(arg, "--force-command=")
+		case arg == "--output-from":
+			if i+1 >= len(rest) {
+				return nil, fmt.Errorf("argument --output-from: expected one argument")
+			}
+			args.OutputFrom = rest[i+1]
+			i++
+		case strings.HasPrefix(arg, "--output-from="):
+			args.OutputFrom = strings.TrimPrefix(arg, "--output-from=")
 		case arg == "--json":
 			args.JSON = true
 		case strings.HasPrefix(arg, "-"):
@@ -121,6 +132,9 @@ func Parse(argv []string) (*Args, error) {
 	}
 	if args.Yes && args.Repeat {
 		return nil, fmt.Errorf("argument -r/--repeat: not allowed with argument -y/--yes/--yeah/--hard")
+	}
+	if args.OutputFrom != "" && args.ForceCommand == "" {
+		return nil, fmt.Errorf("argument --output-from: requires argument --force-command")
 	}
 	return args, nil
 }
@@ -159,6 +173,7 @@ var helpOptions = []helpOption{
 	{"--doctor", "print a diagnostic report of the shell integration"},
 	{"--list-rules", "print the names of the built-in rules and exit"},
 	{"--force-command FORCE_COMMAND", "fix this command instead of the previous one"},
+	{"--output-from FILE", "read the output of the fixed command from FILE (or stdin with -) instead of re-running it"},
 	{"--json", "print the suggestions as JSON and exit"},
 	{"-y, --yes, --yeah, --hard", "execute fixed command without confirmation"},
 	{"-r, --repeat", "repeat on failure"},
@@ -178,7 +193,7 @@ func Usage() string {
 func usageText(styled bool) string {
 	rest := consts.ExecutableName() + " [-v] [-a [ALIAS]] [-l SHELL_LOGGER] [--setup] " +
 		"[--enable-experimental-instant-mode] [-h] [-d] [--doctor] [--list-rules] " +
-		"[--force-command FORCE_COMMAND] [--json] [-y | -r] [command ...]"
+		"[--force-command FORCE_COMMAND] [--output-from FILE] [--json] [-y | -r] [command ...]"
 	if !styled {
 		return "usage: " + rest
 	}

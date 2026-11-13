@@ -293,7 +293,8 @@ Common options:
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `-y`, `--yes`, `--yeah`, `--hard`    | execute the first suggestion without asking                                                                                                                      |
 | `-r`, `--repeat`                     | re-run go-fuck if the corrected command fails                                                                                                                    |
-| `--force-command CMD`                | fix `CMD` instead of the previous command                                                                                                                        |
+| `--force-command CMD`                | fix `CMD` instead of the previous command                                                                                                                     |
+| `--output-from FILE`                 | read the output of `--force-command` from `FILE` (or standard input with `-`) instead of re-running it                                                  |                                                                                                                        |
 | `--doctor`                           | print a diagnostic report: detected shell, alias, settings file, history and optional integrations; `--doctor --json` prints it as JSON                          |
 | `--list-rules`                       | print the names of the built-in rules and exit (useful for the `rules`, `exclude_rules` and `priority` settings); with `--json` one object per rule with its priority and flags                  |
 | `--json`                             | print the suggestions as JSON and exit (useful for scripts and editors; call go-fuck directly rather than through the alias)                                     |
@@ -425,6 +426,18 @@ automatically; there is no need to set it manually.
 `--json` prints the correction result as JSON instead of opening the interactive prompt. It is
 intended for editor plugins, scripts and AI agents; call go-fuck directly rather than through the
 shell alias, because the alias evaluates whatever go-fuck prints.
+
+When the caller already captured the output of the failed command (an editor, a terminal
+integration or an AI agent usually did), pass it with `--output-from FILE` instead of letting go-fuck
+re-run the command. Use `-` to read the output from standard input:
+
+```console
+$ go-fuck --json --force-command "git push" --output-from failed-output.log
+$ cat failed-output.log | go-fuck --json --force-command "git push" --output-from -
+```
+
+This avoids re-running a command with side effects and works when the command cannot be run again.
+The output is treated exactly like captured output, so the same rules and suggestions apply.
 
 ```console
 $ go-fuck --json --force-command "git brnch"

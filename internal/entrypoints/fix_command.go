@@ -2,6 +2,7 @@ package entrypoints
 
 import (
 	"errors"
+	"io"
 	"os"
 	"strings"
 
@@ -41,7 +42,17 @@ func fixCommand(args *argumentparser.Args) int {
 		return 0
 	}
 
-	command, err := types.FromRawScript(rawCommand)
+	var command *types.Command
+	if args.OutputFrom != "" {
+		commandOutput, readErr := readCommandOutput(args.OutputFrom)
+		if readErr != nil {
+			logs.Exception("Can't read the command output", readErr)
+			return 1
+		}
+		command, err = types.FromScriptAndOutput(rawCommand, commandOutput)
+	} else {
+		command, err = types.FromRawScript(rawCommand)
+	}
 	if errors.Is(err, types.ErrEmptyCommand) {
 		logs.Debug("Empty command, nothing to do")
 		if args.JSON {
@@ -66,6 +77,30 @@ func fixCommand(args *argumentparser.Args) int {
 	}
 	selected.Run(command)
 	return 0
+}
+
+// readCommandOutput returns the output of the failed command from a file, or
+// from standard input when the file is "-".
+//
+// The text is normalized like captured output: a UTF-8 byte order mark is
+// dropped and CRLF line endings become LF, because the rules are written
+// against LF and a stray carriage return breaks expressions anchored to the
+// end of a line.
+func readCommandOutput(path string) (string, error) {
+	var output []byte
+	var err error
+	if path == "-" {
+		output, err = io.ReadAll(os.Stdin)
+	} else {
+		output, err = os.ReadFile(path)
+	}
+	if err != nil {
+		return "", err
+	}
+	text := strings.TrimPrefix(string(output), "\uFEFF")
+	text = strings.ReplaceAll(text, "\r\n", "\n")
+	text = strings.ReplaceAll(text, "\r", "")
+	return text, nil
 }
 
 // warnUnknownSettings reports top level settings file keys that go-fuck

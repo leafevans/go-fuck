@@ -311,3 +311,23 @@ func TestCorrectedCommandRunSideEffectAndHistory(t *testing.T) {
 		t.Fatalf("unexpected history: %q", shell.recorded)
 	}
 }
+
+// TestFromScriptAndOutput checks that a caller supplied output is used as is
+// instead of re-running the command.
+func TestFromScriptAndOutput(t *testing.T) {
+	resetTypesState(t)
+
+	command, err := FromScriptAndOutput([]string{"git", "push"}, "fatal: no upstream branch\n")
+	if err != nil {
+		t.Fatalf("FromScriptAndOutput() error = %v", err)
+	}
+	if command.Script != "git push" || command.Output != "fatal: no upstream branch\n" || !command.HasOutput() {
+		t.Fatalf("unexpected command: %+v", command)
+	}
+
+	for _, raw := range [][]string{{}, {""}, {"", ""}, {"   "}} {
+		if _, err := FromScriptAndOutput(raw, "output"); err != ErrEmptyCommand {
+			t.Errorf("FromScriptAndOutput(%q) error = %v, want ErrEmptyCommand", raw, err)
+		}
+	}
+}

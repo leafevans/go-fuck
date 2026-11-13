@@ -76,6 +76,21 @@ func FromRawScript(raw []string) (*Command, error) {
 	return &Command{Script: expanded, Output: commandOutput, hasOutput: ok}, nil
 }
 
+// FromScriptAndOutput creates a command from the command line arguments of
+// go-fuck and the output that the caller captured. It does not re-run the
+// command, so it is used when the output is already available.
+func FromScriptAndOutput(raw []string, commandOutput string) (*Command, error) {
+	script := FormatRawScript(raw)
+	if script == "" {
+		return nil, ErrEmptyCommand
+	}
+	return &Command{
+		Script:    shells.Current().FromShell(script),
+		Output:    commandOutput,
+		hasOutput: true,
+	}, nil
+}
+
 // FormatRawScript joins the raw command line parts into a single command.
 func FormatRawScript(raw []string) string {
 	return strings.TrimLeft(strings.Join(raw, " "), " ")
