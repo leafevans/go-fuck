@@ -5,7 +5,7 @@
 # It validates packaging/aur/PKGBUILD and packaging/aur/.SRCINFO, clones
 # ssh://aur@aur.archlinux.org/go-fuck.git, skips the push when both files are
 # already published, commits "upgpkg: go-fuck X.Y.Z-pkgrel" and pushes. Run it
-# on Linux, macOS or WSL; see --help for the options.
+# on Linux, macOS, WSL or Git Bash on Windows; see --help for the options.
 #
 set -euo pipefail
 
@@ -22,6 +22,8 @@ version=
 source_dir="$repo_root/packaging/aur"
 clone_dir=
 direct_ip=false
+address=
+address_set=false
 dry_run=false
 
 temp_root=
@@ -66,6 +68,10 @@ Options:
                         and connect to the address with
                         HostKeyAlias=aur.archlinux.org; use this when the
                         network's answer for aur.archlinux.org blocks SSH
+      --address IP      skip DNS-over-HTTPS and connect to the IPv4 address IP
+                        with HostKeyAlias=aur.archlinux.org; use this when the
+                        DNS-over-HTTPS endpoint is blocked; cannot be combined
+                        with --direct-ip
       --dry-run         print the plan without cloning, committing or pushing
   -h, --help            print this help
 
@@ -75,11 +81,13 @@ are already published. Otherwise it copies the files, commits
 "upgpkg: go-fuck X.Y.Z-pkgrel", pushes to
 ssh://aur@aur.archlinux.org/go-fuck.git and removes a temporary clone. The
 clone and the push are retried up to three times; --direct-ip resolves the
-address again on every attempt. The script needs bash and git, plus curl for
---direct-ip, and an SSH key registered with the AUR:
+address again on every attempt, while --address uses the address it is given.
+The script needs bash and git, plus curl for --direct-ip, and an SSH key
+registered with the AUR:
 
   bash scripts/push-aur.sh --version X.Y.Z
   bash scripts/push-aur.sh --version X.Y.Z --direct-ip
+  bash scripts/push-aur.sh --version X.Y.Z --address 209.126.35.78
   bash scripts/push-aur.sh --dry-run
 EOF
 }
@@ -94,6 +102,23 @@ read_pkgbuild_value() {
 read_srcinfo_value() {
   # $1: file, $2: field name
   sed -n "s/^[[:space:]]*$2[[:space:]]*=[[:space:]]*//p" "$1" | head -n 1
+}
+
+# valid_ipv4 reports whether $1 is a dotted-quad IPv4 address: four decimal
+# octets, each 0 to 255. It rejects typos in --address early.
+valid_ipv4() {
+  local octet
+  local -a octets
+  if ! [[ "$1" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+    return 1
+  fi
+  IFS=. read -r -a octets <<<"$1"
+  for octet in "${octets[@]}"; do
+    if [ "$((10#$octet))" -gt 255 ]; then
+      return 1
+    fi
+  done
+  return 0
 }
 
 # resolve_doh prints the first IPv4 address of aur.archlinux.org from the
@@ -130,9 +155,9 @@ resolve_doh() {
 }
 
 # git_ssh runs a git command with the HostKeyAlias SSH options in --direct-ip
-# mode and with the regular SSH configuration otherwise.
+# or --address mode and with the regular SSH configuration otherwise.
 git_ssh() {
-  if [ "$direct_ip" = true ]; then
+  if [ "$direct_ip" = true ] || [ -n "$address" ]; then
     GIT_SSH_COMMAND="$ssh_command" "$@"
   else
     "$@"
@@ -141,7 +166,7 @@ git_ssh() {
 
 # clone_repository clones the AUR repository into clone_path and retries
 # transient failures. With --direct-ip the address is resolved again for every
-# attempt.
+# attempt; with --address the given address is used for every attempt.
 clone_repository() {
   local attempt=1 url
   while [ "$attempt" -le "$max_attempts" ]; do
@@ -157,13 +182,16 @@ clone_repository() {
       fi
       note "resolved aur.archlinux.org to $url (attempt $attempt/$max_attempts)"
       url="ssh://aur@$url/$package.git"
+    elif [ -n "$address" ]; then
+      url="ssh://aur@$address/$package.git"
+      note "cloning from the explicit address $address (attempt $attempt/$max_attempts)"
     else
       url=$aur_remote
     fi
     if git_ssh git clone --quiet "$url" "$clone_path"; then
-      if [ "$direct_ip" = true ]; then
-        # The clone was fetched over the resolved address; keep the canonical
-        # remote in a kept clone.
+      if [ "$direct_ip" = true ] || [ -n "$address" ]; then
+        # The clone was fetched over a resolved or explicit address; keep the
+        # canonical remote in a kept clone.
         git -C "$clone_path" remote set-url origin "$aur_remote"
       fi
       return 0
@@ -188,9 +216,14 @@ push_package() {
         echo "push-aur: cannot resolve aur.archlinux.org over DNS-over-HTTPS (attempt $attempt/$max_attempts)" >&2
       else
         note "resolved aur.archlinux.org to $url (attempt $attempt/$max_attempts)"
-        if GIT_SSH_COMMAND="$ssh_command" git -C "$clone_path" push --quiet "ssh://aur@$url/$package.git" HEAD:master; then
+        if git_ssh git -C "$clone_path" push --quiet "ssh://aur@$url/$package.git" HEAD:master; then
           return 0
         fi
+      fi
+    elif [ -n "$address" ]; then
+      note "pushing to the explicit address $address (attempt $attempt/$max_attempts)"
+      if git_ssh git -C "$clone_path" push --quiet "ssh://aur@$address/$package.git" HEAD:master; then
+        return 0
       fi
     elif git -C "$clone_path" push --quiet origin HEAD:master; then
       return 0
@@ -218,6 +251,9 @@ print_plan() {
   if [ "$direct_ip" = true ]; then
     echo "  transport: resolve aur.archlinux.org over Cloudflare DNS-over-HTTPS and"
     echo "             connect with HostKeyAlias=aur.archlinux.org"
+  elif [ -n "$address" ]; then
+    echo "  transport: connect to the explicit address $address with"
+    echo "             HostKeyAlias=aur.archlinux.org (no DNS-over-HTTPS lookup)"
   else
     echo "  transport: direct SSH to aur.archlinux.org"
   fi
@@ -274,6 +310,17 @@ while [ "$#" -gt 0 ]; do
       clone_dir=${1#*=}
       shift
       ;;
+    --address)
+      [ "$#" -ge 2 ] || usage_error "missing argument for $1"
+      address=$2
+      address_set=true
+      shift 2
+      ;;
+    --address=*)
+      address=${1#*=}
+      address_set=true
+      shift
+      ;;
     --direct-ip)
       direct_ip=true
       shift
@@ -300,6 +347,14 @@ while [ "$#" -gt 0 ]; do
 done
 if [ "$#" -gt 0 ]; then
   usage_error "unexpected argument: $1"
+fi
+if [ "$address_set" = true ]; then
+  if [ "$direct_ip" = true ]; then
+    usage_error "--address and --direct-ip are mutually exclusive"
+  fi
+  if ! valid_ipv4 "$address"; then
+    usage_error "invalid IPv4 address for --address: '$address'"
+  fi
 fi
 
 if [ ! -d "$source_dir" ]; then

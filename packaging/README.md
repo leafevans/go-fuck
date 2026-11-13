@@ -94,12 +94,13 @@ To update the package for a release:
 ### Publishing to the AUR
 
 `scripts/push-aur.sh` is the preferred way to publish `packaging/aur/PKGBUILD`
-and `packaging/aur/.SRCINFO`. It works on Linux, macOS and in a WSL shell on
+and `packaging/aur/.SRCINFO`. It works on Linux, macOS, WSL and Git Bash on
 Windows and needs bash, git and an SSH key registered with the AUR:
 
 ```bash
 bash scripts/push-aur.sh --version X.Y.Z                # clone, commit and push
 bash scripts/push-aur.sh --version X.Y.Z --direct-ip    # blocked SSH fallback
+bash scripts/push-aur.sh --version X.Y.Z --address IP   # DNS-over-HTTPS also blocked
 bash scripts/push-aur.sh --dry-run                      # print the plan, no network access
 ```
 
@@ -111,7 +112,10 @@ exits successfully without pushing when both files are already published, so
 it is safe to rerun. Otherwise it copies the files, commits
 `upgpkg: go-fuck X.Y.Z-pkgrel`, pushes `HEAD:master` and removes the
 temporary clone. The clone and the push are retried up to three times.
-`--clone-dir DIR` clones into `DIR` and keeps it.
+`--clone-dir DIR` clones into `DIR` and keeps it. `--direct-ip` resolves the
+current address again on every attempt; `--address IP` uses the given IPv4
+address as is and skips the DNS-over-HTTPS lookup. The two options are
+mutually exclusive.
 
 The manual equivalent is:
 
@@ -143,8 +147,21 @@ git clone "ssh://aur@$IP/go-fuck.git"
 git push
 ```
 
-The address can change, so resolve it again on every push instead of hard-coding it; the script
-retries the resolution up to three times when the connection fails. The AUR RPC endpoint
+Some networks block the DNS-over-HTTPS endpoint as well. In that case pass the
+AUR IPv4 address explicitly with `--address`:
+
+```bash
+bash scripts/push-aur.sh --version X.Y.Z --address 209.126.35.78
+```
+
+`--address IP` skips the DNS lookup, connects to the given IPv4 address for the
+clone and for every push retry, and keeps the same
+`HostKeyAlias=aur.archlinux.org` SSH option, so the host key check still works.
+It cannot be combined with `--direct-ip`.
+
+The address can change, so resolve it again on every push instead of hard-coding it; `--direct-ip`
+retries the resolution up to three times when the connection fails. With `--address` re-check the
+address when connections start failing, because the script uses it as given. The AUR RPC endpoint
 (`https://aur.archlinux.org/rpc/?v=5&type=info&arg[]=go-fuck`) works over HTTPS and reports the
 published version; it can lag behind the Git repository for a few minutes.
 
@@ -195,7 +212,8 @@ CHECKSUMS=checksums.txt AUR_SOURCE=go-fuck-X.Y.Z.tar.gz`). The whole download
     ```
     The script skips the push when the AUR already carries the same files, so
     it is safe to rerun. Add `--direct-ip` when SSH to `aur.archlinux.org` is
-    blocked (see [Publishing to the AUR](#publishing-to-the-aur)).
+    blocked, or `--address IP` when the DNS-over-HTTPS endpoint is blocked too
+    (see [Publishing to the AUR](#publishing-to-the-aur)).
 4. Run `go run ./tools/gen-rule-list -check` and the full test suite before
    tagging the follow-up commit.
 5. Check that `go install github.com/leafevans/go-fuck/v2/cmd/go-fuck@latest`
