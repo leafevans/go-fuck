@@ -311,8 +311,9 @@ If `fuck` does nothing, or go-fuck cannot find the command that failed, run the 
 $ go-fuck --doctor
 ```
 
-It checks the detected shell, the alias in the shell configuration file, the settings file (including
-ignored unknown keys), the command history and the optional integrations (fzf and instant mode). For instant mode it validates
+It checks the detected shell, the alias in the shell configuration file (for PowerShell every
+installed flavor's profile), the settings file (including ignored unknown keys), the command history
+and the optional integrations (fzf and instant mode). For instant mode it validates
 the logged shell's terminal log and warns when the instant mode line is no longer the last prompt
 definition in the PowerShell profile. Warnings include the command that fixes them, and
 `--doctor --json` prints the same report as JSON.

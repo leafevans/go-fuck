@@ -64,6 +64,9 @@ var (
 	doctorIsAvailable  = utils.IsAvailable
 	doctorLoadSettings = func() (*conf.Settings, error) { return conf.Load(&conf.Args{}) }
 	doctorCollectShell = collectDoctorShellState
+	// doctorPowerShellProfiles returns the profile files of the installed
+	// PowerShell flavors. It is a variable so tests can replace the lookup.
+	doctorPowerShellProfiles = powerShellProfiles
 )
 
 // collectDoctorShellState gathers the information about the invoking shell.
@@ -173,9 +176,7 @@ func doctorAliasCheck(shell doctorShellState) doctorCheck {
 		check.Message = "the shell does not have a configuration file to inspect"
 		check.Hint = "run go-fuck --alias and add its output to your shell configuration"
 	case shell.ConfigPath == "$profile":
-		check.Status = doctorInfo
-		check.Message = "the PowerShell profile cannot be checked automatically"
-		check.Hint = "add iex \"$(" + consts.ExecutableName() + " --alias)\" to $PROFILE"
+		return doctorPowerShellAliasCheck()
 	case strings.HasPrefix(shell.ConfigPath, "$"):
 		check.Status = doctorInfo
 		check.Message = "the " + shell.ConfigPath + " profile cannot be checked automatically"
@@ -187,6 +188,44 @@ func doctorAliasCheck(shell doctorShellState) doctorCheck {
 		check.Status = doctorWarn
 		check.Message = "no alias found in " + shell.ConfigPath
 		check.Hint = "run go-fuck --setup to add it"
+	}
+	return check
+}
+
+// doctorPowerShellAliasCheck looks for the alias line in the profile of every
+// installed PowerShell flavor. PowerShell reports a variable ($PROFILE) instead
+// of a path, so the profiles have to be resolved through the executables first.
+func doctorPowerShellAliasCheck() doctorCheck {
+	check := doctorCheck{Name: "alias"}
+	profiles := doctorPowerShellProfiles()
+	found := []string{}
+	inspected := []string{}
+	for _, profile := range profiles {
+		content, err := doctorReadFile(expandHome(profile))
+		if err != nil {
+			continue
+		}
+		inspected = append(inspected, profile)
+		if strings.Contains(string(content), consts.ExecutableName()+" --alias") {
+			found = append(found, profile)
+		}
+	}
+	switch {
+	case len(found) > 0:
+		check.Status = doctorOK
+		check.Message = "found in " + strings.Join(found, ", ")
+	case len(inspected) > 0:
+		check.Status = doctorWarn
+		check.Message = "no alias found in " + strings.Join(inspected, ", ")
+		check.Hint = "run " + consts.ExecutableName() + " --setup to add it"
+	case len(profiles) > 0:
+		check.Status = doctorInfo
+		check.Message = "the PowerShell profiles cannot be read: " + strings.Join(profiles, ", ")
+		check.Hint = "check the file permissions, or run " + consts.ExecutableName() + " --setup"
+	default:
+		check.Status = doctorInfo
+		check.Message = "no PowerShell profile found"
+		check.Hint = "run " + consts.ExecutableName() + " --setup to create and configure it"
 	}
 	return check
 }
