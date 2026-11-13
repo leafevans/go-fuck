@@ -180,3 +180,24 @@ func TestRecoverEntrypoints(t *testing.T) {
 		}
 	}
 }
+
+func TestDoctorLogHasMarker(t *testing.T) {
+	dir := t.TempDir()
+	if doctorLogHasMarker(filepath.Join(dir, "missing")) {
+		t.Fatal("doctorLogHasMarker(missing) = true")
+	}
+	plain := filepath.Join(dir, "plain.log")
+	if err := os.WriteFile(plain, []byte("no marker here\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if doctorLogHasMarker(plain) {
+		t.Fatal("doctorLogHasMarker(plain) = true")
+	}
+	marked := filepath.Join(dir, "marked.log")
+	if err := os.WriteFile(marked, []byte("prefix "+consts.UserCommandMark+"$ "), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if !doctorLogHasMarker(marked) {
+		t.Fatal("doctorLogHasMarker(marked) = false")
+	}
+}

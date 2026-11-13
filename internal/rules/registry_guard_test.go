@@ -454,3 +454,9 @@ func TestRuleRegistryFiles(t *testing.T) {
 			strings.Join(unexpected, ", "))
 	}
 }
+
+func TestRuleCount(t *testing.T) {
+	if Count() != len(All()) {
+		t.Fatalf("Count() = %d, len(All()) = %d", Count(), len(All()))
+	}
+}

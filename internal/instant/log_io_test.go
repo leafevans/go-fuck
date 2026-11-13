@@ -64,3 +64,36 @@ func TestTrimFile(t *testing.T) {
 		t.Fatalf("trimFile(0) left %q, want empty", string(got))
 	}
 }
+
+func TestLineOperationsClamp(t *testing.T) {
+	terminal := newLineTerminal("a", "b", "c")
+	terminal.cursorY = 1
+	terminal.insertLines(99)
+	terminal = newLineTerminal("a", "b", "c")
+	terminal.cursorY = 1
+	terminal.deleteLines(99)
+	terminal.insertLines(0)
+	terminal.deleteLines(0)
+}
+
+func TestTrimFileNegativeKeep(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "log")
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0o644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	if _, err := file.WriteString("abc"); err != nil {
+		t.Fatal(err)
+	}
+	if err := trimFile(file, -5); err != nil {
+		t.Fatalf("trimFile(-5) error = %v", err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(data) != 0 {
+		t.Fatalf("trimFile(-5) left %q", string(data))
+	}
+}

@@ -226,3 +226,37 @@ func TestRuleDockerNotCommand(t *testing.T) {
 			[]string{"docker image load", "docker image ls", "docker image tag"})
 	})
 }
+
+func TestDockerNotCommandHelpers(t *testing.T) {
+	lines := []string{
+		"Management Commands:",
+		"  builder     Manage builds",
+		"",
+		"Commands:",
+		"  build       Build an image",
+		"  run         Run a command",
+		"",
+	}
+	if got := dockerNotCommandParseCommands(lines, "Management Commands:"); len(got) != 1 || got[0] != "builder" {
+		t.Fatalf("dockerNotCommandParseCommands(management) = %q", got)
+	}
+	if got := dockerNotCommandParseCommands(lines, "Commands:"); len(got) != 2 || got[0] != "build" || got[1] != "run" {
+		t.Fatalf("dockerNotCommandParseCommands(commands) = %q", got)
+	}
+	if got := dockerNotCommandParseCommands(lines, "Missing:"); got != nil {
+		t.Fatalf("dockerNotCommandParseCommands(missing) = %q", got)
+	}
+	if got := dockerNotCommandSplitLines(""); got != nil {
+		t.Fatalf("dockerNotCommandSplitLines(empty) = %q", got)
+	}
+	if got := dockerNotCommandSplitLines("a\nb"); len(got) != 2 {
+		t.Fatalf("dockerNotCommandSplitLines() = %q", got)
+	}
+	if got := dockerNotCommandHelpCommands("", ""); len(got) != 0 {
+		t.Fatalf("dockerNotCommandHelpCommands(empty) = %q", got)
+	}
+	help := "Management Commands:\n  builder\n\nCommands:\n  build\n"
+	if got := dockerNotCommandHelpCommands("", help); len(got) != 2 || got[0] != "builder" || got[1] != "build" {
+		t.Fatalf("dockerNotCommandHelpCommands(stderr) = %q", got)
+	}
+}

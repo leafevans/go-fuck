@@ -469,3 +469,32 @@ func TestLoadExcludedSearchPathPrefixesSeparator(t *testing.T) {
 		}
 	}
 }
+
+func TestUserDirFallback(t *testing.T) {
+	t.Setenv("APPDATA", "")
+	t.Setenv("XDG_CONFIG_HOME", "")
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
+	dir := UserDir()
+	if !strings.Contains(dir, "go-fuck") {
+		t.Fatalf("UserDir() = %q, want a go-fuck directory", dir)
+	}
+}
+
+func TestExtraSettings(t *testing.T) {
+	settings := Default()
+	if got := settings.String("missing", "fallback"); got != "fallback" {
+		t.Fatalf("String(missing) = %q", got)
+	}
+	settings.SetExtra("fixlinecmd", "value")
+	if got := settings.String("fixlinecmd", "fallback"); got != "value" {
+		t.Fatalf("String(fixlinecmd) = %q", got)
+	}
+
+	empty := &Settings{}
+	empty.SetExtra("key", "value")
+	if got := empty.String("key", ""); got != "value" {
+		t.Fatalf("String(key) = %q", got)
+	}
+}

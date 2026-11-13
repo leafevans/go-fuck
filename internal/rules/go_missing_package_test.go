@@ -1,6 +1,9 @@
 package rules
 
-import "testing"
+import (
+	"os"
+	"testing"
+)
 
 // stubGoDirectoryEntries replaces the directory lookup of the rule.
 func stubGoDirectoryEntries(t *testing.T, names []string) {
@@ -31,4 +34,28 @@ func TestRuleGoMissingPackage(t *testing.T) {
 
 	assertNewCommands(t, rule, "go build ./internal/missng", goMissingDirectoryOutput,
 		[]string{"go build ./internal/missing"})
+}
+
+func TestGoMissingPackageEdges(t *testing.T) {
+	resetTestState(t)
+	rule := Get("go_missing_package")
+	original := goDirectoryEntries
+	t.Cleanup(func() { goDirectoryEntries = original })
+
+	assertNotMatch(t, rule, "go build ./internal/missng", "other output")
+
+	// The lookup fails, so the rule cannot suggest anything.
+	goDirectoryEntries = func(string) ([]string, error) { return nil, os.ErrNotExist }
+	assertNewCommands(t, rule, "go build ./internal/missng", goMissingDirectoryOutput, nil)
+
+	// The only close name is the missing name itself.
+	goDirectoryEntries = func(string) ([]string, error) { return []string{"missng"}, nil }
+	assertNewCommands(t, rule, "go build ./internal/missng", goMissingDirectoryOutput, nil)
+
+	// The script does not contain the missing directory name.
+	goDirectoryEntries = func(string) ([]string, error) { return []string{"missing"}, nil }
+	assertNewCommands(t, rule, "go build other", goMissingDirectoryOutput, nil)
+
+	// A "." directory has no useful correction.
+	assertNewCommands(t, rule, "go build .", "stat /repo/.: directory not found", nil)
 }

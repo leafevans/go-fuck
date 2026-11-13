@@ -1,6 +1,11 @@
 package rules
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/leafevans/go-fuck/internal/types"
+	"github.com/leafevans/go-fuck/internal/utils"
+)
 
 func TestRuleAptGet(t *testing.T) {
 	resetTestState(t)
@@ -72,4 +77,52 @@ func TestRuleAptGet(t *testing.T) {
 			assertNewCommands(t, rule, testCase.script, "", []string{testCase.want})
 		})
 	}
+}
+
+func TestAptGetHelpers(t *testing.T) {
+	resetTestState(t)
+	originalWhich := aptGetWhich
+	originalPackages := aptGetPackages
+	t.Cleanup(func() { aptGetWhich = originalWhich; aptGetPackages = originalPackages })
+
+	if got := aptGetExecutable(types.NewCommand("", "")); got != "" {
+		t.Fatalf("aptGetExecutable(empty) = %q", got)
+	}
+	if got := aptGetExecutable(types.NewCommand("sudo", "")); got != "" {
+		t.Fatalf("aptGetExecutable(sudo) = %q", got)
+	}
+	if got := aptGetExecutable(types.NewCommand("sudo make", "")); got != "make" {
+		t.Fatalf("aptGetExecutable(sudo make) = %q", got)
+	}
+	if got := aptGetExecutable(types.NewCommand("make", "")); got != "make" {
+		t.Fatalf("aptGetExecutable(make) = %q", got)
+	}
+
+	aptGetWhich = func(string) string { return "" }
+	aptGetPackages = func(string) []string { return nil }
+	if aptGetMatch(types.NewCommand("make", "command not found")) {
+		t.Fatal("aptGetMatch() matched without a package")
+	}
+	aptGetPackages = func(string) []string { return []string{"make"} }
+	if !aptGetMatch(types.NewCommand("make", "command not found")) {
+		t.Fatal("aptGetMatch() did not match an installable package")
+	}
+	aptGetWhich = func(string) string { return "/usr/bin/make" }
+	if aptGetMatch(types.NewCommand("make", "command not found")) {
+		t.Fatal("aptGetMatch() matched an available executable")
+	}
+
+	aptGetPackages = func(string) []string { return nil }
+	if got, _ := aptGetNewCommand(types.NewCommand("make", "command not found")); len(got) != 0 {
+		t.Fatalf("aptGetNewCommand(no package) = %q", got)
+	}
+	aptGetPackages = func(string) []string { return []string{"make"} }
+	if got, _ := aptGetNewCommand(types.NewCommand("make", "command not found")); len(got) != 1 ||
+		got[0] != "sudo apt-get install make && make" {
+		t.Fatalf("aptGetNewCommand() = %q", got)
+	}
+
+	t.Setenv("PATH", "")
+	utils.ResetCaches()
+	_ = aptGetHandlerPath()
 }
