@@ -75,10 +75,10 @@ func clapSuggestions(commandOutput string, brokenPattern *regexp.Regexp, hint st
 // clapSuggestionCutoff is the minimum similarity between the value clap
 // reported and its suggestion before the correction is offered. A command line
 // parser that accepts the misspelled prefix of a subcommand reports the next
-// argument as the unknown one (rustup turns "rustup instal stable" into
-// "unrecognized subcommand 'stable'"); replacing that argument with the
-// suggested one would produce a wrong command, so a low similarity suggests
-// that the reported value is not the typo.
+// argument as the unknown one, for example when rustup accepts the prefix of
+// the install subcommand and then reports the toolchain argument. Replacing
+// that argument with the suggested one would produce a wrong command, so a low
+// similarity suggests that the reported value is not the typo.
 const clapSuggestionCutoff = 0.65
 
 // clapSubcommandNewCommand replaces the unknown subcommand with each suggestion
