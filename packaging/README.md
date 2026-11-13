@@ -94,6 +94,27 @@ To update the package for a release:
     git push
     ```
 
+### When SSH to aur.archlinux.org is blocked
+
+Some networks resolve `aur.archlinux.org` to a proxy address that closes port 22 (and
+443), so `git clone ssh://aur@aur.archlinux.org/...` fails with "Connection closed" or
+"Connection reset". The AUR Git service is still reachable directly; resolve the current address over
+DNS-over-HTTPS and keep the host key name with `HostKeyAlias`:
+
+```bash
+IP=$(curl -s -H 'accept: application/dns-json' \
+  'https://cloudflare-dns.com/dns-query?name=aur.archlinux.org&type=A' |
+  jq -r '.Answer[] | select(.type == 1) | .data' | head -n1)
+export GIT_SSH_COMMAND="ssh -o HostKeyAlias=aur.archlinux.org"
+git clone "ssh://aur@$IP/go-fuck.git"
+# ...copy PKGBUILD and .SRCINFO, commit, then:
+git push
+```
+
+The address can change, so resolve it again on every push instead of hard-coding it. The AUR RPC
+endpoint (`https://aur.archlinux.org/rpc/?v=5&type=info&arg[]=go-fuck`) works over HTTPS and reports the
+published version; it can lag behind the Git repository for a few minutes.
+
 ## Local updater
 
 `scripts/update-go-fuck.ps1` (Windows, and WSL unless `-SkipWsl` is passed) and
