@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/leafevans/go-fuck/internal/utils"
+	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // cmdInsertArgument inserts argument after the first word of a cmd.exe

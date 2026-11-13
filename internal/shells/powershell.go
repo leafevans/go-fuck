@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/leafevans/go-fuck/internal/consts"
-	"github.com/leafevans/go-fuck/internal/instant"
-	"github.com/leafevans/go-fuck/internal/logs"
+	"github.com/leafevans/go-fuck/v2/internal/consts"
+	"github.com/leafevans/go-fuck/v2/internal/instant"
+	"github.com/leafevans/go-fuck/v2/internal/logs"
 )
 
 // powershellAliasTemplate defines the alias function for PowerShell.

@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/leafevans/go-fuck/internal/shells"
-	"github.com/leafevans/go-fuck/internal/types"
-	"github.com/leafevans/go-fuck/internal/utils"
+	"github.com/leafevans/go-fuck/v2/internal/shells"
+	"github.com/leafevans/go-fuck/v2/internal/types"
+	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // goMissingModError is the error that Go prints when no module file exists.

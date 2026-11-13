@@ -3,7 +3,7 @@ package rules
 import (
 	"strings"
 
-	"github.com/leafevans/go-fuck/internal/types"
+	"github.com/leafevans/go-fuck/v2/internal/types"
 )
 
 // removeTrailingCedillaCedilla is the cedilla that is accidentally typed at

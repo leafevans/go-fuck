@@ -11,8 +11,8 @@ import (
 	"strings"
 	"unicode/utf16"
 
-	"github.com/leafevans/go-fuck/internal/consts"
-	"github.com/leafevans/go-fuck/internal/system"
+	"github.com/leafevans/go-fuck/v2/internal/consts"
+	"github.com/leafevans/go-fuck/v2/internal/system"
 )
 
 // powerShellName returns the canonical name of a PowerShell executable, or an

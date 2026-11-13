@@ -3,7 +3,7 @@ package rules
 import (
 	"testing"
 
-	"github.com/leafevans/go-fuck/internal/specific"
+	"github.com/leafevans/go-fuck/v2/internal/specific"
 )
 
 // makeUnknownTargetOutput returns the output of GNU make for a missing target.

@@ -10,8 +10,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/leafevans/go-fuck/internal/conf"
-	"github.com/leafevans/go-fuck/internal/consts"
+	"github.com/leafevans/go-fuck/v2/internal/conf"
+	"github.com/leafevans/go-fuck/v2/internal/consts"
 )
 
 // ANSI attributes used by the ember theme. The theme colors themselves are

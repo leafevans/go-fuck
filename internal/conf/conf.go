@@ -22,7 +22,7 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"github.com/leafevans/go-fuck/internal/consts"
+	"github.com/leafevans/go-fuck/v2/internal/consts"
 )
 
 // Settings is the complete go-fuck configuration.

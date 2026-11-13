@@ -3,7 +3,7 @@ package rules
 import (
 	"regexp"
 
-	"github.com/leafevans/go-fuck/internal/types"
+	"github.com/leafevans/go-fuck/v2/internal/types"
 )
 
 // powerShellExistingItem matches the existing item that New-Item reports.

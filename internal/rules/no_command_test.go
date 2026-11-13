@@ -3,7 +3,7 @@ package rules
 import (
 	"testing"
 
-	"github.com/leafevans/go-fuck/internal/types"
+	"github.com/leafevans/go-fuck/v2/internal/types"
 )
 
 // noCommandFakeExecutables returns the installed executables used by the tests.

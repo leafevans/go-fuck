@@ -3,10 +3,10 @@ package entrypoints
 import (
 	"path/filepath"
 
-	"github.com/leafevans/go-fuck/internal/conf"
-	"github.com/leafevans/go-fuck/internal/customrules"
-	"github.com/leafevans/go-fuck/internal/logs"
-	"github.com/leafevans/go-fuck/internal/rules"
+	"github.com/leafevans/go-fuck/v2/internal/conf"
+	"github.com/leafevans/go-fuck/v2/internal/customrules"
+	"github.com/leafevans/go-fuck/v2/internal/logs"
+	"github.com/leafevans/go-fuck/v2/internal/rules"
 )
 
 // loadCustomRules loads the declarative rules from the "rules" directory of

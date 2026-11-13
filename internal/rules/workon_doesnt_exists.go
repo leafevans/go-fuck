@@ -3,9 +3,9 @@ package rules
 import (
 	"os"
 
-	"github.com/leafevans/go-fuck/internal/system"
-	"github.com/leafevans/go-fuck/internal/types"
-	"github.com/leafevans/go-fuck/internal/utils"
+	"github.com/leafevans/go-fuck/v2/internal/system"
+	"github.com/leafevans/go-fuck/v2/internal/types"
+	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // workonGetAllEnvironments returns the names of the virtualenv environments. It

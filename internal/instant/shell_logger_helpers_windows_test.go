@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/leafevans/go-fuck/internal/consts"
+	"github.com/leafevans/go-fuck/v2/internal/consts"
 )
 
 func TestIsPowerShell(t *testing.T) {

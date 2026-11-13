@@ -6,7 +6,7 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	"github.com/leafevans/go-fuck/internal/types"
+	"github.com/leafevans/go-fuck/v2/internal/types"
 )
 
 // jsonTestResult mirrors the machine readable output of --json.

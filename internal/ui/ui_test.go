@@ -5,10 +5,10 @@ import (
 	"io"
 	"testing"
 
-	"github.com/leafevans/go-fuck/internal/conf"
-	"github.com/leafevans/go-fuck/internal/consts"
-	"github.com/leafevans/go-fuck/internal/logs"
-	"github.com/leafevans/go-fuck/internal/types"
+	"github.com/leafevans/go-fuck/v2/internal/conf"
+	"github.com/leafevans/go-fuck/v2/internal/consts"
+	"github.com/leafevans/go-fuck/v2/internal/logs"
+	"github.com/leafevans/go-fuck/v2/internal/types"
 )
 
 // testLogBuffer receives the log output of the UI tests.

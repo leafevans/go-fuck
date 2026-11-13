@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/internal/conf"
+	"github.com/leafevans/go-fuck/v2/internal/conf"
 )
 
 // BenchmarkReadHistoryFile measures parsing a large shell history file.

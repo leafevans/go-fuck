@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/internal/conf"
-	"github.com/leafevans/go-fuck/internal/logs"
-	"github.com/leafevans/go-fuck/internal/rules"
+	"github.com/leafevans/go-fuck/v2/internal/conf"
+	"github.com/leafevans/go-fuck/v2/internal/logs"
+	"github.com/leafevans/go-fuck/v2/internal/rules"
 )
 
 func TestLoadCustomRules(t *testing.T) {

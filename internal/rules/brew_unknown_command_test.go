@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/leafevans/go-fuck/internal/utils"
+	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 const brewUnknownCommandUnknown = `Error: Unknown command: inst`

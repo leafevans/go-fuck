@@ -4,8 +4,8 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/leafevans/go-fuck/internal/shells"
-	"github.com/leafevans/go-fuck/internal/types"
+	"github.com/leafevans/go-fuck/v2/internal/shells"
+	"github.com/leafevans/go-fuck/v2/internal/types"
 )
 
 // powerShellSetLocationPath matches the path of a failed Set-Location.

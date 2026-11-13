@@ -261,7 +261,7 @@ build() {
   cd "$pkgname-$pkgver"
   export CGO_ENABLED=0
   go build -trimpath \
-    -ldflags "-s -w -X github.com/leafevans/go-fuck/internal/consts.Version=$pkgver" \
+    -ldflags "-s -w -X github.com/leafevans/go-fuck/v2/internal/consts.Version=$pkgver" \
     -o go-fuck ./cmd/go-fuck
 }
 

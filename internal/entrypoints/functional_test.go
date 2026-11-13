@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/internal/shells"
-	"github.com/leafevans/go-fuck/internal/utils"
+	"github.com/leafevans/go-fuck/v2/internal/shells"
+	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // functionalQuotationCommand contains both a single and a double quote, so

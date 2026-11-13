@@ -9,14 +9,14 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/leafevans/go-fuck/internal/argumentparser"
-	"github.com/leafevans/go-fuck/internal/conf"
-	"github.com/leafevans/go-fuck/internal/consts"
-	"github.com/leafevans/go-fuck/internal/instant"
-	"github.com/leafevans/go-fuck/internal/logs"
-	"github.com/leafevans/go-fuck/internal/rules"
-	"github.com/leafevans/go-fuck/internal/shells"
-	"github.com/leafevans/go-fuck/internal/utils"
+	"github.com/leafevans/go-fuck/v2/internal/argumentparser"
+	"github.com/leafevans/go-fuck/v2/internal/conf"
+	"github.com/leafevans/go-fuck/v2/internal/consts"
+	"github.com/leafevans/go-fuck/v2/internal/instant"
+	"github.com/leafevans/go-fuck/v2/internal/logs"
+	"github.com/leafevans/go-fuck/v2/internal/rules"
+	"github.com/leafevans/go-fuck/v2/internal/shells"
+	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // doctorStatus is the result of a single doctor check.

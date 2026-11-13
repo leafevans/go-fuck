@@ -4,8 +4,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/leafevans/go-fuck/internal/specific"
-	"github.com/leafevans/go-fuck/internal/types"
+	"github.com/leafevans/go-fuck/v2/internal/specific"
+	"github.com/leafevans/go-fuck/v2/internal/types"
 )
 
 // hasExistsScriptPathExists reports whether a path exists. It is a variable so

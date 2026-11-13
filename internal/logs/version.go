@@ -8,7 +8,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/leafevans/go-fuck/internal/consts"
+	"github.com/leafevans/go-fuck/v2/internal/consts"
 )
 
 // VersionInfo describes the build and environment printed by --version.

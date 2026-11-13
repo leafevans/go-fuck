@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/internal/conf"
+	"github.com/leafevans/go-fuck/v2/internal/conf"
 )
 
 // findDoctorCheck returns the named check of the report.

@@ -4,7 +4,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/leafevans/go-fuck/internal/types"
+	"github.com/leafevans/go-fuck/v2/internal/types"
 )
 
 func TestRegisterCustom(t *testing.T) {

@@ -3,7 +3,7 @@ package rules
 import (
 	"testing"
 
-	"github.com/leafevans/go-fuck/internal/specific"
+	"github.com/leafevans/go-fuck/v2/internal/specific"
 )
 
 // npmMissingScriptOutput returns the npm output that reports a missing script.

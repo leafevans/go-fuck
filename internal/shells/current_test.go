@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/leafevans/go-fuck/internal/logs"
+	"github.com/leafevans/go-fuck/v2/internal/logs"
 )
 
 func TestCurrentAndSet(t *testing.T) {

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/internal/consts"
-	"github.com/leafevans/go-fuck/internal/types"
+	"github.com/leafevans/go-fuck/v2/internal/consts"
+	"github.com/leafevans/go-fuck/v2/internal/types"
 )
 
 // writeRule writes a rule file into dir.

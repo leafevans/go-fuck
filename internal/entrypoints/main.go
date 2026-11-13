@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/leafevans/go-fuck/internal/argumentparser"
-	"github.com/leafevans/go-fuck/internal/consts"
-	"github.com/leafevans/go-fuck/internal/logs"
-	"github.com/leafevans/go-fuck/internal/shells"
-	"github.com/leafevans/go-fuck/internal/system"
+	"github.com/leafevans/go-fuck/v2/internal/argumentparser"
+	"github.com/leafevans/go-fuck/v2/internal/consts"
+	"github.com/leafevans/go-fuck/v2/internal/logs"
+	"github.com/leafevans/go-fuck/v2/internal/shells"
+	"github.com/leafevans/go-fuck/v2/internal/system"
 )
 
 // Main is the entry point of the go-fuck command. It returns the process exit

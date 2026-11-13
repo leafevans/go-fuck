@@ -3,7 +3,7 @@ package rules
 import (
 	"testing"
 
-	"github.com/leafevans/go-fuck/internal/utils"
+	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // omnienvNoSuchCommandAppCommandsFixture mirrors the output of

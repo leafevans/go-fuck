@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/leafevans/go-fuck/internal/conf"
+	"github.com/leafevans/go-fuck/v2/internal/conf"
 )
 
 // updateGolden rewrites the golden files instead of comparing against them.

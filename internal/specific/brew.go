@@ -4,7 +4,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/leafevans/go-fuck/internal/utils"
+	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // GetBrewPathPrefix returns the Homebrew installation prefix, or an empty

@@ -3,7 +3,7 @@ package utils
 import (
 	"strings"
 
-	"github.com/leafevans/go-fuck/internal/types"
+	"github.com/leafevans/go-fuck/v2/internal/types"
 )
 
 // ReplaceArgument replaces a single command line argument.

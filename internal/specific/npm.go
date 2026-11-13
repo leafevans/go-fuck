@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/leafevans/go-fuck/internal/utils"
+	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // npmScriptLine matches the indented script lines of "npm run-script" output.

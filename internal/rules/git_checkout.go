@@ -5,10 +5,10 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/leafevans/go-fuck/internal/shells"
-	"github.com/leafevans/go-fuck/internal/specific"
-	"github.com/leafevans/go-fuck/internal/types"
-	"github.com/leafevans/go-fuck/internal/utils"
+	"github.com/leafevans/go-fuck/v2/internal/shells"
+	"github.com/leafevans/go-fuck/v2/internal/specific"
+	"github.com/leafevans/go-fuck/v2/internal/types"
+	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // gitCheckoutPathspec matches the path that git did not find.

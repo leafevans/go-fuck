@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/leafevans/go-fuck/internal/utils"
+	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // makefileNames are the file names GNU make searches, in order.

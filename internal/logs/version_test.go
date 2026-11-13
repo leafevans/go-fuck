@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/internal/conf"
+	"github.com/leafevans/go-fuck/v2/internal/conf"
 )
 
 // bannerInfo returns the fixture used by the banner tests.

@@ -9,7 +9,7 @@ multi-channel distribution for go-fuck.
 | Scoop (Windows)        | `bucket/go-fuck.json`                                        | `scoop bucket add go-fuck https://github.com/leafevans/go-fuck` then `scoop install go-fuck`                              |
 | AUR (Arch Linux)       | `packaging/aur/`                                             | `yay -S go-fuck`, or clone `https://aur.archlinux.org/go-fuck.git` and run `makepkg -si`                                  |
 | Prebuilt binaries      | GitHub releases                                              | download and put `go-fuck` on `PATH`                                                                                      |
-| Go toolchain           | `go install github.com/leafevans/go-fuck/cmd/go-fuck@latest` |                                                                                                                           |
+| Go toolchain           | `go install github.com/leafevans/go-fuck/v2/cmd/go-fuck@latest` |                                                                                                                           |
 
 ## Homebrew
 
@@ -198,6 +198,8 @@ CHECKSUMS=checksums.txt AUR_SOURCE=go-fuck-X.Y.Z.tar.gz`). The whole download
     blocked (see [Publishing to the AUR](#publishing-to-the-aur)).
 4. Run `go run ./tools/gen-rule-list -check` and the full test suite before
    tagging the follow-up commit.
+5. Check that `go install github.com/leafevans/go-fuck/v2/cmd/go-fuck@latest`
+   resolves the new tag; the major version is part of the Go module path.
 
 The version and checksums are intentionally committed as plain text so that the
 release process stays reviewable in the repository history.

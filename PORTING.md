@@ -29,7 +29,7 @@ package rules
 import (
 	"strings"
 
-	"github.com/leafevans/go-fuck/internal/types"
+	"github.com/leafevans/go-fuck/v2/internal/types"
 )
 
 // lsAllMatch reports whether ls was called without -a.

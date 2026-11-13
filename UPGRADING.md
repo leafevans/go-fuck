@@ -15,7 +15,7 @@ Starting with **1.0.0**:
   as before. The precedence stays: built-in defaults < `settings.json` < environment < command line
   flags.
 - **JSON output.** `--json` is a stable machine readable contract. `schema_version` is `1` for
-  the whole 1.x series. The fields `command`, `output`, `output_truncated` and
+  the whole 1.x and 2.x series. The fields `command`, `output`, `output_truncated` and
   `suggestions[].command`, `suggestions[].priority`, `suggestions[].side_effect` keep their
   meaning. New optional fields may be added in minor releases; consumers must ignore unknown fields.
   The document is written to stdout and diagnostics stay on stderr.
@@ -45,7 +45,7 @@ Upgrade with the channel you installed go-fuck from:
 | Homebrew          | `brew upgrade go-fuck`                                       |
 | Scoop             | `scoop update go-fuck`                                       |
 | AUR               | `yay -Syu` or `paru -Syu`                                    |
-| Go toolchain      | `go install github.com/leafevans/go-fuck/cmd/go-fuck@latest` |
+| Go toolchain      | `go install github.com/leafevans/go-fuck/v2/cmd/go-fuck@latest` |
 | Prebuilt archives | download the new archive and replace the binary              |
 
 `go-fuck --setup` is idempotent; it does not have to be run again after upgrading.
@@ -76,7 +76,7 @@ instant mode log.
 
 go-fuck now uses `encoding/json/v2` for every JSON document and therefore needs **Go 1.27 or newer**
 to build from source. The prebuilt release archives, Homebrew, Scoop and AUR packages are unaffected,
-and `go install github.com/leafevans/go-fuck/cmd/go-fuck@latest` keeps working because
+and `go install github.com/leafevans/go-fuck/v2/cmd/go-fuck@latest` keeps working because
 `GOTOOLCHAIN=auto` (the default) downloads Go 1.27 when the installed toolchain is older. Only
 builds with `GOTOOLCHAIN=local` and an older Go need an upgrade.
 
@@ -93,6 +93,18 @@ The settings and `--json` contracts keep their keys, meaning and `schema_version
   encoder no longer escapes `<`, `>` and `&` as `\u003c`, `\u003e` and `\u0026` inside strings;
   both forms are valid JSON and decode to the same values. Invalid UTF-8 bytes in captured command
   output are replaced with U+FFFD before encoding, so `--json` always emits a valid document.
+
+## Upgrading from 2.20 to 2.21.0
+
+The Go module moved to `github.com/leafevans/go-fuck/v2` so that `go install` resolves the current
+release series. No settings, command line or `--json` migration is required: only the import path of
+the Go packages and the install command change.
+
+- Install with `go install github.com/leafevans/go-fuck/v2/cmd/go-fuck@latest`. The command without
+the `/v2` suffix keeps resolving to the old 1.x series, because a Go module path has to carry the
+major version from 2 on.
+- Homebrew, Scoop, the AUR package and the prebuilt archives are unaffected; nothing has to be
+reinstalled beyond the usual upgrade command.
 
 ## Future releases
 

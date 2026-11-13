@@ -8,7 +8,7 @@
 # supported shells and the TF_SHELL/TF_ALIAS mechanism.
 
 if (-not (Get-Command "go-fuck" -ErrorAction Ignore)) {
-    Write-Error "go-fuck is not on PATH. Install it with: go install github.com/leafevans/go-fuck/cmd/go-fuck@latest"
+    Write-Error "go-fuck is not on PATH. Install it with: go install github.com/leafevans/go-fuck/v2/cmd/go-fuck@latest"
     exit 1
 }
 

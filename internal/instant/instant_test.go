@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/internal/consts"
+	"github.com/leafevans/go-fuck/v2/internal/consts"
 )
 
 // prompt returns a log line with the instant mode prompt marker.

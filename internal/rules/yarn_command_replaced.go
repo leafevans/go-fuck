@@ -3,8 +3,8 @@ package rules
 import (
 	"regexp"
 
-	"github.com/leafevans/go-fuck/internal/types"
-	"github.com/leafevans/go-fuck/internal/utils"
+	"github.com/leafevans/go-fuck/v2/internal/types"
+	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // yarnCommandReplacedRunInstead matches the replacement command yarn suggests.

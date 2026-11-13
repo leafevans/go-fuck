@@ -5,8 +5,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/leafevans/go-fuck/internal/shells"
-	"github.com/leafevans/go-fuck/internal/types"
+	"github.com/leafevans/go-fuck/v2/internal/shells"
+	"github.com/leafevans/go-fuck/v2/internal/types"
 )
 
 // chmodXPathExists reports whether a path exists. It is a variable so that

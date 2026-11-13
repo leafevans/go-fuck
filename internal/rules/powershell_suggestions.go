@@ -4,7 +4,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/leafevans/go-fuck/internal/types"
+	"github.com/leafevans/go-fuck/v2/internal/types"
 )
 
 // powerShellCommandIs reports whether the command starts with one of the given

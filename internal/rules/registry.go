@@ -8,7 +8,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/leafevans/go-fuck/internal/types"
+	"github.com/leafevans/go-fuck/v2/internal/types"
 )
 
 // Characters used by rules that build shell snippets or match quoting

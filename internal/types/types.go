@@ -12,11 +12,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/leafevans/go-fuck/internal/conf"
-	"github.com/leafevans/go-fuck/internal/consts"
-	"github.com/leafevans/go-fuck/internal/logs"
-	"github.com/leafevans/go-fuck/internal/output"
-	"github.com/leafevans/go-fuck/internal/shells"
+	"github.com/leafevans/go-fuck/v2/internal/conf"
+	"github.com/leafevans/go-fuck/v2/internal/consts"
+	"github.com/leafevans/go-fuck/v2/internal/logs"
+	"github.com/leafevans/go-fuck/v2/internal/output"
+	"github.com/leafevans/go-fuck/v2/internal/shells"
 )
 
 // ErrEmptyCommand is returned when an empty command is passed to go-fuck.

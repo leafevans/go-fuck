@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/internal/rules"
+	"github.com/leafevans/go-fuck/v2/internal/rules"
 )
 
 func TestRuleNames(t *testing.T) {

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/internal/consts"
-	"github.com/leafevans/go-fuck/internal/instant"
+	"github.com/leafevans/go-fuck/v2/internal/consts"
+	"github.com/leafevans/go-fuck/v2/internal/instant"
 )
 
 func TestDoctorInstantCheck(t *testing.T) {

@@ -1,6 +1,6 @@
 package rules
 
-import "github.com/leafevans/go-fuck/internal/types"
+import "github.com/leafevans/go-fuck/v2/internal/types"
 
 // cdCsMatch reports whether the command is the "cs" typo of "cd".
 func cdCsMatch(command *types.Command) bool {

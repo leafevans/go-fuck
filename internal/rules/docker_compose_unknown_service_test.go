@@ -3,7 +3,7 @@ package rules
 import (
 	"testing"
 
-	"github.com/leafevans/go-fuck/internal/specific"
+	"github.com/leafevans/go-fuck/v2/internal/specific"
 )
 
 // composeUnknownServiceOutput returns the output of docker compose for a

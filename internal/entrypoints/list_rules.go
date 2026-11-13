@@ -6,9 +6,9 @@ import (
 	"os"
 	"sort"
 
-	"github.com/leafevans/go-fuck/internal/argumentparser"
-	"github.com/leafevans/go-fuck/internal/consts"
-	"github.com/leafevans/go-fuck/internal/rules"
+	"github.com/leafevans/go-fuck/v2/internal/argumentparser"
+	"github.com/leafevans/go-fuck/v2/internal/consts"
+	"github.com/leafevans/go-fuck/v2/internal/rules"
 )
 
 // listRules runs the --list-rules command.

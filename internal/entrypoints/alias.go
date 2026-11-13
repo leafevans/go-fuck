@@ -3,10 +3,10 @@ package entrypoints
 import (
 	"fmt"
 
-	"github.com/leafevans/go-fuck/internal/argumentparser"
-	"github.com/leafevans/go-fuck/internal/conf"
-	"github.com/leafevans/go-fuck/internal/logs"
-	"github.com/leafevans/go-fuck/internal/shells"
+	"github.com/leafevans/go-fuck/v2/internal/argumentparser"
+	"github.com/leafevans/go-fuck/v2/internal/conf"
+	"github.com/leafevans/go-fuck/v2/internal/logs"
+	"github.com/leafevans/go-fuck/v2/internal/shells"
 )
 
 // printAlias prints the alias definition for the current shell.

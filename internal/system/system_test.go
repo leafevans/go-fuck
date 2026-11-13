@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/internal/consts"
+	"github.com/leafevans/go-fuck/v2/internal/consts"
 )
 
 // fakeSystemExecutable creates an executable stub in dir and returns its path.

@@ -5,8 +5,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/leafevans/go-fuck/internal/consts"
-	"github.com/leafevans/go-fuck/internal/logs"
+	"github.com/leafevans/go-fuck/v2/internal/consts"
+	"github.com/leafevans/go-fuck/v2/internal/logs"
 )
 
 // Tcsh implements the tcsh specific behavior.

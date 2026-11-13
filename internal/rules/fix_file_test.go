@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/leafevans/go-fuck/internal/conf"
+	"github.com/leafevans/go-fuck/v2/internal/conf"
 )
 
 // fixFileTest is one output format covered by the original test suite.

@@ -3,8 +3,8 @@ package rules
 import (
 	"regexp"
 
-	"github.com/leafevans/go-fuck/internal/types"
-	"github.com/leafevans/go-fuck/internal/utils"
+	"github.com/leafevans/go-fuck/v2/internal/types"
+	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // taskUnknownTask matches the error of go-task for a missing task when it

@@ -7,10 +7,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/leafevans/go-fuck/internal/conf"
-	"github.com/leafevans/go-fuck/internal/logs"
-	"github.com/leafevans/go-fuck/internal/rules"
-	"github.com/leafevans/go-fuck/internal/types"
+	"github.com/leafevans/go-fuck/v2/internal/conf"
+	"github.com/leafevans/go-fuck/v2/internal/logs"
+	"github.com/leafevans/go-fuck/v2/internal/rules"
+	"github.com/leafevans/go-fuck/v2/internal/types"
 )
 
 // GetRules returns the enabled rules ordered by priority.

@@ -4,9 +4,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/leafevans/go-fuck/internal/specific"
-	"github.com/leafevans/go-fuck/internal/types"
-	"github.com/leafevans/go-fuck/internal/utils"
+	"github.com/leafevans/go-fuck/v2/internal/specific"
+	"github.com/leafevans/go-fuck/v2/internal/types"
+	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // composeNoSuchService matches the error of docker compose for a service that

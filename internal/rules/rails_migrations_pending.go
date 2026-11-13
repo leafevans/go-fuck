@@ -4,8 +4,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/leafevans/go-fuck/internal/shells"
-	"github.com/leafevans/go-fuck/internal/types"
+	"github.com/leafevans/go-fuck/v2/internal/shells"
+	"github.com/leafevans/go-fuck/v2/internal/types"
 )
 
 // railsMigrationsPendingSuggestion matches the migration command suggested by

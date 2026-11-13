@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/leafevans/go-fuck/internal/consts"
+	"github.com/leafevans/go-fuck/v2/internal/consts"
 )
 
 // TestRunLoggedShell starts an interactive bash on a pseudo terminal, feeds a

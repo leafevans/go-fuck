@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/leafevans/go-fuck/internal/consts"
+	"github.com/leafevans/go-fuck/v2/internal/consts"
 )
 
 // testPowerShell returns the path of Windows PowerShell, or skips the test.

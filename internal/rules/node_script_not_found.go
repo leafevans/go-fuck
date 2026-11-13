@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/leafevans/go-fuck/internal/types"
-	"github.com/leafevans/go-fuck/internal/utils"
+	"github.com/leafevans/go-fuck/v2/internal/types"
+	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // nodeCannotFindModule matches the path of a module that Node.js cannot find.

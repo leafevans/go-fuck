@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/internal/consts"
-	"github.com/leafevans/go-fuck/internal/rules"
-	"github.com/leafevans/go-fuck/internal/shells"
+	"github.com/leafevans/go-fuck/v2/internal/consts"
+	"github.com/leafevans/go-fuck/v2/internal/rules"
+	"github.com/leafevans/go-fuck/v2/internal/shells"
 )
 
 func TestVersionInfo(t *testing.T) {

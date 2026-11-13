@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/internal/consts"
+	"github.com/leafevans/go-fuck/v2/internal/consts"
 )
 
 // writeRenderedLog writes a ConPTY terminal log fixture to a temporary file.

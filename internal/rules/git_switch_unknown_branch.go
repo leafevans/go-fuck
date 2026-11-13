@@ -3,9 +3,9 @@ package rules
 import (
 	"regexp"
 
-	"github.com/leafevans/go-fuck/internal/specific"
-	"github.com/leafevans/go-fuck/internal/types"
-	"github.com/leafevans/go-fuck/internal/utils"
+	"github.com/leafevans/go-fuck/v2/internal/specific"
+	"github.com/leafevans/go-fuck/v2/internal/types"
+	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // gitSwitchUnknownBranchReference matches the reference that git switch could

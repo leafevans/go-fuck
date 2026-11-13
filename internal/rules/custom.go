@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/leafevans/go-fuck/internal/types"
+	"github.com/leafevans/go-fuck/v2/internal/types"
 )
 
 // RegisterCustom adds a rule that was loaded from a user rule file.

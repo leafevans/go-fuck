@@ -1,7 +1,7 @@
 package specific
 
 import (
-	"github.com/leafevans/go-fuck/internal/utils"
+	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // AptAvailable reports whether apt is available.

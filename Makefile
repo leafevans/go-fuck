@@ -26,7 +26,7 @@ endif
 
 # Extra linker flags, for example:
 #
-#	make build LDFLAGS="-X github.com/leafevans/go-fuck/internal/consts.Version=1.2.3"
+#	make build LDFLAGS="-X github.com/leafevans/go-fuck/v2/internal/consts.Version=1.2.3"
 LDFLAGS ?=
 
 .PHONY: help build test test-race cover bench fuzz vet fmt fmt-check lint install clean packaging packaging-check rules-list rules-list-check

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/internal/consts"
+	"github.com/leafevans/go-fuck/v2/internal/consts"
 )
 
 // aliasSyntaxContains verifies that the generated alias mentions the alias name

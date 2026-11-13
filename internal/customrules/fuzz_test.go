@@ -5,8 +5,8 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/leafevans/go-fuck/internal/consts"
-	"github.com/leafevans/go-fuck/internal/types"
+	"github.com/leafevans/go-fuck/v2/internal/consts"
+	"github.com/leafevans/go-fuck/v2/internal/types"
 )
 
 // fuzzSampleCommands is the fixed set of commands the custom-rule pipeline is

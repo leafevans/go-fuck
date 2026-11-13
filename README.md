@@ -3,7 +3,7 @@
 [![CI](https://github.com/leafevans/go-fuck/actions/workflows/ci.yml/badge.svg)](https://github.com/leafevans/go-fuck/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/leafevans/go-fuck/actions/workflows/codeql.yml/badge.svg)](https://github.com/leafevans/go-fuck/actions/workflows/codeql.yml)
 [![Website](https://img.shields.io/badge/website-leafevans.github.io%2Fgo--fuck-blue)](https://leafevans.github.io/go-fuck/)
-[![Go Reference](https://pkg.go.dev/badge/github.com/leafevans/go-fuck.svg)](https://pkg.go.dev/github.com/leafevans/go-fuck)
+[![Go Reference](https://pkg.go.dev/badge/github.com/leafevans/go-fuck/v2.svg)](https://pkg.go.dev/github.com/leafevans/go-fuck/v2)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 A blazingly fast reimplementation of [thefuck](https://github.com/nvbn/thefuck) in Go.
@@ -151,11 +151,13 @@ targets x86_64; on other architectures use `go install` or the prebuilt binaries
 ### With `go install`
 
 ```bash
-go install github.com/leafevans/go-fuck/cmd/go-fuck@latest
+go install github.com/leafevans/go-fuck/v2/cmd/go-fuck@latest
 ```
 
-The binary is installed into `$(go env GOPATH)/bin` (`%USERPROFILE%\go\bin` on Windows). Make
-sure that directory is on your `PATH`.
+The module path ends in `/v2` because the major version is part of the Go module path; use the
+command above, the module without the suffix only carries the old 1.x releases. The binary is
+installed into `$(go env GOPATH)/bin` (`%USERPROFILE%\go\bin` on Windows). Make sure that
+directory is on your `PATH`.
 
 ### Prebuilt binaries
 
