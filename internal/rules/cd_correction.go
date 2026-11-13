@@ -55,24 +55,27 @@ func cdCorrectionNewCommand(command *types.Command) ([]string, error) {
 	}
 
 	separator := string(os.PathSeparator)
-	destination := strings.Split(parts[1], separator)
-	if len(destination) > 0 && destination[len(destination)-1] == "" {
-		destination = destination[:len(destination)-1]
-	}
-	if len(destination) == 0 {
-		return nil, nil
-	}
-
+	path := parts[1]
 	cwd := ""
-	if destination[0] == "" {
-		cwd = separator
-		destination = destination[1:]
+	if filepath.IsAbs(path) {
+		volume := filepath.VolumeName(path)
+		cwd = volume + separator
+		path = strings.TrimPrefix(path, volume)
 	} else {
 		workingDirectory, err := cdCorrectionGetwd()
 		if err != nil {
 			return nil, err
 		}
 		cwd = workingDirectory
+	}
+	// Windows accepts both slash styles, so a path typed with forward slashes
+	// has to be split the same way as one typed with backslashes. On POSIX
+	// systems a backslash is a valid character in a directory name.
+	destination := strings.FieldsFunc(path, func(character rune) bool {
+		return character == '/' || (separator == "\\" && character == '\\')
+	})
+	if len(destination) == 0 {
+		return nil, nil
 	}
 
 	for _, directory := range destination {

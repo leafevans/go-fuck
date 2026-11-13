@@ -296,3 +296,108 @@ func TestPowerShellProfile(t *testing.T) {
 		t.Skip("no PowerShell flavor is installed")
 	}
 }
+
+func TestSetupConfigPath(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
+	got, err := setupConfigPath("~/.bashrc")
+	if err != nil {
+		t.Fatalf("setupConfigPath() error = %v", err)
+	}
+	if got != filepath.Join(home, ".bashrc") {
+		t.Fatalf("setupConfigPath() = %q", got)
+	}
+	if _, err := setupConfigPath("relative/path"); err == nil {
+		t.Fatal("setupConfigPath() accepted a relative path")
+	}
+}
+
+func TestAppendConfigurationLine(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config")
+	if err := appendConfigurationLine(path, "line", nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := readFile(t, path); got != "line\n" {
+		t.Fatalf("appendConfigurationLine(empty) = %q", got)
+	}
+
+	if err := os.WriteFile(path, []byte("first"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := appendConfigurationLine(path, "second", []byte("first")); err != nil {
+		t.Fatal(err)
+	}
+	if got := readFile(t, path); got != "first\nsecond\n" {
+		t.Fatalf("appendConfigurationLine(no newline) = %q", got)
+	}
+
+	if err := os.WriteFile(path, []byte("first\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := appendConfigurationLine(path, "third", []byte("first\n")); err != nil {
+		t.Fatal(err)
+	}
+	if got := readFile(t, path); got != "first\nthird\n" {
+		t.Fatalf("appendConfigurationLine(with newline) = %q", got)
+	}
+
+	if err := appendConfigurationLine(filepath.Join(dir, "missing", "config"), "line", nil); err == nil {
+		t.Fatal("appendConfigurationLine() of a missing directory returned no error")
+	}
+}
+
+func TestReplaceInstantModeLine(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config")
+	legacy := "eval $(go-fuck --alias --enable-experimental-instant-mode)\nkeep\n"
+	if err := os.WriteFile(path, []byte(legacy), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	content := "eval \"$(go-fuck --alias --enable-experimental-instant-mode)\""
+	changed, err := replaceInstantModeLine(path, []byte(legacy), content)
+	if err != nil {
+		t.Fatalf("replaceInstantModeLine() error = %v", err)
+	}
+	if !changed {
+		t.Fatal("replaceInstantModeLine() did not change the legacy line")
+	}
+	if got := readFile(t, path); !strings.Contains(got, content) || !strings.Contains(got, "keep") {
+		t.Fatalf("replaceInstantModeLine() = %q", got)
+	}
+
+	changed, err = replaceInstantModeLine(path, []byte("nothing here\n"), content)
+	if err != nil || changed {
+		t.Fatalf("replaceInstantModeLine(nothing) = %t, %v", changed, err)
+	}
+
+	if _, err := replaceInstantModeLine(filepath.Join(t.TempDir(), "missing"), []byte(legacy), content); err == nil {
+		t.Fatal("replaceInstantModeLine() of a missing file returned no error")
+	}
+}
+
+func TestWellKnownPowerShellPath(t *testing.T) {
+	t.Setenv("SystemRoot", "")
+	if got := wellKnownPowerShellPath("powershell.exe"); got != "" {
+		t.Fatalf("wellKnownPowerShellPath(no SystemRoot) = %q", got)
+	}
+	t.Setenv("SystemRoot", t.TempDir())
+	if got := wellKnownPowerShellPath("powershell.exe"); got != "" {
+		t.Fatalf("wellKnownPowerShellPath(missing binary) = %q", got)
+	}
+	if got := wellKnownPowerShellPath("pwsh"); got != "" {
+		t.Fatalf("wellKnownPowerShellPath(pwsh) = %q", got)
+	}
+}
+
+func TestSetupManualConfiguration(t *testing.T) {
+	resetEntrypointsState(t)
+	t.Setenv("TF_SHELL", "generic")
+	code, _, stderr := runMain(t, "go-fuck", "--setup")
+	if code != 1 {
+		t.Fatalf("Main(--setup) = %d, want 1", code)
+	}
+	if !strings.Contains(stderr, "can't configure") {
+		t.Fatalf("stderr = %q", stderr)
+	}
+}

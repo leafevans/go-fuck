@@ -1,6 +1,10 @@
 package rules
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
 
 // uvFailedSpawnOutput is the output of uv run for a file that does not exist.
 const uvFailedSpawnOutput = "error: Failed to spawn: mian.py\n  cause: program not found\n"
@@ -33,4 +37,32 @@ func TestRuleUvScriptNotFound(t *testing.T) {
 	stubUvScriptCandidates(t, []string{"main.py"})
 	assertNotMatch(t, rule, "uv run pytest",
 		"error: Failed to spawn: pytest\n  cause: program not found\n")
+}
+
+func TestUvScriptNotFoundEdges(t *testing.T) {
+	resetTestState(t)
+	rule := Get("uv_script_not_found")
+	stubUvScriptCandidates(t, []string{"main.py"})
+
+	assertNotMatch(t, rule, "uv mian.py", uvFailedSpawnOutput)
+	assertNotMatch(t, rule, "python mian.py", uvFailedSpawnOutput)
+	assertNotMatch(t, rule, "uv run mian.py", "error: other\n")
+	assertNotMatch(t, rule, "uv run mian.py", "error: Failed to spawn: mian.py\n")
+	stubUvScriptCandidates(t, []string{"unrelated.py"})
+	assertNotMatch(t, rule, "uv run mian.py", uvFailedSpawnOutput)
+}
+
+func TestUvScriptCandidates(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "main.py"), nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Mkdir(filepath.Join(dir, "sub"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Chdir(dir)
+	names := uvScriptCandidates()
+	if len(names) != 1 || names[0] != "main.py" {
+		t.Fatalf("uvScriptCandidates() = %q", names)
+	}
 }

@@ -56,6 +56,8 @@ func TestRuleCdCorrectionNewCommand(t *testing.T) {
 		want   string
 	}{
 		{"cd prject", "cd \"" + filepath.Join(root, "project") + "\""},
+		// Windows also accepts forward slashes in a path.
+		{"cd prject/subdr", "cd \"" + filepath.Join(root, "project", "subdir") + "\""},
 		{"cd zzzz", "mkdir -p zzzz && cd zzzz"},
 	} {
 		assertNewCommands(t, rule, testCase.script, "", []string{testCase.want})
