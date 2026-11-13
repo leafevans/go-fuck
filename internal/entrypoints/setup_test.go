@@ -401,3 +401,50 @@ func TestSetupManualConfiguration(t *testing.T) {
 		t.Fatalf("setup() = %d, want 1", code)
 	}
 }
+
+// setupTestShell is a fake shell whose configuration can be controlled by the
+// test.
+type setupTestShell struct {
+	*shells.Generic
+	name       string
+	configured *shells.Configuration
+}
+
+func (s setupTestShell) Name() string         { return s.name }
+func (s setupTestShell) FriendlyName() string { return s.name }
+func (s setupTestShell) HowToConfigure() *shells.Configuration {
+	return s.configured
+}
+
+func TestSetupManualConfigurationPaths(t *testing.T) {
+	resetEntrypointsState(t)
+	t.Cleanup(func() { shells.Set(shells.NewGeneric()) })
+
+	cases := []struct {
+		name string
+		path string
+		want int
+	}{
+		{"shell variable path", "$PROFILE", 0},
+		{"relative path", "relative/config", 0},
+		{"missing absolute path", filepath.Join(t.TempDir(), "missing", "config"), 0},
+		{"directory path", t.TempDir(), 1},
+	}
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			shells.Set(setupTestShell{
+				Generic: shells.NewGeneric(),
+				name:    "test",
+				configured: &shells.Configuration{
+					Content:                   "eval \"$(go-fuck --alias)\"",
+					Path:                      testCase.path,
+					Reload:                    "reload",
+					CanConfigureAutomatically: true,
+				},
+			})
+			if code := setup(&argumentparser.Args{}); code != testCase.want {
+				t.Fatalf("setup() = %d, want %d for %s", code, testCase.want, testCase.path)
+			}
+		})
+	}
+}

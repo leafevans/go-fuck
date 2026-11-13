@@ -81,3 +81,47 @@ func TestRuleSSHKnownHosts(t *testing.T) {
 		}
 	})
 }
+
+func TestRuleSSHKnownHostsSideEffectMultipleEntries(t *testing.T) {
+	resetTestState(t)
+	rule := Get("ssh_known_hosts")
+	path := filepath.Join(t.TempDir(), "known_hosts")
+	content := "one\n two\nthree\nfour\nfive\nsix\n"
+	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	output := "Offending RSA key in " + path + ":2\n" +
+		"Matching host key in " + path + ":5\n"
+	if err := rule.SideEffect(testCommand("ssh host", output), ""); err != nil {
+		t.Fatalf("side effect returned an error: %v", err)
+	}
+	got, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "one\nthree\nfour\nsix\n"
+	if string(got) != want {
+		t.Fatalf("side effect left %q, want %q", string(got), want)
+	}
+}
+
+func TestRuleSSHKnownHostsSideEffectDuplicateEntry(t *testing.T) {
+	resetTestState(t)
+	rule := Get("ssh_known_hosts")
+	path := filepath.Join(t.TempDir(), "known_hosts")
+	if err := os.WriteFile(path, []byte("one\ntwo\nthree\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	output := "Offending RSA key in " + path + ":2\n" +
+		"Offending RSA key in " + path + ":2\n"
+	if err := rule.SideEffect(testCommand("ssh host", output), ""); err != nil {
+		t.Fatalf("side effect returned an error: %v", err)
+	}
+	got, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "one\nthree\n"; string(got) != want {
+		t.Fatalf("side effect left %q, want %q", string(got), want)
+	}
+}

@@ -238,3 +238,18 @@ func TestGetRawCommandPowerShellMultilineHistory(t *testing.T) {
 	t.Setenv("TF_HISTORY", "fuck\n")
 	assertRawCommand(t, getRawCommand(&argumentparser.Args{}), nil)
 }
+
+func TestMainJSONEmptyCommand(t *testing.T) {
+	resetEntrypointsState(t)
+	for _, args := range [][]string{
+		{"go-fuck", "--json", "--force-command", "   "},
+	} {
+		code, stdout, stderr := runMain(t, args...)
+		if code != 0 {
+			t.Fatalf("Main(%v) = %d, stderr = %s", args, code, stderr)
+		}
+		if !strings.Contains(stdout, "\"schema_version\"") {
+			t.Fatalf("Main(%v) output = %q, want JSON", args, stdout)
+		}
+	}
+}

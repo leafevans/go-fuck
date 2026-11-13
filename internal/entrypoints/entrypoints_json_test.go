@@ -204,3 +204,17 @@ func TestPrintJSONOmitsUnavailableOutput(t *testing.T) {
 		t.Fatalf("stdout = %q, want the output field to be omitted", stdout)
 	}
 }
+
+func TestTruncatedOutputHandlesReplacementGrowth(t *testing.T) {
+	input := strings.Repeat("\xff", jsonOutputLimit/2) + strings.Repeat("a", jsonOutputLimit)
+	output, truncated := truncatedOutput(input)
+	if !truncated {
+		t.Fatal("truncatedOutput() did not report truncation")
+	}
+	if len(output) > jsonOutputLimit {
+		t.Fatalf("truncatedOutput() length = %d, want at most %d", len(output), jsonOutputLimit)
+	}
+	if !utf8.ValidString(output) {
+		t.Fatal("truncatedOutput() produced invalid UTF-8")
+	}
+}

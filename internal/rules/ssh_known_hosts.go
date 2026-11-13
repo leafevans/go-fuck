@@ -3,6 +3,7 @@ package rules
 import (
 	"os"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -84,8 +85,13 @@ func sshKnownHostsOffendingEntries(commandOutput string) []sshKnownHostsOffendin
 // sshKnownHostsSideEffect removes the outdated keys from the known_hosts
 // files.
 func sshKnownHostsSideEffect(oldCommand *types.Command, script string) error {
+	byPath := map[string][]int{}
 	for _, entry := range sshKnownHostsOffendingEntries(oldCommand.Output) {
-		content, err := os.ReadFile(entry.path)
+		byPath[entry.path] = append(byPath[entry.path], entry.line)
+	}
+
+	for path, lineNumbers := range byPath {
+		content, err := os.ReadFile(path)
 		if err != nil {
 			return err
 		}
@@ -96,11 +102,33 @@ func sshKnownHostsSideEffect(oldCommand *types.Command, script string) error {
 		if len(lines) > 0 && lines[len(lines)-1] == "" {
 			lines = lines[:len(lines)-1]
 		}
-		if entry.line < 1 || entry.line > len(lines) {
+
+		// Remove the entries from the bottom up: removing the top line first
+		// would shift every later line number. Duplicate entries are removed
+		// once so that the second removal cannot hit the following line.
+		sort.Sort(sort.Reverse(sort.IntSlice(lineNumbers)))
+		removed := 0
+		previous := -1
+		for _, line := range lineNumbers {
+			if line == previous {
+				continue
+			}
+			previous = line
+			if line < 1 || line > len(lines) {
+				continue
+			}
+			lines = append(lines[:line-1], lines[line:]...)
+			removed++
+		}
+		if removed == 0 {
 			continue
 		}
-		lines = append(lines[:entry.line-1], lines[entry.line:]...)
-		if err := os.WriteFile(entry.path, []byte(strings.Join(lines, "")), 0o600); err != nil {
+
+		info, err := os.Stat(path)
+		if err != nil {
+			return err
+		}
+		if err := os.WriteFile(path, []byte(strings.Join(lines, "")), info.Mode().Perm()); err != nil {
 			return err
 		}
 	}
