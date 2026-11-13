@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"strings"
 	"testing"
@@ -385,9 +386,12 @@ func TestNpmGetScriptsParsesOutput(t *testing.T) {
 	// standard directories: the PATH below only contains the stub first.
 	t.Setenv("PATH", dir+string(os.PathListSeparator)+"/bin"+string(os.PathListSeparator)+"/usr/bin")
 
+	// npm 7 and newer list the lifecycle scripts before the scripts that are
+	// available via npm run, so both groups are returned.
 	scripts := NpmGetScripts()
-	if len(scripts) != 2 || scripts[0] != "build" || scripts[1] != "lint" {
-		t.Fatalf("NpmGetScripts() = %q, want [build lint]", scripts)
+	want := []string{"test", "build", "lint"}
+	if !reflect.DeepEqual(scripts, want) {
+		t.Fatalf("NpmGetScripts() = %q, want %q", scripts, want)
 	}
 }
 
