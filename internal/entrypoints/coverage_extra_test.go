@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/leafevans/go-fuck/v2/internal/argumentparser"
+	"github.com/leafevans/go-fuck/v2/internal/conf"
 	"github.com/leafevans/go-fuck/v2/internal/logs"
 	"github.com/leafevans/go-fuck/v2/internal/shells"
 )
@@ -76,8 +77,8 @@ func makeReadOnly(t *testing.T, path string) {
 }
 
 func TestSetupReportsSettingsLoadFailure(t *testing.T) {
-	configDir := resetEntrypointsState(t)
-	settingsPath := filepath.Join(configDir, "go-fuck", "settings.json")
+	resetEntrypointsState(t)
+	settingsPath := filepath.Join(conf.UserDir(), "settings.json")
 	if err := os.MkdirAll(filepath.Dir(settingsPath), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -223,8 +224,8 @@ func TestPowerShellProfileFakeExecutable(t *testing.T) {
 }
 
 func TestFixCommandReportsSettingsLoadFailure(t *testing.T) {
-	configDir := resetEntrypointsState(t)
-	settingsPath := filepath.Join(configDir, "go-fuck", "settings.json")
+	resetEntrypointsState(t)
+	settingsPath := filepath.Join(conf.UserDir(), "settings.json")
 	if err := os.MkdirAll(filepath.Dir(settingsPath), 0o755); err != nil {
 		t.Fatal(err)
 	}
