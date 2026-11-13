@@ -264,6 +264,7 @@ var expectedExtraRuleNames = []string{
 	"powershell_mkdir_existing",
 	"powershell_remove_recurse",
 	"powershell_set_location",
+	"powershell_unix_flags",
 	"rustup_toolchain_missing",
 	"rustup_unknown_subcommand",
 	"task_unknown_task",
