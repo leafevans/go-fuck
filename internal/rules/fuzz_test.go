@@ -26,6 +26,9 @@ func FuzzRules(f *testing.F) {
 	for _, seed := range seeds {
 		f.Add(seed.script, seed.output)
 	}
+	for _, seed := range ruleCorpus() {
+		f.Add(seed.script, seed.output)
+	}
 	registered := All()
 	if len(registered) == 0 {
 		f.Fatal("no rules are registered")
