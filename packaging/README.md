@@ -85,14 +85,43 @@ To update the package for a release:
     ```
     A packaging-only change (no new version) is not generated; bump `pkgrel`
     manually in both files instead.
-3. Push the two files to the AUR:
+3. Publish the two files to the AUR with `scripts/push-aur.sh` (see
+   [Publishing to the AUR](#publishing-to-the-aur)):
     ```bash
-    git clone ssh://aur@aur.archlinux.org/go-fuck.git
-    cp packaging/aur/PKGBUILD packaging/aur/.SRCINFO go-fuck/
-    cd go-fuck
-    git commit -am "upgpkg: go-fuck X.Y.Z-1"
-    git push
+    bash scripts/push-aur.sh --version X.Y.Z
     ```
+
+### Publishing to the AUR
+
+`scripts/push-aur.sh` is the preferred way to publish `packaging/aur/PKGBUILD`
+and `packaging/aur/.SRCINFO`. It works on Linux, macOS and in a WSL shell on
+Windows and needs bash, git and an SSH key registered with the AUR:
+
+```bash
+bash scripts/push-aur.sh --version X.Y.Z                # clone, commit and push
+bash scripts/push-aur.sh --version X.Y.Z --direct-ip    # blocked SSH fallback
+bash scripts/push-aur.sh --dry-run                      # print the plan, no network access
+```
+
+The script reads `pkgver` from `PKGBUILD` when `--version` is omitted and
+checks that `PKGBUILD` and `.SRCINFO` declare the same `pkgver` and
+`pkgrel` and match the requested release. It clones
+`ssh://aur@aur.archlinux.org/go-fuck.git` into a temporary directory and
+exits successfully without pushing when both files are already published, so
+it is safe to rerun. Otherwise it copies the files, commits
+`upgpkg: go-fuck X.Y.Z-pkgrel`, pushes `HEAD:master` and removes the
+temporary clone. The clone and the push are retried up to three times.
+`--clone-dir DIR` clones into `DIR` and keeps it.
+
+The manual equivalent is:
+
+```bash
+git clone ssh://aur@aur.archlinux.org/go-fuck.git
+cp packaging/aur/PKGBUILD packaging/aur/.SRCINFO go-fuck/
+cd go-fuck
+git commit -am "upgpkg: go-fuck X.Y.Z-pkgrel"
+git push
+```
 
 ### When SSH to aur.archlinux.org is blocked
 
@@ -100,6 +129,9 @@ Some networks resolve `aur.archlinux.org` to a proxy address that closes port 22
 443), so `git clone ssh://aur@aur.archlinux.org/...` fails with "Connection closed" or
 "Connection reset". The AUR Git service is still reachable directly; resolve the current address over
 DNS-over-HTTPS and keep the host key name with `HostKeyAlias`:
+
+`scripts/push-aur.sh --direct-ip` automates this and resolves the address
+again on every attempt; to do it by hand:
 
 ```bash
 IP=$(curl -s -H 'accept: application/dns-json' \
@@ -111,8 +143,9 @@ git clone "ssh://aur@$IP/go-fuck.git"
 git push
 ```
 
-The address can change, so resolve it again on every push instead of hard-coding it. The AUR RPC
-endpoint (`https://aur.archlinux.org/rpc/?v=5&type=info&arg[]=go-fuck`) works over HTTPS and reports the
+The address can change, so resolve it again on every push instead of hard-coding it; the script
+retries the resolution up to three times when the connection fails. The AUR RPC endpoint
+(`https://aur.archlinux.org/rpc/?v=5&type=info&arg[]=go-fuck`) works over HTTPS and reports the
 published version; it can lag behind the Git repository for a few minutes.
 
 ## Local updater
@@ -156,8 +189,13 @@ CHECKSUMS=checksums.txt AUR_SOURCE=go-fuck-X.Y.Z.tar.gz`). The whole download
     and regeneration step is wrapped by
     `scripts/update-manifests.ps1 -Version X.Y.Z`; pass `-Commit` to commit the
     regenerated files.
-3. Push the regenerated `PKGBUILD` and `.SRCINFO` to
-   `ssh://aur@aur.archlinux.org/go-fuck.git` (see the AUR section above).
+3. Publish the regenerated `PKGBUILD` and `.SRCINFO` to the AUR:
+    ```bash
+    bash scripts/push-aur.sh --version X.Y.Z
+    ```
+    The script skips the push when the AUR already carries the same files, so
+    it is safe to rerun. Add `--direct-ip` when SSH to `aur.archlinux.org` is
+    blocked (see [Publishing to the AUR](#publishing-to-the-aur)).
 4. Run `go run ./tools/gen-rule-list -check` and the full test suite before
    tagging the follow-up commit.
 
