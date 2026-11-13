@@ -83,8 +83,8 @@ To update the package for a release:
     go run ./tools/update-packaging -version X.Y.Z \
       -checksums checksums.txt -aur-source go-fuck-X.Y.Z.tar.gz
     ```
-   A packaging-only change (no new version) is not generated; bump `pkgrel`
-   manually in both files instead.
+    A packaging-only change (no new version) is not generated; bump `pkgrel`
+    manually in both files instead.
 3. Push the two files to the AUR:
     ```bash
     git clone ssh://aur@aur.archlinux.org/go-fuck.git
@@ -142,7 +142,7 @@ When publishing a new release `vX.Y.Z`:
 
 1. Push the tag and wait for the Release workflow to finish.
 2. Download `checksums.txt` and the tag archive from the release, then
-    regenerate the manifests and the AUR package:
+   regenerate the manifests and the AUR package:
     ```bash
     go run ./tools/update-packaging -version X.Y.Z \
       -checksums checksums.txt -aur-source go-fuck-X.Y.Z.tar.gz
@@ -153,9 +153,9 @@ When publishing a new release `vX.Y.Z`:
     `.SRCINFO` with a fresh `pkgrel=1`, in one step. Review the diff and
     commit it (also possible through `make packaging VERSION=X.Y.Z
 CHECKSUMS=checksums.txt AUR_SOURCE=go-fuck-X.Y.Z.tar.gz`). The whole download
-and regeneration step is wrapped by
-`scripts/update-manifests.ps1 -Version X.Y.Z`; pass `-Commit` to commit the
-regenerated files.
+    and regeneration step is wrapped by
+    `scripts/update-manifests.ps1 -Version X.Y.Z`; pass `-Commit` to commit the
+    regenerated files.
 3. Push the regenerated `PKGBUILD` and `.SRCINFO` to
    `ssh://aur@aur.archlinux.org/go-fuck.git` (see the AUR section above).
 4. Run `go run ./tools/gen-rule-list -check` and the full test suite before
