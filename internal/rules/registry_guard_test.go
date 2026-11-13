@@ -230,6 +230,7 @@ var expectedExtraRuleNames = []string{
 	"git_switch_existing_branch",
 	"git_switch_unknown_branch",
 	"git_tag_missing",
+	"git_unknown_option",
 	"git_unknown_remote",
 	"git_worktree_branch_used",
 	"git_worktree_remove_missing",
