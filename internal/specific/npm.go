@@ -39,25 +39,59 @@ var PackageScripts = utils.Memoize(func() []string {
 	return scripts
 })
 
+// npmRunScriptOutput runs "npm run-script", which lists the scripts of the
+// current project. It is a variable so that tests do not need npm.
+var npmRunScriptOutput = func() ([]byte, error) {
+	return exec.Command("npm", "run-script").Output()
+}
+
 // NpmGetScripts returns the custom npm scripts of the current project.
 //
 // The result is memoized because npm is started once per go-fuck invocation.
-var NpmGetScripts = utils.Memoize(func() []string {
-	output, err := exec.Command("npm", "run-script").Output()
-	if err != nil {
-		return nil
-	}
+// npm 6 lists every script under "Scripts available in ... via ...", while
+// npm 7 and newer split the list into the lifecycle scripts and the scripts
+// available via "npm run". The package.json file is used as a fallback so the
+// suggestions keep working when npm prints an unexpected format or is missing.
+var NpmGetScripts = utils.Memoize(npmScripts)
 
-	scripts := []string{}
-	shouldYield := false
-	for _, line := range strings.Split(string(output), "\n") {
-		if strings.Contains(line, "available via ") {
-			shouldYield = true
+// npmScripts returns the scripts reported by npm, falling back to the
+// package.json file.
+func npmScripts() []string {
+	output, err := npmRunScriptOutput()
+	if err == nil {
+		if scripts := parseNpmScripts(string(output)); len(scripts) > 0 {
+			return scripts
+		}
+	}
+	return PackageScripts()
+}
+
+// parseNpmScripts extracts the script names from the output of "npm run-script"
+// and "npm run", accepting the npm 6 and npm 7+ layouts.
+func parseNpmScripts(output string) []string {
+	var scripts []string
+	listing := false
+	for _, line := range strings.Split(output, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "Lifecycle scripts included in") ||
+			strings.HasPrefix(trimmed, "Scripts available in") ||
+			strings.Contains(trimmed, "available via ") {
+			listing = true
 			continue
 		}
-		if shouldYield && npmScriptLine.MatchString(line) {
-			scripts = append(scripts, strings.Fields(line)[0])
+		if !listing {
+			continue
 		}
+		if npmScriptLine.MatchString(line) {
+			scripts = append(scripts, strings.Fields(line)[0])
+			continue
+		}
+		if trimmed == "" || strings.HasPrefix(line, "    ") {
+			// A blank line or the description under a script name.
+			continue
+		}
+		// Any other non-indented line ends the listing.
+		listing = false
 	}
 	return scripts
-})
+}
