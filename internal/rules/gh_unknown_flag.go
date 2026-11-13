@@ -33,7 +33,10 @@ func ghUnknownFlagNewCommand(command *types.Command) ([]string, error) {
 	}
 	broken := match[1]
 
-	flags := []string{}
+	// The help flag works for every gh command but the usage output does not
+	// list it, so it has to be added to the candidates by hand; otherwise a
+	// typo such as --hlep is corrected to an unrelated flag.
+	flags := []string{"--help"}
 	for _, flagMatch := range ghFlag.FindAllStringSubmatch(command.Output, -1) {
 		flags = append(flags, flagMatch[1])
 	}

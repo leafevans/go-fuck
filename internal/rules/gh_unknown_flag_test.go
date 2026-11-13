@@ -29,3 +29,30 @@ func TestRuleGhUnknownFlag(t *testing.T) {
 	assertNewCommands(t, rule, "gh pr list --stat", ghUnknownFlagOutput(),
 		[]string{"gh pr list --state"})
 }
+
+// ghUnknownFlagHelpOutput is the output of gh for a misspelled --help flag. The
+// usage output does not list the help flag, although every command accepts it.
+func ghUnknownFlagHelpOutput() string {
+	return "unknown flag: --hlep\n" +
+		"\n" +
+		"Usage:  gh pr view [<number> | <url> | <branch>] [flags]\n" +
+		"Flags:\n" +
+		"  -c, --comments          View pull request comments\n" +
+		"  -q, --jq expression     Filter JSON output using a jq expression\n" +
+		"      --json fields       Output JSON with the specified fields\n" +
+		"  -w, --web               Open a pull request in the browser\n"
+}
+
+// TestRuleGhUnknownFlagHelp checks that a typo of the help flag is corrected to
+// --help even though the usage output does not list the flag.
+func TestRuleGhUnknownFlagHelp(t *testing.T) {
+	resetTestState(t)
+	rule := Get("gh_unknown_flag")
+	if rule == nil {
+		t.Fatal("gh_unknown_flag rule is not registered")
+	}
+
+	assertMatch(t, rule, "gh pr view --hlep", ghUnknownFlagHelpOutput())
+	assertNewCommands(t, rule, "gh pr view --hlep", ghUnknownFlagHelpOutput(),
+		[]string{"gh pr view --help"})
+}
