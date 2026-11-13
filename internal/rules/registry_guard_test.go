@@ -257,6 +257,7 @@ var expectedExtraRuleNames = []string{
 	"pnpm_command_not_found",
 	"pnpm_frozen_lockfile",
 	"poetry_unknown_command",
+	"powershell_cat_directory",
 	"powershell_cd_unquoted_path",
 	"powershell_missing_directory",
 	"powershell_missing_file",
