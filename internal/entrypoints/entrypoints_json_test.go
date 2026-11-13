@@ -23,6 +23,7 @@ type jsonTestSuggestion struct {
 	Command    string `json:"command"`
 	Priority   int    `json:"priority"`
 	SideEffect bool   `json:"side_effect"`
+	Rule       string `json:"rule"`
 }
 
 func TestMainJSONOutput(t *testing.T) {
@@ -49,6 +50,9 @@ func TestMainJSONOutput(t *testing.T) {
 	want := "echo " + string(rune(34)) + "hello" + string(rune(34))
 	for _, suggestion := range result.Suggestions {
 		if suggestion.Command == want {
+			if suggestion.Rule == "" {
+				t.Fatalf("suggestion %q has no rule name", suggestion.Command)
+			}
 			return
 		}
 	}
@@ -70,6 +74,7 @@ func TestPrintJSONIncludesSuggestionDetails(t *testing.T) {
 	command := types.NewCommand("git commit", "")
 	suggestion := &types.CorrectedCommand{
 		Script:   "git commit --amend",
+		RuleName: "git_commit_amend",
 		Priority: 2000,
 		SideEffect: func(*types.Command, string) error {
 			return nil
@@ -92,6 +97,9 @@ func TestPrintJSONIncludesSuggestionDetails(t *testing.T) {
 	got := result.Suggestions[0]
 	if got.Command != "git commit --amend" || got.Priority != 2000 || !got.SideEffect {
 		t.Fatalf("unexpected suggestion JSON: %+v", got)
+	}
+	if got.Rule != "git_commit_amend" {
+		t.Fatalf("rule = %q, want git_commit_amend", got.Rule)
 	}
 }
 func TestPrintJSONIncludesCommandOutput(t *testing.T) {

@@ -5,7 +5,8 @@
     {
       "command": "git commit --amend",
       "priority": 2000,
-      "side_effect": true
+      "side_effect": true,
+      "rule": "git_commit_amend"
     }
   ]
 }

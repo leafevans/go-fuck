@@ -295,7 +295,7 @@ Common options:
 | `-r`, `--repeat`                     | re-run go-fuck if the corrected command fails                                                                                                                    |
 | `--force-command CMD`                | fix `CMD` instead of the previous command                                                                                                                        |
 | `--doctor`                           | print a diagnostic report: detected shell, alias, settings file, history and optional integrations; `--doctor --json` prints it as JSON                          |
-| `--list-rules`                       | print the names of the built-in rules and exit (useful for the `rules`, `exclude_rules` and `priority` settings)                                                  |
+| `--list-rules`                       | print the names of the built-in rules and exit (useful for the `rules`, `exclude_rules` and `priority` settings); with `--json` one object per rule with its priority and flags                  |
 | `--json`                             | print the suggestions as JSON and exit (useful for scripts and editors; call go-fuck directly rather than through the alias)                                     |
 | `-d`, `--debug`                      | print debug information to stderr                                                                                                                                |
 | `-v`, `--version`                    | print version/build information: a themed banner in a terminal, one line when piped; `--debug --version` adds the config path, instant mode, fzf and alias state |
@@ -323,6 +323,10 @@ To list the rule names accepted by the `rules`, `exclude_rules` and `priority` s
 ```console
 $ go-fuck --list-rules
 ```
+
+`go-fuck --list-rules --json` prints one JSON object per rule with its `name`, `priority`,
+`enabled_by_default`, `requires_output` and `side_effect` fields, which is convenient for
+editor plugins and scripts that generate settings files.
 
 ## How it works
 
@@ -431,20 +435,23 @@ $ go-fuck --json --force-command "git brnch"
     {
       "command": "git branch",
       "priority": 1000,
-      "side_effect": false
+      "side_effect": false,
+      "rule": "git_unknown_command"
     },
     {
       "command": "git brnch",
       "priority": 5000,
-      "side_effect": false
+      "side_effect": false,
+      "rule": "history"
     }
   ]
 }
 ```
 
 The suggestions are ordered as they would be offered interactively. `priority` is the rule
-priority (lower values are tried first). `side_effect` reports whether the interactive mode would
-run a side effect, for example `git add`, before the corrected command. The history rule can repeat
+priority (lower values are tried first). `rule` is the name of the rule that produced the
+suggestion. `side_effect` reports whether the interactive mode would run a side effect, for
+example `git add`, before the corrected command. The history rule can repeat
 the original command as a fallback suggestion; consumers that only want real corrections can skip
 suggestions equal to `command`.
 

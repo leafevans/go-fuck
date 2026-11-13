@@ -95,7 +95,10 @@ func GetCorrectedCommands(command *types.Command) []*types.CorrectedCommand {
 		if !rule.IsMatch(command) {
 			continue
 		}
-		corrected = append(corrected, filterUnchanged(command, rule.GetCorrectedCommands(command))...)
+		for _, correctedCommand := range filterUnchanged(command, rule.GetCorrectedCommands(command)) {
+			correctedCommand.RuleName = rule.Name
+			corrected = append(corrected, correctedCommand)
+		}
 	}
 	return OrganizeCommands(corrected)
 }

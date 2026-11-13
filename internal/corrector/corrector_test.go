@@ -84,6 +84,27 @@ func TestOrganizeCommandsEmpty(t *testing.T) {
 	}
 }
 
+// TestGetCorrectedCommandsRecordsRuleName checks that every suggestion carries
+// the name of the rule that produced it, which the machine readable output
+// reports.
+func TestGetCorrectedCommandsRecordsRuleName(t *testing.T) {
+	resetCorrectorState(t)
+	conf.Current().Rules = []string{"git_not_command"}
+
+	output := "git: 'brnch' is not a git command. See 'git --help'.\n\n" +
+		"The most similar command is\n\tbranch\n"
+	command := types.NewCommand("git brnch", output)
+	corrected := GetCorrectedCommands(command)
+	if len(corrected) == 0 {
+		t.Fatal("GetCorrectedCommands() returned no suggestions")
+	}
+	for _, suggestion := range corrected {
+		if suggestion.RuleName != "git_not_command" {
+			t.Fatalf("rule name = %q, want git_not_command", suggestion.RuleName)
+		}
+	}
+}
+
 func TestGetCorrectedCommands(t *testing.T) {
 	resetCorrectorState(t)
 	conf.Current().Rules = []string{"quotation_marks"}

@@ -30,6 +30,8 @@ type jsonSuggestion struct {
 	// SideEffect reports whether the normal interactive mode would run a side
 	// effect (for example "git add") before the command.
 	SideEffect bool `json:"side_effect"`
+	// Rule is the name of the rule that produced the suggestion.
+	Rule string `json:"rule,omitempty"`
 }
 
 // jsonResult is the machine readable result of a correction request.
@@ -69,6 +71,7 @@ func printJSON(command *types.Command, corrected []*types.CorrectedCommand) int 
 			Command:    validUTF8(suggestion.Script),
 			Priority:   suggestion.Priority,
 			SideEffect: suggestion.SideEffect != nil,
+			Rule:       suggestion.RuleName,
 		})
 	}
 

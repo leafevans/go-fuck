@@ -6,12 +6,14 @@
     {
       "command": "git branch",
       "priority": 1000,
-      "side_effect": false
+      "side_effect": false,
+      "rule": "git_unknown_command"
     },
     {
       "command": "git brnch",
       "priority": 5000,
-      "side_effect": false
+      "side_effect": false,
+      "rule": "history"
     }
   ]
 }

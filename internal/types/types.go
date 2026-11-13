@@ -226,6 +226,9 @@ func (r *Rule) String() string {
 type CorrectedCommand struct {
 	// Script is the corrected command line.
 	Script string
+	// RuleName is the name of the rule that produced the suggestion. It is set
+	// by the corrector and is reported by the machine readable output.
+	RuleName string
 	// SideEffect is executed before the corrected command runs.
 	SideEffect SideEffectFunc
 	// Priority orders the corrected commands. Lower values are suggested
@@ -252,8 +255,8 @@ func sameSideEffect(a, b SideEffectFunc) bool {
 
 // String implements fmt.Stringer.
 func (c *CorrectedCommand) String() string {
-	return fmt.Sprintf("CorrectedCommand(script=%s, side_effect=%t, priority=%d)",
-		c.Script, c.SideEffect != nil, c.Priority)
+	return fmt.Sprintf("CorrectedCommand(script=%s, rule=%s, side_effect=%t, priority=%d)",
+		c.Script, c.RuleName, c.SideEffect != nil, c.Priority)
 }
 
 // runnableScript returns the script that is executed in the shell.

@@ -52,8 +52,8 @@ func TestJSONGolden(t *testing.T) {
 			name:    "suggestions",
 			command: types.NewCommand("git brnch", "git: 'brnch' is not a git command.\n"),
 			corrected: []*types.CorrectedCommand{
-				{Script: "git branch", Priority: 1000},
-				{Script: "git brnch", Priority: 5000},
+				{Script: "git branch", RuleName: "git_unknown_command", Priority: 1000},
+				{Script: "git brnch", RuleName: "history", Priority: 5000},
 			},
 			file: "json_suggestions.golden",
 		},
@@ -61,7 +61,7 @@ func TestJSONGolden(t *testing.T) {
 			name:    "side_effect",
 			command: types.NewCommandWithoutOutput("git commit"),
 			corrected: []*types.CorrectedCommand{
-				{Script: "git commit --amend", Priority: 2000, SideEffect: sideEffect},
+				{Script: "git commit --amend", RuleName: "git_commit_amend", Priority: 2000, SideEffect: sideEffect},
 			},
 			file: "json_side_effect.golden",
 		},
