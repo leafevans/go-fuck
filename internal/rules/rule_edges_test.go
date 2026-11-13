@@ -38,6 +38,14 @@ func TestRuleEdgeCases(t *testing.T) {
 		{"grep_recursive", "grep", ""},
 		{"no_such_file", "cat missing", ""},
 		{"just_unknown_recipe", "just task", ""},
+		{"git_branch_missing", "git status", ""},
+		{"git_tag_missing", "git status", ""},
+		{"git_unknown_remote", "git status", ""},
+		{"task_unknown_task", "task", ""},
+		{"yarn_alias", "yarn", ""},
+		{"npm_wrong_command", "", ""},
+		{"gradle_no_task", "gradle", ""},
+		{"missing_space_before_subcommand", "", ""},
 	}
 	for _, testCase := range nilCommands {
 		rule := Get(testCase.rule)

@@ -29,6 +29,9 @@ var npmWrongCommandHelpCommands = utils.Memoize(func() []string {
 
 // npmWrongCommandFirst returns the first non-flag argument of the command.
 func npmWrongCommandFirst(parts []string) string {
+	if len(parts) == 0 {
+		return ""
+	}
 	for _, part := range parts[1:] {
 		if !strings.HasPrefix(part, "-") {
 			return part
