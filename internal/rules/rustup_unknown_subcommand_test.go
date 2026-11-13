@@ -69,3 +69,32 @@ func TestRuleRustupUnknownSubcommand(t *testing.T) {
 		})
 	}
 }
+
+// rustupInferredSubcommandOutput is the output of rustup when the misspelled
+// prefix of a subcommand is accepted and the next argument is reported as the
+// unknown subcommand instead.
+func rustupInferredSubcommandOutput() string {
+	return `error: unrecognized subcommand 'stable'
+
+  tip: a similar subcommand exists: 'install'
+
+Usage: rustup[EXE] [OPTIONS] [+toolchain] [COMMAND]
+
+For more information, try '--help'.
+`
+}
+
+// TestRuleRustupUnknownSubcommandInferred checks that the rule does not replace
+// the argument that a parser reported after accepting a misspelled prefix.
+func TestRuleRustupUnknownSubcommandInferred(t *testing.T) {
+	resetTestState(t)
+	rule := Get("rustup_unknown_subcommand")
+	if rule == nil {
+		t.Fatal("rustup_unknown_subcommand rule is not registered")
+	}
+
+	output := rustupInferredSubcommandOutput()
+	if got, err := rule.GetNewCommand(testCommand("rustup instal stable", output)); err != nil || len(got) != 0 {
+		t.Fatalf("GetNewCommand() = %q, %v, want no suggestion", got, err)
+	}
+}
