@@ -98,7 +98,7 @@ func dirtyUnzipSideEffect(oldCommand *types.Command, script string) error {
 		if file.FileInfo().IsDir() {
 			continue
 		}
-		if !dirtyUnzipInsideDirectory(file.Name, workingDirectory) {
+		if !pathInsideDirectory(file.Name, workingDirectory) {
 			// It is unsafe to overwrite files outside of the current
 			// directory.
 			continue
@@ -109,14 +109,24 @@ func dirtyUnzipSideEffect(oldCommand *types.Command, script string) error {
 	return nil
 }
 
-// dirtyUnzipInsideDirectory reports whether name resolves to a path inside
-// directory.
-func dirtyUnzipInsideDirectory(name, directory string) bool {
+// pathInsideDirectory reports whether name resolves to directory or a path
+// inside it. It is used before removing extracted files: an archive entry such
+// as "../outside.txt" must not make the side effect delete a file outside the
+// working directory.
+func pathInsideDirectory(name, directory string) bool {
 	absolute, err := filepath.Abs(name)
 	if err != nil {
 		return false
 	}
-	return strings.HasPrefix(absolute, directory)
+	base, err := filepath.Abs(directory)
+	if err != nil {
+		return false
+	}
+	relative, err := filepath.Rel(base, absolute)
+	if err != nil {
+		return false
+	}
+	return relative != ".." && !strings.HasPrefix(relative, ".."+string(filepath.Separator))
 }
 
 func init() {

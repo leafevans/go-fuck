@@ -3,6 +3,7 @@ package rules
 import (
 	"archive/zip"
 	"os"
+	"path/filepath"
 	"sort"
 	"testing"
 )
@@ -162,4 +163,53 @@ func TestRuleDirtyUnzip(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestPathInsideDirectory(t *testing.T) {
+	base := t.TempDir()
+	if !pathInsideDirectory(filepath.Join(base, "dir", "file"), base) {
+		t.Fatal("pathInsideDirectory(nested) = false")
+	}
+	if !pathInsideDirectory(base, base) {
+		t.Fatal("pathInsideDirectory(directory) = false")
+	}
+	if pathInsideDirectory(filepath.Join(base, "..", "outside"), base) {
+		t.Fatal("pathInsideDirectory(parent) = true")
+	}
+	if pathInsideDirectory(base+"-evil"+string(filepath.Separator)+"file", base) {
+		t.Fatal("pathInsideDirectory(prefix sibling) = true")
+	}
+}
+
+func TestDirtyUnzipSideEffectSkipsOutsideFiles(t *testing.T) {
+	resetTestState(t)
+	rule := Get("dirty_unzip")
+	root := t.TempDir()
+	work := filepath.Join(root, "work")
+	if err := os.Mkdir(work, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	outside := filepath.Join(root, "outside.txt")
+	if err := os.WriteFile(outside, []byte("keep"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(work, "inside.txt"), []byte("remove"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	dirtyUnzipWriteArchive(t, filepath.Join(work, "archive.zip"), map[string]string{
+		"../outside.txt": "outside",
+		"inside.txt":     "inside",
+	})
+	t.Chdir(work)
+
+	command := testCommand("unzip archive.zip", "")
+	if err := rule.SideEffect(command, ""); err != nil {
+		t.Fatalf("side effect returned an error: %v", err)
+	}
+	if _, err := os.Stat(outside); err != nil {
+		t.Fatalf("side effect removed a file outside the working directory: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(work, "inside.txt")); !os.IsNotExist(err) {
+		t.Fatalf("side effect did not remove the extracted file: %v", err)
+	}
 }

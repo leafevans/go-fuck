@@ -7,7 +7,6 @@ import (
 	"compress/gzip"
 	"io"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/leafevans/go-fuck/internal/shells"
@@ -106,7 +105,7 @@ func dirtyUntarSideEffect(oldCommand *types.Command, script string) error {
 		if header.Typeflag == tar.TypeDir {
 			continue
 		}
-		if !dirtyUntarInsideDirectory(header.Name, workingDirectory) {
+		if !pathInsideDirectory(header.Name, workingDirectory) {
 			// It is unsafe to overwrite files outside of the current
 			// directory.
 			continue
@@ -144,16 +143,6 @@ func dirtyUntarArchiveReader(file *os.File) (io.Reader, error) {
 	default:
 		return file, nil
 	}
-}
-
-// dirtyUntarInsideDirectory reports whether name resolves to a path inside
-// directory.
-func dirtyUntarInsideDirectory(name, directory string) bool {
-	absolute, err := filepath.Abs(name)
-	if err != nil {
-		return false
-	}
-	return strings.HasPrefix(absolute, directory)
 }
 
 func init() {
