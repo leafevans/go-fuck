@@ -24,7 +24,8 @@ import (
 // is no history yet, so go-fuck is invoked when either history or arguments
 // are available.
 const powershellAliasTemplate = `function %[1]s {
-    $env:TF_SHELL = "powershell";
+%[3]s    $env:TF_SHELL = "powershell";
+    $env:TF_ALIAS_VERSION = "3";
     try { $env:GOFUCK_SHELL = (Get-Process -Id $PID).Path } catch { };
     $history = (Get-History -Count 1).CommandLine;
     $previousHistory = $env:TF_HISTORY;
@@ -108,7 +109,8 @@ func NewPowershell() *Powershell {
 
 // AppAlias returns the PowerShell alias function.
 func (p *Powershell) AppAlias(aliasName string) string {
-	return fmt.Sprintf(powershellAliasTemplate, aliasName, consts.ExecutableName())
+	return fmt.Sprintf(powershellAliasTemplate, aliasName, consts.ExecutableName(),
+		powershellAliasGuard(aliasName, consts.ExecutableName()))
 }
 
 // InstantModeAlias returns the alias of the instant mode.

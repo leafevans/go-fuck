@@ -32,6 +32,26 @@ func aliasSyntaxCommand(t *testing.T, program string, args ...string) {
 	}
 }
 
+// aliasSyntaxFile checks the syntax of an alias by writing it to a file and
+// running the shell parser on the file.
+//
+// Passing a multi-line alias through the command line is fragile: on Windows the
+// bash.exe launcher does not always preserve the argument, and bash then fails
+// with a syntax error even though the alias is valid. A file is parsed the same
+// way by every shell and every launcher.
+func aliasSyntaxFile(t *testing.T, program, alias string) {
+	t.Helper()
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "alias"), []byte(alias), 0o644); err != nil {
+		t.Fatalf("write the alias to a temporary file: %v", err)
+	}
+	command := exec.Command(program, "-n", "alias")
+	command.Dir = dir
+	if output, err := command.CombinedOutput(); err != nil {
+		t.Fatalf("%s failed to parse the alias file: %v\n%s", program, err, output)
+	}
+}
+
 // aliasSyntaxRequireShell skips the test when the shell executable cannot
 // actually be started.
 //
@@ -61,11 +81,11 @@ func TestAliasSyntaxBash(t *testing.T) {
 	if !strings.Contains(bashAlias, consts.ArgumentPlaceholder) {
 		t.Fatalf("bash AppAlias() does not contain the argument placeholder: %q", bashAlias)
 	}
-	aliasSyntaxCommand(t, bash, "-n", "-c", bashAlias)
+	aliasSyntaxFile(t, bash, bashAlias)
 
 	genericAlias := NewGeneric().AppAlias("fuck")
 	aliasSyntaxContains(t, "generic", genericAlias)
-	aliasSyntaxCommand(t, bash, "-n", "-c", genericAlias)
+	aliasSyntaxFile(t, bash, genericAlias)
 }
 
 func TestAliasSyntaxZsh(t *testing.T) {
@@ -82,7 +102,7 @@ func TestAliasSyntaxZsh(t *testing.T) {
 	if !strings.Contains(alias, consts.ArgumentPlaceholder) {
 		t.Fatalf("zsh AppAlias() does not contain the argument placeholder: %q", alias)
 	}
-	aliasSyntaxCommand(t, zsh, "-n", "-c", alias)
+	aliasSyntaxFile(t, zsh, alias)
 }
 
 func TestAliasSyntaxFish(t *testing.T) {

@@ -10,9 +10,9 @@ import (
 
 // zshAliasTemplate defines the alias function for zsh.
 const zshAliasTemplate = `%[1]s () {
-    export TF_SHELL=zsh;
+%[5]s    export TF_SHELL=zsh;
     export TF_ALIAS=%[1]s;
-    export TF_ALIAS_VERSION=2;
+    export TF_ALIAS_VERSION=3;
     TF_SHELL_ALIASES=$(alias);
     export TF_SHELL_ALIASES;
     TF_HISTORY=$'\x01'"${history[$((HISTCMD-1))]}";
@@ -45,7 +45,8 @@ func (z *Zsh) AppAlias(aliasName string) string {
 		alterHistory = "    test -n " + dquote + "$TF_CMD" + dquote + " && print -s $TF_CMD"
 	}
 	return fmt.Sprintf(zshAliasTemplate, aliasName, consts.ExecutableName(),
-		consts.ArgumentPlaceholder, alterHistory)
+		consts.ArgumentPlaceholder, alterHistory,
+		posixAliasGuard("zsh", aliasName, consts.ExecutableName()))
 }
 
 // InstantModeAlias returns the alias of the instant mode.

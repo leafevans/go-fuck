@@ -96,6 +96,15 @@ func TestWarnOutdatedAlias(t *testing.T) {
 		t.Fatalf("warnOutdatedAlias() warned for a marked history value: %q", buffer.String())
 	}
 
+	shells.Set(shells.NewPowershell())
+	t.Setenv("TF_ALIAS_VERSION", "")
+	t.Setenv("TF_HISTORY", "git status")
+	buffer.Reset()
+	warnOutdatedAlias()
+	if !strings.Contains(buffer.String(), "iex \"$(go-fuck --alias)\"") {
+		t.Fatalf("warnOutdatedAlias() output = %q, want the PowerShell reload command", buffer.String())
+	}
+
 	shells.Set(shells.NewGeneric())
 	t.Setenv("TF_HISTORY", "git status")
 	buffer.Reset()

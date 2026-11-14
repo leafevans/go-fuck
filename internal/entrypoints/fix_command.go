@@ -118,8 +118,12 @@ func warnOutdatedAlias() {
 	if os.Getenv("TF_HISTORY") == "" {
 		return
 	}
+	reload := ""
 	switch shells.Current().Name() {
 	case "bash", "zsh":
+		reload = "eval \"$(" + consts.ExecutableName() + " --alias)\""
+	case "powershell":
+		reload = "iex \"$(" + consts.ExecutableName() + " --alias)\""
 	default:
 		return
 	}
@@ -129,7 +133,8 @@ func warnOutdatedAlias() {
 	if strings.HasPrefix(os.Getenv("TF_HISTORY"), rawCommandMarker) {
 		return
 	}
-	logs.Warn("Your shell alias is outdated; run eval \"$(go-fuck --alias)\" to enable multi-line command support.")
+	logs.Warn("Your shell alias is outdated; run " + reload +
+		" to enable multi-line commands and the information commands (--list-rules, --json).")
 }
 
 // getRawCommand returns the command line that should be fixed.

@@ -10,9 +10,9 @@ import (
 
 // bashAliasTemplate defines the alias function for bash.
 const bashAliasTemplate = `function %[1]s () {
-    export TF_SHELL=bash;
+%[5]s    export TF_SHELL=bash;
     export TF_ALIAS=%[1]s;
-    export TF_ALIAS_VERSION=2;
+    export TF_ALIAS_VERSION=3;
     export TF_SHELL_ALIASES=$(alias);
     export TF_HISTORY=$'\x01'$(fc -ln -2 2>/dev/null);
     TF_CMD=$(
@@ -42,7 +42,8 @@ func (b *Bash) AppAlias(aliasName string) string {
 		alterHistory = "    history -s $TF_CMD;"
 	}
 	return fmt.Sprintf(bashAliasTemplate, aliasName, consts.ExecutableName(),
-		consts.ArgumentPlaceholder, alterHistory)
+		consts.ArgumentPlaceholder, alterHistory,
+		posixAliasGuard("bash", aliasName, consts.ExecutableName()))
 }
 
 // InstantModeAlias returns the alias of the instant mode.

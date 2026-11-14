@@ -108,8 +108,10 @@ const AliasVersionEnv = "TF_ALIAS_VERSION"
 
 // AliasVersion is the current alias format version. Version 2 passes the
 // previous history entry as a single marked value, so multi-line commands are
-// restored correctly.
-const AliasVersion = "2"
+// restored correctly. Version 3 passes the informational commands (such as
+// --list-rules and --json) through to go-fuck instead of capturing their
+// output as a corrected command.
+const AliasVersion = "3"
 
 // Environment variables of the instant mode.
 const (

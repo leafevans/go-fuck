@@ -183,3 +183,39 @@ func TestPowershellAliasRunsMultilineCorrection(t *testing.T) {
 		t.Fatalf("PowerShell output = %q, want both lines of the corrected command", output)
 	}
 }
+
+// TestPowershellAliasPassesInformationCommands checks that the information
+// commands run go-fuck directly instead of being evaluated as a corrected
+// command: --list-rules prints a rule list, and evaluating it would run the
+// rule names as commands.
+func TestPowershellAliasPassesInformationCommands(t *testing.T) {
+	resetShellsState(t)
+
+	rulesPath := filepath.Join(t.TempDir(), "rules.txt")
+	if err := os.WriteFile(rulesPath, []byte("adb_unknown_command\nnot-a-command-marker\n"), 0o600); err != nil {
+		t.Fatalf("write the rule list: %v", err)
+	}
+	t.Setenv("GOFUCK_STUB_OUTPUT", rulesPath)
+
+	output, argsFile := runPowershellAliasRaw(t,
+		"function Get-History { param($Count) $null }",
+		"fuck --list-rules")
+
+	if !strings.Contains(string(output), "adb_unknown_command") {
+		t.Fatalf("PowerShell output = %q, want the printed rule list", output)
+	}
+	if strings.Contains(string(output), "CommandNotFoundException") {
+		t.Fatalf("PowerShell output = %q, want no evaluated rule names", output)
+	}
+	if !strings.Contains(string(output), "not-a-command-marker") {
+		t.Fatalf("PowerShell output = %q, want the raw rule list output", output)
+	}
+
+	data, err := os.ReadFile(argsFile)
+	if err != nil {
+		t.Fatalf("read the recorded go-fuck arguments: %v", err)
+	}
+	if !strings.Contains(string(data), "ARGS:--list-rules") {
+		t.Fatalf("go-fuck arguments = %q, want --list-rules", data)
+	}
+}

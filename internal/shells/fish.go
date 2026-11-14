@@ -14,7 +14,7 @@ import (
 
 // fishAliasTemplate defines the alias function for fish.
 const fishAliasTemplate = `function %[1]s -d "Correct your previous console command"
-  set -l fucked_up_command $history[1]
+%[5]s  set -l fucked_up_command $history[1]
   env TF_SHELL=fish TF_ALIAS=%[1]s %[2]s $fucked_up_command %[3]s $argv | read -l unfucked_command
   if [ "$unfucked_command" != "" ]
     eval $unfucked_command
@@ -50,7 +50,8 @@ func (f *Fish) AppAlias(aliasName string) string {
 		alterHistory = fishAlterHistory
 	}
 	return fmt.Sprintf(fishAliasTemplate, aliasName, consts.ExecutableName(),
-		consts.ArgumentPlaceholder, alterHistory)
+		consts.ArgumentPlaceholder, alterHistory,
+		fishAliasGuard(aliasName, consts.ExecutableName()))
 }
 
 // InstantModeAlias falls back to the regular alias because instant mode is not
