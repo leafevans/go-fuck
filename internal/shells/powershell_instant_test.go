@@ -59,7 +59,10 @@ func TestPowershellInstantModeUnsupportedPlatform(t *testing.T) {
 	if !strings.Contains(alias, "function fuck") {
 		t.Fatalf("fallback alias does not define the alias: %q", alias)
 	}
-	if strings.Contains(alias, "--shell-logger") {
+	// The alias guard mentions --shell-logger in its list of pass-through
+	// options; only an actual invocation of go-fuck with the flag may be
+	// reported here.
+	if strings.Contains(alias, consts.ExecutableName()+" --shell-logger") {
 		t.Fatalf("fallback alias should not start the shell logger: %q", alias)
 	}
 }
