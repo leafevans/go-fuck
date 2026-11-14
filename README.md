@@ -329,6 +329,13 @@ $ go-fuck --list-rules
 `enabled_by_default`, `requires_output` and `side_effect` fields, which is convenient for
 editor plugins and scripts that generate settings files.
 
+Run the information commands (`--list-rules`, `--doctor`, `--json`, `--alias`) through `go-fuck`
+itself, not through the `fuck` shell function. The function evaluates the standard output of
+go-fuck as the corrected command, so `fuck --list-rules` tries to run the first rule name
+(`adb_unknown_command`) and reports that it is not a command. `fuck -v` happens to work because the
+version banner is written to standard error, but calling `go-fuck` directly is the supported way for
+all of the information commands.
+
 ## How it works
 
 1. You run a command and it fails. You type `fuck`.
