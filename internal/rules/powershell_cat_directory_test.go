@@ -1,6 +1,11 @@
 package rules
 
-import "testing"
+import (
+	"strings"
+	"testing"
+
+	"github.com/leafevans/go-fuck/v2/internal/shells"
+)
 
 // powerShellCatDirectoryOutput is the error Windows PowerShell prints when
 // Get-Content is used on a directory.
@@ -28,4 +33,31 @@ func TestRulePowerShellCatDirectory(t *testing.T) {
 	assertNewCommands(t, rule, "cat internal", powerShellCatDirectoryOutput, []string{"ls internal"})
 	assertNewCommands(t, rule, "Get-Content internal", powerShellCatDirectoryOutput, []string{"ls internal"})
 	assertNewCommands(t, rule, "Get-Content -Path internal", powerShellCatDirectoryOutput, nil)
+}
+
+// TestRulePowerShellCatDirectoryAbsolutePath covers absolute Windows paths.
+//
+// The PowerShell shell keeps the backslashes when it splits the command line,
+// so unlike the POSIX splitting the path of the command matches the path of the
+// error message.
+func TestRulePowerShellCatDirectoryAbsolutePath(t *testing.T) {
+	resetTestState(t)
+	shells.Set(shells.NewPowershell())
+	t.Cleanup(func() { shells.Set(shells.NewGeneric()) })
+	original := powerShellItemIsDirectory
+	t.Cleanup(func() { powerShellItemIsDirectory = original })
+	powerShellItemIsDirectory = func(path string) bool {
+		return strings.EqualFold(path, `C:\Windows`)
+	}
+
+	rule := Get("powershell_cat_directory")
+	if rule == nil {
+		t.Fatal("powershell_cat_directory rule is not registered")
+	}
+	output := "Access to the path 'C:\\Windows' is denied.\r\n"
+	assertMatch(t, rule, `cat C:\Windows`, output)
+	assertMatch(t, rule, `gc "C:\Windows"`, output)
+	assertNotMatch(t, rule, `cat C:\Windows2`, output)
+	assertNewCommands(t, rule, `cat C:\Windows`, output,
+		[]string{`ls C:\Windows`})
 }

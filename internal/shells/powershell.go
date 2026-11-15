@@ -200,6 +200,96 @@ func powerShellStringExpression(value string) string {
 	return strings.Join(parts, " + ")
 }
 
+// Quote returns a PowerShell escaped version of s.
+//
+// PowerShell does not concatenate adjacent string literals like POSIX shells
+// do, so the shlex style '"'"' escape is a syntax error there. Single quoted
+// strings are literal apart from the doubled single quote, which makes them the
+// safe form for every value.
+func (p *Powershell) Quote(s string) string {
+	return quotePowerShellString(s)
+}
+
+// SplitCommand splits a command line into the arguments that PowerShell passes
+// to the command.
+//
+// Backslash is an ordinary character in PowerShell (the backtick is the escape
+// character), so a Windows path must not be treated as a POSIX escape
+// sequence: "cat C:\Windows" has to keep the backslashes.
+func (p *Powershell) SplitCommand(command string) []string {
+	return splitPowerShell(command)
+}
+
+// splitPowerShell splits a command line using PowerShell quoting rules.
+//
+// Only the parts that matter for rule matching are implemented: argument
+// separation, single and double quoted strings, doubled single quotes, and
+// backtick escapes. Variables and subexpressions are kept as literal text.
+func splitPowerShell(command string) []string {
+	var (
+		args    []string
+		current strings.Builder
+		inWord  bool
+	)
+	flush := func() {
+		if inWord {
+			args = append(args, current.String())
+			current.Reset()
+			inWord = false
+		}
+	}
+	runes := []rune(command)
+	for index := 0; index < len(runes); index++ {
+		ch := runes[index]
+		switch {
+		case isArgumentSpace(ch):
+			flush()
+		case ch == rune(charSingleQuote):
+			inWord = true
+			for index++; index < len(runes); index++ {
+				if runes[index] != rune(charSingleQuote) {
+					current.WriteRune(runes[index])
+					continue
+				}
+				// Two consecutive single quotes are one literal quote.
+				if index+1 < len(runes) && runes[index+1] == rune(charSingleQuote) {
+					current.WriteRune(rune(charSingleQuote))
+					index++
+					continue
+				}
+				break
+			}
+		case ch == rune(charDoubleQuote):
+			inWord = true
+			for index++; index < len(runes); index++ {
+				next := runes[index]
+				if next == rune(charBacktick) {
+					if index+1 < len(runes) {
+						current.WriteRune(runes[index+1])
+						index++
+					}
+					continue
+				}
+				if next == rune(charDoubleQuote) {
+					break
+				}
+				current.WriteRune(next)
+			}
+		case ch == rune(charBacktick):
+			inWord = true
+			if index+1 < len(runes) {
+				current.WriteRune(runes[index+1])
+				index++
+			}
+		default:
+			inWord = true
+			current.WriteRune(ch)
+		}
+	}
+	flush()
+	return args
+}
+
 // quotePowerShellString quotes value as a PowerShell single quoted string.
 func quotePowerShellString(value string) string {
 	return "'" + strings.ReplaceAll(value, "'", "''") + "'"
