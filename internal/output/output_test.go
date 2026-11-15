@@ -34,6 +34,9 @@ func slowCommand() string {
 
 func TestGetOutput(t *testing.T) {
 	resetOutputState(t)
+	// The whole test suite runs packages in parallel; a generous wait keeps a
+	// loaded machine from turning the healthy echo into a timeout.
+	conf.Current().WaitCommand = 15
 	command := echoCommand("hello")
 	output, ok := GetOutput(command, command)
 	if !ok {
@@ -46,6 +49,7 @@ func TestGetOutput(t *testing.T) {
 
 func TestGetOutputMergesConfiguredEnvironment(t *testing.T) {
 	resetOutputState(t)
+	conf.Current().WaitCommand = 15
 	conf.Current().Env = map[string]string{"GOFUCK_TEST_ENV": "value"}
 
 	var command string
