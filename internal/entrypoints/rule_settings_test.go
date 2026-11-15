@@ -159,3 +159,41 @@ func TestDoctorWarnsAboutUnknownRuleNames(t *testing.T) {
 		}
 	}
 }
+
+func TestWarnInvalidSettings(t *testing.T) {
+	settings := conf.Default()
+	settings.InvalidValues = []string{"wait_command 0"}
+	buffer := &bytes.Buffer{}
+	logs.SetOutput(buffer)
+	t.Cleanup(func() {
+		logs.SetOutput(os.Stderr)
+	})
+
+	warnInvalidSettings(settings)
+	if !strings.Contains(buffer.String(), "Invalid settings values") ||
+		!strings.Contains(buffer.String(), "wait_command 0") {
+		t.Fatalf("warnInvalidSettings() output = %q", buffer.String())
+	}
+
+	buffer.Reset()
+	warnInvalidSettings(conf.Default())
+	if buffer.Len() != 0 {
+		t.Fatalf("warnInvalidSettings() warned for the default settings: %q", buffer.String())
+	}
+}
+
+func TestDoctorWarnsAboutInvalidSettingsValues(t *testing.T) {
+	resetEntrypointsState(t)
+	settingsDir := conf.UserDir()
+	writeTestFile(t, filepath.Join(settingsDir, "settings.json"), `{"wait_command": 0}`)
+
+	code, stdout, _ := runMain(t, "go-fuck", "--doctor")
+	if code != 0 {
+		t.Fatalf("Main(--doctor) = %d, want 0", code)
+	}
+	for _, want := range []string{"invalid values", "wait_command 0"} {
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("doctor output %q does not contain %q", stdout, want)
+		}
+	}
+}

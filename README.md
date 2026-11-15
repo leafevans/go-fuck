@@ -510,7 +510,10 @@ as `rule` instead of `rules` does not go unnoticed. Rule names in `rules`, `excl
 `priority` are validated the same way: an unknown name is reported with its setting, because a typo
 would otherwise silently ignore the rule or its priority override. Contradictory rule settings are
 reported too: a rule that appears in both `rules` and `exclude_rules`, or a `priority` override for an
-excluded or disabled rule, would be silently ignored (`exclude_rules` wins). Set `strict_settings` (or
+excluded or disabled rule, would be silently ignored (`exclude_rules` wins). Values out of range are
+reported the same way and replaced with the defaults: `wait_command` and `wait_slow_command` must be between 1 and
+3600 seconds (a zero or negative value used to kill the re-run command immediately), and
+`history_limit` and `num_close_matches` must not be negative. Set `strict_settings` (or
 `GOFUCK_STRICT_SETTINGS=true`) to reject unknown keys instead: the file is reported as invalid and
 not applied. Invalid JSON or a value of the wrong type is always reported and the file is not
 applied, so go-fuck falls back to the built-in defaults instead of running with a half applied

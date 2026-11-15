@@ -25,6 +25,7 @@ func fixCommand(args *argumentparser.Args) int {
 		logs.Exception("Can't load settings", err)
 	} else {
 		warnUnknownSettings(settings)
+		warnInvalidSettings(settings)
 		warnUnknownRuleSettings(settings)
 		warnConflictingRuleSettings(settings)
 	}
@@ -112,6 +113,15 @@ func warnUnknownSettings(settings *conf.Settings) {
 		return
 	}
 	logs.Warn("Unknown settings in settings.json (ignored): " + strings.Join(settings.UnknownKeys, ", "))
+}
+
+// warnInvalidSettings reports settings values that were out of range and
+// replaced with the built-in defaults.
+func warnInvalidSettings(settings *conf.Settings) {
+	if settings == nil || len(settings.InvalidValues) == 0 {
+		return
+	}
+	logs.Warn("Invalid settings values (using the defaults): " + strings.Join(settings.InvalidValues, ", "))
 }
 
 // warnOutdatedAlias warns when a bash or zsh alias still passes the old

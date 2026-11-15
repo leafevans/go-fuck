@@ -258,6 +258,12 @@ func doctorSettingsCheck() doctorCheck {
 		check.Hint = "unknown rule names: " + strings.Join(unknown, ", ")
 		return check
 	}
+	if settings != nil && len(settings.InvalidValues) > 0 {
+		check.Status = doctorWarn
+		check.Message = "loaded " + path
+		check.Hint = "invalid values, using the defaults: " + strings.Join(settings.InvalidValues, ", ")
+		return check
+	}
 	check.Status = doctorOK
 	check.Message = "loaded " + path
 	return check

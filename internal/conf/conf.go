@@ -76,6 +76,9 @@ type Settings struct {
 	// UnknownKeys lists the top level keys of the settings file that go-fuck
 	// does not understand. They are ignored; the list is used for diagnostics.
 	UnknownKeys []string `json:"-"`
+	// InvalidValues lists the values that were out of range and replaced with
+	// the built-in defaults. It is used for diagnostics.
+	InvalidValues []string `json:"-"`
 
 	// extra holds rule specific settings that are not part of the core
 	// configuration, for example "fixlinecmd".
@@ -176,6 +179,7 @@ func Load(args *Args) (*Settings, error) {
 	fileErr := s.loadFile()
 	s.loadEnv()
 	s.loadArgs(args)
+	s.normalize()
 
 	current.Store(s)
 
@@ -199,6 +203,43 @@ func userDir() string {
 		base = filepath.Join(home, ".config")
 	}
 	return filepath.Join(base, "go-fuck")
+}
+
+// maxWaitSeconds is the upper bound of the wait_command and wait_slow_command
+// settings. Larger values used to overflow the time.Duration conversion and
+// turned the wait into an immediate timeout.
+const maxWaitSeconds = 3600
+
+// normalize replaces out of range values with the built-in defaults and records
+// them for diagnostics.
+//
+// A zero or negative wait_command kills the re-run command before it prints
+// anything, so every rule that needs the output silently stops working. The
+// history limit and the number of close matches have no useful negative value
+// either.
+func (s *Settings) normalize() {
+	defaults := Default()
+	s.WaitCommand = s.validSeconds("wait_command", s.WaitCommand, defaults.WaitCommand)
+	s.WaitSlowCommand = s.validSeconds("wait_slow_command", s.WaitSlowCommand, defaults.WaitSlowCommand)
+	if s.HistoryLimit < 0 {
+		s.InvalidValues = append(s.InvalidValues, fmt.Sprintf("history_limit %d", s.HistoryLimit))
+		s.HistoryLimit = 0
+	}
+	if s.NumCloseMatches < 0 {
+		s.InvalidValues = append(s.InvalidValues,
+			fmt.Sprintf("num_close_matches %d", s.NumCloseMatches))
+		s.NumCloseMatches = defaults.NumCloseMatches
+	}
+}
+
+// validSeconds returns value when it is a usable number of seconds and the
+// fallback otherwise.
+func (s *Settings) validSeconds(name string, value, fallback int) int {
+	if value >= 1 && value <= maxWaitSeconds {
+		return value
+	}
+	s.InvalidValues = append(s.InvalidValues, fmt.Sprintf("%s %d", name, value))
+	return fallback
 }
 
 // fileSchema mirrors the settings file layout. Both the flattened form and the
