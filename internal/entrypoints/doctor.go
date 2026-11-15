@@ -144,6 +144,7 @@ func doctorChecks(report doctorReport, shell doctorShellState) []doctorCheck {
 	checks = append(checks, doctorShellCheck(shell))
 	checks = append(checks, doctorAliasCheck(shell))
 	checks = append(checks, doctorSettingsCheck())
+	checks = append(checks, doctorRulesCheck())
 	checks = append(checks, doctorHistoryCheck(shell))
 	checks = append(checks, doctorFzfCheck())
 	checks = append(checks, doctorInstantCheck())
@@ -259,6 +260,27 @@ func doctorSettingsCheck() doctorCheck {
 	}
 	check.Status = doctorOK
 	check.Message = "loaded " + path
+	return check
+}
+
+// doctorRulesCheck reports rule settings that contradict each other.
+func doctorRulesCheck() doctorCheck {
+	check := doctorCheck{Name: "rules"}
+	settings, err := doctorLoadSettings()
+	if err != nil || settings == nil {
+		check.Status = doctorInfo
+		check.Message = "not checked: the settings were not loaded"
+		return check
+	}
+	conflicts := conflictingRuleSettings(settings)
+	if len(conflicts) == 0 {
+		check.Status = doctorOK
+		check.Message = "rule settings are consistent"
+		return check
+	}
+	check.Status = doctorWarn
+	check.Message = "inconsistent rule settings"
+	check.Hint = strings.Join(conflicts, "; ")
 	return check
 }
 

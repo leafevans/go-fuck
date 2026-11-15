@@ -62,6 +62,88 @@ func TestWarnUnknownRuleSettings(t *testing.T) {
 	}
 }
 
+func TestConflictingRuleSettings(t *testing.T) {
+	if got := conflictingRuleSettings(nil); got != nil {
+		t.Fatalf("conflictingRuleSettings(nil) = %q, want nil", got)
+	}
+	if got := conflictingRuleSettings(conf.Default()); len(got) != 0 {
+		t.Fatalf("conflictingRuleSettings(default) = %q, want none", got)
+	}
+
+	excludedSettings := conf.Default()
+	excludedSettings.ExcludeRules = []string{"git_push", "unknown"}
+	excludedSettings.Rules = []string{consts.AllEnabled, "git_push"}
+	got := conflictingRuleSettings(excludedSettings)
+	want := []string{`rules "git_push" also appears in exclude_rules`}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("conflictingRuleSettings() = %q, want %q", got, want)
+	}
+
+	prioritySettings := conf.Default()
+	prioritySettings.ExcludeRules = []string{"git_push"}
+	prioritySettings.Priority = map[string]int{"git_push": 10}
+	got = conflictingRuleSettings(prioritySettings)
+	want = []string{`priority "git_push" is ignored because the rule is excluded`}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("conflictingRuleSettings() = %q, want %q", got, want)
+	}
+
+	disabledSettings := conf.Default()
+	disabledSettings.Rules = []string{"git_add"}
+	disabledSettings.Priority = map[string]int{"git_push": 10}
+	got = conflictingRuleSettings(disabledSettings)
+	want = []string{`priority "git_push" is ignored because the rule is not enabled`}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("conflictingRuleSettings() = %q, want %q", got, want)
+	}
+
+	enabledSettings := conf.Default()
+	enabledSettings.Rules = []string{consts.AllEnabled}
+	enabledSettings.Priority = map[string]int{"git_push": 10}
+	if got := conflictingRuleSettings(enabledSettings); len(got) != 0 {
+		t.Fatalf("conflictingRuleSettings(enabled) = %q, want none", got)
+	}
+}
+
+func TestWarnConflictingRuleSettings(t *testing.T) {
+	settings := conf.Default()
+	settings.ExcludeRules = []string{"git_push"}
+	settings.Priority = map[string]int{"git_push": 10}
+	buffer := &bytes.Buffer{}
+	logs.SetOutput(buffer)
+	t.Cleanup(func() {
+		logs.SetOutput(os.Stderr)
+	})
+
+	warnConflictingRuleSettings(settings)
+	if !strings.Contains(buffer.String(), "Conflicting rule settings") {
+		t.Fatalf("warnConflictingRuleSettings() output = %q", buffer.String())
+	}
+
+	buffer.Reset()
+	warnConflictingRuleSettings(conf.Default())
+	if buffer.Len() != 0 {
+		t.Fatalf("warnConflictingRuleSettings() warned for the default settings: %q", buffer.String())
+	}
+}
+
+func TestDoctorWarnsAboutConflictingRuleSettings(t *testing.T) {
+	resetEntrypointsState(t)
+	settingsDir := conf.UserDir()
+	writeTestFile(t, filepath.Join(settingsDir, "settings.json"),
+		`{"exclude_rules": ["git_push"], "priority": {"git_push": 10}}`)
+
+	code, stdout, _ := runMain(t, "go-fuck", "--doctor")
+	if code != 0 {
+		t.Fatalf("Main(--doctor) = %d, want 0", code)
+	}
+	for _, want := range []string{"inconsistent rule settings", "git_push"} {
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("doctor output %q does not contain %q", stdout, want)
+		}
+	}
+}
+
 func TestDoctorWarnsAboutUnknownRuleNames(t *testing.T) {
 	resetEntrypointsState(t)
 	settingsDir := conf.UserDir()

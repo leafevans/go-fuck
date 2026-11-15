@@ -26,6 +26,7 @@ func fixCommand(args *argumentparser.Args) int {
 	} else {
 		warnUnknownSettings(settings)
 		warnUnknownRuleSettings(settings)
+		warnConflictingRuleSettings(settings)
 	}
 	loadCustomRules()
 	warnOutdatedAlias()

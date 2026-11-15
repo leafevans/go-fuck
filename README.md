@@ -508,7 +508,9 @@ Unknown keys are ignored by default, so a settings file written by a newer go-fu
 with an older one. They are reported by `go-fuck --doctor` and by a correction run, so a typo such
 as `rule` instead of `rules` does not go unnoticed. Rule names in `rules`, `exclude_rules` and
 `priority` are validated the same way: an unknown name is reported with its setting, because a typo
-would otherwise silently ignore the rule or its priority override. Set `strict_settings` (or
+would otherwise silently ignore the rule or its priority override. Contradictory rule settings are
+reported too: a rule that appears in both `rules` and `exclude_rules`, or a `priority` override for an
+excluded or disabled rule, would be silently ignored (`exclude_rules` wins). Set `strict_settings` (or
 `GOFUCK_STRICT_SETTINGS=true`) to reject unknown keys instead: the file is reported as invalid and
 not applied. Invalid JSON or a value of the wrong type is always reported and the file is not
 applied, so go-fuck falls back to the built-in defaults instead of running with a half applied
