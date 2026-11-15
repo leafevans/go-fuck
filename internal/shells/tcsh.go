@@ -27,11 +27,20 @@ func NewTcsh() *Tcsh {
 }
 
 // AppAlias returns the tcsh alias.
+//
+// The failed command and the corrected command are captured in double quotes:
+// an unquoted command substitution word splits on every blank and expands
+// globs, so "make *.txt" would reach go-fuck as the files of the directory and
+// "echo  a" would lose the second blank. The raw command is handed over in
+// TF_HISTORY so go-fuck sees exactly what was typed, and the variable is
+// cleared again so a later manual invocation does not reuse a stale history.
 func (t *Tcsh) AppAlias(aliasName string) string {
 	return fmt.Sprintf(
 		"alias %[1]s 'setenv TF_SHELL tcsh && setenv TF_ALIAS %[1]s && "+
-			"set fucked_cmd=%[3]shistory -h 2 | head -n 1%[3]s && "+
-			"eval %[3]s%[2]s $fucked_cmd%[3]s'",
+			"set fucked_cmd = \"%[3]shistory -h 2 | head -n 1%[3]s\" && "+
+			"setenv TF_HISTORY \"$fucked_cmd\" && "+
+			"set unfucked_cmd = \"%[3]s%[2]s%[3]s\" && "+
+			"eval \"$unfucked_cmd\" ; unsetenv TF_HISTORY'",
 		aliasName, consts.ExecutableName(), backtick)
 }
 

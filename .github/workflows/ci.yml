@@ -185,6 +185,8 @@ jobs:
         run: bash scripts/check-shell-integration.sh "$RUNNER_TEMP/go-fuck"
       - name: Check the quote round trips
         run: go test ./internal/shells -run 'TestQuoteRoundTrip' -count=1 -v
+      - name: Check the tcsh alias behavior
+        run: go test ./internal/shells -run 'TestTcshAlias|TestAliasSyntaxTcsh' -count=1 -v
 
   gofmt:
     name: gofmt
