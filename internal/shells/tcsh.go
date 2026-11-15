@@ -35,6 +35,31 @@ func (t *Tcsh) AppAlias(aliasName string) string {
 		aliasName, consts.ExecutableName(), backtick)
 }
 
+// Quote returns a tcsh escaped version of s.
+//
+// csh performs history substitution even inside single quotes, so an
+// exclamation mark has to be escaped, and a plain newline ends the quoted
+// string: both are written with a leading backslash. An embedded single quote
+// closes the string, escapes the quote and opens it again.
+func (t *Tcsh) Quote(s string) string {
+	var builder strings.Builder
+	builder.WriteString("'")
+	for _, character := range s {
+		switch character {
+		case '!':
+			builder.WriteString("\\!")
+		case '\n':
+			builder.WriteString("\\\n")
+		case '\'':
+			builder.WriteString("'\\''")
+		default:
+			builder.WriteRune(character)
+		}
+	}
+	builder.WriteString("'")
+	return builder.String()
+}
+
 // InstantModeAlias falls back to the regular alias because instant mode is not
 // supported.
 func (t *Tcsh) InstantModeAlias(aliasName string) string {

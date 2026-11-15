@@ -61,6 +61,17 @@ func (f *Fish) InstantModeAlias(aliasName string) string {
 	return f.AppAlias(aliasName)
 }
 
+// Quote returns a fish escaped version of s.
+//
+// Inside single quotes fish only treats a backslash before a backslash or a
+// single quote as an escape; a POSIX style '"'"' sequence leaves the closing
+// quote escaped and breaks the word. Doubling the backslash and escaping the
+// single quote keeps every value intact.
+func (f *Fish) Quote(s string) string {
+	escaped := strings.NewReplacer("\\", "\\\\", "'", "\\'").Replace(s)
+	return "'" + escaped + "'"
+}
+
 // And joins commands with the fish AND operator.
 func (f *Fish) And(commands ...string) string {
 	return strings.Join(commands, "; and ")
