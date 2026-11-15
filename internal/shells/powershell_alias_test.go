@@ -219,3 +219,16 @@ func TestPowershellAliasPassesInformationCommands(t *testing.T) {
 		t.Fatalf("go-fuck arguments = %q, want --list-rules", data)
 	}
 }
+
+// TestPowershellAliasPassesEqualsInformationCommands checks that the equals
+// form of the information options is passed through as well.
+func TestPowershellAliasPassesEqualsInformationCommands(t *testing.T) {
+	resetShellsState(t)
+
+	recorded := runPowershellAlias(t,
+		"function Get-History { param($Count) $null }",
+		"fuck --alias=myfuck")
+	if len(recorded) != 1 || strings.TrimSpace(recorded[0].args) != "--alias=myfuck" {
+		t.Fatalf("go-fuck invocation = %+v, want --alias=myfuck passed through", recorded)
+	}
+}

@@ -176,3 +176,23 @@ func TestAliasSyntaxPowerShell(t *testing.T) {
 		"')) | Out-Null; exit 0"
 	aliasSyntaxCommand(t, powershell, "-NoProfile", "-Command", validate)
 }
+
+// TestAliasPassesEqualsForms checks that the equals form of the information
+// options, for example --alias=myfuck, is passed through as well.
+func TestAliasPassesEqualsForms(t *testing.T) {
+	resetShellsState(t)
+	aliases := map[string]Shell{
+		"bash":       NewBash(),
+		"zsh":        NewZsh(),
+		"fish":       NewFish(),
+		"powershell": NewPowershell(),
+	}
+	for name, shell := range aliases {
+		alias := shell.AppAlias("fuck")
+		for _, want := range []string{"--alias=*", "--shell-logger=*"} {
+			if !strings.Contains(alias, want) {
+				t.Errorf("%s AppAlias() does not pass %q through: %q", name, want, alias)
+			}
+		}
+	}
+}
