@@ -22,7 +22,6 @@ func Main() int {
 func dispatch() int {
 	consts.SetExecutableName(os.Args[0])
 	system.InitOutput()
-	shells.Set(shells.Detect())
 
 	args, err := argumentparser.Parse(os.Args)
 	if err != nil {
@@ -36,24 +35,39 @@ func dispatch() int {
 		fmt.Fprintln(os.Stderr, argumentparser.Help())
 		return 0
 	case args.Version:
+		ensureShell()
 		logs.PrintVersion(versionInfo(logs.OutputIsTerminal() || args.Debug), args.Debug)
 		return 0
 	case args.ListRules:
 		return listRules(args)
 	case args.Doctor:
+		ensureShell()
 		return doctor(args)
 	case args.ShellLogger != "":
 		return shellLogger(args.ShellLogger)
 	case args.AliasRequested:
+		ensureShell()
 		return printAlias(args)
 	case args.Setup:
+		ensureShell()
 		return setup(args)
 	case len(args.Command) > 0 || args.ForceCommand != "" || os.Getenv("TF_HISTORY") != "":
+		ensureShell()
 		return fixCommand(args)
 	default:
 		fmt.Fprintln(os.Stderr, argumentparser.Usage())
 		return 0
 	}
+}
+
+// ensureShell detects the invoking shell and installs it as the current shell.
+//
+// Only commands that inspect or run the shell call it: detecting the shell walks
+// the process tree, which takes a few milliseconds on Unix and tens of
+// milliseconds on Windows. Information commands such as --help and
+// --list-rules do not need it, so they stay fast.
+func ensureShell() {
+	shells.Set(shells.Detect())
 }
 
 // recoverEntrypoints runs fn and converts a panic into a friendly error so
