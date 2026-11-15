@@ -40,13 +40,13 @@ No configuration or JSON migration is required:
 
 Upgrade with the channel you installed go-fuck from:
 
-| Channel           | Command                                                      |
-| ----------------- | ------------------------------------------------------------ |
-| Homebrew          | `brew upgrade go-fuck`                                       |
-| Scoop             | `scoop update go-fuck`                                       |
-| AUR               | `yay -Syu` or `paru -Syu`                                    |
+| Channel           | Command                                                         |
+| ----------------- | --------------------------------------------------------------- |
+| Homebrew          | `brew upgrade go-fuck`                                          |
+| Scoop             | `scoop update go-fuck`                                          |
+| AUR               | `yay -Syu` or `paru -Syu`                                       |
 | Go toolchain      | `go install github.com/leafevans/go-fuck/v2/cmd/go-fuck@latest` |
-| Prebuilt archives | download the new archive and replace the binary              |
+| Prebuilt archives | download the new archive and replace the binary                 |
 
 `go-fuck --setup` is idempotent; it does not have to be run again after upgrading.
 
@@ -101,10 +101,10 @@ release series. No settings, command line or `--json` migration is required: onl
 the Go packages and the install command change.
 
 - Install with `go install github.com/leafevans/go-fuck/v2/cmd/go-fuck@latest`. The command without
-the `/v2` suffix keeps resolving to the old 1.x series, because a Go module path has to carry the
-major version from 2 on.
+  the `/v2` suffix keeps resolving to the old 1.x series, because a Go module path has to carry the
+  major version from 2 on.
 - Homebrew, Scoop, the AUR package and the prebuilt archives are unaffected; nothing has to be
-reinstalled beyond the usual upgrade command.
+  reinstalled beyond the usual upgrade command.
 
 ## Upgrading from 2.28 to 2.29.0
 
