@@ -251,6 +251,12 @@ func doctorSettingsCheck() doctorCheck {
 		check.Hint = "ignored unknown keys: " + strings.Join(settings.UnknownKeys, ", ")
 		return check
 	}
+	if unknown := unknownRuleSettings(settings); len(unknown) > 0 {
+		check.Status = doctorWarn
+		check.Message = "loaded " + path
+		check.Hint = "unknown rule names: " + strings.Join(unknown, ", ")
+		return check
+	}
 	check.Status = doctorOK
 	check.Message = "loaded " + path
 	return check

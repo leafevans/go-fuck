@@ -25,6 +25,7 @@ func fixCommand(args *argumentparser.Args) int {
 		logs.Exception("Can't load settings", err)
 	} else {
 		warnUnknownSettings(settings)
+		warnUnknownRuleSettings(settings)
 	}
 	loadCustomRules()
 	warnOutdatedAlias()
