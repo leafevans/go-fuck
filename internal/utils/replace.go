@@ -45,8 +45,16 @@ func ReplaceArgumentsSorted(script, from string, candidates []string) []string {
 func ReplaceCommand(command *types.Command, broken string, matched []string) []string {
 	closeMatches := GetCloseMatches(broken, matched, 0, 0.1)
 	results := make([]string, 0, len(closeMatches))
+	seen := make(map[string]bool, len(closeMatches))
 	for _, match := range closeMatches {
-		results = append(results, ReplaceArgument(command.Script, broken, strings.TrimSpace(match)))
+		suggestion := ReplaceArgument(command.Script, broken, strings.TrimSpace(match))
+		// A correction that does not change the command is useless and makes
+		// --repeat run the failing command again.
+		if suggestion == command.Script || seen[suggestion] {
+			continue
+		}
+		seen[suggestion] = true
+		results = append(results, suggestion)
 	}
 	return results
 }

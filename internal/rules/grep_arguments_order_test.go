@@ -71,3 +71,22 @@ func TestRuleGrepArgumentsOrder(t *testing.T) {
 		}
 	})
 }
+
+// TestRuleGrepArgumentsOrderFileAlreadyLast checks that the rule does not
+// suggest the original command when the file argument is already at the end.
+func TestRuleGrepArgumentsOrderFileAlreadyLast(t *testing.T) {
+	resetTestState(t)
+	original := grepArgumentsOrderPathExists
+	t.Cleanup(func() { grepArgumentsOrderPathExists = original })
+	grepArgumentsOrderPathExists = func(path string) bool { return path == "." }
+
+	rule := Get("grep_arguments_order")
+	command := testCommand("grep -r foo .", "grep: warning: foo: No such file or directory")
+	suggestions, err := rule.GetNewCommand(command)
+	if err != nil {
+		t.Fatalf("grep_arguments_order returned an error: %v", err)
+	}
+	if len(suggestions) != 0 {
+		t.Fatalf("grep_arguments_order suggested %q for an already ordered command", suggestions)
+	}
+}

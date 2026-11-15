@@ -49,7 +49,13 @@ func grepArgumentsOrderNewCommand(command *types.Command) ([]string, error) {
 		parts = append(parts[:index], parts[index+1:]...)
 	}
 	parts = append(parts, actualFile)
-	return []string{strings.Join(parts, " ")}, nil
+	suggestion := strings.Join(parts, " ")
+	if suggestion == strings.Join(command.ScriptParts(), " ") {
+		// The file argument is already last, so the command cannot be
+		// improved and the rule must not offer the same command again.
+		return nil, nil
+	}
+	return []string{suggestion}, nil
 }
 
 func init() {

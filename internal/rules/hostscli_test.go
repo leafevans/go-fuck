@@ -33,4 +33,24 @@ func TestRuleHostscli(t *testing.T) {
 		assertNewCommands(t, rule, "hostscli block a_website_that_does_not_exist", hostscliNoWebsiteOutput,
 			[]string{"hostscli websites"})
 	})
+
+	t.Run("get new command for a misspelled command", func(t *testing.T) {
+		command := testCommand("hostscli blok a_website", "Error: No such command \"blok\"")
+		suggestions, err := rule.GetNewCommand(command)
+		if err != nil {
+			t.Fatalf("hostscli returned an error: %v", err)
+		}
+		found := false
+		for _, suggestion := range suggestions {
+			if suggestion == "hostscli blok a_website" {
+				t.Fatalf("hostscli suggests the original command: %q", suggestions)
+			}
+			if suggestion == "hostscli block a_website" {
+				found = true
+			}
+		}
+		if !found {
+			t.Fatalf("hostscli suggestions %q do not contain the correction", suggestions)
+		}
+	})
 }

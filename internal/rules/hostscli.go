@@ -16,7 +16,9 @@ const hostscliNoCommand = "Error: No such command"
 const hostscliNoWebsite = "hostscli.errors.WebsiteImportError"
 
 // hostscliMisspelledCommand matches the unknown command reported by hostscli.
-var hostscliMisspelledCommand = regexp.MustCompile(`Error: No such command ".*"`)
+// The first group is the command name itself: the surrounding error message is
+// not part of the command line and cannot be replaced there.
+var hostscliMisspelledCommand = regexp.MustCompile(`Error: No such command "([^"]*)"`)
 
 // hostscliCommands lists the commands implemented by hostscli.
 var hostscliCommands = []string{"block", "unblock", "websites", "block_all", "unblock_all"}
@@ -34,11 +36,11 @@ func hostscliNewCommand(command *types.Command) ([]string, error) {
 		return []string{"hostscli websites"}, nil
 	}
 
-	matches := hostscliMisspelledCommand.FindAllString(command.Output, -1)
-	if len(matches) == 0 {
+	match := hostscliMisspelledCommand.FindStringSubmatch(command.Output)
+	if match == nil {
 		return nil, nil
 	}
-	return utils.ReplaceCommand(command, matches[0], hostscliCommands), nil
+	return utils.ReplaceCommand(command, match[1], hostscliCommands), nil
 }
 
 func init() {
