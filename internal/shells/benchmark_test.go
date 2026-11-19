@@ -29,7 +29,7 @@ func BenchmarkReadHistoryFile(b *testing.B) {
 
 	b.ReportAllocs()
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		readHistoryFile(path, func(line string) string { return line })
 	}
 }
