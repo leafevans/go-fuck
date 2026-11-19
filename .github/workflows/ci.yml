@@ -112,13 +112,17 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v7
         with:
-          go-version: stable
+          # The allocation baseline is tied to the Go toolchain, so the
+          # benchmark job follows go.mod instead of the moving stable version.
+          go-version-file: go.mod
           cache: true
       - name: Run benchmarks
         shell: bash
         run: |
           set -o pipefail
           go test ./internal/... -run '^$' -bench . -benchmem -count=1 | tee benchmark.txt
+      - name: Guard the benchmark allocations
+        run: go run ./tools/benchguard -bench benchmark.txt -baseline benchmarks/baseline.txt
       - name: Upload the benchmark results
         uses: actions/upload-artifact@v7
         with:

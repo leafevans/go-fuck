@@ -70,7 +70,7 @@ The correction hot path and the shell history parser have Go benchmarks
 | Full correction path (select rules, match them, order suggestions) | ~0.2 ms/op  |
 | Matching every rule against a captured output                      | ~0.18 ms/op |
 | Matching rules when the command output could not be captured       | ~1.4 µs/op  |
-| Parsing a 20,000 line shell history file                           | ~1.3 ms/op  |
+| Parsing a 20,000 line shell history file                           | ~0.7 ms/op (1.5 MB) |
 | Restoring a multi-line command from the bash alias history         | ~0.65 µs/op |
 | Restoring a command from the zsh history array                     | ~42 ns/op   |
 
@@ -78,6 +78,10 @@ The rule engine adds roughly 0.2 ms; the wall clock time of a correction is
 dominated by deliberately re-running the failed command. An interpreter based
 implementation pays for interpreter and module import startup before the first
 rule runs, which a native binary does not need.
+CI compares the allocated bytes and objects per operation of every benchmark with
+`benchmarks/baseline.txt` (`make bench-guard`); timing is not compared because it
+depends on the runner. To record an intentional allocation change, regenerate the
+baseline with `go run ./tools/benchguard -bench benchmark.txt -baseline benchmarks/baseline.txt -update`.
 
 ## Features
 

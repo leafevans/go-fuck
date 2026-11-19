@@ -1,0 +1,12 @@
+# benchmark baseline: name, bytes per op, allocations per op
+BenchmarkGetCloseMatchesLarge 464 5
+BenchmarkGetCloseMatchesLowCutoff 218871 824
+BenchmarkGetCorrectedCommands 8263 47
+BenchmarkGetRules 2048 1
+BenchmarkMarkedBashRawCommand 440 7
+BenchmarkMarkedZshRawCommand 16 1
+BenchmarkReadHistoryFile 1459851 8
+BenchmarkRuleMatchingAllRules 5168 19
+BenchmarkRuleMatchingWithoutOutput 0 0
+BenchmarkSequenceRatio 336 3
+BenchmarkSortBySimilarity 42368 421

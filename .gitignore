@@ -36,7 +36,8 @@ go.work.sum
 # must not be committed.
 /thefuck/
 
-# Build output
+# Build and benchmark output
+/benchmark.txt
 /go-fuck
 /go-fuck.exe
 /dist/

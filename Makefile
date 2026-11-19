@@ -29,7 +29,7 @@ endif
 #	make build LDFLAGS="-X github.com/leafevans/go-fuck/v2/internal/consts.Version=1.2.3"
 LDFLAGS ?=
 
-.PHONY: help build test test-race cover bench fuzz vet fmt fmt-check lint install clean packaging packaging-check rules-list rules-list-check
+.PHONY: help build test test-race cover bench bench-guard fuzz vet fmt fmt-check lint install clean packaging packaging-check rules-list rules-list-check
 
 .DEFAULT_GOAL := help
 
@@ -51,6 +51,10 @@ cover: ## Run the test suite with coverage and print the total
 
 bench: ## Run the benchmarks
 	$(GO) test ./internal/... -run '^$$' -bench . -benchmem
+
+bench-guard: ## Compare the benchmark allocations with the committed baseline
+	$(GO) test ./internal/... -run '^$$' -bench . -benchmem -count=1 > benchmark.txt
+	$(GO) run ./tools/benchguard -bench benchmark.txt -baseline benchmarks/baseline.txt
 
 fuzz: ## Run each native fuzz target briefly as a local smoke test
 	$(GO) test ./internal/argumentparser -run '^$$' -fuzz '^FuzzParse$$' -fuzztime=20s
