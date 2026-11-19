@@ -1,30 +1,54 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
 	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
-// cargoNoCommandSuggestionRegexp matches the subcommand suggested by cargo.
-var cargoNoCommandSuggestionRegexp = regexp.MustCompile(`Did you mean ` + "`([^`]*)`")
+// cargoNoCommandSuggestionRegexps match the subcommand suggested by cargo.
+//
+// Old cargo releases printed "no such subcommand" followed by "Did you mean"
+// and the subcommand; current releases print "no such command" and a help line
+// with the similar name. Both forms have to be understood, otherwise the rule
+// silently stops working after a cargo upgrade.
+var cargoNoCommandSuggestionRegexps = []*lazyRegexp{
+	newRegexp("Did you mean `([^`]*)`"),
+	newRegexp("a command with a similar name exists: `([^`]*)`"),
+	newRegexp("a similar subcommand exists: [`']([^`']*)[`']"),
+}
+
+// cargoNoCommandSuggestion returns the subcommand suggested by cargo, if the
+// output carries one.
+func cargoNoCommandSuggestion(output string) string {
+	for _, pattern := range cargoNoCommandSuggestionRegexps {
+		if match := pattern.FindStringSubmatch(output); match != nil {
+			return match[1]
+		}
+	}
+	return ""
+}
 
 // cargoNoCommandMatch reports whether cargo did not recognize the subcommand.
 func cargoNoCommandMatch(command *types.Command) bool {
-	return strings.Contains(strings.ToLower(command.Output), "no such subcommand") &&
-		strings.Contains(command.Output, "Did you mean")
+	output := strings.ToLower(command.Output)
+	if !strings.Contains(output, "no such subcommand") &&
+		!strings.Contains(output, "no such command") &&
+		!strings.Contains(output, "unrecognized subcommand") {
+		return false
+	}
+	return cargoNoCommandSuggestion(command.Output) != ""
 }
 
 // cargoNoCommandNewCommand replaces the misspelled subcommand.
 func cargoNoCommandNewCommand(command *types.Command) ([]string, error) {
 	parts := command.ScriptParts()
-	match := cargoNoCommandSuggestionRegexp.FindStringSubmatch(command.Output)
-	if len(parts) < 2 || match == nil {
+	suggestion := cargoNoCommandSuggestion(command.Output)
+	if len(parts) < 2 || suggestion == "" {
 		return nil, nil
 	}
-	return []string{utils.ReplaceArgument(command.Script, parts[1], match[1])}, nil
+	return []string{utils.ReplaceArgument(command.Script, parts[1], suggestion)}, nil
 }
 
 func init() {
