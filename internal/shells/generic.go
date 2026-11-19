@@ -103,7 +103,7 @@ func (g *Generic) expandAliases(script string, aliases map[string]string) string
 	if len(aliases) == 0 {
 		return script
 	}
-	binary := strings.SplitN(script, " ", 2)[0]
+	binary, _, _ := strings.Cut(script, " ")
 	if replacement, ok := aliases[binary]; ok {
 		return strings.Replace(script, binary, replacement, 1)
 	}
@@ -176,22 +176,37 @@ func (g *Generic) readHistory() []string {
 
 // readHistoryFile parses a history file, applying the history_limit setting.
 //
-// The file is read in one go and split into lines. This avoids one string
-// allocation per history line, which matters because the history based rules
-// are matched for every command, not only for history related ones.
+// The file is read in one go; the lines are handled as substrings of that
+// content, so a history line does not allocate a string of its own. Without a
+// history_limit the parsed entries are collected in a single pass, which keeps
+// the intermediate slice of all lines out of the hot path: the history based
+// rules are matched for every command, not only for history related ones.
 func readHistoryFile(path string, parse func(string) string) []string {
 	data, err := os.ReadFile(homePath(path))
 	if err != nil {
 		return nil
 	}
+	content := string(data)
+	delimiter := string(rune(charNewline))
 
-	lines := strings.Split(string(data), string(rune(charNewline)))
+	if limit := conf.Current().HistoryLimit; limit <= 0 {
+		history := make([]string, 0, strings.Count(content, delimiter)+1)
+		for line := range strings.SplitSeq(content, delimiter) {
+			if prepared := strings.TrimSpace(parse(line)); prepared != "" {
+				history = append(history, prepared)
+			}
+		}
+		return history
+	}
+
+	lines := strings.Split(content, delimiter)
 	// A trailing newline produces an empty last element; drop it so that the
 	// history_limit slice selection matches the previous line based reader.
 	if last := len(lines) - 1; last >= 0 && lines[last] == "" {
 		lines = lines[:last]
 	}
-	if limit := conf.Current().HistoryLimit; limit > 0 && len(lines) > limit {
+	limit := conf.Current().HistoryLimit
+	if limit > 0 && len(lines) > limit {
 		lines = lines[len(lines)-limit:]
 	}
 
