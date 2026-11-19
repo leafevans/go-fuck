@@ -48,6 +48,7 @@ func TestDoctorReportsShellIntegration(t *testing.T) {
 		"go-fuck doctor",
 		consts.Version,
 		"rules",
+		"path",
 		"shell",
 		"Bash",
 		"alias",
@@ -84,7 +85,7 @@ func TestDoctorJSON(t *testing.T) {
 		names[check.Name] = true
 	}
 	for _, want := range []string{
-		"version", "binary", "shell", "alias", "config", "history", "fzf", "instant",
+		"version", "binary", "path", "shell", "alias", "config", "history", "fzf", "instant",
 	} {
 		if !names[want] {
 			t.Fatalf("the report has no %q check: %+v", want, report.Checks)

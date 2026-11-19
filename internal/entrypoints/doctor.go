@@ -140,8 +140,12 @@ func doctorChecks(report doctorReport, shell doctorShellState) []doctorCheck {
 		binaryMessage = "could not determine the executable path"
 	}
 	checks = append(checks, doctorCheck{Name: "binary", Status: binaryStatus, Message: binaryMessage})
+	checks = append(checks, doctorPathCheck(report))
 
 	checks = append(checks, doctorShellCheck(shell))
+	if wslCheck, ok := doctorWSLInteropCheck(); ok {
+		checks = append(checks, wslCheck)
+	}
 	checks = append(checks, doctorAliasCheck(shell))
 	checks = append(checks, doctorSettingsCheck())
 	checks = append(checks, doctorRulesCheck())

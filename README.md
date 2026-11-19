@@ -314,10 +314,13 @@ $ go-fuck --doctor
 
 It checks the detected shell, the alias in the shell configuration file (for PowerShell every
 installed flavor's profile), the settings file (including ignored unknown keys), the command history
-and the optional integrations (fzf and instant mode). For instant mode it validates
-the logged shell's terminal log and warns when the instant mode line is no longer the last prompt
-definition in the PowerShell profile. Warnings include the command that fixes them, and
-`--doctor --json` prints the same report as JSON.
+and the optional integrations (fzf and instant mode). It also resolves the executable in `PATH`: when
+an older or differently installed copy comes first, `--doctor` warns that the shell alias starts that
+copy instead of the running build. On Windows it additionally warns when the Windows build was
+started from inside WSL, where the shell detection sees the Windows host instead of the Linux shell.
+For instant mode it validates the logged shell's terminal log and warns when the instant mode line is
+no longer the last prompt definition in the PowerShell profile. Warnings include the command that
+fixes them, and `--doctor --json` prints the same report as JSON.
 
 To list the rule names accepted by the `rules`, `exclude_rules` and `priority` settings, run:
 
