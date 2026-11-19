@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/shells"
@@ -12,7 +11,7 @@ import (
 // touchPathPattern extracts the missing directory from the touch error. The
 // optional "cannot touch '" prefix is used by GNU coreutils, the BSD
 // implementation prints the path directly.
-var touchPathPattern = regexp.MustCompile("touch: (cannot touch ')?(.+)/.+?'?:")
+var touchPathPattern = newRegexp("touch: (cannot touch ')?(.+)/.+?'?:")
 
 // touchMatch reports whether touch failed because the parent directory is
 // missing.

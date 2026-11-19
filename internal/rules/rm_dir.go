@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/specific"
@@ -9,7 +8,7 @@ import (
 )
 
 // rmDirPattern matches a rm invocation.
-var rmDirPattern = regexp.MustCompile(`\brm (.*)`)
+var rmDirPattern = newRegexp(`\brm (.*)`)
 
 // rmDirMatch reports whether rm failed because the target is a directory.
 func rmDirMatch(command *types.Command) bool {

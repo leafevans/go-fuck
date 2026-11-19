@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/specific"
@@ -10,7 +9,7 @@ import (
 )
 
 // leinNotTaskPattern extracts the unknown lein task from the output.
-var leinNotTaskPattern = regexp.MustCompile("'([^']*)' is not a task")
+var leinNotTaskPattern = newRegexp("'([^']*)' is not a task")
 
 // leinNotTaskMatch reports whether lein reported an unknown task together with
 // suggestions.

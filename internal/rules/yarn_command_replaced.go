@@ -1,14 +1,12 @@
 package rules
 
 import (
-	"regexp"
-
 	"github.com/leafevans/go-fuck/v2/internal/types"
 	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // yarnCommandReplacedRunInstead matches the replacement command yarn suggests.
-var yarnCommandReplacedRunInstead = regexp.MustCompile("Run \"(.*)\" instead")
+var yarnCommandReplacedRunInstead = newRegexp("Run \"(.*)\" instead")
 
 // yarnCommandReplacedMatch reports whether yarn suggested running another
 // command instead.

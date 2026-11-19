@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/shells"
@@ -11,7 +10,7 @@ import (
 
 // goMissingPackage matches the "go get" command that the Go toolchain prints
 // to suggest the missing module.
-var goMissingPackage = regexp.MustCompile(`(?m)^\tgo get (.+)$`)
+var goMissingPackage = newRegexp(`(?m)^\tgo get (.+)$`)
 
 // goMissingModuleMatch matches the error that the Go toolchain prints when a
 // package is imported but not provided by any required module.

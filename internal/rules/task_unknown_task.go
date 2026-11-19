@@ -1,8 +1,6 @@
 package rules
 
 import (
-	"regexp"
-
 	"github.com/leafevans/go-fuck/v2/internal/types"
 	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
@@ -10,7 +8,7 @@ import (
 // taskUnknownTask matches the error of go-task for a missing task when it
 // suggests a similar task, for example:
 // task: Task "typo" does not exist. Did you mean "task"?
-var taskUnknownTask = regexp.MustCompile(`task: Task "([^"]*)" does not exist\. Did you mean "([^"]*)"\?`)
+var taskUnknownTask = newRegexp(`task: Task "([^"]*)" does not exist\. Did you mean "([^"]*)"\?`)
 
 // taskUnknownTaskMatch reports whether go-task failed because the task does
 // not exist and suggested a similar one.

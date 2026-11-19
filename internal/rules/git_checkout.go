@@ -2,7 +2,7 @@ package rules
 
 import (
 	"os/exec"
-	"regexp"
+
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/shells"
@@ -12,7 +12,7 @@ import (
 )
 
 // gitCheckoutPathspec matches the path that git did not find.
-var gitCheckoutPathspec = regexp.MustCompile(`error: pathspec '([^']*)' did not match any file\(s\) known to git`)
+var gitCheckoutPathspec = newRegexp(`error: pathspec '([^']*)' did not match any file\(s\) known to git`)
 
 // gitCheckoutBranches returns the local and remote branch names. It is a
 // variable so that tests do not need git to be installed.

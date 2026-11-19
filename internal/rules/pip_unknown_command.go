@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/specific"
@@ -10,10 +9,10 @@ import (
 )
 
 // pipUnknownCommandBroken matches the unknown pip command in the output.
-var pipUnknownCommandBroken = regexp.MustCompile(`ERROR: unknown command "([^"]+)"`)
+var pipUnknownCommandBroken = newRegexp(`ERROR: unknown command "([^"]+)"`)
 
 // pipUnknownCommandSuggestion matches the pip suggestion in the output.
-var pipUnknownCommandSuggestion = regexp.MustCompile(`maybe you meant "([^"]+)"`)
+var pipUnknownCommandSuggestion = newRegexp(`maybe you meant "([^"]+)"`)
 
 // pipUnknownCommandMatch reports whether pip reported an unknown command
 // together with a suggestion.

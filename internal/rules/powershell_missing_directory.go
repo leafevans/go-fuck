@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/shells"
@@ -9,7 +8,7 @@ import (
 )
 
 // powerShellMissingPath matches the destination path of a failed copy.
-var powerShellMissingPath = regexp.MustCompile(`Could not find a part of the path '([^']*)'`)
+var powerShellMissingPath = newRegexp(`Could not find a part of the path '([^']*)'`)
 
 // powerShellMissingDirectoryCommands are the PowerShell commands that write a
 // file, copy an item or move an item.

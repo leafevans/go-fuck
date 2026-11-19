@@ -2,14 +2,13 @@ package rules
 
 import (
 	"os"
-	"regexp"
 
 	"github.com/leafevans/go-fuck/v2/internal/shells"
 	"github.com/leafevans/go-fuck/v2/internal/types"
 )
 
 // powerShellSetLocationPath matches the path of a failed Set-Location.
-var powerShellSetLocationPath = regexp.MustCompile(`Cannot find path '([^']*)' because it does not exist`)
+var powerShellSetLocationPath = newRegexp(`Cannot find path '([^']*)' because it does not exist`)
 
 // powerShellPathMissing reports whether path does not exist.
 var powerShellPathMissing = func(path string) bool {

@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/specific"
@@ -9,7 +8,7 @@ import (
 )
 
 // mkdirPPattern matches a mkdir invocation.
-var mkdirPPattern = regexp.MustCompile(`\bmkdir (.*)`)
+var mkdirPPattern = newRegexp(`\bmkdir (.*)`)
 
 // mkdirPMatch reports whether mkdir failed because the parent directory is
 // missing.

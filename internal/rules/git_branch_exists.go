@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/shells"
@@ -10,7 +9,7 @@ import (
 )
 
 // gitBranchExistsBranch matches the branch name reported by git.
-var gitBranchExistsBranch = regexp.MustCompile("fatal: A branch named '(.+)' already exists.")
+var gitBranchExistsBranch = newRegexp("fatal: A branch named '(.+)' already exists.")
 
 // gitBranchExistsMatch reports whether the branch that should be created
 // already exists.

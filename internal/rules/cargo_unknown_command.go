@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -11,9 +10,9 @@ import (
 var (
 	// cargoNoSuchCommand matches the error line of cargo for an unknown
 	// subcommand, for example: error: no such command: `instll`.
-	cargoNoSuchCommand = regexp.MustCompile("no such command: \x60([^\x60]*)\x60")
+	cargoNoSuchCommand = newRegexp("no such command: \x60([^\x60]*)\x60")
 	// cargoSimilarCommand matches the help line that suggests a command.
-	cargoSimilarCommand = regexp.MustCompile("a command with a similar name exists: \x60([^\x60]*)\x60")
+	cargoSimilarCommand = newRegexp("a command with a similar name exists: \x60([^\x60]*)\x60")
 )
 
 // cargoUnknownCommandMatch matches the error that cargo prints for a

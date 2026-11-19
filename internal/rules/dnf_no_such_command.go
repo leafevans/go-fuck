@@ -2,7 +2,7 @@ package rules
 
 import (
 	"os/exec"
-	"regexp"
+
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/specific"
@@ -11,11 +11,11 @@ import (
 )
 
 // dnfNoSuchCommandRegexp matches the misspelled command in the dnf output.
-var dnfNoSuchCommandRegexp = regexp.MustCompile(`No such command: (.*)\.`)
+var dnfNoSuchCommandRegexp = newRegexp(`No such command: (.*)\.`)
 
 // dnfNoSuchCommandOperationsRegexp matches the command names in the dnf help
 // output.
-var dnfNoSuchCommandOperationsRegexp = regexp.MustCompile(`(?m)^([a-z-]+) +`)
+var dnfNoSuchCommandOperationsRegexp = newRegexp(`(?m)^([a-z-]+) +`)
 
 // dnfNoSuchCommandHelp returns the output of "dnf --help".
 var dnfNoSuchCommandHelp = utils.Memoize(func() string {

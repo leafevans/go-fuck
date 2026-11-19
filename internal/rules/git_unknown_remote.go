@@ -2,7 +2,7 @@ package rules
 
 import (
 	"os/exec"
-	"regexp"
+
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -11,10 +11,10 @@ import (
 
 // gitUnknownRemotePatterns match the errors that git prints when a remote of a
 // "git remote" subcommand does not exist.
-var gitUnknownRemotePatterns = []*regexp.Regexp{
-	regexp.MustCompile(`(?m)^(?:error|fatal): No such remote: '([^']+)'$`),
-	regexp.MustCompile(`(?m)^(?:error|fatal): No such remote '([^']+)'$`),
-	regexp.MustCompile(`(?m)^fatal: '([^']+)' does not appear to be a git repository$`),
+var gitUnknownRemotePatterns = []*lazyRegexp{
+	newRegexp(`(?m)^(?:error|fatal): No such remote: '([^']+)'$`),
+	newRegexp(`(?m)^(?:error|fatal): No such remote '([^']+)'$`),
+	newRegexp(`(?m)^fatal: '([^']+)' does not appear to be a git repository$`),
 }
 
 // gitRemoteNamesCommand lists the configured remotes. It is a variable so that

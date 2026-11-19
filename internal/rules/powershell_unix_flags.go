@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -10,12 +9,12 @@ import (
 
 // powerShellUnknownParameter matches the error for a parameter that does not
 // exist, for example: A parameter cannot be found that matches parameter name 'rf'.
-var powerShellUnknownParameter = regexp.MustCompile(`A parameter cannot be found that matches parameter name '([^']*)'\.`)
+var powerShellUnknownParameter = newRegexp(`A parameter cannot be found that matches parameter name '([^']*)'\.`)
 
 // powerShellAmbiguousParameter matches the error for an abbreviated parameter
 // that matches several parameters, for example: Parameter cannot be processed
 // because the parameter name 'f' is ambiguous.
-var powerShellAmbiguousParameter = regexp.MustCompile(`the parameter name '([^']*)' is ambiguous`)
+var powerShellAmbiguousParameter = newRegexp(`the parameter name '([^']*)' is ambiguous`)
 
 // powerShellFlagFamilies maps a command family to the Unix style flags that it
 // can translate. The keys are the PowerShell commands that accept the

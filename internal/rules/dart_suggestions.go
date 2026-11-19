@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -13,7 +12,7 @@ import (
 //
 //	Could not find a command named "buidl".
 //	Could not find a subcommand named "buidl" for "dart pub".
-var dartUnknownCommand = regexp.MustCompile(`Could not find a (?:command|subcommand) named "([^"]*)"`)
+var dartUnknownCommand = newRegexp(`Could not find a (?:command|subcommand) named "([^"]*)"`)
 
 // dartSimilarCommands extracts the misspelled command and the suggestions that
 // the args package prints after a "Did you mean one of these?" line.

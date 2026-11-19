@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"sort"
 	"strings"
 
@@ -10,7 +9,7 @@ import (
 )
 
 // tmuxAmbiguous matches the ambiguous command error message of tmux.
-var tmuxAmbiguous = regexp.MustCompile(`ambiguous command: (.*), could be: (.*)`)
+var tmuxAmbiguous = newRegexp(`ambiguous command: (.*), could be: (.*)`)
 
 // tmuxMatch reports whether tmux could not resolve an ambiguous command.
 func tmuxMatch(command *types.Command) bool {

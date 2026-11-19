@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -9,7 +8,7 @@ import (
 )
 
 // yarnAliasSuggestion matches the alias yarn suggests in its error output.
-var yarnAliasSuggestion = regexp.MustCompile("Did you mean [`\"](?:yarn )?([^`\"]*)[`\"]")
+var yarnAliasSuggestion = newRegexp("Did you mean [`\"](?:yarn )?([^`\"]*)[`\"]")
 
 // yarnAliasMatch reports whether yarn suggested a corrected alias.
 func yarnAliasMatch(command *types.Command) bool {

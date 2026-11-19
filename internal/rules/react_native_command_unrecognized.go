@@ -3,7 +3,7 @@ package rules
 import (
 	"bytes"
 	"os/exec"
-	"regexp"
+
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -12,10 +12,10 @@ import (
 
 // reactNativeCommandUnrecognizedPattern matches the error printed for an
 // unknown command.
-var reactNativeCommandUnrecognizedPattern = regexp.MustCompile(`Unrecognized command '.*'`)
+var reactNativeCommandUnrecognizedPattern = newRegexp(`Unrecognized command '.*'`)
 
 // reactNativeCommandMistake matches the misspelled command.
-var reactNativeCommandMistake = regexp.MustCompile(`Unrecognized command '(.*)'`)
+var reactNativeCommandMistake = newRegexp(`Unrecognized command '(.*)'`)
 
 // reactNativeCommandReadHelp runs "react-native --help" and captures its
 // output.

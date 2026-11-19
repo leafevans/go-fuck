@@ -2,7 +2,7 @@ package rules
 
 import (
 	"os/exec"
-	"regexp"
+
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -11,9 +11,9 @@ import (
 
 // gitBranchMissingPatterns match the errors that git prints when a branch
 // passed to "git branch" does not exist.
-var gitBranchMissingPatterns = []*regexp.Regexp{
-	regexp.MustCompile(`(?m)^error: branch '([^']+)' not found$`),
-	regexp.MustCompile(`(?m)^fatal: no branch named '([^']+)'$`),
+var gitBranchMissingPatterns = []*lazyRegexp{
+	newRegexp(`(?m)^error: branch '([^']+)' not found$`),
+	newRegexp(`(?m)^fatal: no branch named '([^']+)'$`),
 }
 
 // gitLocalBranchesCommand lists the local branch names. It is a variable so

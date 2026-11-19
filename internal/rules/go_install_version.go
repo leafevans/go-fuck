@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -10,7 +9,7 @@ import (
 
 // goInstallSuggestion matches the command that the Go toolchain suggests for
 // go install outside of a module.
-var goInstallSuggestion = regexp.MustCompile(`Try '(go install [^']*)' to install the latest version`)
+var goInstallSuggestion = newRegexp(`Try '(go install [^']*)' to install the latest version`)
 
 // goInstallVersionMatch matches the error that the Go toolchain prints when
 // go install is used outside a module without a version.

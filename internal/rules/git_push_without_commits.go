@@ -1,8 +1,6 @@
 package rules
 
 import (
-	"regexp"
-
 	"github.com/leafevans/go-fuck/v2/internal/shells"
 	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -10,7 +8,7 @@ import (
 
 // gitPushWithoutCommitsRefspec matches the error git prints when the pushed
 // refspec has no commits.
-var gitPushWithoutCommitsRefspec = regexp.MustCompile(`src refspec \w+ does not match any`)
+var gitPushWithoutCommitsRefspec = newRegexp(`src refspec \w+ does not match any`)
 
 // gitPushWithoutCommitsMatch reports whether git refused to push because
 // there is nothing to push yet.

@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/specific"
@@ -11,7 +10,7 @@ import (
 
 // brewInstallSuggestionRegexp matches the formula suggestions of the brew
 // warning.
-var brewInstallSuggestionRegexp = regexp.MustCompile(
+var brewInstallSuggestionRegexp = newRegexp(
 	`Warning: No available formula with the name "[^"]+"\. Did you mean (.+)\?`)
 
 // brewInstallSuggestions splits the suggestion list of the brew warning.

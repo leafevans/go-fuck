@@ -1,8 +1,6 @@
 package rules
 
 import (
-	"regexp"
-
 	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
 	"github.com/leafevans/go-fuck/v2/internal/utils"
@@ -10,11 +8,11 @@ import (
 
 // gitUnknownOption matches the error line for an unknown long option, for
 // example: error: unknown option `set-upstrem'.
-var gitUnknownOption = regexp.MustCompile("error: unknown option `([^']*)'")
+var gitUnknownOption = newRegexp("error: unknown option `([^']*)'")
 
 // gitUsageOption matches a long option in the usage list of git. Boolean
 // options are printed as --[no-]option, so the optional prefix is skipped.
-var gitUsageOption = regexp.MustCompile(`(?m)^\s+(?:-[A-Za-z],\s+)?--(?:\[no-\])?([A-Za-z0-9][A-Za-z0-9-]*)`)
+var gitUsageOption = newRegexp(`(?m)^\s+(?:-[A-Za-z],\s+)?--(?:\[no-\])?([A-Za-z0-9][A-Za-z0-9-]*)`)
 
 // gitUnknownOptionBroken returns the long option git rejected, or an empty
 // string when the output does not name one.

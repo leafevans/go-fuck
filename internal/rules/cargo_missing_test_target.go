@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -9,7 +8,7 @@ import (
 )
 
 // cargoMissingTestTarget matches the test target that cargo could not find.
-var cargoMissingTestTarget = regexp.MustCompile("no test target named `([^`]+)`")
+var cargoMissingTestTarget = newRegexp("no test target named `([^`]+)`")
 
 // cargoTestTargetsMarker introduces the test targets that cargo lists.
 const cargoTestTargetsMarker = "available test targets:"

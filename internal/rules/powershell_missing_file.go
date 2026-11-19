@@ -11,9 +11,9 @@ import (
 
 // powerShellMissingFilePatterns match the file path in the PowerShell errors
 // for a file that does not exist.
-var powerShellMissingFilePatterns = []*regexp.Regexp{
-	regexp.MustCompile(`Cannot find path '([^']*)' because it does not exist\.`),
-	regexp.MustCompile(`Cannot rename because item at '([^']*)' does not exist\.`),
+var powerShellMissingFilePatterns = []*lazyRegexp{
+	newRegexp(`Cannot find path '([^']*)' because it does not exist\.`),
+	newRegexp(`Cannot rename because item at '([^']*)' does not exist\.`),
 }
 
 // powerShellMissingFileCommands are the PowerShell commands that read, copy,
@@ -99,7 +99,7 @@ func powerShellMissingFileNewCommand(command *types.Command) ([]string, error) {
 // complete argument in script, or -1. The boundary check keeps a path such as
 // config.txt from matching the missing file config.tx.
 func powerShellArgumentIndex(script, missing string) int {
-	pattern := regexp.MustCompile(`(^|[\s"'\\/(])` + regexp.QuoteMeta(missing) + `($|[\s"';|)])`)
+	pattern := newRegexp(`(^|[\s"'\\/(])` + regexp.QuoteMeta(missing) + `($|[\s"';|)])`)
 	match := pattern.FindStringSubmatchIndex(script)
 	if match == nil {
 		return -1

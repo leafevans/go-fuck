@@ -1,16 +1,14 @@
 package rules
 
 import (
-	"regexp"
-
 	"github.com/leafevans/go-fuck/v2/internal/types"
 )
 
 // powerShellExistingItem matches the existing item that New-Item reports.
-var powerShellExistingItem = regexp.MustCompile(`An item with the specified name (.+) already exists\.`)
+var powerShellExistingItem = newRegexp(`An item with the specified name (.+) already exists\.`)
 
 // powerShellNewItemDirectory matches a New-Item call that creates a directory.
-var powerShellNewItemDirectory = regexp.MustCompile(`(?i)-(itemtype|type)\s+directory`)
+var powerShellNewItemDirectory = newRegexp(`(?i)-(itemtype|type)\s+directory`)
 
 // powerShellMkdirExistingMatch reports whether mkdir failed because the
 // directory already exists.

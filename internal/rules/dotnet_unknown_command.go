@@ -2,7 +2,7 @@ package rules
 
 import (
 	"os/exec"
-	"regexp"
+
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -14,11 +14,11 @@ var (
 	// the .NET CLI prints for a misspelled top level command, for example
 	// `dotnet-buidl does not exist`. The surrounding message is localized, but
 	// the token always contains the command the user typed.
-	dotnetUnknownCommandToken = regexp.MustCompile(`dotnet-([A-Za-z0-9][A-Za-z0-9_.-]*)`)
+	dotnetUnknownCommandToken = newRegexp(`dotnet-([A-Za-z0-9][A-Za-z0-9_.-]*)`)
 	// dotnetUnknownCommandHelpLine matches one command of the "dotnet --help"
 	// listing, for example `  build             Build a .NET project.`. The
 	// command names are not localized.
-	dotnetUnknownCommandHelpLine = regexp.MustCompile(`(?m)^  ([a-z][a-z0-9-]*) {2,}\S`)
+	dotnetUnknownCommandHelpLine = newRegexp(`(?m)^  ([a-z][a-z0-9-]*) {2,}\S`)
 )
 
 // dotnetUnknownCommandFallbackCommands is used when "dotnet --help" cannot be

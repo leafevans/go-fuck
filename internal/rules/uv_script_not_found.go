@@ -2,7 +2,7 @@ package rules
 
 import (
 	"os"
-	"regexp"
+
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -10,7 +10,7 @@ import (
 )
 
 // uvFailedSpawn matches the name that uv could not spawn.
-var uvFailedSpawn = regexp.MustCompile(`Failed to spawn: ([^\r\n]+)`)
+var uvFailedSpawn = newRegexp(`Failed to spawn: ([^\r\n]+)`)
 
 // uvScriptCandidates returns the names of the files in the current directory.
 var uvScriptCandidates = func() []string {

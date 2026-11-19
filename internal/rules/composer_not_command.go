@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -9,14 +8,14 @@ import (
 )
 
 // composerNotCommandBrokenRegexp matches the misspelled composer command.
-var composerNotCommandBrokenRegexp = regexp.MustCompile(`Command "([^']*)" is not defined`)
+var composerNotCommandBrokenRegexp = newRegexp(`Command "([^']*)" is not defined`)
 
 // composerNotCommandThisRegexp matches a single suggestion.
-var composerNotCommandThisRegexp = regexp.MustCompile(
+var composerNotCommandThisRegexp = newRegexp(
 	`Did you mean this\?[^\n]*\n\s*([^\n]*)`)
 
 // composerNotCommandOneOfThisRegexp matches a list of suggestions.
-var composerNotCommandOneOfThisRegexp = regexp.MustCompile(
+var composerNotCommandOneOfThisRegexp = newRegexp(
 	`Did you mean one of these\?[^\n]*\n\s*([^\n]*)`)
 
 // composerNotCommandMatch reports whether composer did not recognize the

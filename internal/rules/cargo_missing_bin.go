@@ -1,14 +1,12 @@
 package rules
 
 import (
-	"regexp"
-
 	"github.com/leafevans/go-fuck/v2/internal/types"
 	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // cargoMissingBin matches the bin target that cargo could not find.
-var cargoMissingBin = regexp.MustCompile("no bin target named `([^`]+)`")
+var cargoMissingBin = newRegexp("no bin target named `([^`]+)`")
 
 // cargoBinTargetsMarker introduces the bin targets that cargo lists.
 const cargoBinTargetsMarker = "available bin targets:"

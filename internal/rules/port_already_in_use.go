@@ -2,7 +2,7 @@ package rules
 
 import (
 	"os/exec"
-	"regexp"
+
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/shells"
@@ -12,11 +12,11 @@ import (
 
 // portAlreadyInUsePatterns match the port of the "address already in use"
 // errors of the supported applications.
-var portAlreadyInUsePatterns = []*regexp.Regexp{
-	regexp.MustCompile(`bind on address \('.*', (?P<port>\d+)\)`),
-	regexp.MustCompile(`Unable to bind [^ ]*:(?P<port>\d+)`),
-	regexp.MustCompile(`can't listen on port (?P<port>\d+)`),
-	regexp.MustCompile(`listen EADDRINUSE [^ ]*:(?P<port>\d+)`),
+var portAlreadyInUsePatterns = []*lazyRegexp{
+	newRegexp(`bind on address \('.*', (?P<port>\d+)\)`),
+	newRegexp(`Unable to bind [^ ]*:(?P<port>\d+)`),
+	newRegexp(`can't listen on port (?P<port>\d+)`),
+	newRegexp(`listen EADDRINUSE [^ ]*:(?P<port>\d+)`),
 }
 
 // portAlreadyInUseParsePort returns the port reported by an error output.

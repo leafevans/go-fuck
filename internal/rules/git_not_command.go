@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/specific"
@@ -10,7 +9,7 @@ import (
 )
 
 // gitNotCommandBroken matches the command that is not a git command.
-var gitNotCommandBroken = regexp.MustCompile("git: '([^']*)' is not a git command")
+var gitNotCommandBroken = newRegexp("git: '([^']*)' is not a git command")
 
 // gitNotCommandMatch reports whether git suggested similar commands.
 func gitNotCommandMatch(command *types.Command) bool {

@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/specific"
@@ -11,7 +10,7 @@ import (
 
 // pacmanInvalidOptionRegexp matches the option that must be uppercase when it
 // is combined with other options.
-var pacmanInvalidOptionRegexp = regexp.MustCompile(" -[dfqrstuv]")
+var pacmanInvalidOptionRegexp = newRegexp(" -[dfqrstuv]")
 
 // pacmanInvalidOptionSupportedOptions lists the options that may be combined
 // with a pacman action.

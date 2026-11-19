@@ -2,7 +2,7 @@ package rules
 
 import (
 	"os/exec"
-	"regexp"
+
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -10,7 +10,7 @@ import (
 )
 
 // gemUnknownCommandRegexp matches the unknown command name.
-var gemUnknownCommandRegexp = regexp.MustCompile(`Unknown command ([^\n]*)`)
+var gemUnknownCommandRegexp = newRegexp(`Unknown command ([^\n]*)`)
 
 // gemUnknownCommandGemCommands returns the commands reported by
 // "gem help commands".

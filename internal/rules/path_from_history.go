@@ -2,7 +2,7 @@ package rules
 
 import (
 	"os"
-	"regexp"
+
 	"sort"
 	"strings"
 
@@ -15,11 +15,11 @@ import (
 // pathFromHistoryPatterns matches the missing destination reported in the
 // command output. The order is significant: only the first pattern that names
 // an argument of the command is used.
-var pathFromHistoryPatterns = []*regexp.Regexp{
-	regexp.MustCompile(`no such file or directory: (.*)$`),
-	regexp.MustCompile(`cannot access '(.*)': No such file or directory`),
-	regexp.MustCompile(`: (.*): No such file or directory`),
-	regexp.MustCompile(`can't cd to (.*)$`),
+var pathFromHistoryPatterns = []*lazyRegexp{
+	newRegexp(`no such file or directory: (.*)$`),
+	newRegexp(`cannot access '(.*)': No such file or directory`),
+	newRegexp(`: (.*): No such file or directory`),
+	newRegexp(`can't cd to (.*)$`),
 }
 
 // pathFromHistoryGetValidHistory returns the history entries that may be

@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -14,13 +13,13 @@ import (
 var (
 	// clapUnrecognizedSubcommand matches the error line of an unknown
 	// subcommand, for example `error: unrecognized subcommand 'instal'`.
-	clapUnrecognizedSubcommand = regexp.MustCompile(`unrecognized subcommand '([^']*)'`)
+	clapUnrecognizedSubcommand = newRegexp(`unrecognized subcommand '([^']*)'`)
 	// clapUnexpectedArgument matches the error line of an unknown argument, for
 	// example `error: unexpected argument '--versio' found`.
-	clapUnexpectedArgument = regexp.MustCompile(`unexpected argument '([^']*)' found`)
+	clapUnexpectedArgument = newRegexp(`unexpected argument '([^']*)' found`)
 	// clapQuotedSuggestion matches a quoted suggestion of a clap tip line, for
 	// example `tip: a similar subcommand exists: 'install'`.
-	clapQuotedSuggestion = regexp.MustCompile(`'([^']*)'`)
+	clapQuotedSuggestion = newRegexp(`'([^']*)'`)
 )
 
 // clapSubcommandMatch reports whether clap reported an unknown subcommand
@@ -54,7 +53,7 @@ func clapArgumentSuggestions(commandOutput string) (string, []string) {
 
 // clapSuggestions extracts the broken value and the quoted suggestions of the
 // tip lines that mention hint.
-func clapSuggestions(commandOutput string, brokenPattern *regexp.Regexp, hint string) (string, []string) {
+func clapSuggestions(commandOutput string, brokenPattern *lazyRegexp, hint string) (string, []string) {
 	match := brokenPattern.FindStringSubmatch(commandOutput)
 	if match == nil {
 		return "", nil

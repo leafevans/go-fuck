@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -9,7 +8,7 @@ import (
 )
 
 // tsuruNotCommandMistake matches the misspelled tsuru command.
-var tsuruNotCommandMistake = regexp.MustCompile(`tsuru: "([^"]*)" is not a tsuru command`)
+var tsuruNotCommandMistake = newRegexp(`tsuru: "([^"]*)" is not a tsuru command`)
 
 // tsuruNotCommandMatch reports whether tsuru did not recognize a command.
 func tsuruNotCommandMatch(command *types.Command) bool {

@@ -1,15 +1,13 @@
 package rules
 
 import (
-	"regexp"
-
 	"github.com/leafevans/go-fuck/v2/internal/types"
 	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // cargoMissingExampleTarget matches the example target that cargo could not
 // find.
-var cargoMissingExampleTarget = regexp.MustCompile("no example target named `([^`]+)`")
+var cargoMissingExampleTarget = newRegexp("no example target named `([^`]+)`")
 
 // cargoExampleTargetsMarker introduces the example targets that cargo lists.
 const cargoExampleTargetsMarker = "available example targets:"

@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -10,7 +9,7 @@ import (
 
 // gitWorktreeBranchUsedPattern matches the error that git prints when a branch
 // is already checked out in another working tree.
-var gitWorktreeBranchUsedPattern = regexp.MustCompile("(?m)^fatal: '([^']+)' is already used by worktree at '([^']+)'$")
+var gitWorktreeBranchUsedPattern = newRegexp("(?m)^fatal: '([^']+)' is already used by worktree at '([^']+)'$")
 
 // gitWorktreeBranchUsedMatch reports whether "git worktree add" failed because
 // the branch is already checked out in another worktree.

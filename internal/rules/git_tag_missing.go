@@ -2,7 +2,7 @@ package rules
 
 import (
 	"os/exec"
-	"regexp"
+
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -11,7 +11,7 @@ import (
 
 // gitTagMissingPattern matches the error that git prints when a tag passed to
 // "git tag" does not exist.
-var gitTagMissingPattern = regexp.MustCompile(`(?m)^error: tag '([^']+)' not found\.$`)
+var gitTagMissingPattern = newRegexp(`(?m)^error: tag '([^']+)' not found\.$`)
 
 // gitTagNamesCommand lists the tag names. It is a variable so that tests do
 // not depend on the repository that runs them.

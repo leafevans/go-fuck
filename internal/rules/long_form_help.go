@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -10,11 +9,11 @@ import (
 
 // longFormHelpSuggestion matches the message that suggests the long form of
 // the help flag.
-var longFormHelpSuggestion = regexp.MustCompile(`(?:Run|Try) '([^']+)'(?: or '[^']+')? for (?:details|more information).`)
+var longFormHelpSuggestion = newRegexp(`(?:Run|Try) '([^']+)'(?: or '[^']+')? for (?:details|more information).`)
 
 // longFormHelpSuggestionInsensitive is the case insensitive variant, used to
 // extract the suggested help command.
-var longFormHelpSuggestionInsensitive = regexp.MustCompile(`(?i)(?:Run|Try) '([^']+)'(?: or '[^']+')? for (?:details|more information).`)
+var longFormHelpSuggestionInsensitive = newRegexp(`(?i)(?:Run|Try) '([^']+)'(?: or '[^']+')? for (?:details|more information).`)
 
 // longFormHelpMatch reports whether the output suggests a help command or the
 // script uses the short help flag and the output mentions the long one.

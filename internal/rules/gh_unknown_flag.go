@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -11,9 +10,9 @@ import (
 var (
 	// ghUnknownFlag matches the error line of the GitHub CLI for an unknown
 	// flag, for example: unknown flag: --stat.
-	ghUnknownFlag = regexp.MustCompile(`unknown flag: (--[A-Za-z0-9-]+)`)
+	ghUnknownFlag = newRegexp(`unknown flag: (--[A-Za-z0-9-]+)`)
 	// ghFlag matches a long flag in the Flags section of the usage output.
-	ghFlag = regexp.MustCompile(`(?m)^\s+(?:-\w,\s+)?(--[A-Za-z0-9-]+)`)
+	ghFlag = newRegexp(`(?m)^\s+(?:-\w,\s+)?(--[A-Za-z0-9-]+)`)
 )
 
 // ghUnknownFlagMatch matches the error that the GitHub CLI prints for an

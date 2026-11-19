@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/specific"
@@ -12,7 +11,7 @@ import (
 // npmMissingScriptPattern extracts the misspelled script name from npm
 // output. npm 6 and older print "npm ERR! missing script: wach"; npm 7 and
 // newer print 'npm error Missing script: "wach"'.
-var npmMissingScriptPattern = regexp.MustCompile(`(?i)missing script: "?([^"\n]+)"?`)
+var npmMissingScriptPattern = newRegexp(`(?i)missing script: "?([^"\n]+)"?`)
 
 // npmMissingScriptRunPartPrefix is the prefix of the npm arguments that run a
 // script ("run", "ru", "run-script", ...).

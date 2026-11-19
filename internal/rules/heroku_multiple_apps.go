@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -10,7 +9,7 @@ import (
 
 // herokuMultipleAppsSuggestion matches the "app (remote)" lines that heroku
 // prints when several apps are configured.
-var herokuMultipleAppsSuggestion = regexp.MustCompile(`([^ ]*) \([^)]*\)`)
+var herokuMultipleAppsSuggestion = newRegexp(`([^ ]*) \([^)]*\)`)
 
 // herokuMultipleAppsMatch reports whether heroku could not choose an app.
 func herokuMultipleAppsMatch(command *types.Command) bool {

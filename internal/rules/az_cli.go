@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -13,10 +12,10 @@ import (
 // Deviation: Go regular expressions (RE2) do not support lookaheads. The
 // leading ".*" reproduces the greedy search that the Python rule anchors with
 // the "(?=az)" lookahead.
-var azCLIInvalidChoice = regexp.MustCompile(`.*: '(.*)' is not in the '.*' command group.`)
+var azCLIInvalidChoice = newRegexp(`.*: '(.*)' is not in the '.*' command group.`)
 
 // azCLIOptions matches the choices suggested by the az CLI.
-var azCLIOptions = regexp.MustCompile(`(?m)^The most similar choice to '.*' is:\n\s*(.*)$`)
+var azCLIOptions = newRegexp(`(?m)^The most similar choice to '.*' is:\n\s*(.*)$`)
 
 // azCLIMatch reports whether the az CLI reported an invalid command that is not
 // in a command group.

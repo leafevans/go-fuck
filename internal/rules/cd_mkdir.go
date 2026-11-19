@@ -2,7 +2,7 @@ package rules
 
 import (
 	"os"
-	"regexp"
+
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/shells"
@@ -12,7 +12,7 @@ import (
 )
 
 // cdMkdirScript matches the directory argument of a cd command.
-var cdMkdirScript = regexp.MustCompile("^cd (.*)")
+var cdMkdirScript = newRegexp("^cd (.*)")
 
 // cdTarget returns the directory argument of a cd command.
 //

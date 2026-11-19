@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -11,9 +10,9 @@ import (
 var (
 	// denoTaskNotFound matches the error line of deno for a task that does not
 	// exist, for example: error: Task not found: buidl.
-	denoTaskNotFound = regexp.MustCompile(`Task not found: (\S+)`)
+	denoTaskNotFound = newRegexp(`Task not found: (\S+)`)
 	// denoAnsiColor matches ANSI SGR sequences in the colored deno output.
-	denoAnsiColor = regexp.MustCompile(`\x1b\[[0-9;]*m`)
+	denoAnsiColor = newRegexp(`\x1b\[[0-9;]*m`)
 )
 
 // denoAvailableTasksHeading is printed before the list of available tasks.

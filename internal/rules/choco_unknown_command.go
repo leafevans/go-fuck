@@ -2,7 +2,7 @@ package rules
 
 import (
 	"os/exec"
-	"regexp"
+
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/specific"
@@ -21,10 +21,10 @@ var chocoUnknownCommandFallbackCommands = []string{
 
 // chocoUnknownCommandRegexp matches the command that Chocolatey did not find,
 // for example: Could not find a command registered that meets 'instal'.
-var chocoUnknownCommandRegexp = regexp.MustCompile("Could not find a command registered that meets '([^']*)'")
+var chocoUnknownCommandRegexp = newRegexp("Could not find a command registered that meets '([^']*)'")
 
 // chocoUnknownCommandNameRegexp matches a command name of the help output.
-var chocoUnknownCommandNameRegexp = regexp.MustCompile("^[a-z][a-z0-9_-]*$")
+var chocoUnknownCommandNameRegexp = newRegexp("^[a-z][a-z0-9_-]*$")
 
 // chocoUnknownCommandParseCommands parses the command names of the
 // "choco --help" output.

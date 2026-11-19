@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -9,7 +8,7 @@ import (
 )
 
 // sudoCommandFromUserPathPattern matches the command name reported by sudo.
-var sudoCommandFromUserPathPattern = regexp.MustCompile(`sudo: (.*): command not found`)
+var sudoCommandFromUserPathPattern = newRegexp(`sudo: (.*): command not found`)
 
 // sudoCommandFromUserPathWhich reports whether a command is available. It is a
 // variable so that tests can inject a fixed result.

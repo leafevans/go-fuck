@@ -2,7 +2,7 @@ package rules
 
 import (
 	"os/exec"
-	"regexp"
+
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -21,12 +21,12 @@ var bundleUnknownCommandFallbackCommands = []string{
 
 // bundleUnknownCommandRegexp matches the command that Bundler did not find,
 // for example: Could not find command "zzz".
-var bundleUnknownCommandRegexp = regexp.MustCompile(`Could not find command "([^"]*)"\.`)
+var bundleUnknownCommandRegexp = newRegexp(`Could not find command "([^"]*)"\.`)
 
 // bundleUnknownCommandReferenceRegexp matches a backticked command reference
 // of the help output, for example "bundle install(1)" or the alias
 // "bundle package".
-var bundleUnknownCommandReferenceRegexp = regexp.MustCompile(`\x60bundle ([a-zA-Z0-9_-]+)(?:\([0-9]\))?\x60`)
+var bundleUnknownCommandReferenceRegexp = newRegexp(`\x60bundle ([a-zA-Z0-9_-]+)(?:\([0-9]\))?\x60`)
 
 // bundleUnknownCommandParseCommands parses the command names of the
 // "bundle help" output.

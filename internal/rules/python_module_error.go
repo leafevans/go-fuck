@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/shells"
@@ -9,7 +8,7 @@ import (
 )
 
 // pythonModuleErrorMissingModule matches the missing module reported by python.
-var pythonModuleErrorMissingModule = regexp.MustCompile(`ModuleNotFoundError: No module named '([^']+)'`)
+var pythonModuleErrorMissingModule = newRegexp(`ModuleNotFoundError: No module named '([^']+)'`)
 
 // pythonModuleErrorMatch reports whether python failed to import a module.
 func pythonModuleErrorMatch(command *types.Command) bool {

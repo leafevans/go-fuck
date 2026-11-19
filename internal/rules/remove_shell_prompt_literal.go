@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -9,7 +8,7 @@ import (
 
 // removeShellPromptLiteralPattern matches a script that starts with a shell
 // prompt and a command, as copied from a documentation code block.
-var removeShellPromptLiteralPattern = regexp.MustCompile(`^\s*\$ \S+`)
+var removeShellPromptLiteralPattern = newRegexp(`^\s*\$ \S+`)
 
 // removeShellPromptLiteralMatch reports whether the failed command contains a
 // literal shell prompt.

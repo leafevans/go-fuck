@@ -1,14 +1,13 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
 )
 
 // cmdExistingDirectory matches the existing item that mkdir reports.
-var cmdExistingDirectory = regexp.MustCompile(`A subdirectory or file (.+) already exists\.`)
+var cmdExistingDirectory = newRegexp(`A subdirectory or file (.+) already exists\.`)
 
 // cmdMkdirExistingMatch reports whether mkdir failed because a directory with
 // the same name already exists.

@@ -1,18 +1,16 @@
 package rules
 
 import (
-	"regexp"
-
 	"github.com/leafevans/go-fuck/v2/internal/types"
 	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // unknownCommandBrokenCommand matches the unknown command reported by the
 // application.
-var unknownCommandBrokenCommand = regexp.MustCompile(`([^:]*): Unknown command.*`)
+var unknownCommandBrokenCommand = newRegexp(`([^:]*): Unknown command.*`)
 
 // unknownCommandSuggestion matches the suggestions printed by the application.
-var unknownCommandSuggestion = regexp.MustCompile(`Did you mean ([^?]*)?`)
+var unknownCommandSuggestion = newRegexp(`Did you mean ([^?]*)?`)
 
 // unknownCommandMatch reports whether the application printed a list of similar
 // commands.

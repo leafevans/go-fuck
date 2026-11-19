@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/shells"
@@ -10,11 +9,11 @@ import (
 
 // noSuchFilePatterns match the mv and cp errors that are caused by a missing
 // destination directory.
-var noSuchFilePatterns = []*regexp.Regexp{
-	regexp.MustCompile("mv: cannot move '[^']*' to '([^']*)': No such file or directory"),
-	regexp.MustCompile("mv: cannot move '[^']*' to '([^']*)': Not a directory"),
-	regexp.MustCompile("cp: cannot create regular file '([^']*)': No such file or directory"),
-	regexp.MustCompile("cp: cannot create regular file '([^']*)': Not a directory"),
+var noSuchFilePatterns = []*lazyRegexp{
+	newRegexp("mv: cannot move '[^']*' to '([^']*)': No such file or directory"),
+	newRegexp("mv: cannot move '[^']*' to '([^']*)': Not a directory"),
+	newRegexp("cp: cannot create regular file '([^']*)': No such file or directory"),
+	newRegexp("cp: cannot create regular file '([^']*)': Not a directory"),
 }
 
 // noSuchFileMatch reports whether mv or cp failed because the destination

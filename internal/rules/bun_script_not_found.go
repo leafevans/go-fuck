@@ -1,8 +1,6 @@
 package rules
 
 import (
-	"regexp"
-
 	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
 	"github.com/leafevans/go-fuck/v2/internal/utils"
@@ -11,9 +9,9 @@ import (
 var (
 	// bunScriptNotFound matches the error line of bun for a script that does
 	// not exist, for example: error: Script not found "buidl".
-	bunScriptNotFound = regexp.MustCompile(`Script not found "([^"]*)"`)
+	bunScriptNotFound = newRegexp(`Script not found "([^"]*)"`)
 	// bunAnsiColor matches ANSI SGR sequences around the colored bun error.
-	bunAnsiColor = regexp.MustCompile(`\x1b\[[0-9;]*m`)
+	bunAnsiColor = newRegexp(`\x1b\[[0-9;]*m`)
 )
 
 // bunOutput strips ANSI color sequences from the captured bun output.

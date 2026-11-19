@@ -2,7 +2,6 @@ package rules
 
 import (
 	"os"
-	"regexp"
 
 	"github.com/leafevans/go-fuck/v2/internal/shells"
 	"github.com/leafevans/go-fuck/v2/internal/specific"
@@ -12,7 +11,7 @@ import (
 // gitAddPathspec matches the path that git did not find. Older git versions
 // end the message with a period and prefix it with "error:"; git 2.4x and
 // newer omit the period, and some commands use "fatal:".
-var gitAddPathspec = regexp.MustCompile(
+var gitAddPathspec = newRegexp(
 	`(?m)^(?:error|fatal): pathspec '([^']*)' did not match any (?:file\(s\) known to git|files)\.?$`)
 
 // gitAddFileExists reports whether a path exists. It is a variable so that

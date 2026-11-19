@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/shells"
@@ -13,7 +12,7 @@ import (
 //
 // CommonJS reports "Cannot find module" while ESM reports
 // "Cannot find package" together with the ERR_MODULE_NOT_FOUND code.
-var nodeMissingModule = regexp.MustCompile(`Cannot find (?:module|package) '([^']*)'`)
+var nodeMissingModule = newRegexp(`Cannot find (?:module|package) '([^']*)'`)
 
 // nodeMissingModuleMatch matches the error that Node.js prints when a module
 // cannot be resolved.

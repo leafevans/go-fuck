@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/specific"
@@ -18,7 +17,7 @@ const hostscliNoWebsite = "hostscli.errors.WebsiteImportError"
 // hostscliMisspelledCommand matches the unknown command reported by hostscli.
 // The first group is the command name itself: the surrounding error message is
 // not part of the command line and cannot be replaced there.
-var hostscliMisspelledCommand = regexp.MustCompile(`Error: No such command "([^"]*)"`)
+var hostscliMisspelledCommand = newRegexp(`Error: No such command "([^"]*)"`)
 
 // hostscliCommands lists the commands implemented by hostscli.
 var hostscliCommands = []string{"block", "unblock", "websites", "block_all", "unblock_all"}

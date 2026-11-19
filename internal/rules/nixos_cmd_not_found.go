@@ -1,8 +1,6 @@
 package rules
 
 import (
-	"regexp"
-
 	"github.com/leafevans/go-fuck/v2/internal/shells"
 	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -10,7 +8,7 @@ import (
 
 // nixosCmdNotFoundRegexp matches the package installation hint printed by
 // NixOS.
-var nixosCmdNotFoundRegexp = regexp.MustCompile(`nix-env -iA ([^\s]*)`)
+var nixosCmdNotFoundRegexp = newRegexp(`nix-env -iA ([^\s]*)`)
 
 // nixosCmdNotFoundMatch reports whether the shell printed the nix-env hint.
 func nixosCmdNotFoundMatch(command *types.Command) bool {

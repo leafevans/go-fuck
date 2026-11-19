@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -9,7 +8,7 @@ import (
 )
 
 // condaMistypeRegexp matches the quoted command names in the conda output.
-var condaMistypeRegexp = regexp.MustCompile(`'conda ([^']*)'`)
+var condaMistypeRegexp = newRegexp(`'conda ([^']*)'`)
 
 // condaMistypeMatch reports whether conda suggested a corrected command.
 func condaMistypeMatch(command *types.Command) bool {

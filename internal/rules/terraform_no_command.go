@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -14,9 +13,9 @@ import (
 var (
 	// terraformNoCommandMistake matches the unknown command reported by
 	// terraform.
-	terraformNoCommandMistake = regexp.MustCompile(`Terraform has no command named "([^"]+)".`)
+	terraformNoCommandMistake = newRegexp(`Terraform has no command named "([^"]+)".`)
 	// terraformNoCommandFix matches the command terraform suggests.
-	terraformNoCommandFix = regexp.MustCompile(`Did you mean "([^"]+)"\?`)
+	terraformNoCommandFix = newRegexp(`Did you mean "([^"]+)"\?`)
 )
 
 // terraformNoCommandMatch reports whether terraform did not recognize a

@@ -2,7 +2,7 @@ package rules
 
 import (
 	"os"
-	"regexp"
+
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -10,7 +10,7 @@ import (
 )
 
 // nodeCannotFindModule matches the path of a module that Node.js cannot find.
-var nodeCannotFindModule = regexp.MustCompile(`Cannot find module '([^']+)'`)
+var nodeCannotFindModule = newRegexp(`Cannot find module '([^']+)'`)
 
 // nodeScriptExtensions are the file extensions that Node.js executes.
 var nodeScriptExtensions = []string{".js", ".mjs", ".cjs", ".json", ".ts"}

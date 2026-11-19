@@ -2,7 +2,7 @@ package rules
 
 import (
 	"os/exec"
-	"regexp"
+
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -10,7 +10,7 @@ import (
 )
 
 // gruntTaskNotFoundPattern matches the unknown grunt task reported by grunt.
-var gruntTaskNotFoundPattern = regexp.MustCompile(`Warning: Task "(.*)" not found.`)
+var gruntTaskNotFoundPattern = newRegexp(`Warning: Task "(.*)" not found.`)
 
 // gruntTaskNotFoundParseTasks extracts the tasks from "grunt --help" output.
 func gruntTaskNotFoundParseTasks(helpOutput string) []string {

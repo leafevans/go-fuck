@@ -2,7 +2,7 @@ package rules
 
 import (
 	"os/exec"
-	"regexp"
+
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -11,7 +11,7 @@ import (
 
 // gitSubmoduleMissingPattern matches the pathspec error that git prints when a
 // submodule path passed to "git submodule" does not exist.
-var gitSubmoduleMissingPattern = regexp.MustCompile(`error: pathspec '([^']+)' did not match any file\(s\) known to git`)
+var gitSubmoduleMissingPattern = newRegexp(`error: pathspec '([^']+)' did not match any file\(s\) known to git`)
 
 // gitSubmodulePathsCommand lists the configured submodule paths. It is a
 // variable so that tests do not depend on the repository that runs them.

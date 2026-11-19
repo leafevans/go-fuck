@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -9,7 +8,7 @@ import (
 
 // powerShellCatDirectoryPath matches the path in the error PowerShell prints
 // when Get-Content (cat, type, gc) is asked to read a directory.
-var powerShellCatDirectoryPath = regexp.MustCompile(`Access to the path '([^']*)' is denied\.`)
+var powerShellCatDirectoryPath = newRegexp(`Access to the path '([^']*)' is denied\.`)
 
 // powerShellCatDirectoryCommands are the PowerShell commands that read a file.
 var powerShellCatDirectoryCommands = []string{"cat", "type", "gc", "get-content"}

@@ -2,7 +2,7 @@ package rules
 
 import (
 	"os/exec"
-	"regexp"
+
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -12,9 +12,9 @@ import (
 var (
 	// goUndefinedFlag matches the error line of the Go toolchain for an
 	// unknown flag, for example: flag provided but not defined: -raec.
-	goUndefinedFlag = regexp.MustCompile(`flag provided but not defined: (-[A-Za-z0-9-]+)`)
+	goUndefinedFlag = newRegexp(`flag provided but not defined: (-[A-Za-z0-9-]+)`)
 	// goHelpFlag matches a flag line in the output of "go help <command>".
-	goHelpFlag = regexp.MustCompile(`(?m)^\t(-[A-Za-z][A-Za-z0-9-]*)`)
+	goHelpFlag = newRegexp(`(?m)^\t(-[A-Za-z][A-Za-z0-9-]*)`)
 )
 
 // goHelpOutput returns the output of "go help <subcommand>". It is a

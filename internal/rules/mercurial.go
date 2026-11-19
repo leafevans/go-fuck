@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -9,10 +8,10 @@ import (
 )
 
 // mercurialDidYouMean matches the suggestions printed for an unknown command.
-var mercurialDidYouMean = regexp.MustCompile(`\n\(did you mean one of ([^?]+)\?\)`)
+var mercurialDidYouMean = newRegexp(`\n\(did you mean one of ([^?]+)\?\)`)
 
 // mercurialAmbiguous matches the commands listed for an ambiguous command.
-var mercurialAmbiguous = regexp.MustCompile(`\n    ([^$]+)$`)
+var mercurialAmbiguous = newRegexp(`\n    ([^$]+)$`)
 
 // mercurialExtractPossibilities returns the commands suggested by mercurial.
 func mercurialExtractPossibilities(command *types.Command) []string {

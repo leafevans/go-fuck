@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/specific"
@@ -10,7 +9,7 @@ import (
 )
 
 // gitSwitchExistingBranchName matches the branch name that already exists.
-var gitSwitchExistingBranchName = regexp.MustCompile(`fatal: a branch named '([^']*)' already exists`)
+var gitSwitchExistingBranchName = newRegexp(`fatal: a branch named '([^']*)' already exists`)
 
 // gitSwitchExistingBranchMatch reports whether git switch failed because the
 // branch it should create already exists.

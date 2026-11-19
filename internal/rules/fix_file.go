@@ -2,7 +2,7 @@ package rules
 
 import (
 	"os"
-	"regexp"
+
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/conf"
@@ -41,7 +41,7 @@ var fixFilePatternSources = []string{
 
 // fixFilePattern is a compiled output format.
 type fixFilePattern struct {
-	re     *regexp.Regexp
+	re     *lazyRegexp
 	file   int
 	line   int
 	col    int
@@ -54,7 +54,7 @@ func fixFileCompile(source string) fixFilePattern {
 	pattern = strings.ReplaceAll(pattern, "{line}", `(?P<line>[0-9]+)`)
 	pattern = strings.ReplaceAll(pattern, "{col}", `(?P<col>[0-9]+)`)
 
-	re := regexp.MustCompile("(?m)" + pattern)
+	re := newRegexp("(?m)" + pattern)
 	return fixFilePattern{
 		re:     re,
 		file:   re.SubexpIndex("file"),

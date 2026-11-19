@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -10,7 +9,7 @@ import (
 
 // herokuNotCommandSuggestion matches the corrected command suggested by
 // heroku.
-var herokuNotCommandSuggestion = regexp.MustCompile(`Run heroku _ to run ([^.]*)`)
+var herokuNotCommandSuggestion = newRegexp(`Run heroku _ to run ([^.]*)`)
 
 // herokuNotCommandMatch reports whether heroku did not recognize a command.
 func herokuNotCommandMatch(command *types.Command) bool {

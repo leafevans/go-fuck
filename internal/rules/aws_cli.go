@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -13,10 +12,10 @@ import (
 // Deviation: Go regular expressions (RE2) do not support lookbehinds and
 // lookaheads, so the Python pattern is replaced by an equivalent pattern that
 // captures the mistake in a group.
-var awsCLIInvalidChoice = regexp.MustCompile(`Invalid choice: '(.*)', maybe you meant:`)
+var awsCLIInvalidChoice = newRegexp(`Invalid choice: '(.*)', maybe you meant:`)
 
 // awsCLIOptions matches the choices suggested by the aws CLI.
-var awsCLIOptions = regexp.MustCompile(`(?m)^\s*\*\s(.*)`)
+var awsCLIOptions = newRegexp(`(?m)^\s*\*\s(.*)`)
 
 // awsCLIMatch reports whether the aws CLI reported an invalid choice together
 // with suggestions.

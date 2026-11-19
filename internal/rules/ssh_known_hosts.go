@@ -2,7 +2,7 @@ package rules
 
 import (
 	"os"
-	"regexp"
+
 	"sort"
 	"strconv"
 	"strings"
@@ -15,18 +15,18 @@ import (
 var sshKnownHostsCommands = []string{"ssh", "scp"}
 
 // sshKnownHostsPatterns match the warnings about a changed host key.
-var sshKnownHostsPatterns = []*regexp.Regexp{
-	regexp.MustCompile("WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!"),
-	regexp.MustCompile("WARNING: POSSIBLE DNS SPOOFING DETECTED!"),
-	regexp.MustCompile(`Warning: the \S+ host key for '([^']+)' differs from the key for the IP address '([^']+)'`),
+var sshKnownHostsPatterns = []*lazyRegexp{
+	newRegexp("WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!"),
+	newRegexp("WARNING: POSSIBLE DNS SPOOFING DETECTED!"),
+	newRegexp(`Warning: the \S+ host key for '([^']+)' differs from the key for the IP address '([^']+)'`),
 }
 
 // sshKnownHostsOffendingPatterns match the lines that name the offending key.
-var sshKnownHostsOffendingPatterns = []*regexp.Regexp{
+var sshKnownHostsOffendingPatterns = []*lazyRegexp{
 	// The path is greedy so that a Windows drive letter (C:\...) is kept as
 	// part of the path instead of being treated as the line separator.
-	regexp.MustCompile(`Offending (key for IP|\S+ key) in (.+):(\d+)`),
-	regexp.MustCompile(`Matching host key in (.+):(\d+)`),
+	newRegexp(`Offending (key for IP|\S+ key) in (.+):(\d+)`),
+	newRegexp(`Matching host key in (.+):(\d+)`),
 }
 
 // sshKnownHostsOffending describes one known_hosts line that must be removed.

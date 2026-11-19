@@ -2,7 +2,7 @@ package rules
 
 import (
 	"os/exec"
-	"regexp"
+
 	"strings"
 	"unicode/utf8"
 
@@ -11,7 +11,7 @@ import (
 )
 
 // gulpNotTaskPattern matches the unknown gulp task reported by gulp.
-var gulpNotTaskPattern = regexp.MustCompile(`Task '(\w+)' is not in your gulpfile`)
+var gulpNotTaskPattern = newRegexp(`Task '(\w+)' is not in your gulpfile`)
 
 // gulpNotTaskParseTasks extracts the tasks from "gulp --tasks-simple" output.
 //

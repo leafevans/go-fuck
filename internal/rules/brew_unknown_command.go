@@ -3,7 +3,7 @@ package rules
 import (
 	"os"
 	"path/filepath"
-	"regexp"
+
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/specific"
@@ -21,7 +21,7 @@ var brewUnknownCommandFallbackCommands = []string{
 }
 
 // brewUnknownCommandRegexp matches the command that brew did not recognize.
-var brewUnknownCommandRegexp = regexp.MustCompile(`Error: Unknown command: ([a-z]+)`)
+var brewUnknownCommandRegexp = newRegexp(`Error: Unknown command: ([a-z]+)`)
 
 // brewUnknownCommandBrewCommands returns the commands supported by the local
 // Homebrew installation, including the commands provided by taps.

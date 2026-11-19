@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -13,7 +12,7 @@ import (
 // Deviation: the original Python rule uses a negative lookahead here. RE2 has
 // no lookarounds, so the captured formula is checked for an embedded "is "
 // instead.
-var brewReinstallWarningRegexp = regexp.MustCompile(
+var brewReinstallWarningRegexp = newRegexp(
 	`Warning: (.+) is already installed and up-to-date`)
 
 // brewReinstallMessageRegexp matches the reinstall suggestion of brew.
@@ -21,7 +20,7 @@ var brewReinstallWarningRegexp = regexp.MustCompile(
 // Deviation: the original Python rule uses a negative lookahead here. RE2 has
 // no lookarounds, so the captured formula is checked for an embedded ", "
 // instead.
-var brewReinstallMessageRegexp = regexp.MustCompile(
+var brewReinstallMessageRegexp = newRegexp(
 	"To reinstall (.+?), run `brew reinstall [^`]+`")
 
 // brewReinstallHasWarning reports whether the output contains the warning.

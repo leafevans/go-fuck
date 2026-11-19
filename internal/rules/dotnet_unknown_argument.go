@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -19,7 +18,7 @@ var dotnetUnknownArgumentHeader = "was not matched. Did you mean one of the foll
 // line, for example: 'instal' was not matched. The "Unrecognized command or
 // argument" line below it is localized, so it must not be used to extract the
 // argument.
-var dotnetUnknownArgumentBroken = regexp.MustCompile("'([^']*)' was not matched")
+var dotnetUnknownArgumentBroken = newRegexp("'([^']*)' was not matched")
 
 // dotnetUnknownArgumentSuggestions returns the suggestions printed after the
 // "was not matched" header line.

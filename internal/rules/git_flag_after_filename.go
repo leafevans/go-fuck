@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/specific"
@@ -11,12 +10,12 @@ import (
 
 // gitFlagAfterFilenameFlagPattern matches a flag that was put after a
 // filename.
-var gitFlagAfterFilenameFlagPattern = regexp.MustCompile(
+var gitFlagAfterFilenameFlagPattern = newRegexp(
 	"fatal: bad flag '(.*?)' used after filename")
 
 // gitFlagAfterFilenameOptionPattern matches an option that git requires before
 // non-option arguments.
-var gitFlagAfterFilenameOptionPattern = regexp.MustCompile(
+var gitFlagAfterFilenameOptionPattern = newRegexp(
 	"fatal: option '(.*?)' must come before non-option arguments")
 
 // gitFlagAfterFilenameBadFlag returns the flag that git rejected, or an empty

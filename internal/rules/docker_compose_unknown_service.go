@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/specific"
@@ -11,7 +10,7 @@ import (
 
 // composeNoSuchService matches the error of docker compose for a service that
 // is not defined in the Compose file, for example: no such service: buidl.
-var composeNoSuchService = regexp.MustCompile(`no such service: "?([^"\s:]+)"?`)
+var composeNoSuchService = newRegexp(`no such service: "?([^"\s:]+)"?`)
 
 // composeUnknownServiceMatch reports whether docker compose failed because the
 // service does not exist.

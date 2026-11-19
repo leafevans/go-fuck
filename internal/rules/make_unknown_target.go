@@ -1,8 +1,6 @@
 package rules
 
 import (
-	"regexp"
-
 	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
 	"github.com/leafevans/go-fuck/v2/internal/utils"
@@ -10,7 +8,7 @@ import (
 
 // makeUnknownTarget matches the GNU make error for a target that is not in the
 // Makefile, for example: make: *** No rule to make target 'buidl'.  Stop.
-var makeUnknownTarget = regexp.MustCompile("No rule to make target [\x60']([^\x60']*)[\x60']")
+var makeUnknownTarget = newRegexp("No rule to make target [\x60']([^\x60']*)[\x60']")
 
 // makeUnknownTargetMatch reports whether make failed because the target does
 // not exist and the target is part of the command line. The "needed by"

@@ -1,8 +1,6 @@
 package rules
 
 import (
-	"regexp"
-
 	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
 	"github.com/leafevans/go-fuck/v2/internal/utils"
@@ -10,7 +8,7 @@ import (
 
 // gitSwitchUnknownBranchReference matches the reference that git switch could
 // not resolve.
-var gitSwitchUnknownBranchReference = regexp.MustCompile(`fatal: invalid reference: (\S+)`)
+var gitSwitchUnknownBranchReference = newRegexp(`fatal: invalid reference: (\S+)`)
 
 // gitSwitchUnknownBranchMatch reports whether git switch failed because the
 // branch does not exist.

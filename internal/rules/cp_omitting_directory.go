@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/specific"
@@ -10,7 +9,7 @@ import (
 )
 
 // cpOmittingDirectoryPrefix matches the leading cp command.
-var cpOmittingDirectoryPrefix = regexp.MustCompile("^cp")
+var cpOmittingDirectoryPrefix = newRegexp("^cp")
 
 // cpOmittingDirectoryMatch reports whether cp rejected a directory argument.
 func cpOmittingDirectoryMatch(command *types.Command) bool {

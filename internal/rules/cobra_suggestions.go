@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -10,7 +9,7 @@ import (
 
 // cobraUnknownCommand matches the error line printed by command line tools that
 // use the Cobra framework, for example `unknown command "prr" for "gh"`.
-var cobraUnknownCommand = regexp.MustCompile(`unknown command "([^"]*)" for "([^"]*)"`)
+var cobraUnknownCommand = newRegexp(`unknown command "([^"]*)" for "([^"]*)"`)
 
 // cobraSuggestions extracts the broken command and the "Did you mean this?"
 // suggestions from a Cobra error message.

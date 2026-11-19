@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/specific"
@@ -10,10 +9,10 @@ import (
 )
 
 // gitBisectUsageBroken matches the mistyped bisect subcommand.
-var gitBisectUsageBroken = regexp.MustCompile("git bisect ([^ $]*).*")
+var gitBisectUsageBroken = newRegexp("git bisect ([^ $]*).*")
 
 // gitBisectUsageSubcommands matches the list of subcommands in the usage line.
-var gitBisectUsageSubcommands = regexp.MustCompile(`usage: git bisect \[([^\]]+)\]`)
+var gitBisectUsageSubcommands = newRegexp(`usage: git bisect \[([^\]]+)\]`)
 
 // gitBisectUsageMatch reports whether git printed the bisect usage because of
 // a mistyped subcommand.

@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/specific"
@@ -9,7 +8,7 @@ import (
 )
 
 // lnNoHardLinkPrefix matches the leading ln command.
-var lnNoHardLinkPrefix = regexp.MustCompile("^ln ")
+var lnNoHardLinkPrefix = newRegexp("^ln ")
 
 // lnNoHardLinkMatch reports whether ln failed because hard links are not
 // allowed for directories.

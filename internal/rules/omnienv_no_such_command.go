@@ -2,7 +2,7 @@ package rules
 
 import (
 	"os/exec"
-	"regexp"
+
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -21,7 +21,7 @@ var omnienvNoSuchCommandCommonTypos = map[string][]string{
 }
 
 // omnienvNoSuchCommandRegexp matches the quoted missing command.
-var omnienvNoSuchCommandRegexp = regexp.MustCompile("env: no such command ['`]([^']*)'")
+var omnienvNoSuchCommandRegexp = newRegexp("env: no such command ['`]([^']*)'")
 
 // omnienvNoSuchCommandAppCommands returns the commands supported by a version
 // manager.

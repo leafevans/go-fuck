@@ -3,7 +3,7 @@ package rules
 import (
 	"bytes"
 	"os/exec"
-	"regexp"
+
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/specific"
@@ -12,7 +12,7 @@ import (
 )
 
 // dockerNotCommandWrong matches the misspelled command reported by docker.
-var dockerNotCommandWrong = regexp.MustCompile(`docker: '(\w+)' is not a docker command\.`)
+var dockerNotCommandWrong = newRegexp(`docker: '(\w+)' is not a docker command\.`)
 
 // dockerNotCommandMatch reports whether docker did not recognize a command.
 func dockerNotCommandMatch(command *types.Command) bool {

@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -10,7 +9,7 @@ import (
 
 // gitRemoteAlreadyExistsError matches the error that git prints when
 // "git remote add" is used for a remote that already exists.
-var gitRemoteAlreadyExistsError = regexp.MustCompile(`(?m)^(?:error|fatal): remote (\S+) already exists\.$`)
+var gitRemoteAlreadyExistsError = newRegexp(`(?m)^(?:error|fatal): remote (\S+) already exists\.$`)
 
 // gitRemoteAlreadyExistsMatch reports whether "git remote add" failed because
 // the remote already exists. Flags between "add" and the remote name are not

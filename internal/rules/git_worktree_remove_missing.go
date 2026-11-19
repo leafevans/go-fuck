@@ -3,7 +3,7 @@ package rules
 import (
 	"os/exec"
 	"path/filepath"
-	"regexp"
+
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -12,7 +12,7 @@ import (
 
 // gitWorktreeRemoveMissingPattern matches the error that git prints when
 // "git worktree remove" is used for a path that is not a working tree.
-var gitWorktreeRemoveMissingPattern = regexp.MustCompile(`(?m)^fatal: '([^']+)' is not a working tree$`)
+var gitWorktreeRemoveMissingPattern = newRegexp(`(?m)^fatal: '([^']+)' is not a working tree$`)
 
 // gitWorktreePathsCommand lists the registered worktree paths. It is a
 // variable so that tests do not depend on the repository that runs them.

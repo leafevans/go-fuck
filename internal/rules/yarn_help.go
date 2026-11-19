@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/system"
@@ -10,7 +9,7 @@ import (
 )
 
 // yarnHelpDocumentation matches the documentation URL printed by yarn help.
-var yarnHelpDocumentation = regexp.MustCompile(`Visit ([^ ]*) for documentation about this command\.`)
+var yarnHelpDocumentation = newRegexp(`Visit ([^ ]*) for documentation about this command\.`)
 
 // yarnHelpMatch reports whether yarn asked to visit the command documentation.
 func yarnHelpMatch(command *types.Command) bool {

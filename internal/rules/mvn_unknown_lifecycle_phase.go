@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -10,10 +9,10 @@ import (
 
 // mvnUnknownLifecyclePattern matches the unknown lifecycle phase reported by
 // maven.
-var mvnUnknownLifecyclePattern = regexp.MustCompile(`\[ERROR\] Unknown lifecycle phase "(.+)"`)
+var mvnUnknownLifecyclePattern = newRegexp(`\[ERROR\] Unknown lifecycle phase "(.+)"`)
 
 // mvnAvailableLifecyclePattern matches the list of available lifecycle phases.
-var mvnAvailableLifecyclePattern = regexp.MustCompile(`Available lifecycle phases are: (.+) -> \[Help 1\]`)
+var mvnAvailableLifecyclePattern = newRegexp(`Available lifecycle phases are: (.+) -> \[Help 1\]`)
 
 // mvnUnknownLifecyclePhaseMatch reports whether maven reported an unknown
 // lifecycle phase and listed the valid ones.

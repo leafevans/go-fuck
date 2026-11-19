@@ -1,8 +1,6 @@
 package rules
 
 import (
-	"regexp"
-
 	"github.com/leafevans/go-fuck/v2/internal/types"
 	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
@@ -10,10 +8,10 @@ import (
 var (
 	// justUnknownRecipe matches the error line of just for an unknown recipe,
 	// for example: error: justfile does not contain recipe `buidl`.
-	justUnknownRecipe = regexp.MustCompile("justfile does not contain recipe `([^`]*)`")
+	justUnknownRecipe = newRegexp("justfile does not contain recipe `([^`]*)`")
 	// justUnknownRecipeSuggestion matches the "Did you mean" line, for example:
 	// Did you mean `build`?
-	justUnknownRecipeSuggestion = regexp.MustCompile("Did you mean `([^`]*)`")
+	justUnknownRecipeSuggestion = newRegexp("Did you mean `([^`]*)`")
 )
 
 // justUnknownRecipeMatch reports whether just failed because the recipe does

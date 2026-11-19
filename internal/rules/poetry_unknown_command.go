@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -10,7 +9,7 @@ import (
 
 // poetryUnknownCommand matches the error line of Poetry for an unknown
 // command, for example: The requested command intall does not exist.
-var poetryUnknownCommand = regexp.MustCompile(`The requested command (\S+) does not exist\.`)
+var poetryUnknownCommand = newRegexp(`The requested command (\S+) does not exist\.`)
 
 // poetrySuggestionHeader introduces the list of suggested commands.
 const poetrySuggestionHeader = "Did you mean one of these perhaps?"

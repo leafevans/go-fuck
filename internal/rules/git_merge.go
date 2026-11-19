@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/specific"
@@ -10,10 +9,10 @@ import (
 )
 
 // gitMergeUnknownBranch matches the branch that git could not merge.
-var gitMergeUnknownBranch = regexp.MustCompile("merge: (.+) - not something we can merge")
+var gitMergeUnknownBranch = newRegexp("merge: (.+) - not something we can merge")
 
 // gitMergeRemoteBranch matches the suggestion printed by git.
-var gitMergeRemoteBranch = regexp.MustCompile(`Did you mean this\?\n\t([^\n]+)`)
+var gitMergeRemoteBranch = newRegexp(`Did you mean this\?\n\t([^\n]+)`)
 
 // gitMergeMatch reports whether git suggested a similar remote branch.
 func gitMergeMatch(command *types.Command) bool {

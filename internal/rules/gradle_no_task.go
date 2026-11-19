@@ -2,7 +2,7 @@ package rules
 
 import (
 	"os/exec"
-	"regexp"
+
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -10,7 +10,7 @@ import (
 )
 
 // gradleNoTaskPattern matches the gradle error for an unknown task name.
-var gradleNoTaskPattern = regexp.MustCompile("Task '(.*)' (is ambiguous|not found)")
+var gradleNoTaskPattern = newRegexp("Task '(.*)' (is ambiguous|not found)")
 
 // gradleNoTaskParseTasks extracts the task names from "gradle tasks" output.
 func gradleNoTaskParseTasks(tasksOutput string) []string {

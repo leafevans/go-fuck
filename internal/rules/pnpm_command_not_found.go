@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -11,9 +10,9 @@ import (
 var (
 	// pnpmBrokenCommand matches the error line of pnpm for a command or
 	// script that does not exist.
-	pnpmBrokenCommand = regexp.MustCompile(`Command "([^"]*)" not found`)
+	pnpmBrokenCommand = newRegexp(`Command "([^"]*)" not found`)
 	// pnpmSuggestion matches the "Did you mean" line of pnpm.
-	pnpmSuggestion = regexp.MustCompile(`Did you mean "pnpm ([^"]*)"\?`)
+	pnpmSuggestion = newRegexp(`Did you mean "pnpm ([^"]*)"\?`)
 )
 
 // pnpmCommandNotFoundMatch matches the error that pnpm prints when a command

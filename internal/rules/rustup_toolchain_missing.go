@@ -1,8 +1,6 @@
 package rules
 
 import (
-	"regexp"
-
 	"github.com/leafevans/go-fuck/v2/internal/shells"
 	"github.com/leafevans/go-fuck/v2/internal/types"
 	"github.com/leafevans/go-fuck/v2/internal/utils"
@@ -10,7 +8,7 @@ import (
 
 // rustupMissingToolchain matches the error of a toolchain that is not
 // installed.
-var rustupMissingToolchain = regexp.MustCompile(`toolchain '([^']+)' is not installed`)
+var rustupMissingToolchain = newRegexp(`toolchain '([^']+)' is not installed`)
 
 // rustupToolchainApps are the commands that use the rustup toolchain shim.
 var rustupToolchainApps = []string{"rustup", "cargo", "rustc", "rustdoc"}

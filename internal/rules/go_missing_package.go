@@ -3,7 +3,7 @@ package rules
 import (
 	"os"
 	"path/filepath"
-	"regexp"
+
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -12,7 +12,7 @@ import (
 
 // goMissingDirectory matches the package directory that the go command could
 // not stat.
-var goMissingDirectory = regexp.MustCompile(`stat (.+): directory not found`)
+var goMissingDirectory = newRegexp(`stat (.+): directory not found`)
 
 // goDirectoryEntries returns the names in dir.
 var goDirectoryEntries = func(dir string) ([]string, error) {

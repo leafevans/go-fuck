@@ -2,7 +2,7 @@ package rules
 
 import (
 	"os/exec"
-	"regexp"
+
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -10,7 +10,7 @@ import (
 )
 
 // yarnCommandNotFoundPattern matches the missing command error of yarn.
-var yarnCommandNotFoundPattern = regexp.MustCompile(`error Command "(.*)" not found\.`)
+var yarnCommandNotFoundPattern = newRegexp(`error Command "(.*)" not found\.`)
 
 // yarnCommandNotFoundAliases maps npm commands to their yarn equivalents.
 var yarnCommandNotFoundAliases = map[string]string{"require": "add"}

@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/specific"
@@ -10,7 +9,7 @@ import (
 )
 
 // gitPushUpstream matches the commands suggested by git.
-var gitPushUpstream = regexp.MustCompile("git push (.*)")
+var gitPushUpstream = newRegexp("git push (.*)")
 
 // gitPushMatch reports whether git suggested setting an upstream branch.
 func gitPushMatch(command *types.Command) bool {

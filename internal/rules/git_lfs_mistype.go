@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/specific"
@@ -10,7 +9,7 @@ import (
 )
 
 // gitLfsMistypeBroken matches the mistyped git-lfs command.
-var gitLfsMistypeBroken = regexp.MustCompile(
+var gitLfsMistypeBroken = newRegexp(
 	"Error: unknown command \"([^\"]*)\" for \"git-lfs\"")
 
 // gitLfsMistypeMatch reports whether git-lfs printed the usage of a mistyped

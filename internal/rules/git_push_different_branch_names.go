@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/specific"
@@ -10,7 +9,7 @@ import (
 
 // gitPushDifferentBranchSuggestion matches the commands git suggests when the
 // upstream branch name differs from the local one.
-var gitPushDifferentBranchSuggestion = regexp.MustCompile(`(?m)^ +(git push \S+ \S+)`)
+var gitPushDifferentBranchSuggestion = newRegexp(`(?m)^ +(git push \S+ \S+)`)
 
 // gitPushDifferentBranchNamesMatch reports whether the upstream branch has a
 // different name than the current branch.
