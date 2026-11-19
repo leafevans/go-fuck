@@ -31,6 +31,10 @@ type VersionInfo struct {
 	Fzf bool
 	// Alias is the configured shell alias name.
 	Alias string
+	// Executable is the path of the running binary.
+	Executable string
+	// Module is the module path and version that produced the binary.
+	Module string
 }
 
 // PrintVersion prints the version banner.
@@ -179,6 +183,12 @@ func renderBanner(info VersionInfo, verbose bool) string {
 			field("fzf", "not installed")
 		}
 		field("Alias", info.Alias)
+		if info.Executable != "" {
+			field("Exe", info.Executable)
+		}
+		if info.Module != "" {
+			field("Module", info.Module)
+		}
 	}
 
 	return b.String()

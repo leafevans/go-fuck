@@ -39,6 +39,12 @@ func TestVersionInfo(t *testing.T) {
 	if info.Alias != "fuck" {
 		t.Fatalf("alias = %q, want fuck", info.Alias)
 	}
+	if info.Executable == "" {
+		t.Fatal("executable path is empty")
+	}
+	if !strings.Contains(info.Module, "go-fuck") {
+		t.Fatalf("module = %q, want the go-fuck module", info.Module)
+	}
 }
 
 // TestVersionInfoCompactShellName checks that the plain one line printed to a

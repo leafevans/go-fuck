@@ -299,7 +299,7 @@ Common options:
 | `--list-rules`                       | print the names of the built-in rules and exit (useful for the `rules`, `exclude_rules` and `priority` settings); with `--json` one object per rule with its priority and flags |
 | `--json`                             | print the suggestions as JSON and exit (useful for scripts and editors; the shell alias passes it through unchanged)                                                            |
 | `-d`, `--debug`                      | print debug information to stderr                                                                                                                                               |
-| `-v`, `--version`                    | print version/build information: a themed banner in a terminal, one line when piped; `--debug --version` adds the config path, instant mode, fzf and alias state                |
+| `-v`, `--version`                    | print version/build information: a themed banner in a terminal, one line when piped; `--debug --version` adds the config path, executable path, build module, instant mode, fzf and alias state |
 | `-h`, `--help`                       | print the full option list                                                                                                                                                      |
 | `--setup`                            | write the alias to the detected shell's configuration file (bash, zsh, fish, tcsh, PowerShell)                                                                                  |
 | `--enable-experimental-instant-mode` | alias initialization flag: with `--alias` or `--setup`, configure the instant mode (bash/zsh on Linux and macOS, PowerShell on Windows)                                         |
@@ -337,6 +337,15 @@ older releases evaluate go-fuck's standard output as the corrected command inste
 executed line by line. After upgrading, the alias is refreshed by the next shell start when the
 configuration file evaluates `go-fuck --alias`; to refresh it in a running shell run `go-fuck --setup` or
 evaluate the alias again (go-fuck warns when it detects an outdated alias).
+
+If `fuck -v` reports an unexpected version, or reports PowerShell inside WSL, another `go-fuck` binary is
+probably earlier in `PATH`. The pre-v2 module — `go install github.com/leafevans/go-fuck/cmd/go-fuck@latest`
+without the `/v2` suffix — installs the old 0.x/1.x series into `$GOPATH/bin`, and that binary can shadow the
+release one. `go-fuck --debug --version` prints the executable path (`Exe`) and the module that built the
+binary (`Module`); the v2 releases report `github.com/leafevans/go-fuck/v2`. Remove or rename the old
+binary, or put the v2 installation earlier in `PATH`. Inside WSL use the Linux binary
+(`~/.local/bin/go-fuck`) instead of a Windows executable picked up from the interop `PATH`, and run
+`hash -r` (bash) or `rehash` (zsh) in a shell that was already open before the change.
 
 ## How it works
 

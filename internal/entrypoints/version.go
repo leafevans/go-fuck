@@ -1,6 +1,7 @@
 package entrypoints
 
 import (
+	"os"
 	"runtime"
 
 	"github.com/leafevans/go-fuck/v2/internal/conf"
@@ -33,6 +34,15 @@ func versionInfo(detailed bool) logs.VersionInfo {
 	if detailed {
 		shell = shells.Current().Info()
 	}
+	executablePath := ""
+	if executable, err := os.Executable(); err == nil {
+		executablePath = executable
+	}
+	modulePath, moduleVersion := consts.BuildModule()
+	module := modulePath
+	if moduleVersion != "" && moduleVersion != "(devel)" {
+		module = modulePath + " " + moduleVersion
+	}
 	return logs.VersionInfo{
 		Version:     consts.Version,
 		GoVersion:   runtime.Version(),
@@ -43,5 +53,7 @@ func versionInfo(detailed bool) logs.VersionInfo {
 		InstantMode: instantState,
 		Fzf:         utils.IsAvailable("fzf"),
 		Alias:       conf.Alias(),
+		Executable:  executablePath,
+		Module:      module,
 	}
 }

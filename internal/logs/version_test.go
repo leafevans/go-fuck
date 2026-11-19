@@ -19,6 +19,8 @@ func bannerInfo() VersionInfo {
 		InstantMode: "available (bash/zsh on Linux and macOS)",
 		Fzf:         true,
 		Alias:       "fuck",
+		Executable:  "/usr/local/bin/go-fuck",
+		Module:      "github.com/leafevans/go-fuck/v2",
 	}
 }
 
@@ -32,7 +34,7 @@ func TestRenderBanner(t *testing.T) {
 			t.Fatalf("banner does not contain %q:%s%s", want, newline, banner)
 		}
 	}
-	for _, unwanted := range []string{"/tmp/go-fuck/settings.json", "Instant", "fzf", "Alias"} {
+	for _, unwanted := range []string{"/tmp/go-fuck/settings.json", "Instant", "fzf", "Alias", "/usr/local/bin/go-fuck", "github.com/leafevans/go-fuck/v2"} {
 		if strings.Contains(banner, unwanted) {
 			t.Fatalf("compact banner should not contain %q:%s%s", unwanted, newline, banner)
 		}
@@ -47,7 +49,7 @@ func TestRenderVerboseBanner(t *testing.T) {
 	conf.Reset()
 
 	banner := renderBanner(bannerInfo(), true)
-	for _, want := range []string{"/tmp/go-fuck/settings.json", "Instant", "available", "fzf", "installed", "Alias", "fuck"} {
+	for _, want := range []string{"/tmp/go-fuck/settings.json", "Instant", "available", "fzf", "installed", "Alias", "fuck", "Exe", "/usr/local/bin/go-fuck", "Module", "github.com/leafevans/go-fuck/v2"} {
 		if !strings.Contains(banner, want) {
 			t.Fatalf("verbose banner does not contain %q:%s%s", want, newline, banner)
 		}
