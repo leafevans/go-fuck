@@ -187,6 +187,8 @@ jobs:
         run: go test ./internal/shells -run 'TestQuoteRoundTrip' -count=1 -v
       - name: Check the tcsh alias behavior
         run: go test ./internal/shells -run 'TestTcshAlias|TestAliasSyntaxTcsh' -count=1 -v
+      - name: Check the suggestion syntax
+        run: go test ./internal/rules -run 'TestRuleSuggestionsAreShellSyntax' -count=1 -v
 
   gofmt:
     name: gofmt

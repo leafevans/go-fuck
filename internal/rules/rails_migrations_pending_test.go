@@ -37,4 +37,10 @@ func TestRuleRailsMigrationsPending(t *testing.T) {
 		assertNewCommands(t, rule, "bin/rspec", railsMigrationsPendingTestOutput,
 			[]string{"bin/rails db:migrate RAILS_ENV=test && bin/rspec"})
 	})
+
+	t.Run("get new command without a final newline", func(t *testing.T) {
+		output := "Migrations are pending. To resolve this issue, run:\n\n        bin/rails db:migrate"
+		assertNewCommands(t, rule, "rails server", output,
+			[]string{"bin/rails db:migrate && rails server"})
+	})
 }
