@@ -1,7 +1,7 @@
 package rules
 
 import (
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -31,8 +31,8 @@ func tmuxNewCommand(command *types.Command) ([]string, error) {
 	// Python's difflib orders equally similar suggestions by the suggestion
 	// itself. utils.ReplaceCommand keeps the input order for equal ratios, so
 	// sort the suggestions the same way beforehand.
-	sort.SliceStable(suggestions, func(left, right int) bool {
-		return suggestions[left] > suggestions[right]
+	slices.SortStableFunc(suggestions, func(left, right string) int {
+		return strings.Compare(right, left)
 	})
 	return utils.ReplaceCommand(command, match[1], suggestions), nil
 }

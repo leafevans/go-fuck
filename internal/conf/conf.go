@@ -541,7 +541,7 @@ func (s *Settings) rulesFromEnv(prefix string) {
 	}
 	rules := []string{}
 	hasDefault := false
-	for _, rule := range strings.Split(value, ":") {
+	for rule := range strings.SplitSeq(value, ":") {
 		if rule == "DEFAULT_RULES" {
 			hasDefault = true
 			continue
@@ -568,7 +568,7 @@ func (s *Settings) priorityFromEnv(prefix string) {
 	if !ok {
 		return
 	}
-	for _, part := range strings.Split(value, ":") {
+	for part := range strings.SplitSeq(value, ":") {
 		rule, raw, found := strings.Cut(part, "=")
 		if !found {
 			continue

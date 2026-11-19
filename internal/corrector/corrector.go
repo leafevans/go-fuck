@@ -3,8 +3,8 @@
 package corrector
 
 import (
+	"cmp"
 	"slices"
-	"sort"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/conf"
@@ -46,8 +46,8 @@ func GetRules() []*types.Rule {
 		enabled = append(enabled, &configured)
 	}
 
-	sort.SliceStable(enabled, func(left, right int) bool {
-		return enabled[left].Priority < enabled[right].Priority
+	slices.SortStableFunc(enabled, func(left, right *types.Rule) int {
+		return cmp.Compare(left.Priority, right.Priority)
 	})
 	return enabled
 }
@@ -64,8 +64,8 @@ func OrganizeCommands(commands []*types.CorrectedCommand) []*types.CorrectedComm
 	first := commands[0]
 	rest := make([]*types.CorrectedCommand, len(commands)-1)
 	copy(rest, commands[1:])
-	sort.SliceStable(rest, func(left, right int) bool {
-		return rest[left].Priority < rest[right].Priority
+	slices.SortStableFunc(rest, func(left, right *types.CorrectedCommand) int {
+		return cmp.Compare(left.Priority, right.Priority)
 	})
 
 	seen := []*types.CorrectedCommand{first}

@@ -48,7 +48,7 @@ func BenchmarkGetRules(b *testing.B) {
 
 	b.ReportAllocs()
 	b.ResetTimer()
-	for iteration := 0; iteration < b.N; iteration++ {
+	for b.Loop() {
 		GetRules()
 	}
 }
@@ -62,7 +62,7 @@ func BenchmarkGetCorrectedCommands(b *testing.B) {
 
 	b.ReportAllocs()
 	b.ResetTimer()
-	for iteration := 0; iteration < b.N; iteration++ {
+	for b.Loop() {
 		GetCorrectedCommands(command)
 	}
 }

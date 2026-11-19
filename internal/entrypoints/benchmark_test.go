@@ -8,7 +8,7 @@ func BenchmarkMarkedBashRawCommand(b *testing.B) {
 	payload := "\t if true; then\necho hi\nfi\n\t fuck"
 	b.ReportAllocs()
 	b.ResetTimer()
-	for iteration := 0; iteration < b.N; iteration++ {
+	for b.Loop() {
 		bashMarkedRawCommand(payload)
 	}
 }
@@ -19,7 +19,7 @@ func BenchmarkMarkedZshRawCommand(b *testing.B) {
 	payload := "if true; then\necho hi\nfi\n"
 	b.ReportAllocs()
 	b.ResetTimer()
-	for iteration := 0; iteration < b.N; iteration++ {
+	for b.Loop() {
 		zshMarkedRawCommand(payload)
 	}
 }

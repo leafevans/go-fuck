@@ -100,11 +100,10 @@ func TestLoadReportsUnknownKeys(t *testing.T) {
 }
 
 func TestKnownSettingKeysMatchSchema(t *testing.T) {
-	typ := reflect.TypeOf(fileSchema{})
+	typ := reflect.TypeFor[fileSchema]()
 	expected := map[string]bool{}
-	for index := 0; index < typ.NumField(); index++ {
-		tag := typ.Field(index).Tag.Get("json")
-		name, _, _ := strings.Cut(tag, ",")
+	for field := range typ.Fields() {
+		name, _, _ := strings.Cut(field.Tag.Get("json"), ",")
 		if name == "" || name == "-" {
 			continue
 		}

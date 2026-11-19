@@ -5,7 +5,8 @@
 package rules
 
 import (
-	"sort"
+	"cmp"
+	"slices"
 	"sync"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -63,11 +64,14 @@ func All() []*types.Rule {
 		copy(all, registry)
 		registryMu.Unlock()
 
-		sort.SliceStable(all, func(left, right int) bool {
-			return all[left].Name < all[right].Name
-		})
-		sort.SliceStable(all, func(left, right int) bool {
-			return all[left].Priority < all[right].Priority
+		// Sorting by priority and then by name is equivalent to the previous
+		// name sort followed by a stable priority sort, because the names are
+		// unique.
+		slices.SortFunc(all, func(left, right *types.Rule) int {
+			if order := cmp.Compare(left.Priority, right.Priority); order != 0 {
+				return order
+			}
+			return cmp.Compare(left.Name, right.Name)
 		})
 		allRules = all
 	})

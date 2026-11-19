@@ -1,9 +1,9 @@
 package rules
 
 import (
+	"cmp"
 	"os"
-
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -106,7 +106,9 @@ func sshKnownHostsSideEffect(oldCommand *types.Command, script string) error {
 		// Remove the entries from the bottom up: removing the top line first
 		// would shift every later line number. Duplicate entries are removed
 		// once so that the second removal cannot hit the following line.
-		sort.Sort(sort.Reverse(sort.IntSlice(lineNumbers)))
+		slices.SortFunc(lineNumbers, func(left, right int) int {
+			return cmp.Compare(right, left)
+		})
 		removed := 0
 		previous := -1
 		for _, line := range lineNumbers {

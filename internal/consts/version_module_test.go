@@ -18,16 +18,16 @@ func TestModulePathMatchesMajorVersion(t *testing.T) {
 		t.Fatalf("read go.mod: %v", err)
 	}
 	module := ""
-	for _, line := range strings.Split(string(data), "\n") {
-		if strings.HasPrefix(line, "module ") {
-			module = strings.TrimSpace(strings.TrimPrefix(line, "module "))
+	for line := range strings.SplitSeq(string(data), "\n") {
+		if rest, ok := strings.CutPrefix(line, "module "); ok {
+			module = strings.TrimSpace(rest)
 			break
 		}
 	}
 	if module == "" {
 		t.Fatal("go.mod does not declare a module path")
 	}
-	major := strings.SplitN(Version, ".", 2)[0]
+	major, _, _ := strings.Cut(Version, ".")
 	suffix := ""
 	if major != "0" && major != "1" {
 		suffix = "/v" + major

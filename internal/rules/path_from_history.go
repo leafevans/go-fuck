@@ -1,9 +1,9 @@
 package rules
 
 import (
+	"cmp"
 	"os"
-
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/shells"
@@ -72,8 +72,8 @@ func pathFromHistoryAllAbsolutePaths(command *types.Command) []string {
 		}
 	}
 
-	sort.SliceStable(order, func(left, right int) bool {
-		return counts[order[left]] > counts[order[right]]
+	slices.SortStableFunc(order, func(left, right string) int {
+		return cmp.Compare(counts[right], counts[left])
 	})
 	return order
 }
