@@ -4,11 +4,13 @@ import (
 	json "encoding/json/v2"
 	"fmt"
 	"os"
-	"sort"
+	"slices"
+	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/argumentparser"
 	"github.com/leafevans/go-fuck/v2/internal/consts"
 	"github.com/leafevans/go-fuck/v2/internal/rules"
+	"github.com/leafevans/go-fuck/v2/internal/types"
 )
 
 // listRule is one rule of the machine readable rule list.
@@ -30,8 +32,10 @@ type listRule struct {
 
 // listRules runs the --list-rules command.
 func listRules(args *argumentparser.Args) int {
-	all := rules.All()
-	sort.Slice(all, func(left, right int) bool { return all[left].Name < all[right].Name })
+	all := slices.Clone(rules.All())
+	slices.SortFunc(all, func(left, right *types.Rule) int {
+		return strings.Compare(left.Name, right.Name)
+	})
 
 	if args.JSON {
 		listed := make([]listRule, 0, len(all))

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/leafevans/go-fuck/v2/internal/rules"
+	"github.com/leafevans/go-fuck/v2/internal/types"
 )
 
 func TestListRules(t *testing.T) {
@@ -63,6 +64,23 @@ func TestListRulesJSON(t *testing.T) {
 			if !rule.SideEffect {
 				t.Fatalf("ssh_known_hosts side_effect = false, want true")
 			}
+		}
+	}
+}
+
+// TestListRulesKeepsRegistryOrder guards that listing the rules does not sort the
+// shared slice returned by rules.All in place.
+func TestListRulesKeepsRegistryOrder(t *testing.T) {
+	resetEntrypointsState(t)
+	before := append([]*types.Rule(nil), rules.All()...)
+	code, _, stderr := runMain(t, "go-fuck", "--list-rules")
+	if code != 0 {
+		t.Fatalf("Main() = %d, want 0; stderr = %q", code, stderr)
+	}
+	after := rules.All()
+	for index := range before {
+		if before[index] != after[index] {
+			t.Fatalf("--list-rules reordered the shared rule registry at index %d", index)
 		}
 	}
 }
