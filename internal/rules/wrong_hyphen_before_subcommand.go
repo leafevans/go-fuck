@@ -25,7 +25,7 @@ func wrongHyphenMatch(command *types.Command) bool {
 		return false
 	}
 
-	cmd := strings.SplitN(firstPart, "-", 2)[0]
+	cmd, _, _ := strings.Cut(firstPart, "-")
 	return utils.Contains(executables, cmd)
 }
 

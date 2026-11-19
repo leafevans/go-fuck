@@ -57,7 +57,7 @@ func npmWrongCommandMatch(command *types.Command) bool {
 func npmWrongCommandAvailable(commandOutput string) []string {
 	commands := []string{}
 	listing := false
-	for _, line := range strings.Split(commandOutput, "\n") {
+	for line := range strings.SplitSeq(commandOutput, "\n") {
 		if strings.HasPrefix(line, npmWrongCommandListing) {
 			listing = true
 			continue
@@ -68,7 +68,7 @@ func npmWrongCommandAvailable(commandOutput string) []string {
 		if line == "" {
 			break
 		}
-		for _, command := range strings.Split(line, ", ") {
+		for command := range strings.SplitSeq(line, ", ") {
 			if trimmed := strings.TrimSpace(command); trimmed != "" {
 				commands = append(commands, trimmed)
 			}
@@ -82,7 +82,7 @@ func npmWrongCommandAvailable(commandOutput string) []string {
 func npmWrongCommandParseHelp(output string) []string {
 	commands := []string{}
 	listing := false
-	for _, line := range strings.Split(output, newline) {
+	for line := range strings.SplitSeq(output, newline) {
 		trimmed := strings.TrimSpace(line)
 		if trimmed == "All commands:" {
 			listing = true
@@ -98,7 +98,7 @@ func npmWrongCommandParseHelp(output string) []string {
 			}
 			continue
 		}
-		for _, command := range strings.Split(trimmed, ",") {
+		for command := range strings.SplitSeq(trimmed, ",") {
 			if candidate := strings.TrimSpace(command); candidate != "" {
 				commands = append(commands, candidate)
 			}

@@ -146,8 +146,8 @@ func availableFileName(name string) string {
 		return lower
 	}
 	for _, extension := range windowsExecutableExtensions {
-		if strings.HasSuffix(lower, extension) {
-			return strings.TrimSuffix(lower, extension)
+		if trimmed, ok := strings.CutSuffix(lower, extension); ok {
+			return trimmed
 		}
 	}
 	return ""
@@ -160,8 +160,8 @@ func availableName(program string) string {
 		return lower
 	}
 	for _, extension := range windowsExecutableExtensions {
-		if strings.HasSuffix(lower, extension) {
-			return strings.TrimSuffix(lower, extension)
+		if trimmed, ok := strings.CutSuffix(lower, extension); ok {
+			return trimmed
 		}
 	}
 	return lower

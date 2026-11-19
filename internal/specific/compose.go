@@ -34,7 +34,7 @@ var ComposeServices = utils.Memoize(func() []string {
 func parseComposeServices(content string) []string {
 	services := []string{}
 	inServices := false
-	for _, line := range strings.Split(content, "\n") {
+	for line := range strings.SplitSeq(content, "\n") {
 		line = strings.TrimRight(line, "\r")
 		trimmed := strings.TrimSpace(line)
 		if trimmed == "" || strings.HasPrefix(trimmed, "#") {

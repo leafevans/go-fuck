@@ -67,7 +67,7 @@ func ReplaceCommand(command *types.Command, broken string, matched []string) []s
 // of by its position: the captured output may carry extra empty lines, for
 // example when the command was re-run by PowerShell.
 func FindLineByPrefix(output, prefix string) (string, bool) {
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		line = strings.TrimSpace(line)
 		if strings.HasPrefix(line, prefix) {
 			return line, true
@@ -81,7 +81,7 @@ func FindLineByPrefix(output, prefix string) (string, bool) {
 func GetAllMatchedCommands(commandOutput string, separators ...string) []string {
 	results := []string{}
 	shouldYield := false
-	for _, line := range strings.Split(commandOutput, "\n") {
+	for line := range strings.SplitSeq(commandOutput, "\n") {
 		matched := false
 		for _, separator := range separators {
 			if strings.Contains(line, separator) {

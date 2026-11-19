@@ -2,6 +2,7 @@ package rules
 
 import (
 	"os/exec"
+	"slices"
 
 	"strings"
 
@@ -31,7 +32,7 @@ var omnienvNoSuchCommandAppCommands = utils.Memoize1(func(app string) []string {
 		return nil
 	}
 	commands := []string{}
-	for _, line := range strings.Split(string(output), "\n") {
+	for line := range strings.SplitSeq(string(output), "\n") {
 		if command := strings.TrimSpace(line); command != "" {
 			commands = append(commands, command)
 		}
@@ -65,13 +66,7 @@ func omnienvNoSuchCommandNewCommand(command *types.Command) ([]string, error) {
 }
 
 func init() {
-	enabled := false
-	for _, app := range omnienvNoSuchCommandSupportedApps {
-		if utils.IsAvailable(app) {
-			enabled = true
-			break
-		}
-	}
+	enabled := slices.ContainsFunc(omnienvNoSuchCommandSupportedApps, utils.IsAvailable)
 	rule := types.NewRule("omnienv_no_such_command",
 		utils.ForApp(omnienvNoSuchCommandSupportedApps, 1, omnienvNoSuchCommandMatch),
 		omnienvNoSuchCommandNewCommand)

@@ -16,6 +16,7 @@ import (
 	"io"
 	"os"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/consts"
@@ -47,8 +48,7 @@ func LastOutput(logPath, script string) (string, bool) {
 
 	parts := strings.Fields(script)
 	calls := groupCalls(logLines(data))
-	for index := len(calls) - 1; index >= 0; index-- {
-		call := calls[index]
+	for _, call := range slices.Backward(calls) {
 		echo := call.echoIndex(script, parts)
 		if echo < 0 {
 			continue
@@ -122,11 +122,8 @@ func multilineEchoIndex(lines []string, command string) int {
 		return -1
 	}
 	const maxPromptLines = 16
-	last := maxPromptLines
-	if len(lines) < last {
-		last = len(lines)
-	}
-	for start := 0; start < last; start++ {
+	last := min(maxPromptLines, len(lines))
+	for start := range last {
 		index := start
 		matched := 0
 		lastMatch := -1

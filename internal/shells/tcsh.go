@@ -85,7 +85,7 @@ func (t *Tcsh) FromShell(script string) string {
 func (t *Tcsh) GetAliases() map[string]string {
 	t.aliasesOnce.Do(func() {
 		t.aliases = map[string]string{}
-		for _, line := range strings.Split(runOutput("tcsh", "-ic", "alias"), newline) {
+		for line := range strings.SplitSeq(runOutput("tcsh", "-ic", "alias"), newline) {
 			line = strings.TrimSpace(line)
 			if line == "" || !strings.Contains(line, string(rune(9))) {
 				continue

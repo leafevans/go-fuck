@@ -26,7 +26,7 @@ var gemUnknownCommandGemCommands = utils.Memoize(func() []string {
 // output.
 func gemUnknownCommandParseCommands(output string) []string {
 	commands := []string{}
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		if !strings.HasPrefix(line, "    ") {
 			continue
 		}

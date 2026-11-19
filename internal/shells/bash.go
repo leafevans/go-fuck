@@ -66,7 +66,7 @@ func (b *Bash) FromShell(script string) string {
 // GetAliases returns the aliases that were exported by the bash alias.
 func (b *Bash) GetAliases() map[string]string {
 	aliases := map[string]string{}
-	for _, line := range strings.Split(env("TF_SHELL_ALIASES"), newline) {
+	for line := range strings.SplitSeq(env("TF_SHELL_ALIASES"), newline) {
 		if line == "" || !strings.Contains(line, "=") {
 			continue
 		}

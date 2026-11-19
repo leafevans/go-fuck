@@ -31,13 +31,13 @@ var MakeTargets = utils.Memoize(func() []string {
 // parseMakeTargets returns the literal targets of a Makefile content.
 func parseMakeTargets(content string) []string {
 	targets := map[string]bool{}
-	for _, line := range strings.Split(content, "\n") {
+	for line := range strings.SplitSeq(content, "\n") {
 		line = strings.TrimRight(line, "\r")
 		if line == "" || strings.HasPrefix(line, "\t") || strings.HasPrefix(line, "#") {
 			continue
 		}
-		if strings.HasPrefix(line, ".PHONY:") {
-			for _, target := range strings.Fields(strings.TrimPrefix(line, ".PHONY:")) {
+		if rest, ok := strings.CutPrefix(line, ".PHONY:"); ok {
+			for target := range strings.FieldsSeq(rest) {
 				if validMakeTarget(target) {
 					targets[target] = true
 				}
@@ -52,7 +52,7 @@ func parseMakeTargets(content string) []string {
 		if comment := strings.IndexByte(targetPart, '#'); comment >= 0 {
 			targetPart = targetPart[:comment]
 		}
-		for _, target := range strings.Fields(targetPart) {
+		for target := range strings.FieldsSeq(targetPart) {
 			if validMakeTarget(target) {
 				targets[target] = true
 			}

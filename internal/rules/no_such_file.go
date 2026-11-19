@@ -39,8 +39,8 @@ func noSuchFileNewCommand(command *types.Command) ([]string, error) {
 		// Python: dir = file[0:file.rfind('/')]. A file name without a slash
 		// makes rfind return -1, which drops the last character.
 		directory := ""
-		if index := strings.LastIndex(file, "/"); index >= 0 {
-			directory = file[:index]
+		if before, _, found := strings.CutLast(file, "/"); found {
+			directory = before
 		} else if file != "" {
 			directory = file[:len(file)-1]
 		}

@@ -34,7 +34,7 @@ func dartSimilarCommands(output string) (broken string, suggestions []string) {
 	broken = match[1]
 
 	inSuggestions := false
-	for _, line := range strings.Split(output, newline) {
+	for line := range strings.SplitSeq(output, newline) {
 		trimmed := strings.TrimSpace(line)
 		if trimmed == "Did you mean one of these?" {
 			inSuggestions = true

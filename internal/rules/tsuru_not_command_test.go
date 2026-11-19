@@ -9,10 +9,12 @@ import (
 // suggestions.
 func tsuruNotCommandOutput(suggestions ...string) string {
 	var output strings.Builder
-	output.WriteString("tsuru: \"tchururu\" is not a tsuru command. See \"tsuru help\"." +
-		"\n\nDid you mean?\n")
+	output.WriteString("tsuru: \"tchururu\" is not a tsuru command. See \"tsuru help\".")
+	output.WriteString("\n\nDid you mean?\n")
 	for _, suggestion := range suggestions {
-		output.WriteString("\t" + suggestion + "\n")
+		output.WriteString("\t")
+		output.WriteString(suggestion)
+		output.WriteString("\n")
 	}
 	return output.String()
 }
@@ -42,10 +44,14 @@ func TestRuleTsuruNotCommand(t *testing.T) {
 	t.Run("get new command", func(t *testing.T) {
 		commandOutput := func(broken string, suggestions ...string) string {
 			var output strings.Builder
-			output.WriteString("tsuru: \"" + broken + "\" is not a tsuru command. See \"tsuru help\"." +
-				"\n\nDid you mean?\n")
+			output.WriteString("tsuru: \"")
+			output.WriteString(broken)
+			output.WriteString("\" is not a tsuru command. See \"tsuru help\".")
+			output.WriteString("\n\nDid you mean?\n")
 			for _, suggestion := range suggestions {
-				output.WriteString("\t" + suggestion + "\n")
+				output.WriteString("\t")
+				output.WriteString(suggestion)
+				output.WriteString("\n")
 			}
 			return output.String()
 		}

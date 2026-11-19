@@ -26,7 +26,7 @@ var gitSubmodulePathsCommand = func() []string {
 // parseSubmodulePaths extracts the paths from "git submodule status" output.
 func parseSubmodulePaths(output string) []string {
 	paths := []string{}
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		fields := strings.Fields(line)
 		if len(fields) >= 2 {
 			paths = append(paths, fields[1])

@@ -16,7 +16,7 @@ var gruntTaskNotFoundPattern = newRegexp(`Warning: Task "(.*)" not found.`)
 func gruntTaskNotFoundParseTasks(helpOutput string) []string {
 	tasks := []string{}
 	shouldYield := false
-	for _, line := range strings.Split(helpOutput, "\n") {
+	for line := range strings.SplitSeq(helpOutput, "\n") {
 		line = strings.TrimSpace(line)
 		if strings.Contains(line, "Available tasks") {
 			shouldYield = true
@@ -54,7 +54,7 @@ func gruntTaskNotFoundNewCommand(command *types.Command) ([]string, error) {
 	if match == nil {
 		return nil, nil
 	}
-	misspelledTask := strings.Split(match[1], ":")[0]
+	misspelledTask, _, _ := strings.Cut(match[1], ":")
 	fixed := utils.GetClosestDefault(misspelledTask, gruntTasks())
 	if fixed == "" {
 		return nil, nil

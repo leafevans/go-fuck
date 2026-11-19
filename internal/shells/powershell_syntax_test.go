@@ -95,7 +95,7 @@ func TestPowershellSplitCommandMatchesPowerShell(t *testing.T) {
 	}
 	actual := map[int][]string{}
 	current := -1
-	for _, line := range strings.Split(string(output), "\n") {
+	for line := range strings.SplitSeq(string(output), "\n") {
 		line = strings.TrimRight(line, "\r")
 		switch {
 		case strings.HasPrefix(line, "CMD:"):
@@ -158,7 +158,7 @@ func TestPowershellQuoteRoundTrips(t *testing.T) {
 		t.Fatalf("PowerShell failed: %v\n%s", err, output)
 	}
 	got := []string{}
-	for _, line := range strings.Split(string(output), "\n") {
+	for line := range strings.SplitSeq(string(output), "\n") {
 		line = strings.TrimRight(line, "\r")
 		if !strings.HasPrefix(line, "ARG:") {
 			continue

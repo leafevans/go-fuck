@@ -19,7 +19,7 @@ func brewCaskDependencyMatch(command *types.Command) bool {
 // suggested in the output.
 func brewCaskDependencyCaskInstallLines(output string) []string {
 	lines := []string{}
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		line = strings.TrimSpace(line)
 		if strings.HasPrefix(line, "brew cask install") {
 			lines = append(lines, line)

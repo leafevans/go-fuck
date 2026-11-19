@@ -22,7 +22,7 @@ func doctorPathCheck(report doctorReport) doctorCheck {
 	}
 
 	running := doctorResolvePath(report.Binary)
-	candidates := doctorPathCandidates(report.Binary, running)
+	candidates := doctorPathCandidates(report.Binary)
 	if len(candidates) == 0 {
 		check.Status = doctorWarn
 		check.Message = "the running binary is not on PATH: " + report.Binary
@@ -65,7 +65,7 @@ type doctorPathCandidate struct {
 
 // doctorPathCandidates scans PATH for executables with the name of the running
 // binary and returns them in PATH order, without duplicates.
-func doctorPathCandidates(running, resolvedRunning string) []doctorPathCandidate {
+func doctorPathCandidates(running string) []doctorPathCandidate {
 	names := doctorCandidateNames(running)
 	candidates := make([]doctorPathCandidate, 0, 4)
 	seen := map[string]bool{}

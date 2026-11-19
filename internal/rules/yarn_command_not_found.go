@@ -19,7 +19,7 @@ var yarnCommandNotFoundAliases = map[string]string{"require": "add"}
 func yarnCommandNotFoundParseTasks(commandOutput string) []string {
 	tasks := []string{}
 	shouldYield := false
-	for _, line := range strings.Split(commandOutput, "\n") {
+	for line := range strings.SplitSeq(commandOutput, "\n") {
 		line = strings.TrimSpace(line)
 		if strings.Contains(line, "Commands:") {
 			shouldYield = true

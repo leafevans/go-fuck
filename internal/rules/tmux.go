@@ -25,7 +25,7 @@ func tmuxNewCommand(command *types.Command) ([]string, error) {
 	}
 
 	suggestions := []string{}
-	for _, suggestion := range strings.Split(match[2], ",") {
+	for suggestion := range strings.SplitSeq(match[2], ",") {
 		suggestions = append(suggestions, strings.TrimSpace(suggestion))
 	}
 	// Python's difflib orders equally similar suggestions by the suggestion

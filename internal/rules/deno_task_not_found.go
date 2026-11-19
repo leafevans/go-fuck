@@ -49,7 +49,7 @@ func denoTaskNotFoundNewCommand(command *types.Command) ([]string, error) {
 func denoAvailableTasks(output string) []string {
 	tasks := []string{}
 	inTasks := false
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		trimmed := strings.TrimSpace(line)
 		if !inTasks {
 			inTasks = strings.HasPrefix(trimmed, denoAvailableTasksHeading)

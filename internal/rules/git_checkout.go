@@ -27,7 +27,7 @@ var gitCheckoutBranches = func() []string {
 // gitCheckoutParseBranches parses the output of "git branch -a".
 func gitCheckoutParseBranches(commandOutput string) []string {
 	branches := []string{}
-	for _, line := range strings.Split(commandOutput, "\n") {
+	for line := range strings.SplitSeq(commandOutput, "\n") {
 		if strings.Contains(line, "->") {
 			continue
 		}

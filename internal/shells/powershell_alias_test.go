@@ -100,7 +100,7 @@ func runPowershellAlias(t *testing.T, prelude, commands string) []aliasInvocatio
 
 	recorded := []aliasInvocation{}
 	current := aliasInvocation{}
-	for _, line := range strings.Split(string(data), "\n") {
+	for line := range strings.SplitSeq(string(data), "\n") {
 		line = strings.TrimSpace(line)
 		switch {
 		case strings.HasPrefix(line, "ARGS:"):

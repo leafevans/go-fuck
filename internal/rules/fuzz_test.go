@@ -56,7 +56,6 @@ func FuzzRules(f *testing.F) {
 	f.Fuzz(func(t *testing.T, script, output string) {
 		command := types.NewCommand(script, output)
 		for _, rule := range registered {
-			rule := rule
 			func() {
 				defer func() {
 					if recovered := recover(); recovered != nil {

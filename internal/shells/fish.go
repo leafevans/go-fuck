@@ -95,7 +95,7 @@ func (f *Fish) loadAliases() map[string]string {
 	overridden := f.overriddenAliases()
 	aliases := map[string]string{}
 
-	for _, name := range strings.Split(runOutput("fish", "-ic", "functions"), newline) {
+	for name := range strings.SplitSeq(runOutput("fish", "-ic", "functions"), newline) {
 		name = strings.TrimSpace(name)
 		if name == "" || overridden[name] {
 			continue
@@ -103,7 +103,7 @@ func (f *Fish) loadAliases() map[string]string {
 		aliases[name] = name
 	}
 
-	for _, line := range strings.Split(runOutput("fish", "-ic", "alias"), newline) {
+	for line := range strings.SplitSeq(runOutput("fish", "-ic", "alias"), newline) {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
@@ -134,7 +134,7 @@ func (f *Fish) overriddenAliases() map[string]bool {
 	overridden := map[string]bool{
 		"cd": true, "grep": true, "ls": true, "man": true, "open": true,
 	}
-	for _, alias := range strings.Split(raw, ",") {
+	for alias := range strings.SplitSeq(raw, ",") {
 		if alias = strings.TrimSpace(alias); alias != "" {
 			overridden[alias] = true
 		}
@@ -145,7 +145,7 @@ func (f *Fish) overriddenAliases() map[string]bool {
 // FromShell expands fish functions and aliases.
 func (f *Fish) FromShell(script string) string {
 	aliases := f.GetAliases()
-	binary := strings.SplitN(script, " ", 2)[0]
+	binary, _, _ := strings.Cut(script, " ")
 	replacement, ok := aliases[binary]
 	if !ok {
 		return script

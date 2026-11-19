@@ -30,7 +30,7 @@ var gitWorktreePathsCommand = func() []string {
 func parseWorktreePaths(output string) []string {
 	paths := []string{}
 	first := true
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		path, ok := strings.CutPrefix(line, "worktree ")
 		if !ok {
 			continue

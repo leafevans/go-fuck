@@ -32,7 +32,7 @@ func TestEchoIndexMatchesSeparateParts(t *testing.T) {
 // wrappedEchoIndex.
 func TestWrappedEchoIndexLineLimit(t *testing.T) {
 	log := prompt("$ ") + "\r\n"
-	for index := 0; index < 10; index++ {
+	for range 10 {
 		log += "output line" + "\r\n"
 	}
 	if _, ok := LastOutput(writeLog(t, log), "totally-missing-command"); ok {

@@ -12,7 +12,7 @@ import (
 func fabCommandNotFoundGetBetween(content, start, end string) []string {
 	results := []string{}
 	shouldYield := false
-	for _, line := range strings.Split(content, newline) {
+	for line := range strings.SplitSeq(content, newline) {
 		if strings.Contains(line, start) {
 			shouldYield = true
 			continue

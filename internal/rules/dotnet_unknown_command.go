@@ -2,6 +2,7 @@ package rules
 
 import (
 	"os/exec"
+	"slices"
 
 	"strings"
 
@@ -44,7 +45,7 @@ var dotnetUnknownCommandReadHelp = func() string {
 func dotnetUnknownCommandParseCommands(output string) []string {
 	commands := []string{}
 	seen := map[string]bool{}
-	for _, line := range strings.Split(output, newline) {
+	for line := range strings.SplitSeq(output, newline) {
 		match := dotnetUnknownCommandHelpLine.FindStringSubmatch(line)
 		if match == nil || seen[match[1]] {
 			continue
@@ -72,10 +73,8 @@ func dotnetUnknownCommandBroken(command *types.Command) string {
 		return ""
 	}
 	for _, match := range dotnetUnknownCommandToken.FindAllStringSubmatch(command.Output, -1) {
-		for _, part := range parts[1:] {
-			if part == match[1] {
-				return match[1]
-			}
+		if slices.Contains(parts[1:], match[1]) {
+			return match[1]
 		}
 	}
 	return ""

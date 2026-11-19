@@ -51,7 +51,7 @@ func BenchmarkRuleMatchingAllRules(b *testing.B) {
 
 	b.ReportAllocs()
 	b.ResetTimer()
-	for iteration := 0; iteration < b.N; iteration++ {
+	for b.Loop() {
 		for _, rule := range registered {
 			rule.IsMatch(command)
 		}
@@ -68,7 +68,7 @@ func BenchmarkRuleMatchingWithoutOutput(b *testing.B) {
 
 	b.ReportAllocs()
 	b.ResetTimer()
-	for iteration := 0; iteration < b.N; iteration++ {
+	for b.Loop() {
 		for _, rule := range registered {
 			rule.IsMatch(command)
 		}

@@ -60,7 +60,7 @@ func clapSuggestions(commandOutput string, brokenPattern *lazyRegexp, hint strin
 	}
 
 	suggestions := []string{}
-	for _, line := range strings.Split(commandOutput, newline) {
+	for line := range strings.SplitSeq(commandOutput, newline) {
 		if !strings.Contains(line, "tip:") || !strings.Contains(line, hint) {
 			continue
 		}

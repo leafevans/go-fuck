@@ -1,20 +1,16 @@
 package rules
 
-import "testing"
+import (
+	"slices"
+	"testing"
+)
 
 // stubCmdMissingFile replaces the file system checks of the rule.
 func stubCmdMissingFile(t *testing.T, files []string) {
 	t.Helper()
 	originalExists := cmdFileExists
 	originalEntries := cmdDirectoryEntries
-	cmdFileExists = func(path string) bool {
-		for _, file := range files {
-			if file == path {
-				return true
-			}
-		}
-		return false
-	}
+	cmdFileExists = func(path string) bool { return slices.Contains(files, path) }
 	cmdDirectoryEntries = func(string) ([]string, error) { return files, nil }
 	t.Cleanup(func() {
 		cmdFileExists = originalExists

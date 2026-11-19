@@ -42,7 +42,7 @@ var aptGetPackages = utils.Memoize1(func(executable string) []string {
 	}
 	output, _ := exec.Command(handler, executable).CombinedOutput()
 	packages := []string{}
-	for _, line := range strings.Split(string(output), "\n") {
+	for line := range strings.SplitSeq(string(output), "\n") {
 		line = strings.TrimSpace(line)
 		for _, prefix := range []string{"sudo apt install ", "sudo apt-get install "} {
 			if after, ok := strings.CutPrefix(line, prefix); ok {

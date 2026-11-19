@@ -33,7 +33,7 @@ var getPkgFile = utils.Memoize1(func(command string) pkgFileResult {
 	}
 
 	packages := []string{}
-	for _, line := range strings.Split(strings.TrimSpace(string(output)), "\n") {
+	for line := range strings.SplitSeq(strings.TrimSpace(string(output)), "\n") {
 		if line == "" {
 			continue
 		}

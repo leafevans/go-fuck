@@ -39,7 +39,7 @@ func poetryUnknownCommandNewCommand(command *types.Command) ([]string, error) {
 func poetrySuggestions(commandOutput string) []string {
 	suggestions := []string{}
 	inSuggestions := false
-	for _, line := range strings.Split(commandOutput, "\n") {
+	for line := range strings.SplitSeq(commandOutput, "\n") {
 		if !inSuggestions {
 			inSuggestions = strings.Contains(line, poetrySuggestionHeader)
 			continue

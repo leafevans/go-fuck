@@ -9,12 +9,12 @@ import (
 // cargoAvailableTargets returns the target names that cargo lists after the
 // given section marker.
 func cargoAvailableTargets(output, marker string) []string {
-	index := strings.Index(output, marker)
-	if index < 0 {
+	_, after, ok := strings.Cut(output, marker)
+	if !ok {
 		return nil
 	}
 	var targets []string
-	for _, line := range strings.Split(output[index+len(marker):], "\n") {
+	for line := range strings.SplitSeq(after, "\n") {
 		trimmed := strings.TrimSpace(line)
 		if trimmed == "" {
 			continue

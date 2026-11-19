@@ -37,7 +37,7 @@ var chocoUnknownCommandNameRegexp = newRegexp("^[a-z][a-z0-9_-]*$")
 func chocoUnknownCommandParseCommands(output string) []string {
 	commands := []string{}
 	seen := make(map[string]bool)
-	for _, line := range strings.Split(output, newline) {
+	for line := range strings.SplitSeq(output, newline) {
 		rest, found := strings.CutPrefix(line, " * ")
 		if !found {
 			continue

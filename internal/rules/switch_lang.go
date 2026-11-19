@@ -160,7 +160,7 @@ func switchLangContains(layout []rune, ch rune) bool {
 // belongs to the layout. Dashes and underscores are ignored because they exist
 // on every keyboard.
 func switchLangMatchesLayout(script string, layout []rune) bool {
-	for _, part := range strings.Split(script, " ") {
+	for part := range strings.SplitSeq(script, " ") {
 		for _, ch := range part {
 			if ch == '-' || ch == '_' {
 				continue

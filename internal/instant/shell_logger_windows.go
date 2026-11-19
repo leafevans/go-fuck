@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"syscall"
@@ -290,8 +291,8 @@ func makeRawConsole(stdin io.Reader, stdout io.Writer) func() {
 		}
 	}
 	return func() {
-		for index := len(restores) - 1; index >= 0; index-- {
-			restores[index]()
+		for _, restore := range slices.Backward(restores) {
+			restore()
 		}
 	}
 }

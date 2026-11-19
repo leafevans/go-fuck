@@ -29,8 +29,8 @@ func gitHelpAliasedNewCommand(command *types.Command) ([]string, error) {
 	}
 	rest = rest[index+1:]
 
-	aliased := strings.SplitN(rest, "'", 2)[0]
-	aliased = strings.SplitN(aliased, " ", 2)[0]
+	aliased, _, _ := strings.Cut(rest, "'")
+	aliased, _, _ = strings.Cut(aliased, " ")
 	return []string{"git help " + aliased}, nil
 }
 

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/argumentparser"
@@ -183,8 +184,7 @@ func getRawCommand(args *argumentparser.Args) []string {
 	lines := strings.Split(history, string(rune(10)))
 	alias := conf.Alias()
 
-	for i := len(lines) - 1; i >= 0; i-- {
-		command := lines[i]
+	for _, command := range slices.Backward(lines) {
 		diff := utils.SequenceRatio(alias, command)
 		if diff < consts.DiffWithAlias || utils.IsExecutable(command) {
 			return []string{command}

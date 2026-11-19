@@ -51,7 +51,7 @@ func GetValidHistoryWithoutCurrent(command *types.Command) []string {
 		if strings.HasPrefix(line, alias) || line == command.Script {
 			continue
 		}
-		executable := strings.SplitN(line, " ", 2)[0]
+		executable, _, _ := strings.Cut(line, " ")
 		if executableSet[executable] || builtins[executable] {
 			valid = append(valid, line)
 		}

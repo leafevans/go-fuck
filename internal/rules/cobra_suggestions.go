@@ -31,7 +31,7 @@ func cobraSuggestions(commandOutput string) (broken string, suggestions []string
 	broken = match[1]
 
 	inSuggestions := false
-	for _, line := range strings.Split(commandOutput, newline) {
+	for line := range strings.SplitSeq(commandOutput, newline) {
 		trimmed := strings.TrimSpace(line)
 		if trimmed == "Did you mean this?" {
 			inSuggestions = true

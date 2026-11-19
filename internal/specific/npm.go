@@ -71,7 +71,7 @@ func npmScripts() []string {
 func parseNpmScripts(output string) []string {
 	var scripts []string
 	listing := false
-	for _, line := range strings.Split(output, "\n") {
+	for line := range strings.SplitSeq(output, "\n") {
 		trimmed := strings.TrimSpace(line)
 		if strings.HasPrefix(trimmed, "Lifecycle scripts included in") ||
 			strings.HasPrefix(trimmed, "Scripts available in") ||

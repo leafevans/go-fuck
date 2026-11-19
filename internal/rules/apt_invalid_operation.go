@@ -23,7 +23,7 @@ var aptInvalidOperationHelp = utils.Memoize1(func(app string) string {
 func aptInvalidOperationParseAptOperations(help string) []string {
 	operations := []string{}
 	isCommandsList := false
-	for _, line := range strings.Split(help, "\n") {
+	for line := range strings.SplitSeq(help, "\n") {
 		line = strings.TrimSpace(line)
 		if isCommandsList && line != "" {
 			operations = append(operations, strings.Fields(line)[0])
@@ -40,7 +40,7 @@ func aptInvalidOperationParseAptOperations(help string) []string {
 func aptInvalidOperationParseAptGetOperations(help string) []string {
 	operations := []string{}
 	isCommandsList := false
-	for _, line := range strings.Split(help, "\n") {
+	for line := range strings.SplitSeq(help, "\n") {
 		line = strings.TrimSpace(line)
 		if isCommandsList {
 			if line == "" {

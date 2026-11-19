@@ -31,7 +31,7 @@ var reactNativeCommandReadHelp = func() string {
 func reactNativeCommandParseCommands(output string) []string {
 	commands := []string{}
 	shouldYield := false
-	for _, line := range strings.Split(output, newline) {
+	for line := range strings.SplitSeq(output, newline) {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue

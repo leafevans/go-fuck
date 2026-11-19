@@ -1,20 +1,16 @@
 package rules
 
-import "testing"
+import (
+	"slices"
+	"testing"
+)
 
 // stubPowerShellMissingFile replaces the file system checks of the rule.
 func stubPowerShellMissingFile(t *testing.T, files []string) {
 	t.Helper()
 	originalExists := powerShellItemExists
 	originalEntries := powerShellDirectoryEntries
-	powerShellItemExists = func(path string) bool {
-		for _, file := range files {
-			if file == path {
-				return true
-			}
-		}
-		return false
-	}
+	powerShellItemExists = func(path string) bool { return slices.Contains(files, path) }
 	powerShellDirectoryEntries = func(string) ([]string, error) { return files, nil }
 	t.Cleanup(func() {
 		powerShellItemExists = originalExists

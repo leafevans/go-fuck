@@ -47,9 +47,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 
 	width := 0
 	for _, t := range targets {
-		if len(t.name) > width {
-			width = len(t.name)
-		}
+		width = max(width, len(t.name))
 	}
 
 	fmt.Fprintln(stdout, "Usage: make TARGET")

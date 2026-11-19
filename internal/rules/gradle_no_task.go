@@ -16,7 +16,7 @@ var gradleNoTaskPattern = newRegexp("Task '(.*)' (is ambiguous|not found)")
 func gradleNoTaskParseTasks(tasksOutput string) []string {
 	tasks := []string{}
 	shouldYield := false
-	for _, line := range strings.Split(tasksOutput, "\n") {
+	for line := range strings.SplitSeq(tasksOutput, "\n") {
 		line = strings.TrimSpace(line)
 		if strings.HasPrefix(line, "----") {
 			shouldYield = true

@@ -25,7 +25,7 @@ var dotnetUnknownArgumentBroken = newRegexp("'([^']*)' was not matched")
 func dotnetUnknownArgumentSuggestions(output string) []string {
 	suggestions := []string{}
 	inSuggestions := false
-	for _, line := range strings.Split(output, newline) {
+	for line := range strings.SplitSeq(output, newline) {
 		trimmed := strings.TrimSpace(line)
 		if strings.Contains(line, dotnetUnknownArgumentHeader) {
 			inSuggestions = true

@@ -20,7 +20,7 @@ var ifconfigReadOutput = func() string {
 // ifconfigParseInterfaces extracts the interface names from "ifconfig -a".
 func ifconfigParseInterfaces(output string) []string {
 	interfaces := []string{}
-	for _, line := range strings.Split(output, newline) {
+	for line := range strings.SplitSeq(output, newline) {
 		// Interface headers start at the beginning of the line, the details
 		// of an interface are indented.
 		if line == "" || strings.HasPrefix(line, " ") {
@@ -45,7 +45,7 @@ func ifconfigDeviceNotFoundMatch(command *types.Command) bool {
 // ifconfigDeviceNotFoundNewCommand suggests the closest interface name.
 func ifconfigDeviceNotFoundNewCommand(command *types.Command) ([]string, error) {
 	// Python: command.output.split(' ')[0][:-1] -- drop the trailing colon.
-	first := strings.SplitN(command.Output, " ", 2)[0]
+	first, _, _ := strings.Cut(command.Output, " ")
 	runes := []rune(first)
 	if len(runes) < 2 {
 		return nil, nil

@@ -313,12 +313,13 @@ func (t *terminal) lines() []string {
 
 	joined := make([]string, 0, len(lines))
 	for index := 0; index < len(lines); index++ {
-		text := lines[index]
+		var builder strings.Builder
+		builder.WriteString(lines[index])
 		for index+1 < len(lines) && wrapsToNextRow(lines[index], wrapped[index], t.columns) {
 			index++
-			text += lines[index]
+			builder.WriteString(lines[index])
 		}
-		joined = append(joined, text)
+		joined = append(joined, builder.String())
 	}
 	for len(joined) > 0 && joined[len(joined)-1] == "" {
 		joined = joined[:len(joined)-1]

@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -71,8 +72,8 @@ func totalCoverage(profile string) (float64, error) {
 //	total:		(statements)			82.6%
 func parseTotal(output string) (float64, bool) {
 	lines := strings.Split(output, "\n")
-	for index := len(lines) - 1; index >= 0; index-- {
-		line := strings.TrimSpace(lines[index])
+	for _, line := range slices.Backward(lines) {
+		line = strings.TrimSpace(line)
 		if !strings.HasPrefix(line, "total:") {
 			continue
 		}
