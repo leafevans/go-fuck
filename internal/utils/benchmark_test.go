@@ -28,7 +28,7 @@ func BenchmarkGetCloseMatchesLarge(b *testing.B) {
 	possibilities := buildExecutableNames(3000)
 	b.ReportAllocs()
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		GetCloseMatches("gti", possibilities, 3, 0.6)
 	}
 }
@@ -39,7 +39,7 @@ func BenchmarkGetCloseMatchesLowCutoff(b *testing.B) {
 	possibilities := buildExecutableNames(3000)
 	b.ReportAllocs()
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		GetCloseMatches("gti", possibilities, 3, 0.1)
 	}
 }
@@ -47,8 +47,20 @@ func BenchmarkGetCloseMatchesLowCutoff(b *testing.B) {
 // BenchmarkSequenceRatio measures the raw similarity helper.
 func BenchmarkSequenceRatio(b *testing.B) {
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		SequenceRatio("git push --set-upstream origin main", "git branch")
+	}
+}
+
+// BenchmarkSortBySimilarity measures the ranking of tool suggestions. The
+// similarity is computed once per candidate before the sort, so the benchmark
+// also guards against a comparator that recomputes it.
+func BenchmarkSortBySimilarity(b *testing.B) {
+	candidates := buildExecutableNames(200)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for b.Loop() {
+		SortBySimilarity("gti", candidates)
 	}
 }
 

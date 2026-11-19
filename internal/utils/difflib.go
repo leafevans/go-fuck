@@ -1,7 +1,8 @@
 package utils
 
 import (
-	"sort"
+	"cmp"
+	"slices"
 	"unicode/utf8"
 
 	"github.com/leafevans/go-fuck/v2/internal/conf"
@@ -19,11 +20,21 @@ func SequenceRatio(a, b string) float64 {
 // order. It is used to rank the suggestions that a tool prints before they are
 // offered to the user.
 func SortBySimilarity(word string, candidates []string) []string {
-	sorted := make([]string, len(candidates))
-	copy(sorted, candidates)
-	sort.SliceStable(sorted, func(left, right int) bool {
-		return SequenceRatio(word, sorted[left]) > SequenceRatio(word, sorted[right])
+	type scored struct {
+		value string
+		ratio float64
+	}
+	items := make([]scored, len(candidates))
+	for index, candidate := range candidates {
+		items[index] = scored{value: candidate, ratio: SequenceRatio(word, candidate)}
+	}
+	slices.SortStableFunc(items, func(left, right scored) int {
+		return cmp.Compare(right.ratio, left.ratio)
 	})
+	sorted := make([]string, len(items))
+	for index, item := range items {
+		sorted[index] = item.value
+	}
 	return sorted
 }
 
@@ -76,7 +87,7 @@ func matchingBlockSize(a, b []rune) int {
 func findLongestMatch(a, b []rune, alo, ahi, blo, bhi int, previous, current []int) (int, int, int) {
 	bestI, bestJ, bestSize := alo, blo, 0
 	width := bhi - blo
-	for cell := 0; cell <= width; cell++ {
+	for cell := range width + 1 {
 		previous[cell] = 0
 		current[cell] = 0
 	}
@@ -197,11 +208,11 @@ func GetCloseMatches(word string, possibilities []string, n int, cutoff float64)
 
 	// Python uses heapq.nlargest over (ratio, candidate) tuples, so equal
 	// ratios are ordered by the candidate string, descending.
-	sort.SliceStable(matches, func(left, right int) bool {
-		if matches[left].ratio != matches[right].ratio {
-			return matches[left].ratio > matches[right].ratio
+	slices.SortStableFunc(matches, func(left, right scored) int {
+		if left.ratio != right.ratio {
+			return cmp.Compare(right.ratio, left.ratio)
 		}
-		return matches[left].value > matches[right].value
+		return cmp.Compare(right.value, left.value)
 	})
 
 	if len(matches) > n {
