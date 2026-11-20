@@ -57,10 +57,41 @@ func TestRuleGoUnknownCommand(t *testing.T) {
 
 	t.Run("not match", func(t *testing.T) {
 		assertNotMatch(t, rule, "go run", "go run: no go files listed")
+		assertNotMatch(t, rule, "go run ./app", "app: unknown command")
+		assertNotMatch(t, rule, "go test ./...", goUnknownCommandOutput)
+		assertNotMatch(t, rule, "go mod tidyy", "")
+		assertNotMatch(t, rule, "go mod -h", "go mod: unknown command")
 	})
 
 	t.Run("get new command", func(t *testing.T) {
 		goUnknownCommandUseHelp(t)
 		assertNewCommands(t, rule, "go bulid", goUnknownCommandOutput, []string{"go build"})
+		assertNewCommands(t, rule, "go qqqqqqq", "go qqqqqqq: unknown command", nil)
 	})
+
+	t.Run("nested commands", func(t *testing.T) {
+		original := goHelpOutput
+		t.Cleanup(func() { goHelpOutput = original })
+		goHelpOutput = func(group string) string {
+			switch group {
+			case "mod":
+				return "The commands are:\r\n\r\n\ttidy     add missing modules\r\n\tverify   verify dependencies\r\n"
+			case "work":
+				return "The commands are:\n\n\tuse      add modules\n\tsync     sync workspace\n"
+			default:
+				t.Fatalf("unexpected help group %q", group)
+				return ""
+			}
+		}
+		assertMatch(t, rule, "go mod tidyy -diff", "go mod: unknown command\r\nRun 'go help mod' for usage.")
+		assertNewCommands(t, rule, "go mod tidyy -diff", "go mod: unknown command", []string{"go mod tidy -diff"})
+		assertNewCommands(t, rule, "go work usse ./local", "go work: unknown command", []string{"go work use ./local"})
+		assertNewCommands(t, rule, "go mod tidy", "go mod: unknown command", nil)
+	})
+}
+
+func TestGoUnknownCommandTruncatedHelp(t *testing.T) {
+	if got := goUnknownCommandParseCommands("The commands are:"); len(got) != 0 {
+		t.Fatalf("unexpected commands: %v", got)
+	}
 }
