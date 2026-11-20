@@ -46,19 +46,35 @@ function Move-Item {
     Microsoft.PowerShell.Management\Move-Item -LiteralPath $LiteralPath -Destination $Destination -Force:$Force
 }
 
-function wsl.exe {
-    $content = @($input) -join "`n"
-    [System.IO.File]::WriteAllText((Join-Path $fixture "wsl.log"), ($args -join "`n") + "`n" + $content)
-    $global:LASTEXITCODE = 0
+if (-not $scenario.StartsWith("native-wsl")) {
+    function wsl.exe {
+        $content = @($input) -join "`n"
+        [System.IO.File]::WriteAllText((Join-Path $fixture "wsl.log"), ($args -join "`n") + "`n" + $content)
+        $global:LASTEXITCODE = 0
+    }
 }
 
 try {
     $parameters = @{ Version = $Version; InstallDir = $InstallDir; SkipWsl = $true }
-    if ($scenario -eq "wsl") {
+    if ($scenario.Contains("wsl")) {
         $parameters.SkipWsl = $false
         $parameters.WslDistro = "Test Distro"
     }
-    & $Updater @parameters
+    # Exercise the encoding actually used by native pipelines, not just the
+    # string seen by a function mock. Users may configure UTF-8 with a BOM.
+    $OutputEncoding = [System.Text.UTF8Encoding]::new($true)
+    $savedEncoding = $OutputEncoding
+    [Console]::InputEncoding = [System.Text.UTF8Encoding]::new($true)
+    $savedInputEncoding = [Console]::InputEncoding
+    try {
+        & $Updater @parameters
+    } finally {
+        if (-not [object]::ReferenceEquals($savedEncoding, $OutputEncoding)) { throw "OutputEncoding was not restored" }
+        if ([Console]::InputEncoding.CodePage -ne $savedInputEncoding.CodePage -or
+            [BitConverter]::ToString([Console]::InputEncoding.GetPreamble()) -ne [BitConverter]::ToString($savedInputEncoding.GetPreamble())) {
+            throw "Console.InputEncoding was not restored"
+        }
+    }
 } catch {
     [Console]::Error.WriteLine($_.Exception.Message)
     exit 1

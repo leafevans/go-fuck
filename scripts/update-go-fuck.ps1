@@ -185,10 +185,23 @@ if (-not (Test-Path -LiteralPath $script)) {
 # and avoids a shared /tmp filename that concurrent updates could overwrite.
 $content = [System.IO.File]::ReadAllText($script)
 $arguments = @("-e", "sh", "-c", "tr -d '\r' | sh -s -- $Version")
-if ($WslDistro -ne "") {
-    $content | & wsl.exe -d $WslDistro @arguments
+$previousOutputEncoding = $OutputEncoding
+$previousInputEncoding = [Console]::InputEncoding
+try {
+    # A UTF-8 BOM becomes part of the shebang when sh reads from stdin.
+    # Windows PowerShell 5.1 also takes the native stdin writer's encoding
+    # from Console.InputEncoding, independently of OutputEncoding.
+    $OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+    [Console]::InputEncoding = $OutputEncoding
+    if ($WslDistro -ne "") {
+        $content | & wsl.exe -d $WslDistro @arguments
+    }
+    else {
+        $content | & wsl.exe @arguments
+    }
+    $wslExitCode = $LASTEXITCODE
+} finally {
+    $OutputEncoding = $previousOutputEncoding
+    [Console]::InputEncoding = $previousInputEncoding
 }
-else {
-    $content | & wsl.exe @arguments
-}
-if ($LASTEXITCODE -ne 0) { throw "the WSL update failed" }
+if ($wslExitCode -ne 0) { throw "the WSL update failed" }

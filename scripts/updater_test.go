@@ -9,6 +9,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -19,6 +20,35 @@ import (
 )
 
 const fixtureVersion = "9.8.7"
+
+func TestMain(m *testing.M) {
+	// A copy of this test executable acts as a native wsl.exe. Unlike a
+	// PowerShell function mock, it observes the actual bytes on the pipe.
+	if os.Getenv("GO_FUCK_UPDATER_STDIN_HELPER") == "1" {
+		data, err := io.ReadAll(os.Stdin)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		// The WSL command removes CR bytes before passing the stream to sh.
+		normalized := bytes.ReplaceAll(data, []byte("\r"), nil)
+		if !bytes.HasPrefix(normalized, []byte("#!/bin/sh\n")) {
+			prefix := normalized[:min(16, len(normalized))]
+			fmt.Fprintf(os.Stderr, "WSL script must start with a shebang without a BOM; got %x\n", prefix)
+			os.Exit(1)
+		}
+		log := strings.Join(os.Args[1:], "\n") + "\n" + string(data)
+		if err := os.WriteFile(filepath.Join(os.Getenv("UPDATER_FIXTURES"), "wsl.log"), []byte(log), 0o644); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		if os.Getenv("UPDATER_SCENARIO") == "native-wsl-failure" {
+			os.Exit(23)
+		}
+		os.Exit(0)
+	}
+	os.Exit(m.Run())
+}
 
 type updaterCase struct {
 	name    string
@@ -158,7 +188,7 @@ func (f updaterFixture) check(t *testing.T, tc updaterCase, output []byte, err e
 		t.Fatal(readErr)
 	}
 	want := "new binary"
-	if wantFailure {
+	if wantFailure && tc.name != "native-wsl-failure" {
 		want = "old binary"
 	}
 	if string(data) != want {
@@ -232,7 +262,8 @@ func TestPowerShellUpdater(t *testing.T) {
 				t.Skipf("PowerShell cannot start: %v\n%s", err, out)
 			}
 			cases := append([]updaterCase{}, updaterCases...)
-			cases = append(cases, updaterCase{name: "arm64"}, updaterCase{name: "wsl"})
+			cases = append(cases, updaterCase{name: "arm64"}, updaterCase{name: "wsl"}, updaterCase{name: "native-wsl"},
+				updaterCase{name: "native-wsl-failure", wantErr: "the WSL update failed"})
 			for _, tc := range cases {
 				t.Run(tc.name, func(t *testing.T) {
 					arch := "amd64"
@@ -249,6 +280,22 @@ func TestPowerShellUpdater(t *testing.T) {
 					cmd := exec.CommandContext(ctx, program, "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
 						"-File", driver, "-Updater", updater, "-InstallDir", f.install, "-Version", version)
 					cmd.Env = f.env(tc.name)
+					if strings.HasPrefix(tc.name, "native-wsl") {
+						bin := filepath.Join(f.root, "native")
+						if err := os.Mkdir(bin, 0o755); err != nil {
+							t.Fatal(err)
+						}
+						exe, err := os.Executable()
+						if err != nil {
+							t.Fatal(err)
+						}
+						data, err := os.ReadFile(exe)
+						if err != nil {
+							t.Fatal(err)
+						}
+						writeFixture(t, filepath.Join(bin, "wsl.exe"), data, 0o755)
+						cmd.Env = append(cmd.Env, "GO_FUCK_UPDATER_STDIN_HELPER=1", "PATH="+bin+string(os.PathListSeparator)+os.Getenv("PATH"))
+					}
 					if engine == "powershell.exe" {
 						// An editor hosted by PowerShell 7 can export its Core modules
 						// into Desktop PowerShell, hiding the 5.1 utility functions.
@@ -258,7 +305,7 @@ func TestPowerShellUpdater(t *testing.T) {
 					}
 					output, err := cmd.CombinedOutput()
 					f.check(t, tc, output, err, true)
-					if tc.name == "wsl" {
+					if strings.Contains(tc.name, "wsl") {
 						data, err := os.ReadFile(filepath.Join(f.root, "wsl.log"))
 						if err != nil {
 							t.Fatal(err)
