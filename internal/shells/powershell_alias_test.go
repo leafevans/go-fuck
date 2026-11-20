@@ -22,13 +22,15 @@ func writeGoFuckStub(t *testing.T, dir string) {
 		content = "@echo off\r\n" +
 			">> \"%GOFUCK_ARGS_FILE%\" echo ARGS:%*\r\n" +
 			">> \"%GOFUCK_ARGS_FILE%\" echo HISTORY:%TF_HISTORY%\r\n" +
-			"if defined GOFUCK_STUB_OUTPUT type \"%GOFUCK_STUB_OUTPUT%\"\r\n"
+			"if defined GOFUCK_STUB_OUTPUT type \"%GOFUCK_STUB_OUTPUT%\"\r\n" +
+			"if defined GOFUCK_STUB_EXIT_CODE exit /b %GOFUCK_STUB_EXIT_CODE%\r\n"
 	} else {
 		path = filepath.Join(dir, "go-fuck")
 		content = "#!/bin/sh\n" +
 			"printf 'ARGS:%s\\n' \"$*\" >> \"$GOFUCK_ARGS_FILE\"\n" +
 			"printf 'HISTORY:%s\\n' \"${TF_HISTORY-}\" >> \"$GOFUCK_ARGS_FILE\"\n" +
-			"if [ -n \"${GOFUCK_STUB_OUTPUT-}\" ]; then cat \"$GOFUCK_STUB_OUTPUT\"; fi\n"
+			"if [ -n \"${GOFUCK_STUB_OUTPUT-}\" ]; then cat \"$GOFUCK_STUB_OUTPUT\"; fi\n" +
+			"exit \"${GOFUCK_STUB_EXIT_CODE:-0}\"\n"
 	}
 	if err := os.WriteFile(path, []byte(content), 0o755); err != nil {
 		t.Fatalf("write the go-fuck stub: %v", err)

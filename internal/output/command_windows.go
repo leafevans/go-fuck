@@ -111,8 +111,12 @@ func encodePowerShellCommand(command string) string {
 // inside the shell and printing the exception message of the error records
 // keeps the human readable message and drops the positional details that
 // PowerShell adds to formatted errors.
+// The child shell uses English diagnostics so rule matching is independent of
+// the Windows display language, just as LANG=C does for native Unix commands.
 func powerShellReRunScript(command string) string {
-	return "$ProgressPreference = 'SilentlyContinue'; try { & { " + command +
+	return "$ProgressPreference = 'SilentlyContinue'; " +
+		"[System.Threading.Thread]::CurrentThread.CurrentUICulture = [System.Globalization.CultureInfo]::GetCultureInfo('en-US'); " +
+		"try { & { " + command +
 		" } *>&1 | ForEach-Object { if ($_ -is [System.Management.Automation.ErrorRecord]) { $_.Exception.Message } else { $_ } } } catch { $_.Exception.Message }"
 }
 

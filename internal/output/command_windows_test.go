@@ -5,8 +5,10 @@ package output
 import (
 	"encoding/base64"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 	"unicode/utf16"
 
@@ -184,10 +186,36 @@ func TestShellCommandIgnoresMissingPowerShellEnv(t *testing.T) {
 }
 func TestPowerShellReRunScript(t *testing.T) {
 	got := powerShellReRunScript("cd C:\\missing")
-	want := "$ProgressPreference = 'SilentlyContinue'; try { & { cd C:\\missing }" +
+	want := "$ProgressPreference = 'SilentlyContinue'; " +
+		"[System.Threading.Thread]::CurrentThread.CurrentUICulture = [System.Globalization.CultureInfo]::GetCultureInfo('en-US'); " +
+		"try { & { cd C:\\missing }" +
 		" *>&1 | ForEach-Object { if ($_ -is [System.Management.Automation.ErrorRecord])" +
 		" { $_.Exception.Message } else { $_ } } } catch { $_.Exception.Message }"
 	if got != want {
 		t.Fatalf("powerShellReRunScript() = %q, want %q", got, want)
+	}
+}
+
+func TestPowerShellReRunScriptNormalizesDiagnosticLanguage(t *testing.T) {
+	for _, executable := range []string{"powershell.exe", "pwsh.exe"} {
+		t.Run(executable, func(t *testing.T) {
+			path := powerShellPath(executable)
+			if path == "" {
+				t.Skipf("%s is not installed", executable)
+			}
+			directory := strings.ReplaceAll(t.TempDir(), "'", "''")
+			command := "[System.Globalization.CultureInfo]::CurrentUICulture.Name; " +
+				"New-Item -ItemType Directory -Path '" + directory + "' -ErrorAction Stop"
+			script := "[System.Threading.Thread]::CurrentThread.CurrentUICulture = " +
+				"[System.Globalization.CultureInfo]::GetCultureInfo('zh-CN'); " + powerShellReRunScript(command)
+			output, err := exec.Command(path, "-NoProfile", "-NonInteractive", "-EncodedCommand", encodePowerShellCommand(script)).CombinedOutput()
+			if err != nil {
+				t.Fatalf("PowerShell rerun failed: %v\n%s", err, output)
+			}
+			if text := string(output); !strings.Contains(text, "en-US") ||
+				!strings.Contains(text, "An item with the specified name") || !strings.Contains(text, "already exists.") {
+				t.Fatalf("PowerShell diagnostics were not normalized: %q", output)
+			}
+		})
 	}
 }

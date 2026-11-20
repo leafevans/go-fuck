@@ -55,7 +55,7 @@ func posixAliasGuard(shellName, aliasName, executable string) string {
 func fishAliasGuard(aliasName, executable string) string {
 	return fmt.Sprintf("  for __gofuck_option in $argv\n"+
 		"    switch $__gofuck_option\n"+
-		"      case %[1]s --alias=* --shell-logger=*\n"+
+		"      case %[1]s '--alias=*' '--shell-logger=*'\n"+
 		"        env TF_SHELL=fish TF_ALIAS=%[2]s %[3]s $argv\n"+
 		"        return\n"+
 		"    end\n"+

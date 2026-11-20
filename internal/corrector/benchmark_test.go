@@ -1,6 +1,7 @@
 package corrector
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/leafevans/go-fuck/v2/internal/conf"
@@ -8,6 +9,24 @@ import (
 	"github.com/leafevans/go-fuck/v2/internal/types"
 	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
+
+func BenchmarkOrganizeCommands(b *testing.B) {
+	for _, size := range []int{10, 100, 1000} {
+		b.Run(strconv.Itoa(size), func(b *testing.B) {
+			conf.Reset()
+			b.Cleanup(conf.Reset)
+			commands := make([]*types.CorrectedCommand, size)
+			for i := range commands {
+				commands[i] = &types.CorrectedCommand{Script: "command " + strconv.Itoa(i), Priority: size - i}
+			}
+			b.ReportAllocs()
+			b.ResetTimer()
+			for b.Loop() {
+				OrganizeCommands(commands)
+			}
+		})
+	}
+}
 
 // benchmarkCorrectorSetup resets the process wide state so that benchmarks do
 // not depend on the user configuration, on the shell or on the installed

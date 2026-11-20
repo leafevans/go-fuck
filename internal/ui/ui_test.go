@@ -142,7 +142,7 @@ func TestSelectCommandWithConfirmation(t *testing.T) {
 	if selected := SelectCommand(commands); selected == nil || selected.Script != "ls" {
 		t.Fatalf("SelectCommand() = %v, want ls", selected)
 	}
-	want := consts.UserCommandMark + "\x1b[1K\r› ls  [enter · ↑↓ · ctrl+c]" + newline
+	want := consts.UserCommandMark + "\r\x1b[2K› ls  [enter · ↑↓ · ctrl+c]" + newline
 	if got := logOutput(); got != want {
 		t.Fatalf("unexpected output: %q, want %q", got, want)
 	}
@@ -156,7 +156,7 @@ func TestSelectCommandWithConfirmationAbort(t *testing.T) {
 	if selected := SelectCommand(commands); selected != nil {
 		t.Fatalf("SelectCommand() = %v, want nil", selected)
 	}
-	want := consts.UserCommandMark + "\x1b[1K\r› ls  [enter · ↑↓ · ctrl+c]" + newline + "× Aborted" + newline
+	want := consts.UserCommandMark + "\r\x1b[2K› ls  [enter · ↑↓ · ctrl+c]" + newline + "× Aborted" + newline
 	if got := logOutput(); got != want {
 		t.Fatalf("unexpected output: %q, want %q", got, want)
 	}
@@ -171,7 +171,7 @@ func TestSelectCommandWithSideEffect(t *testing.T) {
 	if selected := SelectCommand(commands); selected == nil {
 		t.Fatal("SelectCommand() returned nil")
 	}
-	want := consts.UserCommandMark + "\x1b[1K\r› ls  (+side effect)  [enter · ↑↓ · ctrl+c]" + newline
+	want := consts.UserCommandMark + "\r\x1b[2K› ls  (+side effect)  [enter · ↑↓ · ctrl+c]" + newline
 	if got := logOutput(); got != want {
 		t.Fatalf("unexpected output: %q, want %q", got, want)
 	}
@@ -189,8 +189,8 @@ func TestSelectCommandSelectSecond(t *testing.T) {
 	if selected == nil || selected.Script != "cd" {
 		t.Fatalf("SelectCommand() = %v, want cd", selected)
 	}
-	want := consts.UserCommandMark + "\x1b[1K\r› ls  [enter · ↑↓ · ctrl+c]" +
-		consts.UserCommandMark + "\x1b[1K\r› cd  [enter · ↑↓ · ctrl+c]" + newline
+	want := consts.UserCommandMark + "\r\x1b[2K› ls  [enter · ↑↓ · ctrl+c]" +
+		consts.UserCommandMark + "\r\x1b[2K› cd  [enter · ↑↓ · ctrl+c]" + newline
 	if got := logOutput(); got != want {
 		t.Fatalf("unexpected output: %q, want %q", got, want)
 	}
@@ -263,7 +263,7 @@ func TestSelectCommandFallsBackWhenFzfIsUnavailable(t *testing.T) {
 	if selected == nil || selected.Script != "ls" {
 		t.Fatalf("SelectCommand() = %v, want ls", selected)
 	}
-	want := consts.UserCommandMark + "\x1b[1K\r› ls  [enter · ↑↓ · ctrl+c]" + newline
+	want := consts.UserCommandMark + "\r\x1b[2K› ls  [enter · ↑↓ · ctrl+c]" + newline
 	if got := logOutput(); got != want {
 		t.Fatalf("unexpected log output: %q, want %q", got, want)
 	}

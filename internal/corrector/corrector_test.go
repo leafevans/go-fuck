@@ -84,6 +84,37 @@ func TestOrganizeCommandsEmpty(t *testing.T) {
 	}
 }
 
+func organizeEffectOne(*types.Command, string) error { return nil }
+func organizeEffectTwo(*types.Command, string) error { return nil }
+
+func TestOrganizeCommandsPreservesSideEffectsAndInput(t *testing.T) {
+	resetCorrectorState(t)
+	commands := []*types.CorrectedCommand{
+		{Script: "git status", Priority: 100},
+		{Script: "git status", SideEffect: organizeEffectOne, Priority: 20},
+		{Script: "git status", SideEffect: organizeEffectTwo, Priority: 10},
+		{Script: "git status", SideEffect: organizeEffectOne, Priority: 5},
+		{Script: "git status", Priority: 1},
+		{Script: "git diff", Priority: 5},
+	}
+	original := append([]*types.CorrectedCommand(nil), commands...)
+	got := OrganizeCommands(commands)
+	want := []*types.CorrectedCommand{commands[0], commands[3], commands[5], commands[2]}
+	if len(got) != len(want) {
+		t.Fatalf("OrganizeCommands() = %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("suggestion %d = %v, want %v", i, got[i], want[i])
+		}
+	}
+	for i := range commands {
+		if commands[i] != original[i] {
+			t.Fatalf("input order changed at %d", i)
+		}
+	}
+}
+
 // TestGetCorrectedCommandsRecordsRuleName checks that every suggestion carries
 // the name of the rule that produced it, which the machine readable output
 // reports.

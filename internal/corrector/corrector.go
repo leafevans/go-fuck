@@ -68,22 +68,31 @@ func OrganizeCommands(commands []*types.CorrectedCommand) []*types.CorrectedComm
 		return cmp.Compare(left.Priority, right.Priority)
 	})
 
-	seen := []*types.CorrectedCommand{first}
-	organized := []*types.CorrectedCommand{first}
+	seen := make(map[string]*types.CorrectedCommand, len(commands))
+	seen[first.Script] = first
+	organized := make([]*types.CorrectedCommand, 1, len(commands))
+	organized[0] = first
 	for _, command := range rest {
-		duplicate := slices.ContainsFunc(seen, command.Equal)
-		if duplicate {
-			continue
+		if previous, exists := seen[command.Script]; exists {
+			// Most scripts occur once. Only inspect the full list when the
+			// same script has different side effects, preserving Equal's
+			// semantics without a quadratic scan for distinct scripts.
+			if command.Equal(previous) || slices.ContainsFunc(organized, command.Equal) {
+				continue
+			}
+		} else {
+			seen[command.Script] = command
 		}
-		seen = append(seen, command)
 		organized = append(organized, command)
 	}
 
-	descriptions := make([]string, len(organized))
-	for i, command := range organized {
-		descriptions[i] = command.String()
+	if conf.Current().Debug {
+		descriptions := make([]string, len(organized))
+		for i, command := range organized {
+			descriptions[i] = command.String()
+		}
+		logs.Debug("Corrected commands: %s", strings.Join(descriptions, ", "))
 	}
-	logs.Debug("Corrected commands: %s", strings.Join(descriptions, ", "))
 	return organized
 }
 

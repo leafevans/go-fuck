@@ -86,7 +86,7 @@ func setup(args *argumentparser.Args) int {
 		return 1
 	}
 
-	if strings.Contains(string(existing), configuration.Content) {
+	if hasConfigurationLine(existing, configuration.Content) {
 		printConfigured(shell.FriendlyName(), path, true)
 		fmt.Fprintf(os.Stderr, "%s %s\n", logs.Muted("Reload it with:"), logs.Strong(configuration.Reload))
 		return 0
@@ -146,7 +146,7 @@ func setupPowerShell(shell shells.Shell, configuration *shells.Configuration) in
 			}
 			existing = nil
 		}
-		if strings.Contains(string(existing), configuration.Content) {
+		if hasConfigurationLine(existing, configuration.Content) {
 			printConfigured(shell.FriendlyName(), path, true)
 			alreadyConfigured++
 			continue
@@ -231,14 +231,44 @@ func setupConfigPath(path string) (string, error) {
 	return expanded, nil
 }
 
-// replaceInstantModeLine replaces a legacy instant mode initialization line with
-// content and reports whether the file was changed.
+// hasConfigurationLine reports whether content appears as an initialization
+// line, optionally indented or followed by a comment. Mentions in comments or
+// other commands do not configure a shell.
+func hasConfigurationLine(existing []byte, content string) bool {
+	for line := range strings.SplitSeq(string(existing), "\n") {
+		if _, ok := configurationLineSuffix(line, content); ok {
+			return true
+		}
+	}
+	return false
+}
+
+// configurationLineSuffix matches a complete initialization command and keeps
+// any trailing whitespace or comment for callers that replace the command.
+func configurationLineSuffix(line, content string) (string, bool) {
+	line = strings.TrimLeft(line, " \t\uFEFF")
+	suffix, ok := strings.CutPrefix(line, content)
+	if !ok {
+		return "", false
+	}
+	rest := strings.TrimSpace(suffix)
+	return suffix, rest == "" || strings.HasPrefix(rest, "#")
+}
+
+// replaceInstantModeLine upgrades the legacy unquoted eval initialization.
+// Unrelated commands, comments, indentation and line endings are preserved.
 func replaceInstantModeLine(path string, existing []byte, content string) (bool, error) {
+	quoted, ok := strings.CutPrefix(content, `eval "`)
+	if !ok || !strings.HasSuffix(quoted, `"`) {
+		return false, nil
+	}
+	legacy := "eval " + strings.TrimSuffix(quoted, `"`)
 	lines := strings.Split(string(existing), "\n")
 	changed := false
 	for index, line := range lines {
-		if line != content && strings.Contains(line, "--enable-experimental-instant-mode") {
-			lines[index] = content
+		if suffix, matches := configurationLineSuffix(line, legacy); matches {
+			indent := line[:len(line)-len(strings.TrimLeft(line, " \t\uFEFF"))]
+			lines[index] = indent + content + suffix
 			changed = true
 		}
 	}

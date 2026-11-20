@@ -81,7 +81,7 @@ func sideEffectSuffix(hasSideEffect bool) string {
 // prompt.
 func ShowCorrectedCommand(script string, hasSideEffect bool) {
 	fmt.Fprintf(out, "%s%s %s%s\n",
-		consts.UserCommandMark, accent(selectionSymbol), strong(script),
+		consts.UserCommandMark, accent(selectionSymbol), strong(CommandText(script)),
 		sideEffectSuffix(hasSideEffect))
 }
 
@@ -91,7 +91,7 @@ func ShowCorrectedCommand(script string, hasSideEffect bool) {
 // as the version banner, so all interactive output shares one visual language.
 func ConfirmText(script string, hasSideEffect bool) {
 	fmt.Fprintf(out, "%s%s%s %s%s  %s%s%s%s%s%s%s",
-		consts.UserCommandMark, "\x1b[1K\r", accent(selectionSymbol), strong(script),
+		consts.UserCommandMark, "\r\x1b[2K", accent(selectionSymbol), strong(CommandText(script)),
 		sideEffectSuffix(hasSideEffect),
 		muted("["), success("enter"), muted(" "+separatorSymbol+" "),
 		muted("↑↓"), muted(" "+separatorSymbol+" "), failure("ctrl+c"), muted("]"))

@@ -125,7 +125,8 @@ func paint(profile colorProfile, sequence, text string) string {
 
 // colored wraps text in one of the theme colors.
 func colored(color rgb, fallback, text string) string {
-	return paint(detectColorProfile(), detectColorProfile().sequence(color, fallback), text)
+	profile := detectColorProfile()
+	return paint(profile, profile.sequence(color, fallback), text)
 }
 
 // accent styles the primary accent text.

@@ -15,8 +15,8 @@ import (
 // fishAliasTemplate defines the alias function for fish.
 const fishAliasTemplate = `function %[1]s -d "Correct your previous console command"
 %[5]s  set -l fucked_up_command $history[1]
-  env TF_SHELL=fish TF_ALIAS=%[1]s %[2]s $fucked_up_command %[3]s $argv | read -l unfucked_command
-  if [ "$unfucked_command" != "" ]
+  env TF_SHELL=fish TF_ALIAS=%[1]s TF_ALIAS_VERSION=3 %[2]s $fucked_up_command %[3]s $argv | read --null -l unfucked_command
+  if test $pipestatus[1] -eq 0; and test -n "$unfucked_command"
     eval $unfucked_command
 %[4]s
   end

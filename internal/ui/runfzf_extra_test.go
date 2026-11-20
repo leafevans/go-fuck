@@ -3,9 +3,12 @@ package ui
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
+	"strings"
 	"testing"
 
 	"github.com/leafevans/go-fuck/v2/internal/conf"
@@ -32,6 +35,16 @@ func runFzfHelper(mode string) int {
 	switch mode {
 	case "select":
 		fmt.Print("git status" + newline)
+		return 0
+	case "plain":
+		if !slices.Contains(os.Args, "--no-color") {
+			return 3
+		}
+		input, err := io.ReadAll(os.Stdin)
+		if err != nil || string(input) != "ls\necho 'one\\ntwo'\n" {
+			return 3
+		}
+		fmt.Print("echo 'one\\ntwo'\r\n")
 		return 0
 	case "abort":
 		return 1
@@ -90,6 +103,21 @@ func TestRunFzfSelection(t *testing.T) {
 	}
 	if selected != "git status" {
 		t.Fatalf("runFzf() = %q, want %q", selected, "git status")
+	}
+}
+
+func TestRunFzfPlainMultilineSelection(t *testing.T) {
+	resetUIState(t)
+	installFakeFzf(t)
+	t.Setenv(fzfHelperEnv, "plain")
+	commands := []*types.CorrectedCommand{{Script: "ls"}, {Script: "echo 'one\ntwo'"}}
+	labels, byLabel := fzfCandidates(commands)
+	selected, err := runFzf(labels)
+	if err != nil {
+		t.Fatalf("runFzf() error = %v", err)
+	}
+	if strings.ContainsAny(selected, "\r\n") || byLabel[selected] != commands[1] {
+		t.Fatalf("runFzf() returned an invalid label: %q", selected)
 	}
 }
 

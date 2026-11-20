@@ -25,6 +25,7 @@ import (
 // are available.
 const powershellAliasTemplate = `function %[1]s {
 %[3]s    $env:TF_SHELL = "powershell";
+    $env:TF_ALIAS = "%[1]s";
     $env:TF_ALIAS_VERSION = "3";
     try { $env:GOFUCK_SHELL = (Get-Process -Id $PID).Path } catch { };
     $history = (Get-History -Count 1).CommandLine;
@@ -34,9 +35,8 @@ const powershellAliasTemplate = `function %[1]s {
         else { Remove-Item Env:TF_HISTORY -ErrorAction SilentlyContinue; }
         if (-not [string]::IsNullOrWhiteSpace($history) -or $args.Count -gt 0) {
             $fuck = ($(%[2]s @args) -join [Environment]::NewLine);
-            if (-not [string]::IsNullOrWhiteSpace($fuck)) {
-                if ($fuck.StartsWith("echo")) { $fuck = $fuck.Substring(5); }
-                else { iex "$fuck"; }
+            if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($fuck)) {
+                iex "$fuck";
             }
         }
     } finally {

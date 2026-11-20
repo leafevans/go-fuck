@@ -94,7 +94,7 @@ func TestShowCorrectedCommand(t *testing.T) {
 func TestConfirmText(t *testing.T) {
 	buffer := resetLogsState(t)
 	ConfirmText("ls", false)
-	want := consts.UserCommandMark + "\x1b[1K\r› ls  [enter · ↑↓ · ctrl+c]"
+	want := consts.UserCommandMark + "\r\x1b[2K› ls  [enter · ↑↓ · ctrl+c]"
 	if got := buffer.String(); got != want {
 		t.Fatalf("ConfirmText() wrote %q, want %q", got, want)
 	}

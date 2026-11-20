@@ -203,6 +203,9 @@ configured for every installed flavor: go-fuck asks `powershell.exe` and `pwsh` 
 `$PROFILE` (the Documents folder can be redirected, for example to OneDrive) and creates the profile
 file when it is missing.
 
+Commented initialization lines do not count as an active setup. Upgrading an old instant-mode
+initialization preserves unrelated commands, comments, indentation and line endings.
+
 ### Manual setup
 
 Add the line for your shell to its configuration file, then start a new shell or reload the file:
@@ -238,6 +241,9 @@ The name has to be a valid shell function name. Without an argument, the alias i
 `TF_ALIAS` environment variable when it is set, and `fuck` otherwise.
 
 ### How the alias works
+
+The Fish and PowerShell aliases preserve multi-line corrections and only evaluate a correction
+when go-fuck exits successfully. Information options such as `--json` are printed directly.
 
 The generated function exports a few variables, calls go-fuck and evaluates the corrected command that
 go-fuck prints on standard output:
@@ -376,6 +382,8 @@ On Windows the command is re-run with the PowerShell flavor that started go-fuck
 native commands and syntax produce their real error messages instead of an unrelated cmd.exe
 "not recognized" error. Processes that were not started from PowerShell, and processes whose alias
 does not report the shell through `GOFUCK_SHELL`, keep the cmd.exe behavior.
+The capture subprocess uses English PowerShell diagnostics so matching also works on localized
+Windows installations. This does not change the language of your interactive PowerShell session.
 
 ## Instant mode
 
@@ -639,9 +647,14 @@ Enable it once in `settings.json`:
 ```
 
 or per shell with `export GOFUCK_FZF=true`. When fzf runs, the suggestions are listed with a
-`fuck>` prompt (`Enter` selects, `Esc` aborts); go-fuck falls back to its built-in prompt
+`›` prompt (`Enter` selects, `Esc` aborts); go-fuck falls back to its built-in prompt
 automatically when fzf is not installed or fails. `-y`/`require_confirmation: false` still skips
 the selection entirely.
+
+Both selectors display multi-line commands and control characters as visible escapes
+on one line, while preserving the original command for execution. Suggestions with
+side effects show `(+side effect)`; commands with different side effects remain
+separate choices. The fzf prompt also respects `no_colors` and `NO_COLOR`.
 
 ## Rules
 
