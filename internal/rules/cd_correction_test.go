@@ -1,10 +1,52 @@
 package rules
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 )
+
+func TestCdCorrectionHandlesDirectoryBoundaries(t *testing.T) {
+	resetTestState(t)
+	root := t.TempDir()
+	if err := os.Mkdir(filepath.Join(root, "project"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "file.txt"), nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if got := cdCorrectionSubDirs(root); !slices.Equal(got, []string{"project"}) {
+		t.Fatalf("child directories = %q, want only project", got)
+	}
+	if got := cdCorrectionSubDirs(filepath.Join(root, "missing")); len(got) != 0 {
+		t.Fatalf("missing directory children = %q", got)
+	}
+	original := cdCorrectionGetwd
+	t.Cleanup(func() { cdCorrectionGetwd = original })
+	cdCorrectionGetwd = func() (string, error) { return root, nil }
+	for _, tc := range []struct{ script, want string }{
+		{"cd .", "cd \"" + root + "\""},
+		{"cd ..", "cd \"" + filepath.Dir(root) + "\""},
+		{"cd ./prject", "cd \"" + filepath.Join(root, "project") + "\""},
+	} {
+		got, err := cdCorrectionNewCommand(testCommand(tc.script, ""))
+		if err != nil || !slices.Equal(got, []string{tc.want}) {
+			t.Errorf("correction for %q = %q, %v, want %q", tc.script, got, err, tc.want)
+		}
+	}
+	for _, script := range []string{"cd", "cd " + string(filepath.Separator)} {
+		if got, err := cdCorrectionNewCommand(testCommand(script, "")); err != nil || len(got) != 0 {
+			t.Errorf("correction for %q = %q, %v, want no correction", script, got, err)
+		}
+	}
+	wantErr := errors.New("working directory was removed")
+	cdCorrectionGetwd = func() (string, error) { return "", wantErr }
+	if got, err := cdCorrectionNewCommand(testCommand("cd project", "")); !errors.Is(err, wantErr) || len(got) != 0 {
+		t.Fatalf("correction = %q, %v, want the original directory error", got, err)
+	}
+}
 
 func TestRuleCdCorrection(t *testing.T) {
 	resetTestState(t)

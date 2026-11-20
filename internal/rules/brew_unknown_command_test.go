@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -10,6 +11,20 @@ import (
 
 const brewUnknownCommandUnknown = `Error: Unknown command: inst`
 const brewUnknownCommandUnknownTwo = `Error: Unknown command: instaa`
+
+func TestBrewCommandListReportsMissingDirectories(t *testing.T) {
+	root := t.TempDir()
+	if _, err := brewUnknownCommandList(root); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("missing command directory error = %v", err)
+	}
+	commands := filepath.Join(root, "Homebrew", "Library", "Homebrew", "cmd")
+	if err := os.MkdirAll(commands, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := brewUnknownCommandList(root); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("missing tap directory error = %v", err)
+	}
+}
 
 func TestRuleBrewUnknownCommand(t *testing.T) {
 	resetTestState(t)

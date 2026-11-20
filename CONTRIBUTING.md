@@ -142,6 +142,9 @@ the test helpers, is [PORTING.md](PORTING.md). The short version:
 - Use `go test -race ./...` when a C compiler is available.
 - Tests must pass on Linux, macOS and Windows; CI runs all three. Do not depend on the host shell,
   installed programs, network access or the user's configuration.
+- Keep the total coverage at 95% or higher, as checked by the Linux CI job. Exercise real error
+  paths and protect fixes with regression tests. Workspace readers are separate from their memoized
+  wrappers so missing and malformed files can be tested without changing global caches.
 - Use `t.Setenv`, `t.TempDir` and the injectable function variables documented in PORTING.md
   instead of real state. Never read or write the real go-fuck settings or shell history.
 - If a rule spawns processes, declare the command as a package level function variable so tests can
