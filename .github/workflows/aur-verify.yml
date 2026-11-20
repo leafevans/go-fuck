@@ -3,8 +3,16 @@ name: AUR verification
 on:
   workflow_dispatch:
     inputs:
+      source:
+        description: Recipe to verify
+        required: true
+        default: published
+        type: choice
+        options:
+          - published
+          - repository
       version:
-        description: Published AUR version including pkgrel (for example 2.31.21-1)
+        description: AUR package version including pkgrel (for example 2.31.22-1)
         required: true
         type: string
 
@@ -19,22 +27,34 @@ jobs:
       run:
         shell: bash
     env:
+      RECIPE_SOURCE: ${{ inputs.source }}
       EXPECTED_VERSION: ${{ inputs.version }}
     steps:
+      - name: Checkout the pending repository recipe
+        if: inputs.source == 'repository'
+        uses: actions/checkout@v7
       - name: Install build dependencies
         run: pacman -Syu --noconfirm --needed git go
-      - name: Build and install the published AUR package
+      - name: Build and install the AUR package
         run: |
           fail() { printf 'AUR verification: %s\n' "$1" >&2; exit 1; }
           [[ $EXPECTED_VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+$ ]] ||
             fail "Invalid expected version: $EXPECTED_VERSION"
           useradd --create-home builder
           recipe=$(mktemp -d)
-          chown builder "$recipe"
-          runuser -u builder -- git clone --depth 1 https://aur.archlinux.org/go-fuck.git "$recipe"
+          if [[ $RECIPE_SOURCE == repository ]]; then
+            printf 'Using the pending recipe from %s\n' "$GITHUB_WORKSPACE"
+            cp -a "$GITHUB_WORKSPACE/packaging/aur/." "$recipe/"
+            chown -R builder "$recipe"
+          else
+            chown builder "$recipe"
+            runuser -u builder -- git clone --depth 1 https://aur.archlinux.org/go-fuck.git "$recipe"
+          fi
           cd "$recipe"
-          git -c safe.directory="$recipe" rev-parse HEAD
-          printf 'Checking published .SRCINFO against PKGBUILD\n'
+          if [[ $RECIPE_SOURCE == published ]]; then
+            runuser -u builder -- git rev-parse HEAD
+          fi
+          printf 'Checking .SRCINFO against PKGBUILD\n'
           runuser -u builder -- makepkg --printsrcinfo | diff -u .SRCINFO - ||
             fail 'Could not generate matching .SRCINFO'
 

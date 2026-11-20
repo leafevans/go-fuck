@@ -67,11 +67,12 @@ repositories. On other architectures (for example Arch Linux ARM) use
 
 The `packaging` tests check that `pkgver`, `pkgrel` and the archive checksum
 in `PKGBUILD` and `.SRCINFO` agree with each other and with the Homebrew
-formula version. After publishing, run the **AUR verification** workflow
-manually and pass the full package version (for example `2.31.22-1`). It uses
-an `archlinux:base-devel` container to compare the published `.SRCINFO`, build
-the package with `makepkg`, install it, and verify both the package and CLI
-versions.
+formula version. The **AUR verification** workflow can validate either the
+published AUR recipe or the pending recipe in this repository. Pass the full
+package version (for example `2.31.22-1`) and choose `repository` before
+publishing or `published` afterward. It uses an `archlinux:base-devel`
+container to compare `.SRCINFO`, build the package with `makepkg`, install it,
+and verify both the package and CLI versions.
 
 To update the package for a release:
 
