@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"unicode"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
 	"github.com/leafevans/go-fuck/v2/internal/utils"
@@ -39,7 +40,7 @@ func powerShellMissingFileMatch(command *types.Command) bool {
 		return false
 	}
 	path, ok := powerShellMissingFile(command.Output)
-	if !ok || path == "" || strings.ContainsAny(path, "*?") {
+	if !ok || path == "" || strings.ContainsAny(path, "*?[]\r\n") {
 		return false
 	}
 	missing := filepath.Base(path)
@@ -53,7 +54,7 @@ func powerShellMissingFileMatch(command *types.Command) bool {
 // existing entry in the same directory.
 func powerShellMissingFileNewCommand(command *types.Command) ([]string, error) {
 	path, ok := powerShellMissingFile(command.Output)
-	if !ok {
+	if !ok || path == "" || strings.ContainsAny(path, "*?[]\r\n") {
 		return nil, nil
 	}
 	missing := filepath.Base(path)
@@ -68,32 +69,18 @@ func powerShellMissingFileNewCommand(command *types.Command) ([]string, error) {
 	if err != nil {
 		return nil, nil
 	}
-	closest := ""
+	lowered := make(map[string]string, len(names))
+	loweredNames := make([]string, 0, len(names))
 	for _, name := range names {
-		if strings.EqualFold(name, missing) {
-			closest = name
-			break
-		}
+		lower := strings.ToLower(name)
+		lowered[lower] = name
+		loweredNames = append(loweredNames, lower)
 	}
-	if closest == "" {
-		// PowerShell paths are case insensitive: compare lowercase names and
-		// map the match back to the name as it exists on disk.
-		lowered := make(map[string]string, len(names))
-		loweredNames := make([]string, 0, len(names))
-		for _, name := range names {
-			lower := strings.ToLower(name)
-			if _, ok := lowered[lower]; ok {
-				continue
-			}
-			lowered[lower] = name
-			loweredNames = append(loweredNames, lower)
-		}
-		candidate := utils.GetClosest(strings.ToLower(missing), loweredNames, 0.6, false)
-		if candidate != "" {
-			closest = lowered[candidate]
-		}
-	}
-	if closest == "" || closest == missing {
+	closest := lowered[utils.GetUniqueClosest(strings.ToLower(missing), loweredNames, 0.6)]
+	// A basename inserted verbatim must not introduce PowerShell syntax.
+	if closest == "" || closest == missing || strings.ContainsRune("-@", rune(closest[0])) ||
+		strings.ContainsAny(closest, "*?[]'\"`$;|&<>(){}#,\\/:") ||
+		strings.IndexFunc(closest, unicode.IsSpace) >= 0 {
 		return nil, nil
 	}
 	return []string{command.Script[:index] + closest + command.Script[index+len(missing):]}, nil
@@ -105,7 +92,7 @@ func powerShellMissingFileNewCommand(command *types.Command) ([]string, error) {
 func powerShellArgumentIndex(script, missing string) int {
 	pattern := newRegexp(`(^|[\s"'\\/(])` + regexp.QuoteMeta(missing) + `($|[\s"';|)])`)
 	match := pattern.FindStringSubmatchIndex(script)
-	if match == nil {
+	if match == nil || pattern.MatchString(script[match[4]:]) {
 		return -1
 	}
 	return match[3]

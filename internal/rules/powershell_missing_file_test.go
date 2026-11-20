@@ -59,6 +59,25 @@ func TestRulePowerShellMissingFile(t *testing.T) {
 		[]string{"type config.txt"})
 }
 
+func TestRulePowerShellMissingFileDeclinesUnsafeSubstitutions(t *testing.T) {
+	resetTestState(t)
+	rule := Get("powershell_missing_file")
+	for _, candidates := range [][]string{
+		{"config.ta", "config.tb"},
+		{"Config.txt", "config.txt"},
+		{"config tx"},
+		{"config'tx"},
+		{"config[tx]"},
+	} {
+		stubPowerShellMissingFile(t, candidates)
+		assertNewCommands(t, rule, "Rename-Item config.tx new.txt", powerShellRenameMissingOutput, nil)
+	}
+	stubPowerShellMissingFile(t, []string{"config.txt"})
+	assertNotMatch(t, rule, "Rename-Item config.tx config.tx", powerShellRenameMissingOutput)
+	assertNewCommands(t, rule, "Rename-Item config.tx config.tx", powerShellRenameMissingOutput, nil)
+	assertNotMatch(t, rule, "Get-Content config[1].tx", "Cannot find path 'config[1].tx' because it does not exist.")
+}
+
 func TestRulePowerShellMissingFileChinese(t *testing.T) {
 	resetTestState(t)
 	stubPowerShellMissingFile(t, []string{"config.txt"})

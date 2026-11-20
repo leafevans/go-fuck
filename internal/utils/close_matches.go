@@ -69,6 +69,18 @@ func compareCloseMatches(left, right closeMatch) int {
 //
 // A non-positive n falls back to the num_close_matches setting.
 func GetCloseMatches(word string, possibilities []string, n int, cutoff float64) []string {
+	matches := rankedCloseMatches(word, possibilities, n, cutoff)
+	if matches == nil {
+		return nil
+	}
+	result := make([]string, len(matches))
+	for i, match := range matches {
+		result[i] = match.value
+	}
+	return result
+}
+
+func rankedCloseMatches(word string, possibilities []string, n int, cutoff float64) []closeMatch {
 	if n <= 0 {
 		n = conf.Current().NumCloseMatches
 	}
@@ -77,7 +89,7 @@ func GetCloseMatches(word string, possibilities []string, n int, cutoff float64)
 	}
 	n = min(n, len(possibilities))
 	if n == 0 {
-		return []string{}
+		return []closeMatch{}
 	}
 
 	wordRunes := []rune(word)
@@ -129,11 +141,16 @@ func GetCloseMatches(word string, possibilities []string, n int, cutoff float64)
 	if len(matches) > n {
 		matches = matches[:n]
 	}
-	result := make([]string, len(matches))
-	for i, match := range matches {
-		result[i] = match.value
+	return matches
+}
+
+// GetUniqueClosest returns the best match only when no other candidate ties it.
+func GetUniqueClosest(word string, possibilities []string, cutoff float64) string {
+	matches := rankedCloseMatches(word, possibilities, 2, cutoff)
+	if len(matches) == 0 || (len(matches) == 2 && matches[0].ratio == matches[1].ratio) {
+		return ""
 	}
-	return result
+	return matches[0].value
 }
 
 // GetClosest returns the closest match, or the first possibility when the
