@@ -16,8 +16,11 @@ var makefileNames = []string{"GNUmakefile", "makefile", "Makefile"}
 //
 // Only the first Makefile that exists is parsed; included files and variable
 // expanded target names are not resolved. The result is memoized because the
-// file do not change while go-fuck runs.
-var MakeTargets = utils.Memoize(func() []string {
+// file does not change while go-fuck runs.
+var MakeTargets = utils.Memoize(readMakeTargets)
+
+// readMakeTargets reads the current workspace without consulting the cache.
+func readMakeTargets() []string {
 	for _, name := range makefileNames {
 		content, err := os.ReadFile(name)
 		if err != nil {
@@ -26,7 +29,7 @@ var MakeTargets = utils.Memoize(func() []string {
 		return parseMakeTargets(string(content))
 	}
 	return nil
-})
+}
 
 // parseMakeTargets returns the literal targets of a Makefile content.
 func parseMakeTargets(content string) []string {

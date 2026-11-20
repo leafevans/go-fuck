@@ -20,7 +20,10 @@ var npmScriptLine = regexp.MustCompile("^  [^ ]+")
 // It is memoized because rules ask for the scripts while matching and while
 // building the corrected command. A missing or unparsable package.json yields
 // no scripts.
-var PackageScripts = utils.Memoize(func() []string {
+var PackageScripts = utils.Memoize(readPackageScripts)
+
+// readPackageScripts reads the current workspace without consulting the cache.
+func readPackageScripts() []string {
 	data, err := os.ReadFile("package.json")
 	if err != nil {
 		return nil
@@ -37,7 +40,7 @@ var PackageScripts = utils.Memoize(func() []string {
 	}
 	sort.Strings(scripts)
 	return scripts
-})
+}
 
 // npmRunScriptOutput runs "npm run-script", which lists the scripts of the
 // current project. It is a variable so that tests do not need npm.

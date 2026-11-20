@@ -19,7 +19,10 @@ var composeFileNames = []string{"compose.yaml", "compose.yml", "docker-compose.y
 // "services:" block is understood; YAML anchors and included files are not
 // resolved. The result is memoized because the file does not change while
 // go-fuck runs.
-var ComposeServices = utils.Memoize(func() []string {
+var ComposeServices = utils.Memoize(readComposeServices)
+
+// readComposeServices reads the current workspace without consulting the cache.
+func readComposeServices() []string {
 	for _, name := range composeFileNames {
 		content, err := os.ReadFile(name)
 		if err != nil {
@@ -28,7 +31,7 @@ var ComposeServices = utils.Memoize(func() []string {
 		return parseComposeServices(string(content))
 	}
 	return nil
-})
+}
 
 // parseComposeServices returns the service names of a Compose file content.
 func parseComposeServices(content string) []string {

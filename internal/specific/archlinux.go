@@ -3,8 +3,10 @@ package specific
 import (
 	"errors"
 	"os/exec"
+	"slices"
 	"strings"
 
+	"github.com/leafevans/go-fuck/v2/internal/shells"
 	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
@@ -15,18 +17,21 @@ type pkgFileResult struct {
 }
 
 // getPkgFile runs pkgfile once per command.
-var getPkgFile = utils.Memoize1(func(command string) pkgFileResult {
-	command = strings.TrimSpace(command)
-	command = strings.TrimPrefix(command, "sudo ")
-	fields := strings.Fields(command)
-	if len(fields) == 0 {
+var getPkgFile = utils.Memoize1(lookupPkgFile)
+
+func lookupPkgFile(command string) pkgFileResult {
+	if command == "" {
 		return pkgFileResult{}
 	}
+	output, err := exec.Command("pkgfile", "-b", "-v", command).Output()
+	return parsePkgFile(output, err)
+}
 
-	output, err := exec.Command("pkgfile", "-b", "-v", fields[0]).Output()
+// parsePkgFile keeps process errors separate from a successful empty lookup.
+func parsePkgFile(output []byte, err error) pkgFileResult {
 	if err != nil {
 		var exitError *exec.ExitError
-		if errors.As(err, &exitError) && exitError.ExitCode() == 1 && len(output) == 0 {
+		if errors.As(err, &exitError) && exitError.ExitCode() == 1 && len(output) == 0 && len(exitError.Stderr) == 0 {
 			return pkgFileResult{}
 		}
 		return pkgFileResult{err: err}
@@ -34,20 +39,28 @@ var getPkgFile = utils.Memoize1(func(command string) pkgFileResult {
 
 	packages := []string{}
 	for line := range strings.SplitSeq(strings.TrimSpace(string(output)), "\n") {
-		if line == "" {
+		fields := strings.Fields(line)
+		if len(fields) == 0 {
 			continue
 		}
-		packages = append(packages, strings.Fields(line)[0])
+		packages = append(packages, fields[0])
 	}
 	return pkgFileResult{packages: packages}
-})
+}
 
 // GetPkgFile returns the packages that provide the given command, using pkgfile.
 //
 // When the command has the form "sudo foo" the sudo prefix is ignored.
 func GetPkgFile(command string) ([]string, error) {
-	result := getPkgFile(command)
-	return result.packages, result.err
+	parts := shells.Current().SplitCommand(strings.TrimSpace(command))
+	if len(parts) > 0 && parts[0] == "sudo" {
+		parts = parts[1:]
+	}
+	if len(parts) == 0 || parts[0] == "" {
+		return nil, nil
+	}
+	result := getPkgFile(parts[0])
+	return slices.Clone(result.packages), result.err
 }
 
 // ArchlinuxEnv returns the Arch Linux package manager setup.

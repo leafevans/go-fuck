@@ -32,6 +32,7 @@ func TestParseNpmScripts(t *testing.T) {
 		{"npm 7 and newer", npm11ScriptOutput, []string{"test", "build"}},
 		{"empty", "", nil},
 		{"unrelated", "added 3 packages\n", nil},
+		{"footer ends the listing", npm6ScriptOutput + "npm notice done\n  not-a-script\n", []string{"build", "test"}},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {

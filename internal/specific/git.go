@@ -13,7 +13,11 @@ import (
 
 // gitAliasExpansion matches the alias expansion line printed by git when
 // GIT_TRACE is enabled.
-var gitAliasExpansion = regexp.MustCompile(`trace: alias expansion: ([^ ]*) => ([^\n]*)`)
+var gitAliasExpansion = regexp.MustCompile(`trace: alias expansion: ([^ \t\r\n]+) => ([^\r\n]+)`)
+
+// gitWord locates shell words while retaining their byte offsets, so expanding
+// a subcommand does not rewrite the quoting of unrelated arguments.
+var gitWord = regexp.MustCompile(`(?:[^ \t\r\n'"\\]|\\.|'[^']*'|"(?:[^"\\]|\\.)*")+`)
 
 // GitSupportMatch wraps a match function so that it only runs for git (or hub)
 // commands and with git aliases expanded.
@@ -39,6 +43,10 @@ func GitSupportNew(fn func(*types.Command) ([]string, error)) func(*types.Comman
 
 // expandGitAliases replaces a git alias with the command it expands to.
 func expandGitAliases(command *types.Command) *types.Command {
+	return expandGitAliasesForShell(command, shells.Current())
+}
+
+func expandGitAliasesForShell(command *types.Command, shell shells.Shell) *types.Command {
 	if command.Output == "" || !strings.Contains(command.Output, "trace: alias expansion:") {
 		return command
 	}
@@ -48,11 +56,57 @@ func expandGitAliases(command *types.Command) *types.Command {
 	}
 
 	alias, expansion := match[1], match[2]
-	parts := shells.Current().SplitCommand(expansion)
+	start, end, found := gitAliasSpan(command.Script, alias, shell)
+	if !found {
+		return command
+	}
+	// Git trace uses shell quoting independently of the caller's shell. Parse
+	// it strictly before quoting the expanded arguments for the current shell.
+	parts, err := shells.Split(expansion)
+	if err != nil || len(parts) == 0 || strings.HasPrefix(parts[0], "!") {
+		return command
+	}
 	quoted := make([]string, len(parts))
 	for i, part := range parts {
-		quoted[i] = shells.Current().Quote(part)
+		quoted[i] = shell.Quote(part)
 	}
-	pattern := regexp.MustCompile(`\b` + regexp.QuoteMeta(alias) + `\b`)
-	return command.WithScript(pattern.ReplaceAllString(command.Script, strings.Join(quoted, " ")))
+	return command.WithScript(command.Script[:start] + strings.Join(quoted, " ") + command.Script[end:])
+}
+
+// gitAliasSpan locates only the subcommand, skipping Git's global options and
+// their values. An alias mentioned in a path, option value or later argument
+// must never be expanded.
+func gitAliasSpan(script, alias string, shell shells.Shell) (int, int, bool) {
+	previousEnd := 0
+	skipValue := false
+	for index, span := range gitWord.FindAllStringIndex(script, -1) {
+		if strings.TrimSpace(script[previousEnd:span[0]]) != "" {
+			return 0, 0, false
+		}
+		previousEnd = span[1]
+		if index == 0 {
+			continue
+		}
+		parts := shell.SplitCommand(script[span[0]:span[1]])
+		if len(parts) != 1 {
+			return 0, 0, false
+		}
+		if skipValue {
+			skipValue = false
+			continue
+		}
+		word := parts[0]
+		if word == "--" {
+			return 0, 0, false
+		}
+		if strings.HasPrefix(word, "-") {
+			switch word {
+			case "-C", "-c", "--git-dir", "--work-tree", "--namespace", "--config-env", "--super-prefix", "--attr-source":
+				skipValue = true
+			}
+			continue
+		}
+		return span[0], span[1], word == alias
+	}
+	return 0, 0, false
 }
