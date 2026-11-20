@@ -18,6 +18,8 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/leafevans/go-fuck/v2/internal/consts"
 )
@@ -73,23 +75,20 @@ type logCall struct {
 // prompt block has to be searched instead of only the marker line.
 func (c logCall) echoIndex(script string, parts []string) int {
 	trimmed := strings.TrimSpace(script)
-	lines := append([]string{c.prompt}, c.lines...)
+	if trimmed == "" {
+		return -1
+	}
+	const maxPromptLines = 16
+	lines := append([]string{c.prompt}, c.lines[:min(len(c.lines), maxPromptLines-1)]...)
 	for index, line := range lines {
-		cleaned := sanitize(line)
-		if trimmed != "" && strings.Contains(cleaned, trimmed) {
+		cleaned := strings.TrimSpace(sanitizeEcho(line))
+		if hasCommandSuffix(cleaned, trimmed) {
 			return index
 		}
-		if len(parts) == 0 {
-			continue
-		}
-		matches := true
-		for _, part := range parts {
-			if !strings.Contains(cleaned, part) {
-				matches = false
-				break
-			}
-		}
-		if matches {
+		// Shell redraws may change argument spacing, but argument order and
+		// complete words must still match the end of the echoed invocation.
+		fields := strings.Fields(cleaned)
+		if len(parts) > 0 && len(fields) >= len(parts) && slices.Equal(fields[len(fields)-len(parts):], parts) {
 			return index
 		}
 	}
@@ -97,6 +96,37 @@ func (c logCall) echoIndex(script string, parts []string) int {
 		return index
 	}
 	return wrappedEchoIndex(lines, trimmed)
+}
+
+func hasCommandSuffix(line, command string) bool {
+	if !strings.HasSuffix(line, command) {
+		return false
+	}
+	prefix := line[:len(line)-len(command)]
+	if prefix == "" {
+		return true
+	}
+	last, _ := utf8.DecodeLastRuneInString(prefix)
+	return !unicode.IsLetter(last) && !unicode.IsDigit(last) && !strings.ContainsRune("_./\\-", last)
+}
+
+// sanitizeEcho applies backspace edits before stripping controls. Removing a
+// backspace alone would join a stale typed character to the echoed command.
+func sanitizeEcho(line string) string {
+	if strings.ContainsRune(line, '\b') {
+		runes := make([]rune, 0, len(line))
+		for _, character := range line {
+			if character == '\b' {
+				if len(runes) > 0 {
+					runes = runes[:len(runes)-1]
+				}
+			} else {
+				runes = append(runes, character)
+			}
+		}
+		line = string(runes)
+	}
+	return sanitize(line)
 }
 
 // multilineEchoIndex returns the index of the last prompt block line that
@@ -130,7 +160,7 @@ func multilineEchoIndex(lines []string, command string) int {
 		for _, part := range parts {
 			found := -1
 			for ; index < last; index++ {
-				if strings.Contains(sanitize(lines[index]), part) {
+				if strings.Contains(sanitizeEcho(lines[index]), part) {
 					found = index
 					index++
 					break
@@ -167,12 +197,12 @@ func wrappedEchoIndex(lines []string, command string) int {
 		if index >= instantMaxEchoLines {
 			break
 		}
-		joined.WriteString(sanitize(line))
+		joined.WriteString(sanitizeEcho(line))
 		ends = append(ends, joined.Len())
 	}
 	text := joined.String()
 	offset := strings.Index(text, command)
-	if offset < 0 {
+	if offset < 0 || !hasCommandSuffix(text[:offset+len(command)], command) {
 		return -1
 	}
 	end := offset + len(command)
@@ -275,7 +305,7 @@ func sanitize(line string) string {
 }
 
 // stripOSC removes operating system command sequences (window titles and
-// similar), which are terminated by BEL.
+// similar), which are terminated by BEL or ST (ESC followed by a backslash).
 func stripOSC(line string) string {
 	var b strings.Builder
 	inOSC := false
@@ -284,6 +314,9 @@ func stripOSC(line string) string {
 		if inOSC {
 			if character == 7 {
 				inOSC = false
+			} else if character == 27 && index+1 < len(line) && line[index+1] == '\\' {
+				inOSC = false
+				index++
 			}
 			continue
 		}
@@ -315,6 +348,10 @@ func (w *RingWriter) Write(p []byte) (int, error) {
 	if w.file == nil || len(p) == 0 {
 		return len(p), nil
 	}
+	// A single write may be larger than the entire ring. Consume all input
+	// while persisting only its newest bytes, as with repeated small writes.
+	dropped := max(0, len(p)-consts.LogSizeInBytes)
+	p = p[dropped:]
 	info, err := w.file.Stat()
 	if err != nil {
 		return 0, err
@@ -324,14 +361,15 @@ func (w *RingWriter) Write(p []byte) (int, error) {
 		if keep+int64(len(p)) > consts.LogSizeInBytes {
 			keep = int64(consts.LogSizeInBytes) - int64(len(p))
 		}
-		if keep < 0 {
-			keep = 0
-		}
 		if err := trimFile(w.file, keep); err != nil {
 			return 0, err
 		}
 	}
-	return w.file.Write(p)
+	n, err := w.file.Write(p)
+	if err != nil {
+		return n, err
+	}
+	return dropped + n, nil
 }
 
 // trimFile keeps the last keep bytes of file.

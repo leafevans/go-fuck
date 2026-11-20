@@ -37,6 +37,8 @@ func TestRunLoggedShell(t *testing.T) {
 	powershell := testPowerShell(t)
 
 	dir := t.TempDir()
+	// PSReadLine must not read or update the user's real shell history.
+	t.Setenv("APPDATA", dir)
 	logPath := filepath.Join(dir, "instant.log")
 	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0o600)
 	if err != nil {
@@ -44,7 +46,9 @@ func TestRunLoggedShell(t *testing.T) {
 	}
 	defer logFile.Close()
 
-	prompt := "function prompt { ([string]([char]0x200B)) * 10 + 'PS> ' }"
+	historyPath := strings.ReplaceAll(filepath.Join(dir, "history.txt"), "'", "''")
+	prompt := "Set-PSReadLineOption -HistorySaveStyle SaveNothing -HistorySavePath '" + historyPath + "'; " +
+		"function prompt { ([string]([char]0x200B)) * 10 + 'PS> ' }"
 	commandLine := quoteWindowsCommandLineArg(powershell) + " -NoLogo -NoProfile -NoExit -Command " +
 		quoteWindowsCommandLineArg(prompt)
 	input := strings.NewReader("Write-Output instant-output\r\nexit\r\n")
@@ -84,6 +88,6 @@ func TestRunLoggedShell(t *testing.T) {
 
 	output, ok := LastOutput(logPath, "Write-Output instant-output")
 	if !ok || !strings.Contains(output, "instant-output") {
-		t.Fatalf("LastOutput() = %q, %t, want instant-output, true", output, ok)
+		t.Fatalf("LastOutput() = %q, %t, want instant-output, true; rendered log: %q", output, ok, logLines(string(data)))
 	}
 }
