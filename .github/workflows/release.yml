@@ -23,11 +23,19 @@ jobs:
         with:
           go-version: stable
           cache: true
+      - name: Validate release notes
+        id: notes
+        shell: bash
+        run: |
+          [[ "$GITHUB_REF_NAME" =~ ^v[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]
+          path="release-notes/${GITHUB_REF_NAME}.md"
+          bash scripts/check-release-notes.sh "$path"
+          printf 'path=%s\\n' "$path" >> "$GITHUB_OUTPUT"
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser
           version: "~> v2"
-          args: release --clean
+          args: release --clean --release-notes ${{ steps.notes.outputs.path }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
