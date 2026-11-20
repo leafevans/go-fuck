@@ -57,6 +57,50 @@ func TestFixCommandOutputFromFile(t *testing.T) {
 	assertOutputFromSuggestion(t, stdout)
 }
 
+func TestPowerShellChineseJSONPreview(t *testing.T) {
+	const missingPath = "\u627e\u4e0d\u5230\u8def\u5f84\u201c%s\u201d\uff0c\u56e0\u4e3a\u8be5\u8def\u5f84\u4e0d\u5b58\u5728\u3002"
+	const missingRename = "\u65e0\u6cd5\u91cd\u547d\u540d\uff0c\u56e0\u4e3a\u201c%s\u201d\u5904\u7684\u9879\u4e0d\u5b58\u5728\u3002"
+	for _, tc := range []struct {
+		verb, args, path, diagnostic, rule, want string
+	}{
+		{"Set-Location", " 'missing dir'", "missing dir", missingPath, "powershell_set_location", "mkdir -Force 'missing dir'; if ($?) { Set-Location 'missing dir' }"},
+		{"Push-Location", " 'missing dir'", "missing dir", missingPath, "powershell_set_location", "mkdir -Force 'missing dir'; if ($?) { Push-Location 'missing dir' }"},
+		{"Get-Content", " -LiteralPath 'config.tx'", "config.tx", missingPath, "powershell_missing_file", "Get-Content -LiteralPath 'config.txt'"},
+		{"Rename-Item", " -LiteralPath 'config.tx' -NewName 'renamed.txt'", "config.tx", missingRename, "powershell_missing_file", "Rename-Item -LiteralPath 'config.txt' -NewName 'renamed.txt'"},
+	} {
+		t.Run(tc.verb, func(t *testing.T) {
+			resetEntrypointsState(t)
+			t.Setenv("TF_SHELL", "powershell")
+			t.Chdir(t.TempDir())
+			if err := os.WriteFile("config.txt", []byte("original"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			const log = "failed.log"
+			output := tc.verb + ": " + strings.Replace(tc.diagnostic, "%s", tc.path, 1)
+			if err := os.WriteFile(log, []byte(output+"\r\n"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			command := tc.verb + tc.args
+			code, stdout, stderr := runMain(t, "go-fuck", "--json", "--no-rerun", "--force-command", command, "--output-from", log)
+			var result outputFromResult
+			if err := json.Unmarshal([]byte(stdout), &result); err != nil || code != 0 || result.Command != command || !strings.Contains(result.Output, output) {
+				t.Fatalf("preview = (%d, %q, %q), JSON error: %v", code, stdout, stderr, err)
+			}
+			if len(result.Suggestions) == 0 || result.Suggestions[0].Command != tc.want || result.Suggestions[0].Rule != tc.rule {
+				t.Fatalf("suggestions = %+v, want %q from %s first", result.Suggestions, tc.want, tc.rule)
+			}
+			for _, path := range []string{"missing dir", "renamed.txt", "config.tx"} {
+				if _, err := os.Stat(path); !os.IsNotExist(err) {
+					t.Fatalf("preview changed %q: %v", path, err)
+				}
+			}
+			if content, err := os.ReadFile("config.txt"); err != nil || string(content) != "original" {
+				t.Fatalf("preview changed config.txt: %q, %v", content, err)
+			}
+		})
+	}
+}
+
 func TestFixCommandOutputFromStdin(t *testing.T) {
 	resetEntrypointsState(t)
 	reader, writer, err := os.Pipe()
