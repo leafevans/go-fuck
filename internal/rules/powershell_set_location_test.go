@@ -29,6 +29,15 @@ func TestRulePowerShellSetLocation(t *testing.T) {
 	assertMatch(t, rule, "pushd \x27/root/missing\x27", powerShellSetLocationOutput)
 	assertNotMatch(t, rule, "cd \x27/root/missing\x27", powerShellSetLocationOutput)
 	assertNotMatch(t, rule, "Set-Location \x27/root/missing\x27", "")
+	for _, path := range []string{`Env:\gofuck-missing`, `Registry::HKEY_CURRENT_USER\missing`, `C:relative`, `C:\missing*`} {
+		script := "Set-Location '" + path + "'"
+		output := "Cannot find path '" + path + "' because it does not exist."
+		assertNotMatch(t, rule, script, output)
+		assertNewCommands(t, rule, script, output, nil)
+	}
+	assertNewCommands(t, rule, `Set-Location -LiteralPath 'C:\missing''name'`,
+		`Cannot find path 'C:\missing'name' because it does not exist.`,
+		[]string{`mkdir -Force 'C:\missing''name' && Set-Location -LiteralPath 'C:\missing''name'`})
 
 	assertNewCommands(t, rule, "Set-Location \x27/root/missing\x27", powerShellSetLocationOutput,
 		[]string{"mkdir -Force \x27/root/missing\x27 && Set-Location \x27/root/missing\x27"})
