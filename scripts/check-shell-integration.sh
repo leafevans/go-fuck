@@ -39,6 +39,18 @@ check_alias() {
   case "$shell" in
     bash)
       env TF_SHELL=bash "$bin" --alias >"$work/alias-bash"
+      PATH="$(dirname "$bin"):$PATH" timeout 15 bash --noprofile --norc -eu -c '
+        cd "$1"
+        export HOME="$PWD" TF_SHELL=bash
+        printf "profile sentinel\n" > .bashrc
+        source alias-bash
+        type -t fuck | grep -qx function
+        printf "not a git command\n" > "captured output"
+        command="git stats -- '\''two words'\''"
+        fuck --json --output-from "captured output" --force-command "$command" > response.json
+        python3 -c '\''import json, sys; r = json.load(sys.stdin); sys.exit(not (r["command"] == sys.argv[1] and "not a git command" in r["output"]))'\'' "$command" < response.json
+        printf "profile sentinel\n" | cmp - .bashrc
+      ' _ "$work" </dev/null || fail "noninteractive bash alias lost arguments or changed the profile"
       bash --norc -c 'eval "$(<"$1")"; type fuck >/dev/null' _ "$work/alias-bash" ||
         fail "bash cannot evaluate the generated alias"
       ;;

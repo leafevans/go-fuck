@@ -41,6 +41,26 @@ try {
     $env:GOFUCK_SHELL = (Get-Process -Id $PID).Path
     $env:GOFUCK_WAIT_COMMAND = "20"
 
+    # Exercise the installed alias with a real binary, without user input.
+    $savedPath = $env:PATH
+    try {
+        $env:PATH = (Split-Path -Parent $Exe) + ';' + $savedPath
+        $savedProfile = $PROFILE
+        $PROFILE = Join-Path $root 'test profile.ps1'
+        Set-Content -LiteralPath $PROFILE -Value 'profile sentinel'
+        $profileHash = (Get-FileHash -LiteralPath $PROFILE).Hash
+        Invoke-Expression ((& $Exe --alias) -join "`n")
+        Set-Content -LiteralPath 'captured output' -Value 'not a git command' -Encoding ASCII
+        $command = "git stats -- 'two words'"
+        $reply = fuck --json --output-from 'captured output' --force-command $command | Out-String | ConvertFrom-Json
+        Assert 'alias preserves quoted command' ($reply.command -ceq $command) $reply.command
+        Assert 'alias preserves spaced input path' ($reply.output -match 'not a git command') $reply.output
+        Assert 'alias leaves profile unchanged' ((Get-FileHash -LiteralPath $PROFILE).Hash -eq $profileHash) $PROFILE
+    } finally {
+        $PROFILE = $savedProfile
+        $env:PATH = $savedPath
+    }
+
     # Removing a directory with children suggests -Recurse.
     New-Item -ItemType Directory -Path "nonempty" | Out-Null
     Set-Content -Path "nonempty\a.txt" -Value "x"
