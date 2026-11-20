@@ -61,6 +61,27 @@ try {
         $env:PATH = $savedPath
     }
 
+    # A real missing-source diagnostic must not pick between tied files.
+    Set-Content -LiteralPath 'config.ta' -Value 'candidate A'
+    Set-Content -LiteralPath 'config.tb' -Value 'candidate B'
+    $hashA = (Get-FileHash -LiteralPath 'config.ta').Hash
+    $hashB = (Get-FileHash -LiteralPath 'config.tb').Hash
+    $renameCommand = 'Rename-Item config.tx renamed.txt'
+    $diagnostic = $null
+    try {
+        Rename-Item config.tx renamed.txt -ErrorAction Stop
+    } catch {
+        $diagnostic = $_.Exception.Message
+    }
+    if (-not $diagnostic) { throw 'Expected a missing-source Rename-Item diagnostic' }
+    Set-Content -LiteralPath 'rename.log' -Value $diagnostic -Encoding UTF8
+    $reply = & $Exe --json --no-rerun --force-command $renameCommand --output-from 'rename.log' | Out-String | ConvertFrom-Json
+    Assert 'tied rename candidates produce no suggestion' ($reply.command -ceq $renameCommand -and $reply.suggestions.Count -eq 0) ($reply | ConvertTo-Json -Depth 4)
+    Assert 'preview preserves both candidates' (((Get-FileHash -LiteralPath 'config.ta').Hash -eq $hashA) -and ((Get-FileHash -LiteralPath 'config.tb').Hash -eq $hashB) -and -not (Test-Path -LiteralPath 'renamed.txt')) 'candidate contents or destination changed'
+    Remove-Item -LiteralPath 'config.tb'
+    $reply = & $Exe --json --no-rerun --force-command $renameCommand --output-from 'rename.log' | Out-String | ConvertFrom-Json
+    Assert 'the same diagnostic suggests the unique candidate' ($reply.suggestions[0].command -ceq 'Rename-Item config.ta renamed.txt') ($reply | ConvertTo-Json -Depth 4)
+
     # Removing a directory with children suggests -Recurse.
     New-Item -ItemType Directory -Path "nonempty" | Out-Null
     Set-Content -Path "nonempty\a.txt" -Value "x"
