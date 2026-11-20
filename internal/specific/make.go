@@ -37,6 +37,9 @@ func parseMakeTargets(content string) []string {
 			continue
 		}
 		if rest, ok := strings.CutPrefix(line, ".PHONY:"); ok {
+			if comment := strings.IndexByte(rest, '#'); comment >= 0 {
+				rest = rest[:comment]
+			}
 			for target := range strings.FieldsSeq(rest) {
 				if validMakeTarget(target) {
 					targets[target] = true

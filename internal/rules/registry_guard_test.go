@@ -306,6 +306,7 @@ var registryGuardHelperFiles = map[string]bool{
 	"suggestion_sanity_test.go":      true,
 	"suggestion_syntax_test.go":      true,
 	"rule_corpus_test.go":            true,
+	"lazy_regexp_test.go":            true,
 	"cobra_suggestions.go":           true,
 	"dart_suggestions.go":            true,
 	"powershell_suggestions.go":      true,

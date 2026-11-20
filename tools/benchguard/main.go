@@ -9,6 +9,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -144,60 +145,79 @@ func writeBaseline(writer io.Writer, bench map[string]metrics) error {
 }
 
 func main() {
-	benchPath := flag.String("bench", "benchmark.txt", "benchmark output of go test -bench")
-	baselinePath := flag.String("baseline", "benchmarks/baseline.txt", "baseline file to compare with")
-	update := flag.Bool("update", false, "rewrite the baseline from the benchmark output")
-	flag.Parse()
+	os.Exit(run(os.Args[1:], os.Stdout, os.Stderr))
+}
+
+// run checks or updates the allocation baseline and returns the process exit
+// code. Keeping the CLI separate from main makes its file and error handling
+// testable without terminating the test process.
+func run(args []string, stdout, stderr io.Writer) int {
+	flags := flag.NewFlagSet("benchguard", flag.ContinueOnError)
+	flags.SetOutput(stderr)
+	benchPath := flags.String("bench", "benchmark.txt", "benchmark output of go test -bench")
+	baselinePath := flags.String("baseline", "benchmarks/baseline.txt", "baseline file to compare with")
+	update := flags.Bool("update", false, "rewrite the baseline from the benchmark output")
+	if err := flags.Parse(args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return 0
+		}
+		return 2
+	}
 
 	benchFile, err := os.Open(*benchPath)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "benchguard:", err)
-		os.Exit(2)
+		fmt.Fprintln(stderr, "benchguard:", err)
+		return 2
 	}
 	bench, err := parseBenchmarks(benchFile)
 	benchFile.Close()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "benchguard:", err)
-		os.Exit(2)
+		fmt.Fprintln(stderr, "benchguard:", err)
+		return 2
 	}
 	if len(bench) == 0 {
-		fmt.Fprintln(os.Stderr, "benchguard: the benchmark output has no results")
-		os.Exit(2)
+		fmt.Fprintln(stderr, "benchguard: the benchmark output has no results")
+		return 2
 	}
 
 	if *update {
 		baseline, err := os.Create(*baselinePath)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "benchguard:", err)
-			os.Exit(2)
+			fmt.Fprintln(stderr, "benchguard:", err)
+			return 2
 		}
-		defer baseline.Close()
 		if err := writeBaseline(baseline, bench); err != nil {
-			fmt.Fprintln(os.Stderr, "benchguard:", err)
-			os.Exit(2)
+			baseline.Close()
+			fmt.Fprintln(stderr, "benchguard:", err)
+			return 2
 		}
-		fmt.Printf("benchguard: wrote %d benchmarks to %s\n", len(bench), *baselinePath)
-		return
+		if err := baseline.Close(); err != nil {
+			fmt.Fprintln(stderr, "benchguard:", err)
+			return 2
+		}
+		fmt.Fprintf(stdout, "benchguard: wrote %d benchmarks to %s\n", len(bench), *baselinePath)
+		return 0
 	}
 
 	baselineFile, err := os.Open(*baselinePath)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "benchguard:", err)
-		os.Exit(2)
+		fmt.Fprintln(stderr, "benchguard:", err)
+		return 2
 	}
 	baseline, err := parseBaseline(baselineFile)
 	baselineFile.Close()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "benchguard:", err)
-		os.Exit(2)
+		fmt.Fprintln(stderr, "benchguard:", err)
+		return 2
 	}
 
 	problems := check(bench, baseline)
 	if len(problems) > 0 {
 		for _, problem := range problems {
-			fmt.Fprintln(os.Stderr, "benchguard:", problem)
+			fmt.Fprintln(stderr, "benchguard:", problem)
 		}
-		os.Exit(1)
+		return 1
 	}
-	fmt.Printf("benchguard: %d benchmarks are within the baseline\n", len(baseline))
+	fmt.Fprintf(stdout, "benchguard: %d benchmarks are within the baseline\n", len(baseline))
+	return 0
 }

@@ -226,3 +226,22 @@ func TestTruncatedOutputHandlesReplacementGrowth(t *testing.T) {
 		t.Fatal("truncatedOutput() produced invalid UTF-8")
 	}
 }
+
+func TestTruncateJSONOutputBoundaries(t *testing.T) {
+	exact := strings.Repeat("a", jsonOutputLimit)
+	if got, truncated := truncateJSONOutput(exact); truncated || got != exact {
+		t.Fatalf("truncateJSONOutput(exact limit) truncated=%t, length=%d", truncated, len(got))
+	}
+
+	oversized := strings.Repeat("a", jsonOutputLimit+1)
+	if got, truncated := truncateJSONOutput(oversized); !truncated || len(got) != jsonOutputLimit {
+		t.Fatalf("truncateJSONOutput(oversized) truncated=%t, length=%d", truncated, len(got))
+	}
+
+	splitRune := strings.Repeat("a", jsonOutputLimit-1) + "€"
+	if got, truncated := truncateJSONOutput(splitRune); !truncated || !utf8.ValidString(got) ||
+		len(got) != jsonOutputLimit-1 {
+		t.Fatalf("truncateJSONOutput(split rune) truncated=%t, valid=%t, length=%d",
+			truncated, utf8.ValidString(got), len(got))
+	}
+}

@@ -10,6 +10,9 @@
 GO            ?= go
 BINARY        ?= go-fuck
 GOLANGCI_LINT ?= golangci-lint
+# Use an absolute path because some Go releases on Windows do not write a
+# relative -coverprofile file reliably.
+COVER_PROFILE ?= $(CURDIR)/coverage.out
 
 # Inputs for "make packaging": the release version (without the leading v) and
 # the path of the checksums.txt asset of that release.
@@ -46,8 +49,8 @@ test-race: ## Run the test suite with the race detector enabled
 	$(GO) test -race ./... -count=1
 
 cover: ## Run the test suite with coverage and print the total
-	$(GO) test ./... -count=1 -coverprofile=coverage.out
-	@$(GO) run ./tools/coveragecheck -profile coverage.out
+	$(GO) test ./... -count=1 -coverprofile="$(COVER_PROFILE)"
+	@$(GO) run ./tools/coveragecheck -profile "$(COVER_PROFILE)"
 
 bench: ## Run the benchmarks
 	$(GO) test ./internal/... -run '^$$' -bench . -benchmem
