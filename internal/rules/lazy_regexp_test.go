@@ -44,7 +44,9 @@ func TestLazyRegexpDelegatesToCompiledExpression(t *testing.T) {
 	if got, want := newRegexp(",").Split("a,b,c", -1), []string{"a", "b", "c"}; !slices.Equal(got, want) {
 		t.Fatalf("Split() = %q, want %q", got, want)
 	}
-	if expression.expression() != expression.expression() {
+	first := expression.expression()
+	second := expression.expression()
+	if first != second {
 		t.Fatal("expression() recompiled the pattern")
 	}
 }
