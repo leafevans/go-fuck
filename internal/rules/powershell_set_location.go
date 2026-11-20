@@ -10,10 +10,13 @@ import (
 	"github.com/leafevans/go-fuck/v2/internal/types"
 )
 
+// powerShellPathNotFoundZH matches the zh-CN ItemNotFound diagnostic.
+var powerShellPathNotFoundZH = newRegexp(`\x{627e}\x{4e0d}\x{5230}\x{8def}\x{5f84}\x{201c}([^\r\n]+)\x{201d}\x{ff0c}\x{56e0}\x{4e3a}\x{8be5}\x{8def}\x{5f84}\x{4e0d}\x{5b58}\x{5728}\x{3002}`)
+
 // Match the English and zh-CN ItemNotFound diagnostics emitted by PowerShell.
 var powerShellSetLocationPaths = [...]*lazyRegexp{
 	newRegexp(`Cannot find path '([^\r\n]+)' because it does not exist`),
-	newRegexp(`\x{627e}\x{4e0d}\x{5230}\x{8def}\x{5f84}\x{201c}([^\r\n]+)\x{201d}\x{ff0c}\x{56e0}\x{4e3a}\x{8be5}\x{8def}\x{5f84}\x{4e0d}\x{5b58}\x{5728}\x{3002}`),
+	powerShellPathNotFoundZH,
 }
 
 // powerShellPathMissing reports whether path does not exist.

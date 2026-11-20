@@ -14,6 +14,10 @@ import (
 var powerShellMissingFilePatterns = []*lazyRegexp{
 	newRegexp(`Cannot find path '([^']*)' because it does not exist\.`),
 	newRegexp(`Cannot rename because item at '([^']*)' does not exist\.`),
+	powerShellPathNotFoundZH,
+	// Unable to rename because the item at the quoted path does not exist.
+	newRegexp(`\x{65e0}\x{6cd5}\x{91cd}\x{547d}\x{540d}\x{ff0c}\x{56e0}\x{4e3a}\x{201c}([^\r\n]+)\x{201d}\x{5904}\x{4e0d}\x{5b58}\x{5728}\x{9879}\x{3002}`),
+	newRegexp(`\x{65e0}\x{6cd5}\x{91cd}\x{547d}\x{540d}\x{ff0c}\x{56e0}\x{4e3a}\x{201c}([^\r\n]+)\x{201d}\x{5904}\x{7684}\x{9879}\x{4e0d}\x{5b58}\x{5728}\x{3002}`),
 }
 
 // powerShellMissingFileCommands are the PowerShell commands that read, copy,

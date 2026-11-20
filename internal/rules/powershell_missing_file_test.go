@@ -59,6 +59,25 @@ func TestRulePowerShellMissingFile(t *testing.T) {
 		[]string{"type config.txt"})
 }
 
+func TestRulePowerShellMissingFileChinese(t *testing.T) {
+	resetTestState(t)
+	stubPowerShellMissingFile(t, []string{"config.txt"})
+	rule := Get("powershell_missing_file")
+	readOutput := "Get-Content: \u627e\u4e0d\u5230\u8def\u5f84\u201cconfig.tx\u201d\uff0c\u56e0\u4e3a\u8be5\u8def\u5f84\u4e0d\u5b58\u5728\u3002\r\n"
+	renameOutput := "Rename-Item: \u65e0\u6cd5\u91cd\u547d\u540d\uff0c\u56e0\u4e3a\u201cconfig.tx\u201d\u5904\u4e0d\u5b58\u5728\u9879\u3002\r\n"
+	read := "Get-Content -LiteralPath 'config.tx'"
+	rename := "Rename-Item -LiteralPath 'config.tx' -NewName 'new.txt'"
+	assertMatch(t, rule, read, readOutput)
+	assertNewCommands(t, rule, read, readOutput, []string{"Get-Content -LiteralPath 'config.txt'"})
+	assertMatch(t, rule, rename, renameOutput)
+	assertNewCommands(t, rule, rename, renameOutput, []string{"Rename-Item -LiteralPath 'config.txt' -NewName 'new.txt'"})
+	altRenameOutput := "Rename-Item: \u65e0\u6cd5\u91cd\u547d\u540d\uff0c\u56e0\u4e3a\u201cconfig.tx\u201d\u5904\u7684\u9879\u4e0d\u5b58\u5728\u3002\r\n"
+	assertMatch(t, rule, rename, altRenameOutput)
+	assertNewCommands(t, rule, rename, altRenameOutput, []string{"Rename-Item -LiteralPath 'config.txt' -NewName 'new.txt'"})
+	assertNotMatch(t, rule, read, "Get-Content: \u62d2\u7edd\u8bbf\u95ee\r\n")
+	assertNotMatch(t, rule, rename, "Rename-Item: \u76ee\u6807\u5df2\u5b58\u5728\r\n")
+}
+
 // TestRulePowerShellMissingFileListing checks that listing commands (ls, dir,
 // gci) also get the closest existing name suggested.
 func TestRulePowerShellMissingFileListing(t *testing.T) {
