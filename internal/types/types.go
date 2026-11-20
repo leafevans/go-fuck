@@ -65,14 +65,14 @@ func NewCommandWithoutOutput(script string) *Command {
 
 // FromRawScript creates a command from the command line arguments that were
 // passed to go-fuck.
-func FromRawScript(raw []string) (*Command, error) {
+func FromRawScript(raw []string, allowRerun bool) (*Command, error) {
 	script := FormatRawScript(raw)
 	if script == "" {
 		return nil, ErrEmptyCommand
 	}
 
 	expanded := shells.Current().FromShell(script)
-	commandOutput, ok := output.GetOutput(script, expanded)
+	commandOutput, ok := output.GetOutput(script, expanded, allowRerun)
 	return &Command{Script: expanded, Output: commandOutput, hasOutput: ok}, nil
 }
 

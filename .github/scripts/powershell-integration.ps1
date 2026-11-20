@@ -52,7 +52,7 @@ try {
         Invoke-Expression ((& $Exe --alias) -join "`n")
         Set-Content -LiteralPath 'captured output' -Value 'not a git command' -Encoding ASCII
         $command = "git stats -- 'two words'"
-        $reply = fuck --json --output-from 'captured output' --force-command $command | Out-String | ConvertFrom-Json
+        $reply = fuck --json --no-rerun --output-from 'captured output' --force-command $command | Out-String | ConvertFrom-Json
         Assert 'alias preserves quoted command' ($reply.command -ceq $command) $reply.command
         Assert 'alias preserves spaced input path' ($reply.output -match 'not a git command') $reply.output
         Assert 'alias leaves profile unchanged' ((Get-FileHash -LiteralPath $PROFILE).Hash -eq $profileHash) $PROFILE

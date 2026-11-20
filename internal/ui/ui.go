@@ -81,11 +81,6 @@ func confirmSelection(selector *CommandSelector) {
 func SelectCommand(commands []*types.CorrectedCommand) *types.CorrectedCommand {
 	selector, ok := NewCommandSelector(commands)
 	if !ok {
-		if conf.Alias() == "fuck" {
-			logs.Failed("No fucks given")
-		} else {
-			logs.Failed("Nothing found")
-		}
 		return nil
 	}
 

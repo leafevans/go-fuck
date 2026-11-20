@@ -20,21 +20,24 @@ import (
 	"github.com/leafevans/go-fuck/v2/internal/logs"
 )
 
-// GetOutput re-runs the expanded command and returns its combined output.
+// GetOutput reads the instant log or, if allowed, re-runs the expanded command.
 //
 // The second return value reports whether the output could be obtained; it is
-// false when the command did not finish within the configured timeout.
-func GetOutput(script, expanded string) (string, bool) {
+// false when output is unavailable, including when re-running is disabled.
+func GetOutput(script, expanded string, allowRerun bool) (string, bool) {
 	if conf.Current().InstantMode {
 		if logPath := instant.LogPath(); logPath != "" {
 			if logOutput, ok := instant.LastOutput(logPath, script); ok {
 				logs.Debug("Read output from the instant mode log: %s", logOutput)
 				return logOutput, true
 			}
-			logs.Debug("Command not found in the instant mode log, re-running it")
+			logs.Debug("Command not found in the instant mode log")
 		} else {
-			logs.Debug("No instant mode log path is set, re-running the command")
+			logs.Debug("No instant mode log path is set")
 		}
+	}
+	if !allowRerun {
+		return "", false
 	}
 	commandOutput, ok := rerun(expanded)
 	if !ok {

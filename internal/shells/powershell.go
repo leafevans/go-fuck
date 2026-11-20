@@ -22,7 +22,8 @@ import (
 // are transferred verbatim. Explicit arguments (for example -h or --version)
 // must also work when the alias is the first command of a session, when there
 // is no history yet, so go-fuck is invoked when either history or arguments
-// are available.
+// are available. Without either, pass the empty history marker so the CLI
+// can explain why there is nothing to correct.
 const powershellAliasTemplate = `function %[1]s {
 %[3]s    $env:TF_SHELL = "powershell";
     $env:TF_ALIAS = "%[1]s";
@@ -32,12 +33,11 @@ const powershellAliasTemplate = `function %[1]s {
     $previousHistory = $env:TF_HISTORY;
     try {
         if (-not [string]::IsNullOrWhiteSpace($history)) { $env:TF_HISTORY = $history; }
+        elseif ($args.Count -eq 0) { $env:TF_HISTORY = [string][char]1; }
         else { Remove-Item Env:TF_HISTORY -ErrorAction SilentlyContinue; }
-        if (-not [string]::IsNullOrWhiteSpace($history) -or $args.Count -gt 0) {
-            $fuck = ($(%[2]s @args) -join [Environment]::NewLine);
-            if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($fuck)) {
-                iex "$fuck";
-            }
+        $fuck = ($(%[2]s @args) -join [Environment]::NewLine);
+        if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($fuck)) {
+            iex "$fuck";
         }
     } finally {
         if ($null -eq $previousHistory) { Remove-Item Env:TF_HISTORY -ErrorAction SilentlyContinue }

@@ -47,7 +47,7 @@ check_alias() {
         type -t fuck | grep -qx function
         printf "not a git command\n" > "captured output"
         command="git stats -- '\''two words'\''"
-        fuck --json --output-from "captured output" --force-command "$command" > response.json
+        fuck --json --no-rerun --output-from "captured output" --force-command "$command" > response.json
         python3 -c '\''import json, sys; r = json.load(sys.stdin); sys.exit(not (r["command"] == sys.argv[1] and "not a git command" in r["output"]))'\'' "$command" < response.json
         printf "profile sentinel\n" | cmp - .bashrc
       ' _ "$work" </dev/null || fail "noninteractive bash alias lost arguments or changed the profile"

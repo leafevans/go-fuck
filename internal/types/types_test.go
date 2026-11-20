@@ -98,7 +98,7 @@ func TestFromRawScriptEmpty(t *testing.T) {
 	resetTypesState(t)
 
 	for _, raw := range [][]string{{}, {""}, {"", ""}, {"   "}} {
-		if _, err := FromRawScript(raw); err != ErrEmptyCommand {
+		if _, err := FromRawScript(raw, true); err != ErrEmptyCommand {
 			t.Errorf("FromRawScript(%q) error = %v, want ErrEmptyCommand", raw, err)
 		}
 	}
@@ -107,7 +107,7 @@ func TestFromRawScriptEmpty(t *testing.T) {
 func TestFromRawScript(t *testing.T) {
 	resetTypesState(t)
 
-	command, err := FromRawScript([]string{"echo", "hello"})
+	command, err := FromRawScript([]string{"echo", "hello"}, true)
 	if err != nil {
 		t.Fatalf("FromRawScript() error = %v", err)
 	}

@@ -32,7 +32,7 @@ func TestGetOutputCapturesStderr(t *testing.T) {
 	conf.Current().WaitCommand = 60
 	command := "echo stderr-marker 1>&2"
 
-	result, ok := GetOutput(command, command)
+	result, ok := GetOutput(command, command, true)
 	if !ok {
 		t.Fatal("GetOutput() did not report an output")
 	}
@@ -54,7 +54,7 @@ func TestGetOutputUsesWaitSlowCommand(t *testing.T) {
 	settings.SlowCommands = []string{strings.Fields(command)[0]}
 
 	started := time.Now()
-	result, ok := GetOutput(command, command)
+	result, ok := GetOutput(command, command, true)
 	elapsed := time.Since(started)
 
 	if ok {
@@ -75,7 +75,7 @@ func TestGetOutputIgnoresWaitSlowCommandForFastCommands(t *testing.T) {
 	settings.WaitSlowCommand = 1
 	settings.SlowCommands = []string{"definitely-not-this-command"}
 
-	result, ok := GetOutput(command, command)
+	result, ok := GetOutput(command, command, true)
 	if !ok {
 		t.Fatal("GetOutput() did not report an output for a fast command")
 	}

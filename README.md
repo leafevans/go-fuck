@@ -327,7 +327,8 @@ Common options:
 | `--output-from FILE`                 | read the output of `--force-command` from `FILE` (or standard input with `-`) instead of re-running it                                                                          |
 | `--doctor`                           | print a diagnostic report: detected shell, alias, settings file, history and optional integrations; `--doctor --json` prints it as JSON                                         |
 | `--list-rules`                       | print the names of the built-in rules and exit (useful for the `rules`, `exclude_rules` and `priority` settings); with `--json` one object per rule with its priority and flags |
-| `--json`                             | print the suggestions as JSON and exit (useful for scripts and editors; the shell alias passes it through unchanged)                                                            |
+| `--no-rerun`                         | never re-run the original command to collect output; use supplied output or the instant log when available |
+| `--json`                             | print suggestions as JSON without executing them; add `--no-rerun` to prevent re-running the original command |
 | `-d`, `--debug`                      | print debug information to stderr                                                                                                                                               |
 | `-v`, `--version`                    | print version/build information: a themed banner in a terminal, one line when piped; `--debug --version` adds the config path, executable path, build module, instant mode, fzf and alias state |
 | `-h`, `--help`                       | print the full option list                                                                                                                                                      |
@@ -480,8 +481,10 @@ automatically; there is no need to set it manually.
 ## Machine readable output
 
 `--json` prints the correction result as JSON instead of opening the interactive prompt. It is
-intended for editor plugins, scripts and AI agents; call go-fuck directly rather than through the
-shell alias, because the alias evaluates whatever go-fuck prints.
+intended for editor plugins, scripts and AI agents. Current shell aliases print the JSON without
+evaluating it. By default go-fuck may still re-run the original command to collect output. Use
+`go-fuck --json --no-rerun --force-command "git brnch"` to prevent that. Without supplied output
+or a matching instant log entry, only rules that do not require output can match.
 
 When the caller already captured the output of the failed command (an editor, a terminal
 integration or an AI agent usually did), pass it with `--output-from FILE` instead of letting go-fuck

@@ -28,7 +28,7 @@ func TestGetOutputReadsInstantModeLog(t *testing.T) {
 	t.Setenv(consts.OutputLogEnv, logPath)
 	t.Setenv(consts.LegacyOutputLogEnv, "")
 
-	output, ok := GetOutput("git brnch", "git brnch")
+	output, ok := GetOutput("git brnch", "git brnch", false)
 	if !ok {
 		t.Fatal("GetOutput() did not report the instant mode output")
 	}
@@ -47,7 +47,10 @@ func TestGetOutputFallsBackWhenInstantLogIsMissing(t *testing.T) {
 	t.Setenv(consts.LegacyOutputLogEnv, "")
 
 	command := echoCommand("fallback-output")
-	output, ok := GetOutput(command, command)
+	if got, ok := GetOutput(command, command, false); ok || got != "" {
+		t.Fatalf("GetOutput with reruns disabled = %q, %t, want unavailable", got, ok)
+	}
+	output, ok := GetOutput(command, command, true)
 	if !ok || !strings.Contains(output, "fallback-output") {
 		t.Fatalf("GetOutput() = %q, %t, want the re-run output", output, ok)
 	}

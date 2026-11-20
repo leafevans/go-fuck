@@ -38,7 +38,7 @@ func TestGetOutput(t *testing.T) {
 	// loaded machine from turning the healthy echo into a timeout.
 	conf.Current().WaitCommand = 15
 	command := echoCommand("hello")
-	output, ok := GetOutput(command, command)
+	output, ok := GetOutput(command, command, true)
 	if !ok {
 		t.Fatal("GetOutput() did not report an output")
 	}
@@ -60,7 +60,7 @@ func TestGetOutputMergesConfiguredEnvironment(t *testing.T) {
 	} else {
 		command = "echo $GOFUCK_TEST_ENV"
 	}
-	output, ok := GetOutput(command, command)
+	output, ok := GetOutput(command, command, true)
 	if !ok {
 		t.Fatal("GetOutput() did not report an output")
 	}
@@ -75,7 +75,7 @@ func TestGetOutputTimeout(t *testing.T) {
 	command := slowCommand()
 
 	started := time.Now()
-	output, ok := GetOutput(command, command)
+	output, ok := GetOutput(command, command, true)
 	elapsed := time.Since(started)
 
 	if ok {

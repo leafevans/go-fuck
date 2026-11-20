@@ -103,18 +103,7 @@ func TestSelectCommandEmpty(t *testing.T) {
 	if command := SelectCommand(nil); command != nil {
 		t.Fatalf("SelectCommand(nil) = %v, want nil", command)
 	}
-	if got := logOutput(); got != "× No fucks given"+newline {
-		t.Fatalf("unexpected output: %q", got)
-	}
-}
-
-func TestSelectCommandEmptyCustomAlias(t *testing.T) {
-	resetUIState(t)
-	t.Setenv("TF_ALIAS", "please")
-	if command := SelectCommand(nil); command != nil {
-		t.Fatalf("SelectCommand(nil) = %v, want nil", command)
-	}
-	if got := logOutput(); got != "× Nothing found"+newline {
+	if got := logOutput(); got != "" {
 		t.Fatalf("unexpected output: %q", got)
 	}
 }

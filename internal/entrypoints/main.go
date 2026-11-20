@@ -51,7 +51,7 @@ func dispatch() int {
 	case args.Setup:
 		ensureShell()
 		return setup(args)
-	case len(args.Command) > 0 || args.ForceCommand != "" || os.Getenv("TF_HISTORY") != "":
+	case args.JSON || args.NoRerun || len(args.Command) > 0 || args.ForceCommand != "" || os.Getenv("TF_HISTORY") != "":
 		ensureShell()
 		return fixCommand(args)
 	default:

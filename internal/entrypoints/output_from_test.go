@@ -50,7 +50,7 @@ func TestFixCommandOutputFromFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	code, stdout, stderr := runMain(t, "go-fuck", "--json", "--force-command", "cat testdata", "--output-from", path)
+	code, stdout, stderr := runMain(t, "go-fuck", "--json", "--no-rerun", "--force-command", "cat testdata", "--output-from", path)
 	if code != 0 {
 		t.Fatalf("Main() = %d, want 0; stderr = %q", code, stderr)
 	}
@@ -74,7 +74,7 @@ func TestFixCommandOutputFromStdin(t *testing.T) {
 		_ = writer.Close()
 	}()
 
-	code, stdout, stderr := runMain(t, "go-fuck", "--json", "--force-command", "cat testdata", "--output-from", "-")
+	code, stdout, stderr := runMain(t, "go-fuck", "--json", "--no-rerun", "--force-command", "cat testdata", "--output-from", "-")
 	if code != 0 {
 		t.Fatalf("Main() = %d, want 0; stderr = %q", code, stderr)
 	}

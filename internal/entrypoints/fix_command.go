@@ -38,12 +38,8 @@ func fixCommand(args *argumentparser.Args) int {
 	logs.Debug("Run with settings: %+v", conf.Current())
 
 	rawCommand := getRawCommand(args)
-	if len(rawCommand) == 0 {
-		logs.Debug("Empty command, nothing to do")
-		if args.JSON {
-			return printJSON(nil, nil)
-		}
-		return 0
+	if strings.TrimSpace(types.FormatRawScript(rawCommand)) == "" {
+		return reportMissingCommand(args.JSON)
 	}
 
 	var command *types.Command
@@ -55,14 +51,10 @@ func fixCommand(args *argumentparser.Args) int {
 		}
 		command, err = types.FromScriptAndOutput(rawCommand, commandOutput)
 	} else {
-		command, err = types.FromRawScript(rawCommand)
+		command, err = types.FromRawScript(rawCommand, !args.NoRerun)
 	}
 	if errors.Is(err, types.ErrEmptyCommand) {
-		logs.Debug("Empty command, nothing to do")
-		if args.JSON {
-			return printJSON(nil, nil)
-		}
-		return 0
+		return reportMissingCommand(args.JSON)
 	}
 	if err != nil {
 		logs.Exception("Can't get output of the command", err)
@@ -74,12 +66,28 @@ func fixCommand(args *argumentparser.Args) int {
 	if args.JSON {
 		return printJSON(command, corrected)
 	}
+	if len(corrected) == 0 {
+		if command.HasOutput() {
+			logs.Failed("No matching correction rule found.")
+		} else {
+			logs.Failed("No suggestion without the original command output. Provide it with --force-command and --output-from.")
+		}
+		return 1
+	}
 
 	selected := ui.SelectCommand(corrected)
 	if selected == nil {
 		return 1
 	}
 	selected.Run(command)
+	return 0
+}
+
+func reportMissingCommand(json bool) int {
+	if json {
+		return printJSON(nil, nil)
+	}
+	logs.Failed("No usable command in shell history. Specify one with --force-command.")
 	return 0
 }
 
