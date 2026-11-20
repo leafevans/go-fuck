@@ -10,8 +10,11 @@ import (
 	"github.com/leafevans/go-fuck/v2/internal/types"
 )
 
-// powerShellSetLocationPath matches the path of a failed Set-Location.
-var powerShellSetLocationPath = newRegexp(`Cannot find path '([^\r\n]+)' because it does not exist`)
+// Match the English and zh-CN ItemNotFound diagnostics emitted by PowerShell.
+var powerShellSetLocationPaths = [...]*lazyRegexp{
+	newRegexp(`Cannot find path '([^\r\n]+)' because it does not exist`),
+	newRegexp(`\x{627e}\x{4e0d}\x{5230}\x{8def}\x{5f84}\x{201c}([^\r\n]+)\x{201d}\x{ff0c}\x{56e0}\x{4e3a}\x{8be5}\x{8def}\x{5f84}\x{4e0d}\x{5b58}\x{5728}\x{3002}`),
+}
 
 // powerShellPathMissing reports whether path does not exist.
 var powerShellPathMissing = func(path string) bool {
@@ -20,11 +23,16 @@ var powerShellPathMissing = func(path string) bool {
 }
 
 func powerShellMissingLocation(output string) string {
-	match := powerShellSetLocationPath.FindStringSubmatch(output)
-	if match == nil || strings.ContainsAny(match[1], "*?[]") {
+	var path string
+	for _, pattern := range powerShellSetLocationPaths {
+		if match := pattern.FindStringSubmatch(output); match != nil {
+			path = match[1]
+			break
+		}
+	}
+	if path == "" || strings.ContainsAny(path, "*?[]") {
 		return ""
 	}
-	path := match[1]
 	// A PowerShell provider or custom drive is not necessarily a directory.
 	if colon := strings.IndexByte(path, ':'); colon >= 0 {
 		if colon != 1 || len(path) < 3 || !strings.ContainsRune(`\/`, rune(path[2])) ||

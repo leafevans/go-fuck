@@ -47,3 +47,26 @@ func TestRulePowerShellSetLocation(t *testing.T) {
 	stubPowerShellPathMissing(t, false)
 	assertNotMatch(t, rule, "Set-Location \x27/root/missing\x27", powerShellSetLocationOutput)
 }
+
+func TestRulePowerShellSetLocationChinese(t *testing.T) {
+	resetTestState(t)
+	stubPowerShellPathMissing(t, true)
+	rule := Get("powershell_set_location")
+	diagnostic := func(path string) string {
+		return "\u627e\u4e0d\u5230\u8def\u5f84\u201c" + path + "\u201d\uff0c\u56e0\u4e3a\u8be5\u8def\u5f84\u4e0d\u5b58\u5728\u3002"
+	}
+	path := "C:\\missing " + "\u76ee\u5f55"
+	for _, verb := range []string{"Set-Location", "Push-Location"} {
+		script := verb + " -LiteralPath '" + path + "'"
+		output := verb + ": " + diagnostic(path) + "\r\n"
+		assertMatch(t, rule, script, output)
+		assertNewCommands(t, rule, script, output, []string{"mkdir -Force '" + path + "' && " + script})
+		assertNotMatch(t, rule, script, "")
+	}
+	for _, path := range []string{`Env:\missing`, `C:\missing*`, "C:\\missing\nname"} {
+		script := "Set-Location '" + path + "'"
+		assertNotMatch(t, rule, script, diagnostic(path))
+		assertNewCommands(t, rule, script, diagnostic(path), nil)
+	}
+	assertNotMatch(t, rule, "Get-Content missing", diagnostic("missing"))
+}
