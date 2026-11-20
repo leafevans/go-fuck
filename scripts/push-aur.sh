@@ -24,6 +24,7 @@ clone_dir=
 direct_ip=false
 address=
 address_set=false
+identity_file=
 dry_run=false
 
 temp_root=
@@ -72,6 +73,8 @@ Options:
                         with HostKeyAlias=aur.archlinux.org; use this when the
                         DNS-over-HTTPS endpoint is blocked; cannot be combined
                         with --direct-ip
+      --identity-file FILE
+                        authenticate with FILE and ignore default SSH identities
       --dry-run         print the plan without cloning, committing or pushing
   -h, --help            print this help
 
@@ -88,6 +91,7 @@ registered with the AUR:
   bash scripts/push-aur.sh --version X.Y.Z
   bash scripts/push-aur.sh --version X.Y.Z --direct-ip
   bash scripts/push-aur.sh --version X.Y.Z --address 209.126.35.78
+  bash scripts/push-aur.sh --version X.Y.Z --identity-file "$HOME/.ssh/nox_aur"
   bash scripts/push-aur.sh --dry-run
 EOF
 }
@@ -154,10 +158,10 @@ resolve_doh() {
   printf '%s\n' "$address"
 }
 
-# git_ssh runs a git command with the HostKeyAlias SSH options in --direct-ip
-# or --address mode and with the regular SSH configuration otherwise.
+# git_ssh runs a git command with the HostKeyAlias SSH options in --direct-ip,
+# --address and --identity-file mode. It keeps default git behavior otherwise.
 git_ssh() {
-  if [ "$direct_ip" = true ] || [ -n "$address" ]; then
+  if [ "$direct_ip" = true ] || [ -n "$address" ] || [ -n "$identity_file" ]; then
     GIT_SSH_COMMAND="$ssh_command" "$@"
   else
     "$@"
@@ -225,7 +229,7 @@ push_package() {
       if git_ssh git -C "$clone_path" push --quiet "ssh://aur@$address/$package.git" HEAD:master; then
         return 0
       fi
-    elif git -C "$clone_path" push --quiet origin HEAD:master; then
+    elif git_ssh git -C "$clone_path" push --quiet origin HEAD:master; then
       return 0
     fi
     echo "push-aur: pushing to the AUR failed (attempt $attempt/$max_attempts)" >&2
@@ -248,6 +252,9 @@ print_plan() {
   echo "  commit:    upgpkg: $package $version-$pkgrel"
   echo "  remote:    $aur_remote"
   echo "  clone:     $clone_description"
+  if [ -n "$identity_file" ]; then
+    echo "  identity:  $identity_file"
+  fi
   if [ "$direct_ip" = true ]; then
     echo "  transport: resolve aur.archlinux.org over Cloudflare DNS-over-HTTPS and"
     echo "             connect with HostKeyAlias=aur.archlinux.org"
@@ -321,6 +328,15 @@ while [ "$#" -gt 0 ]; do
       address_set=true
       shift
       ;;
+    --identity-file)
+      [ "$#" -ge 2 ] || usage_error "missing argument for $1"
+      identity_file=$2
+      shift 2
+      ;;
+    --identity-file=*)
+      identity_file=${1#*=}
+      shift
+      ;;
     --direct-ip)
       direct_ip=true
       shift
@@ -355,6 +371,18 @@ if [ "$address_set" = true ]; then
   if ! valid_ipv4 "$address"; then
     usage_error "invalid IPv4 address for --address: '$address'"
   fi
+fi
+
+if [ -n "$identity_file" ]; then
+  if command -v cygpath >/dev/null 2>&1; then
+    identity_file=$(cygpath -u "$identity_file")
+  fi
+  [ -f "$identity_file" ] || die "SSH identity file not found: $identity_file"
+  identity_dir=$(dirname "$identity_file")
+  identity_name=$(basename "$identity_file")
+  identity_file=$(cd "$identity_dir" && pwd)/$identity_name
+  printf -v quoted_identity '%q' "$identity_file"
+  ssh_command="$ssh_command -i $quoted_identity -o IdentitiesOnly=yes"
 fi
 
 if [ ! -d "$source_dir" ]; then

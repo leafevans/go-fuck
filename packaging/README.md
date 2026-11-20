@@ -103,6 +103,7 @@ Windows and needs bash, git and an SSH key registered with the AUR:
 
 ```bash
 bash scripts/push-aur.sh --version X.Y.Z                # clone, commit and push
+bash scripts/push-aur.sh --version X.Y.Z --identity-file ~/.ssh/nox_aur
 bash scripts/push-aur.sh --version X.Y.Z --direct-ip    # blocked SSH fallback
 bash scripts/push-aur.sh --version X.Y.Z --address IP   # DNS-over-HTTPS also blocked
 bash scripts/push-aur.sh --dry-run                      # print the plan, no network access
@@ -116,6 +117,8 @@ exits successfully without pushing when both files are already published, so
 it is safe to rerun. Otherwise it copies the files, commits
 `upgpkg: go-fuck X.Y.Z-pkgrel`, pushes `HEAD:master` and removes the
 temporary clone. The clone and the push are retried up to three times.
+Pass `--identity-file` when the AUR key has a non-default filename; that
+option uses `IdentitiesOnly=yes` so unrelated SSH identities are not offered.
 `--clone-dir DIR` clones into `DIR` and keeps it. `--direct-ip` resolves the
 current address again on every attempt; `--address IP` uses the given IPv4
 address as is and skips the DNS-over-HTTPS lookup. The two options are
