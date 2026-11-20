@@ -10,6 +10,21 @@ permissions:
   contents: read
 
 jobs:
+  release-notes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: bash scripts/test-release-notes.sh
+      - name: Validate notes for the current version
+        id: notes
+        run: |
+          version=$(sed -n 's/^var Version = "\([^"]*\)"$/\1/p' internal/consts/consts.go)
+          GITHUB_REF_NAME="v$version" bash scripts/release-notes-output.sh
+      - name: Verify release notes output
+        env:
+          NOTES_PATH: ${{ steps.notes.outputs.path }}
+        run: test -s "$NOTES_PATH"
+
   build-test:
     name: Build and test (${{ matrix.os }}, Go ${{ matrix.go }})
     runs-on: ${{ matrix.os }}

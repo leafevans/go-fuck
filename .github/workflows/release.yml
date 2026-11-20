@@ -26,11 +26,7 @@ jobs:
       - name: Validate release notes
         id: notes
         shell: bash
-        run: |
-          [[ "$GITHUB_REF_NAME" =~ ^v[0-9]+[.][0-9]+[.][0-9]+(-[0-9A-Za-z.-]+)?$ ]]
-          path="release-notes/${GITHUB_REF_NAME}.md"
-          bash scripts/check-release-notes.sh "$path"
-          printf '%s\n' "path=$path" >> "$GITHUB_OUTPUT"
+        run: bash scripts/release-notes-output.sh
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v7
         with:
