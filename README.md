@@ -171,6 +171,26 @@ binary somewhere on your `PATH`. Linux and macOS archives contain the raw binary
 contain `go-fuck.exe`. Every release ships a `checksums.txt` file that you can use to verify the
 download.
 
+From a source checkout, the update scripts install prebuilt binaries into
+`~/.local/bin` by default:
+
+```sh
+sh scripts/update-go-fuck.sh                  # Linux or macOS
+sh scripts/update-go-fuck.sh v2.31.15 /path/to/bin
+```
+
+```powershell
+./scripts/update-go-fuck.ps1                  # Windows and the default WSL distro
+./scripts/update-go-fuck.ps1 -SkipWsl         # Windows only
+./scripts/update-go-fuck.ps1 -WslDistro Ubuntu
+```
+
+Both scripts verify SHA256 checksums before installation, limit request times,
+and retry failed requests up to three attempts. A failed download, verification
+or replacement preserves the installed binary. Windows supports AMD64 and ARM64;
+Linux and macOS support amd64 and arm64. Pass a version with or without `v` to
+install a specific release.
+
 ### From source
 
 ```bash

@@ -131,6 +131,10 @@ the test helpers, is [PORTING.md](PORTING.md). The short version:
 ## Testing
 
 - Run the full suite with `go test ./... -count=1`.
+- `go test ./scripts -count=1` runs offline updater tests with mocked downloads
+  and WSL calls, covering retries, checksum failures, rollback and cleanup.
+  POSIX tests run on Linux and macOS; PowerShell tests run with available
+  PowerShell 7 and Windows PowerShell 5.1 executables.
 - Run only the rule tests with `go test ./internal/rules -run 'TestRule' -count=1`.
 - On Linux with bash, zsh, fish and tcsh installed, run
   `bash scripts/check-shell-integration.sh ./go-fuck` to verify the generated aliases and
