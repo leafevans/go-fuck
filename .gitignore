@@ -29,13 +29,6 @@ go.work.sum
 # env file
 .env
 
-# Editor/IDE
-# .idea/
-# .vscode/
-# Reference implementation used while porting; it is a separate repository and
-# must not be committed.
-/thefuck/
-
 # Build and benchmark output
 /benchmark.txt
 /go-fuck
@@ -46,4 +39,3 @@ go.work.sum
 # Local DSH client-plugin workspace created by the editor integration; it is
 # not part of the project.
 /plugins/
-
