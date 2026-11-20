@@ -60,3 +60,16 @@ func TestPowershellAliasExportsItsOwnName(t *testing.T) {
 		t.Fatalf("TF_ALIAS was not set for the correction: %q", output)
 	}
 }
+
+func TestPowershellAliasSupportsProfileInterpolation(t *testing.T) {
+	resetShellsState(t)
+	recorded := runPowershellAlias(t, "", `
+$ErrorActionPreference = 'Stop'
+$source = (Get-Command fuck).ScriptBlock.ToString() -split '\r?\n'
+Invoke-Expression "function fuck {$source}"
+fuck --version
+`)
+	if len(recorded) != 1 || strings.TrimSpace(recorded[0].args) != "--version" {
+		t.Fatalf("interpolated alias invocation = %+v, want --version", recorded)
+	}
+}

@@ -70,7 +70,7 @@ func powershellAliasGuard(aliasName, executable string) string {
 	for _, flag := range informationalCommands {
 		quoted = append(quoted, "'"+flag+"'")
 	}
-	return fmt.Sprintf("    $__gofuck_information = @(%[1]s)\n"+
+	return fmt.Sprintf("    $__gofuck_information = @(%[1]s);\n"+
 		"    foreach ($__gofuck_option in $args) {\n"+
 		"        if (($__gofuck_information -contains $__gofuck_option) -or\n"+
 		"            ($__gofuck_option -like '--alias=*') -or\n"+
@@ -80,8 +80,8 @@ func powershellAliasGuard(aliasName, executable string) string {
 		"            $env:TF_ALIAS_VERSION = \"3\";\n"+
 		"            try { $env:GOFUCK_SHELL = (Get-Process -Id $PID).Path } catch { };\n"+
 		"            & %[3]s @args;\n"+
-		"            return\n"+
-		"        }\n"+
-		"    }\n",
+		"            return;\n"+
+		"        };\n"+
+		"    };\n",
 		strings.Join(quoted, ", "), aliasName, executable)
 }

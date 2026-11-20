@@ -99,7 +99,9 @@ try {
     $previousArgsFile = $env:GOFUCK_ARGS_FILE
     $env:PATH = $stubDir + ";" + $previousPath
     $env:GOFUCK_ARGS_FILE = Join-Path $root "stub-args.txt"
-    Invoke-Expression ((& $Exe --alias) | Out-String)
+    # Match the documented profile initialization, which interpolates output
+    # lines into one string and therefore requires statement terminators.
+    Invoke-Expression "$(& $Exe --alias)"
     fuck
     $recorded = Get-Content -LiteralPath $env:GOFUCK_ARGS_FILE -Raw
     $quoted = 'git commit -m ' + [char]34 + 'hello world' + [char]34
