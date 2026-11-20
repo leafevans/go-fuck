@@ -176,7 +176,7 @@ From a source checkout, the update scripts install prebuilt binaries into
 
 ```sh
 sh scripts/update-go-fuck.sh                  # Linux or macOS
-sh scripts/update-go-fuck.sh v2.31.16 /path/to/bin
+sh scripts/update-go-fuck.sh v2.31.17 /path/to/bin
 ```
 
 ```powershell
@@ -464,7 +464,10 @@ Limitations:
   such a program is still running, the end of the log may be missing.
 - On Windows the terminal size is polled, so a resized window reaches the logged shell with a short
   delay.
-- The log keeps the newest 1 MiB of terminal output. The renderer is simpler than the reference
+- The log keeps the newest 1 MiB of terminal output, including when a single write exceeds that
+  limit. ANSI colors, window titles and hyperlinks are removed while keeping their visible text.
+  Command lookup preserves argument order and checks word boundaries to avoid reusing output from a
+  different invocation. The renderer is simpler than the reference
   implementation's pyte emulation: ANSI stripping and carriage return overwrites on Linux and macOS,
   a small screen model for the ConPTY stream on Windows, so full screen programs can still differ.
 - Long output rows are joined again because the console wrapped them. On Windows a row that is one
@@ -530,7 +533,7 @@ not update the shell history; the caller decides what to do with the suggestions
 0 once the JSON was written, even when no rule matched and `suggestions` is empty.
 
 The JSON document is a stable machine readable contract. `schema_version` is `1` for the whole
-1.x series; it is only incremented for a breaking layout change, while new optional fields may be
+1.x and 2.x series; it is only incremented for a breaking layout change, while new optional fields may be
 added in minor releases. Consumers must ignore unknown fields and must not rely on the key order.
 The document is always written to stdout; diagnostics stay on stderr.
 
