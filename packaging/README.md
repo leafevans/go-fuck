@@ -65,10 +65,13 @@ The package targets `x86_64`, the architecture of the official Arch Linux
 repositories. On other architectures (for example Arch Linux ARM) use
 `go install`, the prebuilt release binaries or build from source.
 
-There is no CI job for the AUR because Arch tooling is not available on the
-GitHub runners. The `packaging` tests check that `pkgver`, `pkgrel` and the
-archive checksum in `PKGBUILD` and `.SRCINFO` agree with each other and with
-the Homebrew formula version.
+The `packaging` tests check that `pkgver`, `pkgrel` and the archive checksum
+in `PKGBUILD` and `.SRCINFO` agree with each other and with the Homebrew
+formula version. After publishing, run the **AUR verification** workflow
+manually and pass the full package version (for example `2.31.22-1`). It uses
+an `archlinux:base-devel` container to compare the published `.SRCINFO`, build
+the package with `makepkg`, install it, and verify both the package and CLI
+versions.
 
 To update the package for a release:
 
@@ -218,9 +221,10 @@ CHECKSUMS=checksums.txt AUR_SOURCE=go-fuck-X.Y.Z.tar.gz`). The whole download
     blocked, or `--address IP` when the DNS-over-HTTPS endpoint is blocked too
     (see [Publishing to the AUR](#publishing-to-the-aur)). This step is also
     run by `scripts/update-manifests.ps1 ... -PushAur`.
-4. Run `go run ./tools/gen-rule-list -check` and the full test suite before
+4. Run the **AUR verification** workflow with the published `X.Y.Z-pkgrel`.
+5. Run `go run ./tools/gen-rule-list -check` and the full test suite before
    tagging the follow-up commit.
-5. Check that `go install github.com/leafevans/go-fuck/v2/cmd/go-fuck@latest`
+6. Check that `go install github.com/leafevans/go-fuck/v2/cmd/go-fuck@latest`
    resolves the new tag; the major version is part of the Go module path.
 
 The version and checksums are intentionally committed as plain text so that the
