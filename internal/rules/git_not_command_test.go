@@ -53,6 +53,9 @@ func TestRuleGitNotCommand(t *testing.T) {
 		want   []string
 	}{
 		{"git brnch", gitNotCommandOutput(), []string{"git branch"}},
+		{"git -C brnch 'brnch' -- 'brnch path'", gitNotCommandOutput(), []string{"git -C brnch branch -- 'brnch path'"}},
+		{"git branch brnch", gitNotCommandOutput(), nil},
+		{"git brnch", gitNotCommandOutput() + "branch\nbranch --all\n", []string{"git branch"}},
 		{"git st", gitNotCommandOneOfOutput(),
 			[]string{"git stats", "git stash", "git stage"}},
 		{"git tags", gitNotCommandClosestOutput(),

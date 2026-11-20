@@ -56,7 +56,7 @@ func expandGitAliasesForShell(command *types.Command, shell shells.Shell) *types
 	}
 
 	alias, expansion := match[1], match[2]
-	start, end, found := gitAliasSpan(command.Script, alias, shell)
+	start, end, found := GitSubcommandSpan(command.Script, alias, shell)
 	if !found {
 		return command
 	}
@@ -73,10 +73,9 @@ func expandGitAliasesForShell(command *types.Command, shell shells.Shell) *types
 	return command.WithScript(command.Script[:start] + strings.Join(quoted, " ") + command.Script[end:])
 }
 
-// gitAliasSpan locates only the subcommand, skipping Git's global options and
-// their values. An alias mentioned in a path, option value or later argument
-// must never be expanded.
-func gitAliasSpan(script, alias string, shell shells.Shell) (int, int, bool) {
+// GitSubcommandSpan locates the expected subcommand, skipping Git's global
+// options and their values.
+func GitSubcommandSpan(script, expected string, shell shells.Shell) (int, int, bool) {
 	previousEnd := 0
 	skipValue := false
 	for index, span := range gitWord.FindAllStringIndex(script, -1) {
@@ -106,7 +105,7 @@ func gitAliasSpan(script, alias string, shell shells.Shell) (int, int, bool) {
 			}
 			continue
 		}
-		return span[0], span[1], word == alias
+		return span[0], span[1], word == expected
 	}
 	return 0, 0, false
 }

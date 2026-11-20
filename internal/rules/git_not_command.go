@@ -3,6 +3,7 @@ package rules
 import (
 	"strings"
 
+	"github.com/leafevans/go-fuck/v2/internal/shells"
 	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
 	"github.com/leafevans/go-fuck/v2/internal/utils"
@@ -10,6 +11,8 @@ import (
 
 // gitNotCommandBroken matches the command that is not a git command.
 var gitNotCommandBroken = newRegexp("git: '([^']*)' is not a git command")
+
+var gitNotCommandCandidate = newRegexp(`^[A-Za-z0-9][A-Za-z0-9_.-]*$`)
 
 // gitNotCommandMatch reports whether git suggested similar commands.
 func gitNotCommandMatch(command *types.Command) bool {
@@ -24,9 +27,27 @@ func gitNotCommandNewCommand(command *types.Command) ([]string, error) {
 	if brokenMatch == nil {
 		return nil, nil
 	}
+	shell := shells.Current()
+	broken := brokenMatch[1]
+	start, end, ok := specific.GitSubcommandSpan(command.Script, broken, shell)
+	if !ok {
+		return nil, nil
+	}
 	matched := utils.GetAllMatchedCommands(command.Output,
 		"The most similar command", "Did you mean")
-	return utils.ReplaceCommand(command, brokenMatch[1], matched), nil
+	candidates := matched[:0]
+	seen := make(map[string]bool, len(matched))
+	for _, candidate := range matched {
+		if candidate != broken && !seen[candidate] && gitNotCommandCandidate.MatchString(candidate) {
+			seen[candidate] = true
+			candidates = append(candidates, candidate)
+		}
+	}
+	ranked := utils.GetCloseMatches(broken, candidates, 0, 0.1)
+	for i, candidate := range ranked {
+		ranked[i] = command.Script[:start] + candidate + command.Script[end:]
+	}
+	return ranked, nil
 }
 
 func init() {
