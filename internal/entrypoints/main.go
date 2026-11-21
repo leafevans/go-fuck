@@ -7,7 +7,6 @@ import (
 
 	"github.com/leafevans/go-fuck/v2/internal/argumentparser"
 	"github.com/leafevans/go-fuck/v2/internal/consts"
-	"github.com/leafevans/go-fuck/v2/internal/logs"
 	"github.com/leafevans/go-fuck/v2/internal/shells"
 	"github.com/leafevans/go-fuck/v2/internal/system"
 )
@@ -36,7 +35,7 @@ func dispatch() int {
 		return 0
 	case args.Version:
 		ensureShell()
-		logs.PrintVersion(versionInfo(logs.OutputIsTerminal() || args.Debug), args.Debug)
+		printVersion(args.Debug)
 		return 0
 	case args.ListRules:
 		return listRules(args)

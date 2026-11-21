@@ -1,11 +1,13 @@
 package entrypoints
 
 import (
+	"bytes"
 	"runtime"
 	"strings"
 	"testing"
 
 	"github.com/leafevans/go-fuck/v2/internal/consts"
+	"github.com/leafevans/go-fuck/v2/internal/logs"
 	"github.com/leafevans/go-fuck/v2/internal/rules"
 	"github.com/leafevans/go-fuck/v2/internal/shells"
 )
@@ -47,15 +49,36 @@ func TestVersionInfo(t *testing.T) {
 	}
 }
 
-// TestVersionInfoCompactShellName checks that the plain one line printed to a
-// pipe does not need to detect the shell version.
-func TestVersionInfoCompactShellName(t *testing.T) {
-	resetEntrypointsState(t)
-	shell := shells.NewBash()
-	shells.Set(shell)
+type versionTestShell struct{ shells.Shell }
 
+func (versionTestShell) Info() string { return "Bash 5.2" }
+
+func TestPrintVersionRedirected(t *testing.T) {
+	resetEntrypointsState(t)
+	shells.Set(versionTestShell{shells.NewBash()})
+	var output bytes.Buffer
+	logs.SetOutput(&output)
+	for _, tc := range []struct {
+		verbose bool
+		shell   string
+	}{{false, "Bash"}, {true, "Bash 5.2"}} {
+		output.Reset()
+		printVersion(tc.verbose)
+		want := consts.AppName + " " + consts.Version + " using Go " + runtime.Version() + " and " + tc.shell + "\n"
+		if got := output.String(); got != want {
+			t.Errorf("printVersion(%t) = %q, want %q", tc.verbose, got, want)
+		}
+	}
+}
+
+func TestVersionInfoCompactBanner(t *testing.T) {
+	resetEntrypointsState(t)
+	shells.Set(versionTestShell{shells.NewBash()})
 	info := versionInfo(false)
-	if want := shell.FriendlyName(); info.Shell != want {
-		t.Fatalf("shell = %q, want %q", info.Shell, want)
+	if info.Shell != "Bash 5.2" || info.Rules == 0 {
+		t.Fatalf("compact banner missing shell version or rule count: %+v", info)
+	}
+	if info.ConfigPath != "" || info.InstantMode != "" || info.Fzf || info.Alias != "" || info.Executable != "" || info.Module != "" {
+		t.Fatalf("compact banner collected verbose fields: %+v", info)
 	}
 }

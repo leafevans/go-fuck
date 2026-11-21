@@ -55,7 +55,8 @@ func processSnapshot() map[uint32]processEntry32 {
 func AncestorNames() []string {
 	names := []string{}
 	entries := processSnapshot()
-	pid := uint32(os.Getppid())
+	// os.Getppid takes another process snapshot on Windows.
+	pid := entries[uint32(os.Getpid())].ParentProcessID
 	for depth := 0; depth < 10 && pid != 0; depth++ {
 		entry, ok := entries[pid]
 		if !ok {
