@@ -39,7 +39,7 @@ func NewBash() *Bash {
 func (b *Bash) AppAlias(aliasName string) string {
 	alterHistory := ""
 	if conf.Current().AlterHistory {
-		alterHistory = "    history -s $TF_CMD;"
+		alterHistory = `    if [ -n "$TF_CMD" ]; then history -s "$TF_CMD"; fi;`
 	}
 	return fmt.Sprintf(bashAliasTemplate, aliasName, consts.ExecutableName(),
 		consts.ArgumentPlaceholder, alterHistory,

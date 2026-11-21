@@ -154,6 +154,10 @@ type Rule struct {
 	EnabledByDefault bool
 	// SideEffect is applied before the corrected command runs.
 	SideEffect SideEffectFunc
+	// Reason explains what the rule changes or why it applies.
+	Reason string
+	// SideEffectDescription describes the action performed before execution.
+	SideEffectDescription string
 	// Priority orders the rules. Lower values are tried first.
 	Priority int
 	// RequiresOutput reports whether the rule needs the command output.
@@ -220,11 +224,17 @@ func (r *Rule) GetCorrectedCommands(command *Command) (corrected []*CorrectedCom
 		return nil
 	}
 
+	if len(newCommands) == 0 {
+		return nil
+	}
+	corrected = make([]*CorrectedCommand, 0, len(newCommands))
 	for index, script := range newCommands {
 		corrected = append(corrected, &CorrectedCommand{
-			Script:     script,
-			SideEffect: r.SideEffect,
-			Priority:   (index + 1) * r.Priority,
+			Script:                script,
+			SideEffect:            r.SideEffect,
+			Reason:                r.Reason,
+			SideEffectDescription: r.SideEffectDescription,
+			Priority:              (index + 1) * r.Priority,
 		})
 	}
 	return corrected
@@ -245,9 +255,34 @@ type CorrectedCommand struct {
 	RuleName string
 	// SideEffect is executed before the corrected command runs.
 	SideEffect SideEffectFunc
+	// Reason and SideEffectDescription are display metadata from the rule.
+	Reason                string
+	SideEffectDescription string
 	// Priority orders the corrected commands. Lower values are suggested
 	// first.
 	Priority int
+}
+
+// Explanation falls back to the rule identity when it has no custom reason.
+func (c *CorrectedCommand) Explanation() string {
+	if c.Reason != "" {
+		return c.Reason
+	}
+	if c.RuleName != "" {
+		return "Matched rule: " + c.RuleName
+	}
+	return ""
+}
+
+// BeforeRun describes the extra action, rather than the command's own effects.
+func (c *CorrectedCommand) BeforeRun() string {
+	if c.SideEffect == nil {
+		return ""
+	}
+	if c.SideEffectDescription != "" {
+		return c.SideEffectDescription
+	}
+	return "Run an additional rule action"
 }
 
 // Equal reports whether two corrected commands are equal. The priority is

@@ -46,11 +46,14 @@ func TestSelectWithFzfPreservesMultilineScriptAndSideEffect(t *testing.T) {
 	conf.Current().Fzf = true
 	commands := []*types.CorrectedCommand{
 		{Script: "echo 'one\ntwo'"},
-		{Script: "echo 'one\ntwo'", SideEffect: fzfEffectOne},
+		{Script: "echo 'one\ntwo'", SideEffect: fzfEffectOne, Reason: "reason\ntext", SideEffectDescription: "action\ttext"},
 	}
 	withFzfRunner(t, func(labels []string) (string, error) {
 		if len(labels) != 2 {
 			t.Fatalf("distinct side effects were merged: %q", labels)
+		}
+		if !strings.Contains(labels[1], `reason\ntext  |  Before running: action\ttext`) {
+			t.Fatalf("missing escaped suggestion details: %q", labels[1])
 		}
 		return labels[1], nil
 	})

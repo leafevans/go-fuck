@@ -34,5 +34,6 @@ func init() {
 		specific.GitSupportNew(gitHookBypassNewCommand))
 	rule.Priority = 1100
 	rule.RequiresOutput = false
+	rule.Reason = "Add --no-verify to bypass Git hooks that the flag disables"
 	register(rule)
 }

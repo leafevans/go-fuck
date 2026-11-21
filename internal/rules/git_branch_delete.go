@@ -26,7 +26,9 @@ func gitBranchDeleteNewCommand(command *types.Command) ([]string, error) {
 }
 
 func init() {
-	register(types.NewRule("git_branch_delete",
+	rule := types.NewRule("git_branch_delete",
 		specific.GitSupportMatch(gitBranchDeleteMatch),
-		specific.GitSupportNew(gitBranchDeleteNewCommand)))
+		specific.GitSupportNew(gitBranchDeleteNewCommand))
+	rule.Reason = "Force-delete the branch Git refused to delete normally"
+	register(rule)
 }

@@ -142,5 +142,7 @@ func init() {
 		utils.ForApp(sshKnownHostsCommands, 0, sshKnownHostsMatch),
 		sshKnownHostsNewCommand)
 	rule.SideEffect = sshKnownHostsSideEffect
+	rule.Reason = "SSH reported a changed host key; verify the new fingerprint before reconnecting"
+	rule.SideEffectDescription = "Remove the reported entries from the SSH known_hosts file"
 	register(rule)
 }

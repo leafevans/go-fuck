@@ -7,13 +7,15 @@
       "command": "git branch",
       "priority": 1000,
       "side_effect": false,
-      "rule": "git_unknown_command"
+      "rule": "git_unknown_command",
+      "reason": "Matched rule: git_unknown_command"
     },
     {
       "command": "git brnch",
       "priority": 5000,
       "side_effect": false,
-      "rule": "history"
+      "rule": "history",
+      "reason": "Matched rule: history"
     }
   ]
 }

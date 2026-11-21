@@ -65,9 +65,9 @@ func goldenMessages(t *testing.T, truecolor bool) string {
 		setBannerEnvironment(t, "xterm-256color", "truecolor", "", "")
 		conf.Current().NoColors = false
 	}
-	ConfirmText("git branch", false)
+	ConfirmText("git branch", false, "", "")
 	buffer.WriteString(newline)
-	ShowCorrectedCommand("git add .", true)
+	ShowCorrectedCommand("git add .", true, "", "")
 	Warn("instant mode is not supported for Fish Shell")
 	Failed("No fucks given")
 	conf.Current().Debug = true

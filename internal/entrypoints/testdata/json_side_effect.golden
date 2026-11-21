@@ -6,7 +6,9 @@
       "command": "git commit --amend",
       "priority": 2000,
       "side_effect": true,
-      "rule": "git_commit_amend"
+      "rule": "git_commit_amend",
+      "reason": "Matched rule: git_commit_amend",
+      "side_effect_description": "Run an additional rule action"
     }
   ]
 }

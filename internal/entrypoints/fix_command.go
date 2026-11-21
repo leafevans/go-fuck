@@ -51,7 +51,7 @@ func fixCommand(args *argumentparser.Args) int {
 		}
 		command, err = types.FromScriptAndOutput(rawCommand, commandOutput)
 	} else {
-		command, err = types.FromRawScript(rawCommand, !args.NoRerun)
+		command, err = types.FromRawScript(rawCommand, !args.NoRerun && !args.Preview)
 	}
 	if errors.Is(err, types.ErrEmptyCommand) {
 		return reportMissingCommand(args.JSON)
@@ -75,6 +75,10 @@ func fixCommand(args *argumentparser.Args) int {
 		return 1
 	}
 
+	if args.Preview {
+		ui.PreviewCommands(corrected)
+		return 0
+	}
 	selected := ui.SelectCommand(corrected)
 	if selected == nil {
 		return 1

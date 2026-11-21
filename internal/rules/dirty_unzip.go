@@ -136,5 +136,7 @@ func init() {
 	// Python: requires_output = False
 	rule.RequiresOutput = false
 	rule.SideEffect = dirtyUnzipSideEffect
+	rule.Reason = "Extract the ZIP into a separate directory"
+	rule.SideEffectDescription = "Remove files named in the ZIP from the current directory tree"
 	register(rule)
 }

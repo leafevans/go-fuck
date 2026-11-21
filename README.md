@@ -333,6 +333,7 @@ Common options:
 | `--doctor`                           | print a diagnostic report: detected shell, alias, settings file, history and optional integrations; `--doctor --json` prints it as JSON                                         |
 | `--list-rules`                       | print the names of the built-in rules and exit (useful for the `rules`, `exclude_rules` and `priority` settings); with `--json` one object per rule with its priority and flags |
 | `--no-rerun`                         | never re-run the original command to collect output; use supplied output or the instant log when available |
+| `--preview`                          | show suggestions without re-running the original command, prompting, or applying a fix; combine with `--json` for structured output |
 | `--json`                             | print suggestions as JSON without executing them; add `--no-rerun` to prevent re-running the original command |
 | `-d`, `--debug`                      | print debug information to stderr                                                                                                                                               |
 | `-v`, `--version`                    | print version/build information: a themed banner in a terminal, one line when piped; `--debug --version` adds the config path, executable path, build module, instant mode, fzf and alias state |
@@ -483,7 +484,17 @@ Limitations:
 The logged shell exports `GOFUCK_INSTANT_MODE=true`, which enables the `instant_mode` setting
 automatically; there is no need to set it manually.
 
-## Machine readable output
+## Preview and machine readable output
+
+Use `--preview` to see suggestions without applying them, even with `--yes` or `--repeat`.
+It does not re-run the original command or update shell history. It uses supplied output or a
+matching instant log entry when available; rules can still perform lookups to build suggestions.
+The human-readable preview goes to stderr so shell aliases cannot evaluate it as a correction.
+
+```console
+$ go-fuck --preview --force-command "unzip files.zip"
+$ go-fuck --preview --json --force-command "git push" --output-from failed-output.log
+```
 
 `--json` prints the correction result as JSON instead of opening the interactive prompt. It is
 intended for editor plugins, scripts and AI agents. Current shell aliases print the JSON without
@@ -513,13 +524,15 @@ $ go-fuck --json --force-command "git brnch"
       "command": "git branch",
       "priority": 1000,
       "side_effect": false,
-      "rule": "git_unknown_command"
+      "rule": "git_unknown_command",
+      "reason": "Matched rule: git_unknown_command"
     },
     {
       "command": "git brnch",
       "priority": 5000,
       "side_effect": false,
-      "rule": "history"
+      "rule": "history",
+      "reason": "Suggest a similar command from shell history"
     }
   ]
 }
@@ -527,8 +540,10 @@ $ go-fuck --json --force-command "git brnch"
 
 The suggestions are ordered as they would be offered interactively. `priority` is the rule
 priority (lower values are tried first). `rule` is the name of the rule that produced the
-suggestion. `side_effect` reports whether the interactive mode would run a side effect, for
-example `git add`, before the corrected command. The history rule can repeat
+suggestion. `reason` explains the correction or identifies the matching rule. `side_effect`
+reports whether an extra rule action would run before the corrected command, and
+`side_effect_description` describes that action when present. `side_effect: false` does not
+mean executing the corrected command is risk-free. The history rule can repeat
 the original command as a fallback suggestion; consumers that only want real corrections can skip
 suggestions equal to `command`.
 

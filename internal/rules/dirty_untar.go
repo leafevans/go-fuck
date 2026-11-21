@@ -150,5 +150,7 @@ func init() {
 		utils.ForApp([]string{"tar"}, 0, dirtyUntarMatch),
 		dirtyUntarNewCommand)
 	rule.SideEffect = dirtyUntarSideEffect
+	rule.Reason = "Extract the archive into a separate directory"
+	rule.SideEffectDescription = "Remove files named in the archive from the current directory tree"
 	register(rule)
 }

@@ -79,22 +79,27 @@ func sideEffectSuffix(hasSideEffect bool) string {
 
 // ShowCorrectedCommand prints the selected command without the confirmation
 // prompt.
-func ShowCorrectedCommand(script string, hasSideEffect bool) {
-	fmt.Fprintf(out, "%s%s %s%s\n",
+func ShowCorrectedCommand(script string, hasSideEffect bool, reason, beforeRun string) {
+	fmt.Fprintf(out, "%s%s %s%s%s\n",
 		consts.UserCommandMark, accent(selectionSymbol), strong(CommandText(script)),
-		sideEffectSuffix(hasSideEffect))
+		sideEffectSuffix(hasSideEffect), styledSuggestionDetails(reason, beforeRun))
 }
 
 // ConfirmText prints the interactive confirmation prompt for a command.
 //
 // The prompt uses the same selection symbol, ember accents and "·" separators
 // as the version banner, so all interactive output shares one visual language.
-func ConfirmText(script string, hasSideEffect bool) {
-	fmt.Fprintf(out, "%s%s%s %s%s  %s%s%s%s%s%s%s",
+func ConfirmText(script string, hasSideEffect bool, reason, beforeRun string) {
+	fmt.Fprintf(out, "%s%s%s %s%s%s  %s%s%s%s%s%s%s",
 		consts.UserCommandMark, "\r\x1b[2K", accent(selectionSymbol), strong(CommandText(script)),
-		sideEffectSuffix(hasSideEffect),
+		sideEffectSuffix(hasSideEffect), styledSuggestionDetails(reason, beforeRun),
 		muted("["), success("enter"), muted(" "+separatorSymbol+" "),
 		muted("↑↓"), muted(" "+separatorSymbol+" "), failure("ctrl+c"), muted("]"))
+}
+
+// PreviewHeader introduces the non-executable preview on the diagnostic stream.
+func PreviewHeader() {
+	fmt.Fprintln(out, accent("Preview:"), "original command not re-run; suggestions not applied.")
 }
 
 // Debug writes a debug message when the debug setting is enabled.

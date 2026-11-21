@@ -77,14 +77,14 @@ func TestFailed(t *testing.T) {
 
 func TestShowCorrectedCommand(t *testing.T) {
 	buffer := resetLogsState(t)
-	ShowCorrectedCommand("ls", false)
+	ShowCorrectedCommand("ls", false, "", "")
 	want := consts.UserCommandMark + "› ls" + newline
 	if got := buffer.String(); got != want {
 		t.Fatalf("ShowCorrectedCommand() wrote %q, want %q", got, want)
 	}
 
 	buffer.Reset()
-	ShowCorrectedCommand("ls", true)
+	ShowCorrectedCommand("ls", true, "", "")
 	want = consts.UserCommandMark + "› ls  (+side effect)" + newline
 	if got := buffer.String(); got != want {
 		t.Fatalf("ShowCorrectedCommand() wrote %q, want %q", got, want)
@@ -93,7 +93,7 @@ func TestShowCorrectedCommand(t *testing.T) {
 
 func TestConfirmText(t *testing.T) {
 	buffer := resetLogsState(t)
-	ConfirmText("ls", false)
+	ConfirmText("ls", false, "", "")
 	want := consts.UserCommandMark + "\r\x1b[2K› ls  [enter · ↑↓ · ctrl+c]"
 	if got := buffer.String(); got != want {
 		t.Fatalf("ConfirmText() wrote %q, want %q", got, want)

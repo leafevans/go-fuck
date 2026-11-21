@@ -49,6 +49,8 @@ type Args struct {
 	OutputFrom string
 	// NoRerun disables running the original command to collect output.
 	NoRerun bool
+	// Preview shows suggestions without re-running the original command or applying a fix.
+	Preview bool
 	// JSON prints the suggestions as JSON instead of running the interactive
 	// selection and the corrected command.
 	JSON bool
@@ -128,6 +130,8 @@ func Parse(argv []string) (*Args, error) {
 			args.JSON = true
 		case arg == "--no-rerun":
 			args.NoRerun = true
+		case arg == "--preview":
+			args.Preview = true
 		case strings.HasPrefix(arg, "-"):
 			return nil, fmt.Errorf("unrecognized arguments: %s", arg)
 		default:
@@ -179,6 +183,7 @@ var helpOptions = []helpOption{
 	{"--force-command FORCE_COMMAND", "fix this command instead of the previous one"},
 	{"--output-from FILE", "read the output of the fixed command from FILE (or stdin with -) instead of re-running it"},
 	{"--no-rerun", "do not re-run the original command to collect its output"},
+	{"--preview", "show suggestions without re-running the original or applying a fix"},
 	{"--json", "print suggestions without executing them (use --no-rerun to avoid re-running the original)"},
 	{"-y, --yes, --yeah, --hard", "execute fixed command without confirmation"},
 	{"-r, --repeat", "repeat on failure"},
@@ -198,7 +203,7 @@ func Usage() string {
 func usageText(styled bool) string {
 	rest := consts.ExecutableName() + " [-v] [-a [ALIAS]] [-l SHELL_LOGGER] [--setup] " +
 		"[--enable-experimental-instant-mode] [-h] [-d] [--doctor] [--list-rules] " +
-		"[--force-command FORCE_COMMAND] [--output-from FILE] [--no-rerun] [--json] [-y | -r] [command ...]"
+		"[--force-command FORCE_COMMAND] [--output-from FILE] [--no-rerun] [--preview] [--json] [-y | -r] [command ...]"
 	if !styled {
 		return "usage: " + rest
 	}

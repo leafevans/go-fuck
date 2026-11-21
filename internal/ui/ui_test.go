@@ -160,7 +160,7 @@ func TestSelectCommandWithSideEffect(t *testing.T) {
 	if selected := SelectCommand(commands); selected == nil {
 		t.Fatal("SelectCommand() returned nil")
 	}
-	want := consts.UserCommandMark + "\r\x1b[2K› ls  (+side effect)  [enter · ↑↓ · ctrl+c]" + newline
+	want := consts.UserCommandMark + "\r\x1b[2K› ls  (+side effect)  |  Before running: Run an additional rule action  [enter · ↑↓ · ctrl+c]" + newline
 	if got := logOutput(); got != want {
 		t.Fatalf("unexpected output: %q, want %q", got, want)
 	}

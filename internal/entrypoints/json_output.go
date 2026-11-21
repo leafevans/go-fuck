@@ -32,6 +32,10 @@ type jsonSuggestion struct {
 	SideEffect bool `json:"side_effect"`
 	// Rule is the name of the rule that produced the suggestion.
 	Rule string `json:"rule,omitempty"`
+	// Reason explains why the command was suggested.
+	Reason string `json:"reason,omitempty"`
+	// SideEffectDescription describes the additional pre-run action, if any.
+	SideEffectDescription string `json:"side_effect_description,omitempty"`
 }
 
 // jsonResult is the machine readable result of a correction request.
@@ -68,10 +72,12 @@ func printJSON(command *types.Command, corrected []*types.CorrectedCommand) int 
 	}
 	for _, suggestion := range corrected {
 		result.Suggestions = append(result.Suggestions, jsonSuggestion{
-			Command:    validUTF8(suggestion.Script),
-			Priority:   suggestion.Priority,
-			SideEffect: suggestion.SideEffect != nil,
-			Rule:       suggestion.RuleName,
+			Command:               validUTF8(suggestion.Script),
+			Priority:              suggestion.Priority,
+			SideEffect:            suggestion.SideEffect != nil,
+			Rule:                  validUTF8(suggestion.RuleName),
+			Reason:                validUTF8(suggestion.Explanation()),
+			SideEffectDescription: validUTF8(suggestion.BeforeRun()),
 		})
 	}
 

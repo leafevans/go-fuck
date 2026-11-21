@@ -71,7 +71,19 @@ func (s *CommandSelector) Value() *types.CorrectedCommand {
 // confirmSelection prints the confirmation prompt for a command.
 func confirmSelection(selector *CommandSelector) {
 	value := selector.Value()
-	logs.ConfirmText(value.Script, value.SideEffect != nil)
+	logs.ConfirmText(value.Script, value.SideEffect != nil, value.Explanation(), value.BeforeRun())
+}
+
+// PreviewCommands renders suggestions without selecting one or writing shell code.
+func PreviewCommands(commands []*types.CorrectedCommand) {
+	logs.PreviewHeader()
+	for _, command := range commands {
+		showCommand(command)
+	}
+}
+
+func showCommand(command *types.CorrectedCommand) {
+	logs.ShowCorrectedCommand(command.Script, command.SideEffect != nil, command.Explanation(), command.BeforeRun())
 }
 
 // SelectCommand returns the command chosen by the user.
@@ -86,7 +98,7 @@ func SelectCommand(commands []*types.CorrectedCommand) *types.CorrectedCommand {
 
 	if !conf.Current().RequireConfirmation {
 		value := selector.Value()
-		logs.ShowCorrectedCommand(value.Script, value.SideEffect != nil)
+		showCommand(value)
 		return value
 	}
 

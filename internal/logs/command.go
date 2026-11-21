@@ -9,7 +9,7 @@ import (
 // CommandText renders a command on one terminal line without interpreting its
 // control characters. The original command must still be used for execution.
 func CommandText(script string) string {
-	index := strings.IndexFunc(script, unicode.IsControl)
+	index := strings.IndexFunc(script, needsCommandEscape)
 	if index < 0 {
 		return script
 	}
@@ -17,7 +17,7 @@ func CommandText(script string) string {
 	text.Grow(len(script))
 	text.WriteString(script[:index])
 	for _, char := range script[index:] {
-		if unicode.IsControl(char) {
+		if needsCommandEscape(char) {
 			quoted := strconv.QuoteRune(char)
 			text.WriteString(quoted[1 : len(quoted)-1])
 		} else {
@@ -27,13 +27,35 @@ func CommandText(script string) string {
 	return text.String()
 }
 
+func needsCommandEscape(char rune) bool {
+	return unicode.IsControl(char) || unicode.Is(unicode.Bidi_Control, char) || char == '\u2028' || char == '\u2029'
+}
+
 const sideEffectMarker = "(+side effect)"
 
 // CandidateText returns the uncolored label shared by interactive selectors.
-func CandidateText(script string, hasSideEffect bool) string {
+func CandidateText(script, reason, beforeRun string) string {
 	text := CommandText(script)
-	if hasSideEffect {
+	if beforeRun != "" {
 		text += "  " + sideEffectMarker
 	}
+	return text + suggestionDetails(reason, beforeRun)
+}
+
+func suggestionDetails(reason, beforeRun string) string {
+	var text string
+	if reason != "" {
+		text = "  |  " + CommandText(reason)
+	}
+	if beforeRun != "" {
+		text += "  |  Before running: " + CommandText(beforeRun)
+	}
 	return text
+}
+
+func styledSuggestionDetails(reason, beforeRun string) string {
+	if details := suggestionDetails(reason, beforeRun); details != "" {
+		return muted(details)
+	}
+	return ""
 }

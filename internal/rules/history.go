@@ -27,5 +27,6 @@ func historyNewCommand(command *types.Command) ([]string, error) {
 func init() {
 	rule := types.NewRule("history", historyMatch, historyNewCommand)
 	rule.Priority = 9999
+	rule.Reason = "Suggest a similar command from shell history"
 	register(rule)
 }
