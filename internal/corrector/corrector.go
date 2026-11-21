@@ -61,30 +61,19 @@ func OrganizeCommands(commands []*types.CorrectedCommand) []*types.CorrectedComm
 		return nil
 	}
 
-	first := commands[0]
-	rest := make([]*types.CorrectedCommand, len(commands)-1)
-	copy(rest, commands[1:])
-	slices.SortStableFunc(rest, func(left, right *types.CorrectedCommand) int {
+	ordered := slices.Clone(commands)
+	slices.SortStableFunc(ordered[1:], func(left, right *types.CorrectedCommand) int {
 		return cmp.Compare(left.Priority, right.Priority)
 	})
 
-	seen := make(map[string]*types.CorrectedCommand, len(commands))
-	seen[first.Script] = first
-	organized := make([]*types.CorrectedCommand, 1, len(commands))
-	organized[0] = first
-	for _, command := range rest {
-		if previous, exists := seen[command.Script]; exists {
-			// Most scripts occur once. Only inspect the full list when the
-			// same script has different side effects, preserving Equal's
-			// semantics without a quadratic scan for distinct scripts.
-			if command.Equal(previous) || slices.ContainsFunc(organized, command.Equal) {
-				continue
-			}
-		} else {
-			seen[command.Script] = command
+	seen := types.NewCorrectedCommandSet(len(commands))
+	organized := ordered[:0]
+	for _, command := range ordered {
+		if seen.Add(command) {
+			organized = append(organized, command)
 		}
-		organized = append(organized, command)
 	}
+	clear(ordered[len(organized):])
 
 	if conf.Current().Debug {
 		descriptions := make([]string, len(organized))

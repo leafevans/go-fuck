@@ -4,7 +4,6 @@ import (
 	"errors"
 	"os"
 	"os/exec"
-	"slices"
 	"strconv"
 	"strings"
 
@@ -61,12 +60,11 @@ func runFzf(candidates []string) (string, error) {
 func fzfCandidates(commands []*types.CorrectedCommand) ([]string, map[string]*types.CorrectedCommand) {
 	candidates := make([]string, 0, len(commands))
 	byLabel := make(map[string]*types.CorrectedCommand, len(commands))
-	byScript := make(map[string][]*types.CorrectedCommand, len(commands))
+	seen := types.NewCorrectedCommandSet(len(commands))
 	for _, command := range commands {
-		if slices.ContainsFunc(byScript[command.Script], command.Equal) {
+		if !seen.Add(command) {
 			continue
 		}
-		byScript[command.Script] = append(byScript[command.Script], command)
 		base := logs.CommandText(command.Script)
 		if command.SideEffect != nil {
 			base += "  (+side effect)"

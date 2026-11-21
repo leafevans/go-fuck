@@ -28,6 +28,27 @@ func BenchmarkOrganizeCommands(b *testing.B) {
 	}
 }
 
+func BenchmarkOrganizeCommandsSideEffects(b *testing.B) {
+	for _, size := range []int{100, 1000} {
+		b.Run(strconv.Itoa(size), func(b *testing.B) {
+			conf.Reset()
+			b.Cleanup(conf.Reset)
+			commands := make([]*types.CorrectedCommand, 0, 4*size)
+			for _, effect := range []types.SideEffectFunc{nil, organizeEffectOne, organizeEffectTwo, organizeEffectOne} {
+				for i := range size {
+					commands = append(commands, &types.CorrectedCommand{
+						Script: "command " + strconv.Itoa(i), SideEffect: effect, Priority: 100,
+					})
+				}
+			}
+			b.ReportAllocs()
+			for b.Loop() {
+				OrganizeCommands(commands)
+			}
+		})
+	}
+}
+
 // benchmarkCorrectorSetup resets the process wide state so that benchmarks do
 // not depend on the user configuration, on the shell or on the installed
 // tools.

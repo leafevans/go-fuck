@@ -5,6 +5,14 @@ BenchmarkGetCorrectedCommands 8263 47
 BenchmarkGetRules 2048 1
 BenchmarkMarkedBashRawCommand 440 7
 BenchmarkMarkedZshRawCommand 16 1
+BenchmarkOrganizeCommands/10 536 4
+BenchmarkOrganizeCommands/100 4392 4
+BenchmarkOrganizeCommands/1000 62801 6
+BenchmarkOrganizeCommandsSideEffects/100 35936 17
+BenchmarkOrganizeCommandsSideEffects/1000 575535 49
+BenchmarkFzfCandidates/10 1120 8
+BenchmarkFzfCandidates/100 8832 8
+BenchmarkFzfCandidates/1000 125649 12
 BenchmarkReadHistoryFile 1459851 8
 BenchmarkRuleMatchingAllRules 5168 19
 BenchmarkRuleMatchingWithoutOutput 0 0

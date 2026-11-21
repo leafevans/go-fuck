@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"reflect"
 	"slices"
 	"strings"
 	"sync"
@@ -262,10 +261,7 @@ func (c *CorrectedCommand) Equal(other *CorrectedCommand) bool {
 
 // sameSideEffect reports whether two side effect functions are the same.
 func sameSideEffect(a, b SideEffectFunc) bool {
-	if a == nil || b == nil {
-		return a == nil && b == nil
-	}
-	return reflect.ValueOf(a).Pointer() == reflect.ValueOf(b).Pointer()
+	return sideEffectPointer(a) == sideEffectPointer(b)
 }
 
 // String implements fmt.Stringer.
