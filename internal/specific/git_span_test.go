@@ -30,3 +30,25 @@ func TestGitArgumentSpanPreservesShellWords(t *testing.T) {
 		}
 	}
 }
+
+func TestGitArgumentSpanAcrossShells(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		shell shells.Shell
+	}{
+		{"bash", shells.NewBash()},
+		{"fish", shells.NewFish()},
+		{"powershell", shells.NewPowershell()},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			argument := "master's branch"
+			cwd := `repo\it's dir`
+			quoted := tc.shell.Quote(argument)
+			script := "git -C " + tc.shell.Quote(cwd) + " log " + quoted + " -- " + quoted
+			start, end, ok := GitArgumentSpan(script, argument, tc.shell, false)
+			if !ok || script[start:end] != quoted {
+				t.Fatalf("span = %d:%d, %v in %q; want %q", start, end, ok, script, quoted)
+			}
+		})
+	}
+}

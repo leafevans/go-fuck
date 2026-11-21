@@ -13,6 +13,9 @@ BenchmarkOrganizeCommandsSideEffects/1000 575535 49
 BenchmarkFzfCandidates/10 1120 8
 BenchmarkFzfCandidates/100 8832 8
 BenchmarkFzfCandidates/1000 125649 12
+BenchmarkGitOptionSpan/global 40 3
+BenchmarkGitOptionSpan/paths 0 0
+BenchmarkGitOptionSpan/plain 0 0
 BenchmarkReadHistoryFile 1459851 8
 BenchmarkRuleMatchingAllRules 5168 19
 BenchmarkRuleMatchingWithoutOutput 0 0

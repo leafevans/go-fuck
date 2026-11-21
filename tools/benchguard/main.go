@@ -103,9 +103,13 @@ func benchmarkNames(result map[string]metrics) []string {
 // absolute allowance keeps rounding and runtime changes from failing the guard,
 // while a change that allocates per comparison exceeds it by far.
 func allowed(baseline metrics) metrics {
+	allocs := baseline.allocs * 105 / 100
+	if baseline.allocs > 0 {
+		allocs++
+	}
 	return metrics{
 		bytes:  baseline.bytes*105/100 + 128,
-		allocs: baseline.allocs*105/100 + 1,
+		allocs: allocs,
 	}
 }
 

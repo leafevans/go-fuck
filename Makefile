@@ -70,6 +70,7 @@ fuzz: ## Run each native fuzz target briefly as a local smoke test
 	$(GO) test ./internal/instant -run '^$$' -fuzz '^FuzzStripOSC$$' -fuzztime=20s
 	$(GO) test ./internal/rules -run '^$$' -fuzz '^FuzzRules$$' -fuzztime=20s
 	$(GO) test ./internal/shells -run '^$$' -fuzz '^FuzzSplit$$' -fuzztime=20s
+	$(GO) test ./internal/specific -run '^$$' -fuzz '^FuzzGitQuotedArgument$$' -fuzztime=20s
 
 vet: ## Run go vet on all packages
 	$(GO) vet ./...

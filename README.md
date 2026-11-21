@@ -176,7 +176,7 @@ From a source checkout, the update scripts install prebuilt binaries into
 
 ```sh
 sh scripts/update-go-fuck.sh                  # Linux or macOS
-sh scripts/update-go-fuck.sh v2.31.17 /path/to/bin
+sh scripts/update-go-fuck.sh v2.32.0 /path/to/bin
 ```
 
 ```powershell
@@ -190,6 +190,11 @@ and retry failed requests up to three attempts. A failed download, verification
 or replacement preserves the installed binary. Windows supports AMD64 and ARM64;
 Linux and macOS support amd64 and arm64. Pass a version with or without `v` to
 install a specific release.
+
+The PowerShell updater runs the WSL installer through `sh` explicitly, so Fish
+users do not need to change their login shell. If GitHub is unreachable from the
+WSL network, it downloads the Linux archive through Windows, verifies the
+checksum on both sides and then performs an atomic WSL install.
 
 ### From source
 

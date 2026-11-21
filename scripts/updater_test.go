@@ -37,7 +37,7 @@ func TestMain(m *testing.M) {
 			fmt.Fprintf(os.Stderr, "WSL script must start with a shebang without a BOM; got %x\n", prefix)
 			os.Exit(1)
 		}
-		log := strings.Join(os.Args[1:], "\n") + "\n" + string(data)
+		log := strings.Join(os.Args[1:], " ") + "\n" + string(data)
 		if err := os.WriteFile(filepath.Join(os.Getenv("UPDATER_FIXTURES"), "wsl.log"), []byte(log), 0o644); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
@@ -145,15 +145,40 @@ func newUpdaterFixture(t *testing.T, scenario, platform, arch string) updaterFix
 		data = []byte("not an archive")
 	}
 	writeFixture(t, filepath.Join(f.root, "archive"), data, 0o644)
+	var linuxArchive bytes.Buffer
+	gz := gzip.NewWriter(&linuxArchive)
+	tw := tar.NewWriter(gz)
+	linuxHeader := &tar.Header{Name: "go-fuck", Mode: 0o755, Size: int64(len("new binary"))}
+	if err := tw.WriteHeader(linuxHeader); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tw.Write([]byte("new binary")); err != nil {
+		t.Fatal(err)
+	}
+	if err := tw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := gz.Close(); err != nil {
+		t.Fatal(err)
+	}
+	linuxData := linuxArchive.Bytes()
+	writeFixture(t, filepath.Join(f.root, "linux-archive"), linuxData, 0o644)
 	asset := fmt.Sprintf("go-fuck_%s_%s_%s%s", fixtureVersion, platform, arch, ext)
 	hash := fmt.Sprintf("%x", sha256.Sum256(data))
+	linuxAsset := fmt.Sprintf("go-fuck_%s_linux_amd64.tar.gz", fixtureVersion)
+	linuxHash := fmt.Sprintf("%x", sha256.Sum256(linuxData))
 	switch scenario {
 	case "checksum-mismatch":
 		hash = strings.Repeat("0", 64)
 	case "invalid-checksum":
 		hash = "invalid"
+	case "wsl-fallback-checksum":
+		linuxHash = strings.Repeat("0", 64)
 	}
 	line := hash + "  " + asset + "\n"
+	if linuxAsset != asset {
+		line += linuxHash + "  " + linuxAsset + "\n"
+	}
 	switch scenario {
 	case "missing-checksum":
 		line = hash + "  " + asset + ".extra\n"
@@ -188,7 +213,7 @@ func (f updaterFixture) check(t *testing.T, tc updaterCase, output []byte, err e
 		t.Fatal(readErr)
 	}
 	want := "new binary"
-	if wantFailure && tc.name != "native-wsl-failure" {
+	if wantFailure && tc.name != "native-wsl-failure" && tc.name != "wsl-fallback-checksum" {
 		want = "old binary"
 	}
 	if string(data) != want {
@@ -262,7 +287,9 @@ func TestPowerShellUpdater(t *testing.T) {
 				t.Skipf("PowerShell cannot start: %v\n%s", err, out)
 			}
 			cases := append([]updaterCase{}, updaterCases...)
-			cases = append(cases, updaterCase{name: "arm64"}, updaterCase{name: "wsl"}, updaterCase{name: "native-wsl"},
+			cases = append(cases, updaterCase{name: "arm64"}, updaterCase{name: "wsl"}, updaterCase{name: "wsl-timeout"},
+				updaterCase{name: "wsl-fallback-checksum", wantErr: "checksum verification failed"},
+				updaterCase{name: "native-wsl"},
 				updaterCase{name: "native-wsl-failure", wantErr: "the WSL update failed"})
 			for _, tc := range cases {
 				t.Run(tc.name, func(t *testing.T) {
@@ -310,10 +337,20 @@ func TestPowerShellUpdater(t *testing.T) {
 						if err != nil {
 							t.Fatal(err)
 						}
-						for _, want := range []string{"Test Distro", "sh -s -- " + fixtureVersion, "#!/bin/sh"} {
+						for _, want := range []string{"Test Distro", "--exec sh -c", "tr -d", "go-fuck " + fixtureVersion, "#!/bin/sh"} {
 							if !strings.Contains(string(data), want) {
 								t.Errorf("WSL input missing %q: %s", want, data)
 							}
+						}
+						if tc.name == "wsl-timeout" {
+							for _, want := range []string{"--exec uname -m", "--exec bash -c", "sha256sum --check", "go-fuck $version using Go"} {
+								if !strings.Contains(string(data), want) {
+									t.Errorf("WSL fallback input missing %q: %s", want, data)
+								}
+							}
+						}
+						if tc.name == "wsl-fallback-checksum" && strings.Contains(string(data), "--exec bash -c") {
+							t.Errorf("checksum failure reached the WSL installer: %s", data)
 						}
 					}
 				})

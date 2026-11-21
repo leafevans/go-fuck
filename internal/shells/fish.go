@@ -72,6 +72,68 @@ func (f *Fish) Quote(s string) string {
 	return "'" + escaped + "'"
 }
 
+// SplitCommand splits a fish command line using fish's quote rules. Unlike
+// POSIX shells, fish accepts a backslash as an escape inside single quotes.
+func (f *Fish) SplitCommand(command string) []string {
+	return splitFish(command)
+}
+
+func splitFish(command string) []string {
+	var (
+		args    []string
+		current strings.Builder
+		inWord  bool
+	)
+	flush := func() {
+		if inWord {
+			args = append(args, current.String())
+			current.Reset()
+			inWord = false
+		}
+	}
+	runes := []rune(command)
+	for index := 0; index < len(runes); index++ {
+		switch ch := runes[index]; {
+		case ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n':
+			flush()
+		case ch == '\'':
+			inWord = true
+			for index++; index < len(runes); index++ {
+				if runes[index] == '\\' && index+1 < len(runes) &&
+					(runes[index+1] == '\\' || runes[index+1] == '\'') {
+					index++
+					current.WriteRune(runes[index])
+					continue
+				}
+				if runes[index] == '\'' {
+					break
+				}
+				current.WriteRune(runes[index])
+			}
+		case ch == '"':
+			inWord = true
+			for index++; index < len(runes); index++ {
+				if runes[index] == '"' {
+					break
+				}
+				if runes[index] == '\\' && index+1 < len(runes) {
+					index++
+				}
+				current.WriteRune(runes[index])
+			}
+		case ch == '\\' && index+1 < len(runes):
+			index++
+			current.WriteRune(runes[index])
+			inWord = true
+		default:
+			current.WriteRune(ch)
+			inWord = true
+		}
+	}
+	flush()
+	return args
+}
+
 // And joins commands with the fish AND operator.
 func (f *Fish) And(commands ...string) string {
 	return strings.Join(commands, "; and ")

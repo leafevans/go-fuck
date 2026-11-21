@@ -42,6 +42,8 @@ jobs:
             target: FuzzStripOSC
           - pkg: ./internal/shells
             target: FuzzSplit
+          - pkg: ./internal/specific
+            target: FuzzGitQuotedArgument
           - pkg: ./internal/rules
             target: FuzzRules
     steps:

@@ -7,6 +7,8 @@ Downloads the release archive and checksums.txt, verifies the SHA256 checksum
 and replaces the installed go-fuck.exe with rollback on failure. Downloads have
 bounded timeouts and up to three attempts. Unless -SkipWsl is used, the script
 also runs update-go-fuck.sh in WSL, which has to be next to this script.
+If WSL cannot download from GitHub, the Windows updater downloads and verifies
+the Linux archive, then installs it through Ubuntu's own shell.
 
 .EXAMPLE
 ./update-go-fuck.ps1
@@ -181,10 +183,13 @@ if (-not (Test-Path -LiteralPath $script)) {
     return
 }
 
-# Stream the script through stdin. This handles spaces and quotes in its path
-# and avoids a shared /tmp filename that concurrent updates could overwrite.
-$content = [System.IO.File]::ReadAllText($script)
-$arguments = @("-e", "sh", "-c", "tr -d '\r' | sh -s -- $Version")
+# Run the script through sh explicitly. WSL otherwise starts the user's login
+# shell, which may be fish and does not understand the POSIX invocation.
+$content = [System.IO.File]::ReadAllText($script).Replace("`r", "").TrimStart([char]0xFEFF)
+$wslPrefix = @()
+if ($WslDistro -ne "") {
+    $wslPrefix = @("-d", $WslDistro)
+}
 $previousOutputEncoding = $OutputEncoding
 $previousInputEncoding = [Console]::InputEncoding
 try {
@@ -193,15 +198,111 @@ try {
     # from Console.InputEncoding, independently of OutputEncoding.
     $OutputEncoding = [System.Text.UTF8Encoding]::new($false)
     [Console]::InputEncoding = $OutputEncoding
-    if ($WslDistro -ne "") {
-        $content | & wsl.exe -d $WslDistro @arguments
-    }
-    else {
-        $content | & wsl.exe @arguments
-    }
+    $streamCommand = 'tr -d "\r" | sh -s "$@"'
+    $content | & wsl.exe @wslPrefix --exec sh -c $streamCommand go-fuck $Version
     $wslExitCode = $LASTEXITCODE
 } finally {
     $OutputEncoding = $previousOutputEncoding
     [Console]::InputEncoding = $previousInputEncoding
 }
-if ($wslExitCode -ne 0) { throw "the WSL update failed" }
+if ($wslExitCode -eq 0) { return }
+
+# GitHub is sometimes unreachable from a WSL network while the Windows network
+# works. Download and verify the same Linux archive on the Windows side, then
+# let WSL verify it again and perform an atomic install. The fallback only runs
+# after the direct updater failed, so the normal path keeps its native timeout.
+Write-Warning "the WSL updater could not download the release; retrying with a Windows-verified Linux archive"
+$fallbackDir = Join-Path ([System.IO.Path]::GetTempPath()) ("go-fuck-wsl-update-" + [guid]::NewGuid().ToString("N"))
+New-Item -ItemType Directory -Path $fallbackDir | Out-Null
+try {
+    $machineOutput = (& wsl.exe @wslPrefix --exec uname -m 2>$null | Out-String).Trim()
+    if ($LASTEXITCODE -ne 0) { throw "cannot query the WSL architecture" }
+    $wslArch = switch ($machineOutput) {
+        "x86_64" { "amd64" }
+        "amd64" { "amd64" }
+        "aarch64" { "arm64" }
+        "arm64" { "arm64" }
+        default { throw "unsupported WSL architecture: $machineOutput" }
+    }
+
+    $linuxAsset = "go-fuck_${Version}_linux_$wslArch.tar.gz"
+    $linuxArchive = Join-Path $fallbackDir $linuxAsset
+    $checksums = Join-Path $fallbackDir "checksums.txt"
+    Write-Host "downloading go-fuck $Version (linux/$wslArch) through Windows"
+    Save-Download -Uri "$url/$linuxAsset" -OutFile $linuxArchive
+    Save-Download -Uri "$url/checksums.txt" -OutFile $checksums -TimeoutSec 20
+
+    $pattern = '^(\S+)\s+' + [regex]::Escape($linuxAsset) + '$'
+    $lines = @(Select-String -LiteralPath $checksums -Pattern $pattern)
+    if ($lines.Count -ne 1) { throw "expected exactly one SHA256 checksum for $linuxAsset" }
+    $expected = $lines[0].Matches[0].Groups[1].Value
+    if ($expected -notmatch '^[0-9a-fA-F]{64}$') { throw "invalid SHA256 checksum for $linuxAsset" }
+    $actual = (Get-FileHash -LiteralPath $linuxArchive -Algorithm SHA256).Hash
+    if ($expected -ine $actual) { throw "checksum verification failed for $linuxAsset" }
+
+    $archiveInWsl = (& wsl.exe @wslPrefix --exec wslpath -u $linuxArchive | Out-String).Trim()
+    if ($LASTEXITCODE -ne 0 -or $archiveInWsl -notmatch '^/[^\r\n]+$') {
+        throw "cannot translate the downloaded archive path for WSL"
+    }
+    $installScript = @'
+set -eu
+archive=$1
+expected=$2
+version=$3
+command -v sha256sum >/dev/null 2>&1 || {
+  echo "update-go-fuck: sha256sum is required in WSL" >&2
+  exit 1
+}
+printf '%s  %s\n' "$expected" "$archive" | sha256sum --check -
+tmp=$(mktemp -d)
+staged=
+cleanup() {
+  rm -rf "$tmp"
+  if [ -n "$staged" ]; then rm -f "$staged"; fi
+}
+trap cleanup 0
+tar -xzf "$archive" -C "$tmp" go-fuck
+[ -f "$tmp/go-fuck" ] && [ ! -L "$tmp/go-fuck" ] || {
+  echo "update-go-fuck: archive does not contain a regular go-fuck binary" >&2
+  exit 1
+}
+install_dir="$HOME/.local/bin"
+[ ! -d "$install_dir/go-fuck" ] || {
+  echo "update-go-fuck: installation target is a directory" >&2
+  exit 1
+}
+mkdir -p "$install_dir"
+staged=$(mktemp "$install_dir/.go-fuck.XXXXXX")
+install -m 755 "$tmp/go-fuck" "$staged"
+actual=$("$staged" --version 2>&1)
+case "$actual" in
+  "go-fuck $version using Go "*) ;;
+  *)
+    echo "update-go-fuck: new binary reported unexpected version: $actual" >&2
+    exit 1
+    ;;
+esac
+mv -f "$staged" "$install_dir/go-fuck"
+staged=
+echo "go-fuck $version installed in $install_dir"
+'@
+    $installScript = $installScript.Replace("`r", "").TrimStart([char]0xFEFF)
+    try {
+        $previousOutputEncoding = $OutputEncoding
+        $previousInputEncoding = [Console]::InputEncoding
+        $OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+        [Console]::InputEncoding = $OutputEncoding
+        $streamCommand = 'tr -d "\r" | bash -s "$@"'
+        $installScript | & wsl.exe @wslPrefix --exec bash -c $streamCommand go-fuck $archiveInWsl $expected $Version
+        $fallbackExitCode = $LASTEXITCODE
+    } finally {
+        $OutputEncoding = $previousOutputEncoding
+        [Console]::InputEncoding = $previousInputEncoding
+    }
+    if ($fallbackExitCode -ne 0) { throw "the WSL fallback install failed" }
+    Write-Host "go-fuck $Version installed in WSL"
+} catch {
+    throw "the WSL update failed: $($_.Exception.Message)"
+} finally {
+    Remove-Item -LiteralPath $fallbackDir -Recurse -Force -ErrorAction SilentlyContinue
+}

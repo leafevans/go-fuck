@@ -18,8 +18,8 @@ function Invoke-RestMethod {
 function Invoke-WebRequest {
     param([string]$Uri, [string]$OutFile, [int]$TimeoutSec, [string]$UserAgent,
         [switch]$UseBasicParsing, $ErrorAction)
-    $kind = if ($Uri.EndsWith("/checksums.txt")) { "checksums" } else { "archive" }
-    $expectedTimeout = if ($kind -eq "archive") { 120 } else { 20 }
+    $kind = if ($Uri.EndsWith("/checksums.txt")) { "checksums" } elseif ($Uri.EndsWith(".tar.gz")) { "linux-archive" } else { "archive" }
+    $expectedTimeout = if ($kind -eq "archive" -or $kind -eq "linux-archive") { 120 } else { 20 }
     if ($TimeoutSec -ne $expectedTimeout) { throw "missing download timeout" }
     Add-Content -LiteralPath (Join-Path $fixture "requests.log") -Value $kind
     $global:updaterCounts[$kind]++
@@ -49,8 +49,19 @@ function Move-Item {
 if (-not $scenario.StartsWith("native-wsl")) {
     function wsl.exe {
         $content = @($input) -join "`n"
-        [System.IO.File]::WriteAllText((Join-Path $fixture "wsl.log"), ($args -join "`n") + "`n" + $content)
-        $global:LASTEXITCODE = 0
+        Add-Content -LiteralPath (Join-Path $fixture "wsl.log") -Value (($args -join " ") + "`n" + $content)
+        $arguments = $args -join " "
+        if ($arguments.Contains("--exec uname -m")) {
+            Write-Output "x86_64"
+            $global:LASTEXITCODE = 0
+        } elseif ($arguments.Contains("--exec wslpath -u")) {
+            Write-Output "/mnt/c/three/verified/archive.tar.gz"
+            $global:LASTEXITCODE = 0
+        } elseif ($arguments.Contains("--exec sh -c") -and ($scenario -eq "wsl-timeout" -or $scenario -eq "wsl-fallback-checksum")) {
+            $global:LASTEXITCODE = 1
+        } else {
+            $global:LASTEXITCODE = 0
+        }
     }
 }
 

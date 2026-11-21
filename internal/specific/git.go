@@ -20,6 +20,8 @@ var gitAliasExpansion = regexp.MustCompile(`trace: alias expansion: ([^ \t\r\n]+
 // a subcommand does not rewrite the quoting of unrelated arguments.
 var gitWord = regexp.MustCompile(`^(?:[^ \t\r\n;&|<>()'"\\]|\\.|'[^']*'|"(?:[^"\\]|\\.)*")+`)
 
+var gitFishWord = regexp.MustCompile(`^(?:[^ \t\r\n;&|<>()'"\\]|\\.|'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")+`)
+
 var gitPowerShellWord = regexp.MustCompile("^(?:[^ \\t\\r\\n;&|<>()'\"`]|`.|'(?:[^']|'')*'|\"(?:[^\"`]|`.)*\")+")
 
 // GitSupportMatch wraps a match function so that it only runs for git (or hub)
@@ -140,7 +142,10 @@ func gitShellWord(rest string, shell shells.Shell) (string, int) {
 			return rest[:i], i
 		case '\'', '"', '\\', '`':
 			pattern := gitWord
-			if _, ok := shell.(*shells.Powershell); ok {
+			switch shell.(type) {
+			case *shells.Fish:
+				pattern = gitFishWord
+			case *shells.Powershell:
 				pattern = gitPowerShellWord
 			}
 			raw := pattern.FindString(rest)

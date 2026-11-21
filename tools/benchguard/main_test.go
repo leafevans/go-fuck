@@ -84,6 +84,15 @@ func TestCheckReportsRegression(t *testing.T) {
 	}
 }
 
+func TestCheckRejectsAnAllocationWhenTheBaselineIsZero(t *testing.T) {
+	baseline := map[string]metrics{"BenchmarkZero": {bytes: 0, allocs: 0}}
+	current := map[string]metrics{"BenchmarkZero": {bytes: 0, allocs: 1}}
+	problems := check(current, baseline)
+	if len(problems) != 1 || !strings.Contains(problems[0], "1 allocs/op") {
+		t.Fatalf("check() = %v, want a zero-allocation regression", problems)
+	}
+}
+
 func TestCheckReportsMissingBenchmark(t *testing.T) {
 	baseline := map[string]metrics{"BenchmarkFoo": {bytes: 464, allocs: 5}}
 	problems := check(map[string]metrics{}, baseline)

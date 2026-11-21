@@ -3,6 +3,7 @@ package shells
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -60,6 +61,25 @@ func TestQuote(t *testing.T) {
 	for _, testCase := range cases {
 		if got := Quote(testCase.value); got != testCase.expected {
 			t.Errorf("Quote(%q) = %q, want %q", testCase.value, got, testCase.expected)
+		}
+	}
+}
+
+func TestFishSplitCommand(t *testing.T) {
+	fish := NewFish()
+	for _, tc := range []struct {
+		command string
+		want    []string
+	}{
+		{"git log 'master'", []string{"git", "log", "master"}},
+		{"git log 'repo dir'", []string{"git", "log", "repo dir"}},
+		{"git log 'it\\'s'", []string{"git", "log", "it's"}},
+		{`git log 'back\\slash'`, []string{"git", "log", `back\slash`}},
+		{`git log "double quoted"`, []string{"git", "log", "double quoted"}},
+		{`git log escaped\ space`, []string{"git", "log", "escaped space"}},
+	} {
+		if got := fish.SplitCommand(tc.command); !reflect.DeepEqual(got, tc.want) {
+			t.Errorf("SplitCommand(%q) = %q, want %q", tc.command, got, tc.want)
 		}
 	}
 }

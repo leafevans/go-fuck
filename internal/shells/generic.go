@@ -146,13 +146,9 @@ func (g *Generic) Quote(s string) string {
 
 // SplitCommand splits a command line using shell-like syntax.
 func (g *Generic) SplitCommand(command string) []string {
-	prepared := strings.ReplaceAll(command, backslash+" ", "??")
-	parts, err := Split(prepared)
+	parts, err := splitCommand(command, true)
 	if err != nil {
 		return strings.Split(command, " ")
-	}
-	for i, part := range parts {
-		parts[i] = strings.ReplaceAll(part, "??", backslash+" ")
 	}
 	return parts
 }

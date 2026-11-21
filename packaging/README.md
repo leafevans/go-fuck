@@ -180,18 +180,21 @@ SHA256 checksums and replace a locally installed binary:
 
 ```powershell
 ./scripts/update-go-fuck.ps1                 # latest release, Windows and WSL
-./scripts/update-go-fuck.ps1 -Version 2.11.0 # a specific release
+./scripts/update-go-fuck.ps1 -Version 2.32.0 # a specific release
 ./scripts/update-go-fuck.ps1 -SkipWsl
 ```
 
 ```bash
 ./scripts/update-go-fuck.sh                   # latest release
-./scripts/update-go-fuck.sh 2.11.0 ~/.local/bin
+./scripts/update-go-fuck.sh 2.32.0 ~/.local/bin
 ```
 
 The WSL part of the PowerShell script runs `update-go-fuck.sh`, so keep the two
-files next to each other. The updater is a convenience for local installs; the
-Homebrew, Scoop and AUR packages update through their own package managers.
+files next to each other. It executes the script with `sh` rather than the
+user's login shell. When WSL cannot reach GitHub, the Windows side downloads and
+verifies the Linux archive before WSL verifies and installs it atomically. The
+updater is a convenience for local installs; the Homebrew, Scoop and AUR
+packages update through their own package managers.
 
 ## Release checklist
 

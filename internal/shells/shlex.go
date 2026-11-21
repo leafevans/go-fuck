@@ -42,6 +42,12 @@ func isArgumentSpace(ch rune) bool {
 // backslash before a double quote or another backslash is removed; every other
 // backslash sequence is kept. A trailing backslash is an error.
 func Split(command string) ([]string, error) {
+	return splitCommand(command, false)
+}
+
+// splitCommand implements Split. Generic.SplitCommand sets preserveEscapedSpace
+// to match thefuck, which keeps an unquoted backslash before a space.
+func splitCommand(command string, preserveEscapedSpace bool) ([]string, error) {
 	var (
 		args    []string
 		current strings.Builder
@@ -103,7 +109,18 @@ func Split(command string) ([]string, error) {
 			if i+1 >= len(runes) {
 				return nil, ErrNoEscapedCharacter
 			}
-			current.WriteRune(runes[i+1])
+			escaped := runes[i+1]
+			if preserveEscapedSpace && escaped == charBackslash && i+2 < len(runes) && runes[i+2] == charSpace {
+				current.WriteRune(charBackslash)
+				current.WriteRune(charSpace)
+				inWord = true
+				i += 2
+				continue
+			}
+			if preserveEscapedSpace && escaped == charSpace {
+				current.WriteRune(charBackslash)
+			}
+			current.WriteRune(escaped)
 			inWord = true
 			i++
 		default:

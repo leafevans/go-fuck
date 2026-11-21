@@ -18,6 +18,7 @@ coverage.*
 !coverage.go
 *.coverprofile
 profile.cov
+shellcov
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
