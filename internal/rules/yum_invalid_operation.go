@@ -67,6 +67,6 @@ func init() {
 	rule := types.NewRule("yum_invalid_operation",
 		specific.SudoSupportMatch(utils.ForApp([]string{"yum"}, 0, yumInvalidOperationMatch)),
 		specific.SudoSupportNew(yumInvalidOperationNewCommand))
-	rule.EnabledByDefault = specific.YumAvailable()
+	rule.DefaultProbe = startupTools.YumAvailable
 	register(rule)
 }

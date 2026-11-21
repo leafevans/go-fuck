@@ -55,6 +55,6 @@ func init() {
 	rule := types.NewRule("dnf_no_such_command",
 		specific.SudoSupportMatch(utils.ForApp([]string{"dnf"}, 0, dnfNoSuchCommandMatch)),
 		specific.SudoSupportNew(dnfNoSuchCommandNewCommand))
-	rule.EnabledByDefault = specific.DnfAvailable()
+	rule.DefaultProbe = startupTools.DnfAvailable
 	register(rule)
 }

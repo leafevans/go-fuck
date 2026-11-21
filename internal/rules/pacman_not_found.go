@@ -46,6 +46,6 @@ func pacmanNotFoundNewCommand(command *types.Command) ([]string, error) {
 
 func init() {
 	rule := types.NewRule("pacman_not_found", pacmanNotFoundMatch, pacmanNotFoundNewCommand)
-	rule.EnabledByDefault, _ = specific.ArchlinuxEnv()
+	rule.DefaultProbe = specific.ArchlinuxDefault
 	register(rule)
 }

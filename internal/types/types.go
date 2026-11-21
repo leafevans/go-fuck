@@ -152,6 +152,9 @@ type Rule struct {
 	// EnabledByDefault reports whether the rule is enabled unless it is listed
 	// in the rules setting.
 	EnabledByDefault bool
+	// DefaultProbe optionally determines the default state instead of the static flag.
+	// It must be safe to call concurrently.
+	DefaultProbe func() bool
 	// SideEffect is applied before the corrected command runs.
 	SideEffect SideEffectFunc
 	// Reason explains what the rule changes or why it applies.
@@ -176,13 +179,21 @@ func NewRule(name string, match MatchFunc, getNewCommand NewCommandFunc) *Rule {
 	}
 }
 
+// DefaultEnabled reports whether the rule participates in the default rule set.
+func (r *Rule) DefaultEnabled() bool {
+	if r.DefaultProbe != nil {
+		return r.DefaultProbe()
+	}
+	return r.EnabledByDefault
+}
+
 // IsEnabled reports whether the rule is enabled by the settings.
 func (r *Rule) IsEnabled() bool {
 	rules := conf.Current().Rules
 	if slices.Contains(rules, r.Name) {
 		return true
 	}
-	return r.EnabledByDefault && slices.Contains(rules, consts.AllEnabled)
+	return slices.Contains(rules, consts.AllEnabled) && r.DefaultEnabled()
 }
 
 // IsMatch reports whether the rule matches the command. A panicking or
@@ -243,7 +254,7 @@ func (r *Rule) GetCorrectedCommands(command *Command) (corrected []*CorrectedCom
 // String implements fmt.Stringer.
 func (r *Rule) String() string {
 	return fmt.Sprintf("Rule(name=%s, priority=%d, enabled_by_default=%t, requires_output=%t)",
-		r.Name, r.Priority, r.EnabledByDefault, r.RequiresOutput)
+		r.Name, r.Priority, r.DefaultEnabled(), r.RequiresOutput)
 }
 
 // CorrectedCommand is a command fixed by a rule.

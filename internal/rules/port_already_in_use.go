@@ -70,6 +70,6 @@ func init() {
 		portAlreadyInUseMatch,
 		portAlreadyInUseNewCommand)
 	// Python: enabled_by_default = bool(which('lsof')).
-	rule.EnabledByDefault = utils.IsAvailable("lsof")
+	rule.DefaultProbe = func() bool { return utils.StartupAvailable("lsof") }
 	register(rule)
 }

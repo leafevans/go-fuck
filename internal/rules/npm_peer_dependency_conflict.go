@@ -3,7 +3,6 @@ package rules
 import (
 	"strings"
 
-	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
 	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
@@ -42,6 +41,6 @@ func init() {
 	rule := types.NewRule("npm_peer_dependency_conflict",
 		utils.ForApp([]string{"npm"}, 0, npmPeerDependencyConflictMatch),
 		npmPeerDependencyConflictNewCommand)
-	rule.EnabledByDefault = specific.NpmAvailable()
+	rule.DefaultProbe = startupTools.NpmAvailable
 	register(rule)
 }

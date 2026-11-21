@@ -23,6 +23,6 @@ func init() {
 	rule := types.NewRule("apt_list_upgradable",
 		specific.SudoSupportMatch(utils.ForApp([]string{"apt"}, 0, aptListUpgradableMatch)),
 		specific.SudoSupportNew(aptListUpgradableNewCommand))
-	rule.EnabledByDefault = specific.AptAvailable()
+	rule.DefaultProbe = startupTools.AptAvailable
 	register(rule)
 }

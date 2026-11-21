@@ -3,7 +3,6 @@ package rules
 import (
 	"strings"
 
-	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
 	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
@@ -40,6 +39,6 @@ func init() {
 	rule := types.NewRule("choco_install",
 		utils.ForApp([]string{"choco", "cinst"}, 0, chocoInstallMatch),
 		chocoInstallNewCommand)
-	rule.EnabledByDefault = specific.ChocoAvailable()
+	rule.DefaultProbe = startupTools.ChocoAvailable
 	register(rule)
 }

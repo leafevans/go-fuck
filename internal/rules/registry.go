@@ -9,8 +9,12 @@ import (
 	"slices"
 	"sync"
 
+	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
+	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
+
+var startupTools = specific.ToolAvailability(utils.StartupAvailable)
 
 // Characters used by rules that build shell snippets or match quoting
 // problems.
@@ -46,7 +50,9 @@ func register(rule *types.Rule) {
 
 // Count returns the number of registered rules.
 func Count() int {
-	return len(All())
+	registryMu.Lock()
+	defer registryMu.Unlock()
+	return len(registry)
 }
 
 // All returns the registered rules ordered by priority and name.

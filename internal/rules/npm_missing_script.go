@@ -44,6 +44,6 @@ func init() {
 	rule := types.NewRule("npm_missing_script",
 		utils.ForApp([]string{"npm"}, 0, npmMissingScriptMatch),
 		npmMissingScriptNewCommand)
-	rule.EnabledByDefault = specific.NpmAvailable()
+	rule.DefaultProbe = startupTools.NpmAvailable
 	register(rule)
 }

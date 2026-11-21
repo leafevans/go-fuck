@@ -4,8 +4,8 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 
-	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
 	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
@@ -103,6 +103,8 @@ func aptGetNewCommand(command *types.Command) ([]string, error) {
 
 func init() {
 	rule := types.NewRule("apt_get", aptGetMatch, aptGetNewCommand)
-	rule.EnabledByDefault = specific.AptAvailable() && aptGetHandlerPath() != ""
+	rule.DefaultProbe = sync.OnceValue(func() bool {
+		return startupTools.AptAvailable() && aptGetHandlerPath() != ""
+	})
 	register(rule)
 }

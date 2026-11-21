@@ -5,7 +5,6 @@ import (
 
 	"strings"
 
-	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
 	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
@@ -93,6 +92,6 @@ func init() {
 		utils.ForApp([]string{"choco"}, 0, chocoUnknownCommandMatch),
 		chocoUnknownCommandNewCommand,
 	)
-	rule.EnabledByDefault = specific.ChocoAvailable()
+	rule.DefaultProbe = startupTools.ChocoAvailable
 	register(rule)
 }

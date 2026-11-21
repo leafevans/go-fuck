@@ -45,6 +45,6 @@ func pacmanNewCommand(command *types.Command) ([]string, error) {
 
 func init() {
 	rule := types.NewRule("pacman", pacmanMatch, pacmanNewCommand)
-	rule.EnabledByDefault, _ = specific.ArchlinuxEnv()
+	rule.DefaultProbe = specific.ArchlinuxDefault
 	register(rule)
 }

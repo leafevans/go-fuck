@@ -3,7 +3,6 @@ package rules
 import (
 	"strings"
 
-	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
 	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
@@ -27,6 +26,6 @@ func init() {
 	rule := types.NewRule("apt_get_search",
 		utils.ForApp([]string{"apt-get"}, 0, aptGetSearchMatch),
 		aptGetSearchNewCommand)
-	rule.EnabledByDefault = specific.AptAvailable()
+	rule.DefaultProbe = startupTools.AptAvailable
 	register(rule)
 }

@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/shells"
-	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
 	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
@@ -30,6 +29,6 @@ func init() {
 	rule := types.NewRule("npm_ci_missing_lockfile",
 		utils.ForApp([]string{"npm"}, 0, npmCIMissingLockfileMatch),
 		npmCIMissingLockfileNewCommand)
-	rule.EnabledByDefault = specific.NpmAvailable()
+	rule.DefaultProbe = startupTools.NpmAvailable
 	register(rule)
 }

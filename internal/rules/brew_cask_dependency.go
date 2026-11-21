@@ -3,7 +3,6 @@ package rules
 import (
 	"strings"
 
-	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
 	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
@@ -46,6 +45,6 @@ func init() {
 	rule := types.NewRule("brew_cask_dependency",
 		utils.ForApp([]string{"brew"}, 0, brewCaskDependencyMatch),
 		brewCaskDependencyNewCommand)
-	rule.EnabledByDefault = specific.BrewAvailable()
+	rule.DefaultProbe = startupTools.BrewAvailable
 	register(rule)
 }

@@ -43,7 +43,7 @@ func listRules(args *argumentparser.Args) int {
 			listed = append(listed, listRule{
 				Name:             rule.Name,
 				Priority:         rule.Priority,
-				EnabledByDefault: rule.EnabledByDefault,
+				EnabledByDefault: rule.DefaultEnabled(),
 				RequiresOutput:   rule.RequiresOutput,
 				SideEffect:       rule.SideEffect != nil,
 			})

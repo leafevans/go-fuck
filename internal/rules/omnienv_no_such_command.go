@@ -66,10 +66,11 @@ func omnienvNoSuchCommandNewCommand(command *types.Command) ([]string, error) {
 }
 
 func init() {
-	enabled := slices.ContainsFunc(omnienvNoSuchCommandSupportedApps, utils.IsAvailable)
 	rule := types.NewRule("omnienv_no_such_command",
 		utils.ForApp(omnienvNoSuchCommandSupportedApps, 1, omnienvNoSuchCommandMatch),
 		omnienvNoSuchCommandNewCommand)
-	rule.EnabledByDefault = enabled
+	rule.DefaultProbe = func() bool {
+		return slices.ContainsFunc(omnienvNoSuchCommandSupportedApps, utils.StartupAvailable)
+	}
 	register(rule)
 }

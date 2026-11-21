@@ -3,8 +3,46 @@ package utils
 import (
 	"testing"
 
+	"github.com/leafevans/go-fuck/v2/internal/conf"
 	"github.com/leafevans/go-fuck/v2/internal/shells"
 )
+
+func TestSnapshotAvailabilityDefersAndIsolatesScan(t *testing.T) {
+	resetUtilsState(t)
+	const tool = "go-fuck-test-tool"
+	dir := fakeExecutableDir(t, tool)
+	t.Setenv("PATH", dir)
+	t.Setenv("TF_ALIAS", "go-fuck-test-alias")
+
+	available := snapshotAvailability(dir, GetAlias(), nil)
+	if pathScanCache != nil {
+		t.Fatal("capturing startup inputs scanned PATH")
+	}
+	conf.Current().ExcludedSearchPathPrefixes = []string{dir}
+	if IsAvailable(tool) {
+		t.Fatal("runtime search ignored the path exclusion")
+	}
+	if !available(tool) || available("absent") {
+		t.Fatal("default search did not preserve the original inputs")
+	}
+	if IsAvailable(tool) {
+		t.Fatal("the default search leaked into the runtime search")
+	}
+}
+
+func TestIsAvailableTracksAliasChanges(t *testing.T) {
+	resetUtilsState(t)
+	const tool = "go-fuck-test-tool"
+	t.Setenv("PATH", fakeExecutableDir(t, tool))
+	t.Setenv("TF_ALIAS", tool)
+	if IsAvailable(tool) {
+		t.Fatal("search included the alias itself")
+	}
+	t.Setenv("TF_ALIAS", "go-fuck-test-alias")
+	if !IsAvailable(tool) {
+		t.Fatal("search reused a cached result from a different alias")
+	}
+}
 
 // aliasShell is a shell with fixed aliases.
 type aliasShell struct {

@@ -68,17 +68,27 @@ func GetPkgFile(command string) ([]string, error) {
 // The first result reports whether the pkgfile based rules are enabled by
 // default, the second one is the pacman command to use.
 func ArchlinuxEnv() (enabledByDefault bool, pacman string) {
+	return archlinuxEnv(utils.IsAvailable)
+}
+
+// ArchlinuxDefault reports whether the Arch Linux rules are enabled by default.
+func ArchlinuxDefault() bool {
+	enabled, _ := archlinuxEnv(utils.StartupAvailable)
+	return enabled
+}
+
+func archlinuxEnv(available func(string) bool) (enabledByDefault bool, pacman string) {
 	switch {
-	case utils.IsAvailable("yay"):
+	case available("yay"):
 		pacman = "yay"
-	case utils.IsAvailable("pikaur"):
+	case available("pikaur"):
 		pacman = "pikaur"
-	case utils.IsAvailable("yaourt"):
+	case available("yaourt"):
 		pacman = "yaourt"
-	case utils.IsAvailable("pacman"):
+	case available("pacman"):
 		pacman = "sudo pacman"
 	default:
 		return false, ""
 	}
-	return utils.IsAvailable("pkgfile"), pacman
+	return available("pkgfile"), pacman
 }

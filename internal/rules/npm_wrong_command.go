@@ -136,6 +136,6 @@ func init() {
 	rule := types.NewRule("npm_wrong_command",
 		specific.SudoSupportMatch(utils.ForApp([]string{"npm"}, 0, npmWrongCommandMatch)),
 		specific.SudoSupportNew(npmWrongCommandNewCommand))
-	rule.EnabledByDefault = specific.NpmAvailable()
+	rule.DefaultProbe = startupTools.NpmAvailable
 	register(rule)
 }

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/leafevans/go-fuck/v2/internal/conf"
+	"github.com/leafevans/go-fuck/v2/internal/consts"
 	"github.com/leafevans/go-fuck/v2/internal/logs"
 	"github.com/leafevans/go-fuck/v2/internal/shells"
 )
@@ -162,6 +163,28 @@ func TestRuleIsEnabled(t *testing.T) {
 		if got := testCase.rule.IsEnabled(); got != testCase.expected {
 			t.Errorf("IsEnabled() with rules %v = %v, want %v", testCase.rules, got, testCase.expected)
 		}
+	}
+}
+
+func TestRuleIsEnabledProbesOnlyDefaults(t *testing.T) {
+	resetTypesState(t)
+	rule := NewRule("tool", nil, nil)
+	calls := 0
+	rule.DefaultProbe = func() bool {
+		calls++
+		return false
+	}
+	conf.Current().Rules = []string{consts.AllEnabled, rule.Name}
+	if !rule.IsEnabled() || calls != 0 {
+		t.Fatal("explicitly enabled rule should bypass the default probe")
+	}
+	conf.Current().Rules = nil
+	if rule.IsEnabled() || calls != 0 {
+		t.Fatal("unlisted rule should bypass the default probe in an explicit rule set")
+	}
+	conf.Current().Rules = []string{consts.AllEnabled}
+	if rule.IsEnabled() || calls != 1 {
+		t.Fatal("default rule set should consult the default probe")
 	}
 }
 

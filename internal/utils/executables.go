@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 	"sync"
 
@@ -48,7 +49,7 @@ func ResetCaches() {
 	whichCache = sync.Map{}
 	pathScanMu.Lock()
 	pathScanCache = nil
-	pathScanPath = ""
+	pathScanKey = pathSearchKey{}
 	pathScanMu.Unlock()
 }
 
@@ -93,9 +94,13 @@ type pathScan struct {
 	available map[string]bool
 }
 
+type pathSearchKey struct {
+	path, alias, excluded string
+}
+
 var (
 	pathScanMu    sync.Mutex
-	pathScanPath  string
+	pathScanKey   pathSearchKey
 	pathScanCache *pathScan
 )
 
@@ -104,23 +109,26 @@ var (
 // The cache is keyed by PATH so that tests and shell history helpers see tools
 // that were added to PATH later in the process.
 func scanPath() *pathScan {
-	path := os.Getenv("PATH")
-	key := path + "\x00" + strings.Join(conf.Current().ExcludedSearchPathPrefixes, "\x00")
+	return scanPathWith(os.Getenv("PATH"), GetAlias(), conf.Current().ExcludedSearchPathPrefixes)
+}
+
+func scanPathWith(path, alias string, excluded []string) *pathScan {
+	key := pathSearchKey{path, strings.ToLower(alias), strings.Join(excluded, "\x00")}
 
 	pathScanMu.Lock()
 	defer pathScanMu.Unlock()
-	if pathScanCache != nil && pathScanPath == key {
+	if pathScanCache != nil && pathScanKey == key {
 		return pathScanCache
 	}
 
-	names := readPathExecutableNames(path)
+	names := readPathExecutableNames(path, key.alias, excluded)
 	available := make(map[string]bool, len(names))
 	for _, name := range names {
 		if normalized := availableFileName(name); normalized != "" {
 			available[normalized] = true
 		}
 	}
-	pathScanPath = key
+	pathScanKey = key
 	pathScanCache = &pathScan{names: names, available: available}
 	return pathScanCache
 }
@@ -133,6 +141,21 @@ func scanPath() *pathScan {
 // what makes the enabled_by_default flags of the rules cheap to evaluate.
 func IsAvailable(program string) bool {
 	return scanPath().available[availableName(program)]
+}
+
+// snapshotAvailability keeps the search inputs but defers filesystem work.
+func snapshotAvailability(path, alias string, excluded []string) func(string) bool {
+	excluded = slices.Clone(excluded)
+	scan := sync.OnceValue(func() *pathScan { return scanPathWith(path, alias, excluded) })
+	return func(program string) bool { return scan().available[availableName(program)] }
+}
+
+// startupAvailable preserves the pre-configuration search used by built-in rules.
+var startupAvailable = snapshotAvailability(os.Getenv("PATH"), GetAlias(), conf.Current().ExcludedSearchPathPrefixes)
+
+// StartupAvailable reports tool availability for built-in rule defaults.
+func StartupAvailable(program string) bool {
+	return startupAvailable(program)
 }
 
 // availableFileName normalizes the name of a scanned PATH file for
@@ -176,14 +199,12 @@ var windowsExecutableExtensions = [...]string{".exe", ".cmd", ".bat", ".com"}
 //
 // The scan is parallel because a typical Windows PATH contains many
 // directories and the scan is latency bound.
-func readPathExecutableNames(path string) []string {
-	alias := GetAlias()
-	aliasLower := strings.ToLower(alias)
+func readPathExecutableNames(path, aliasLower string, excluded []string) []string {
 
 	paths := filepath.SplitList(path)
 	dirs := make([]string, 0, len(paths))
 	for _, dir := range paths {
-		if dir != "" && includePathInSearch(dir) {
+		if dir != "" && includePathInSearch(dir, excluded) {
 			dirs = append(dirs, dir)
 		}
 	}
@@ -260,8 +281,8 @@ func trimExecutableSuffix(name string) string {
 }
 
 // includePathInSearch reports whether a PATH entry should be searched.
-func includePathInSearch(path string) bool {
-	for _, prefix := range conf.Current().ExcludedSearchPathPrefixes {
+func includePathInSearch(path string, excluded []string) bool {
+	for _, prefix := range excluded {
 		if prefix != "" && strings.HasPrefix(path, prefix) {
 			return false
 		}

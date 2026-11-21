@@ -55,7 +55,7 @@ func walkEnabledRules(settings *conf.Settings, visit func(*types.Rule)) {
 			logs.Debug("Ignoring excluded rule: %s", rule.Name)
 			continue
 		}
-		if !(defaults && rule.EnabledByDefault) && !slices.Contains(settings.Rules, rule.Name) {
+		if !slices.Contains(settings.Rules, rule.Name) && !(defaults && rule.DefaultEnabled()) {
 			continue
 		}
 		visit(rule)

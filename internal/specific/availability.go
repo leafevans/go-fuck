@@ -1,40 +1,39 @@
 package specific
 
-import (
-	"github.com/leafevans/go-fuck/v2/internal/utils"
-)
+// ToolAvailability checks the names used by rules for each tool.
+type ToolAvailability func(string) bool
 
 // AptAvailable reports whether apt is available.
-func AptAvailable() bool {
-	return utils.IsAvailable("apt-get")
+func (available ToolAvailability) AptAvailable() bool {
+	return available("apt-get")
 }
 
 // BrewAvailable reports whether Homebrew is available.
-func BrewAvailable() bool {
-	return utils.IsAvailable("brew")
+func (available ToolAvailability) BrewAvailable() bool {
+	return available("brew")
 }
 
 // DnfAvailable reports whether dnf is available.
-func DnfAvailable() bool {
-	return utils.IsAvailable("dnf")
+func (available ToolAvailability) DnfAvailable() bool {
+	return available("dnf")
 }
 
 // YumAvailable reports whether yum is available.
-func YumAvailable() bool {
-	return utils.IsAvailable("yum")
+func (available ToolAvailability) YumAvailable() bool {
+	return available("yum")
 }
 
 // NixAvailable reports whether nix is available.
-func NixAvailable() bool {
-	return utils.IsAvailable("nix")
+func (available ToolAvailability) NixAvailable() bool {
+	return available("nix")
 }
 
 // NpmAvailable reports whether npm is available.
-func NpmAvailable() bool {
-	return utils.IsAvailable("npm")
+func (available ToolAvailability) NpmAvailable() bool {
+	return available("npm")
 }
 
 // ChocoAvailable reports whether Chocolatey is available.
-func ChocoAvailable() bool {
-	return utils.IsAvailable("choco") || utils.IsAvailable("cinst")
+func (available ToolAvailability) ChocoAvailable() bool {
+	return available("choco") || available("cinst")
 }

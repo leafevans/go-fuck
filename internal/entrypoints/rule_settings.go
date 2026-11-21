@@ -119,7 +119,7 @@ func conflictingRuleSettings(settings *conf.Settings) []string {
 		switch {
 		case excluded[name]:
 			add("priority " + strconv.Quote(name) + " is ignored because the rule is excluded")
-		case !listed[name] && (!allEnabled || !rule.EnabledByDefault):
+		case !listed[name] && (!allEnabled || !rule.DefaultEnabled()):
 			add("priority " + strconv.Quote(name) + " is ignored because the rule is not enabled")
 		}
 	}

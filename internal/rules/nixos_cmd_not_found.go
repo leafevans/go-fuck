@@ -2,7 +2,6 @@ package rules
 
 import (
 	"github.com/leafevans/go-fuck/v2/internal/shells"
-	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
 )
 
@@ -27,6 +26,6 @@ func nixosCmdNotFoundNewCommand(command *types.Command) ([]string, error) {
 
 func init() {
 	rule := types.NewRule("nixos_cmd_not_found", nixosCmdNotFoundMatch, nixosCmdNotFoundNewCommand)
-	rule.EnabledByDefault = specific.NixAvailable()
+	rule.DefaultProbe = startupTools.NixAvailable
 	register(rule)
 }
