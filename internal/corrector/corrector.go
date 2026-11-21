@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/conf"
+	"github.com/leafevans/go-fuck/v2/internal/consts"
 	"github.com/leafevans/go-fuck/v2/internal/logs"
 	"github.com/leafevans/go-fuck/v2/internal/rules"
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -18,38 +19,43 @@ import (
 // Rules listed in the exclude_rules setting are skipped and the priority
 // setting overrides a rule priority.
 func GetRules() []*types.Rule {
-	settings := conf.Current()
-	excluded := map[string]bool{}
-	for _, name := range settings.ExcludeRules {
-		excluded[name] = true
-	}
+	return configuredRules(conf.Current())
+}
 
-	all := rules.All()
-	enabled := make([]*types.Rule, 0, len(all))
-	for _, rule := range all {
-		if excluded[rule.Name] {
+func configuredRules(settings *conf.Settings) []*types.Rule {
+	enabled := make([]*types.Rule, 0, rules.Count())
+	walkEnabledRules(settings, func(rule *types.Rule) {
+		if priority, overridden := settings.Priority[rule.Name]; overridden {
+			configured := *rule
+			configured.Priority = priority
+			rule = &configured
+		}
+		enabled = append(enabled, rule)
+	})
+	if len(settings.Priority) != 0 {
+		slices.SortStableFunc(enabled, func(left, right *types.Rule) int {
+			return cmp.Compare(left.Priority, right.Priority)
+		})
+	}
+	return enabled
+}
+
+func walkEnabledRules(settings *conf.Settings, visit func(*types.Rule)) {
+	excluded := make(map[string]struct{}, len(settings.ExcludeRules))
+	for _, name := range settings.ExcludeRules {
+		excluded[name] = struct{}{}
+	}
+	defaults := slices.Contains(settings.Rules, consts.AllEnabled)
+	for _, rule := range rules.All() {
+		if _, skip := excluded[rule.Name]; skip {
 			logs.Debug("Ignoring excluded rule: %s", rule.Name)
 			continue
 		}
-		if !rule.IsEnabled() {
+		if !(defaults && rule.EnabledByDefault) && !slices.Contains(settings.Rules, rule.Name) {
 			continue
 		}
-		priority, overridden := settings.Priority[rule.Name]
-		if !overridden {
-			enabled = append(enabled, rule)
-			continue
-		}
-		// The rule is copied only when the settings override its priority, so
-		// the registered rule is never mutated.
-		configured := *rule
-		configured.Priority = priority
-		enabled = append(enabled, &configured)
+		visit(rule)
 	}
-
-	slices.SortStableFunc(enabled, func(left, right *types.Rule) int {
-		return cmp.Compare(left.Priority, right.Priority)
-	})
-	return enabled
 }
 
 // OrganizeCommands sorts the corrected commands and removes duplicates.
@@ -57,25 +63,38 @@ func GetRules() []*types.Rule {
 // The first command of the input is always returned first, because it is the
 // primary suggestion of the highest priority rule.
 func OrganizeCommands(commands []*types.CorrectedCommand) []*types.CorrectedCommand {
-	if len(commands) == 0 {
+	return organizeCommands(slices.Clone(commands), conf.Current().Debug)
+}
+
+// organizeCommands may reorder and compact its caller-owned slice.
+func organizeCommands(ordered []*types.CorrectedCommand, debug bool) []*types.CorrectedCommand {
+	if len(ordered) == 0 {
 		return nil
 	}
-
-	ordered := slices.Clone(commands)
 	slices.SortStableFunc(ordered[1:], func(left, right *types.CorrectedCommand) int {
 		return cmp.Compare(left.Priority, right.Priority)
 	})
 
-	seen := types.NewCorrectedCommandSet(len(commands))
 	organized := ordered[:0]
-	for _, command := range ordered {
-		if seen.Add(command) {
-			organized = append(organized, command)
+	const linearDedupLimit = 16
+	if len(ordered) <= linearDedupLimit {
+		// Most corrections have only a few candidates; skip building a hash index.
+		for _, command := range ordered {
+			if !slices.ContainsFunc(organized, command.Equal) {
+				organized = append(organized, command)
+			}
+		}
+	} else {
+		seen := types.NewCorrectedCommandSet(len(ordered))
+		for _, command := range ordered {
+			if seen.Add(command) {
+				organized = append(organized, command)
+			}
 		}
 	}
 	clear(ordered[len(organized):])
 
-	if conf.Current().Debug {
+	if debug {
 		descriptions := make([]string, len(organized))
 		for i, command := range organized {
 			descriptions[i] = command.String()
@@ -88,30 +107,31 @@ func OrganizeCommands(commands []*types.CorrectedCommand) []*types.CorrectedComm
 // GetCorrectedCommands returns the sorted and deduplicated corrected commands
 // for a failed command.
 func GetCorrectedCommands(command *types.Command) []*types.CorrectedCommand {
-	corrected := []*types.CorrectedCommand{}
-	for _, rule := range GetRules() {
-		if !rule.IsMatch(command) {
-			continue
-		}
-		for _, correctedCommand := range filterUnchanged(command, rule.GetCorrectedCommands(command)) {
-			correctedCommand.RuleName = rule.Name
-			corrected = append(corrected, correctedCommand)
+	settings := conf.Current()
+	var corrected []*types.CorrectedCommand
+	collect := func(rule *types.Rule) {
+		if rule.IsMatch(command) {
+			corrected = appendCorrections(corrected, command.Script, rule.Name, rule.GetCorrectedCommands(command))
 		}
 	}
-	return OrganizeCommands(corrected)
+	if len(settings.Priority) == 0 {
+		walkEnabledRules(settings, collect)
+	} else {
+		for _, rule := range configuredRules(settings) {
+			collect(rule)
+		}
+	}
+	return organizeCommands(corrected, settings.Debug)
 }
 
-// filterUnchanged drops suggestions that are identical to the failed command
-// and have no side effect. A rule can echo the original command when a tool
-// output does not contain the data it expected; such a suggestion cannot help
-// the user and would only add noise to the selection prompt.
-func filterUnchanged(command *types.Command, corrected []*types.CorrectedCommand) []*types.CorrectedCommand {
-	filtered := make([]*types.CorrectedCommand, 0, len(corrected))
-	for _, candidate := range corrected {
-		if candidate.SideEffect == nil && candidate.Script == command.Script {
+// appendCorrections adds suggestions directly, skipping no-ops without a side effect.
+func appendCorrections(dst []*types.CorrectedCommand, original, ruleName string, candidates []*types.CorrectedCommand) []*types.CorrectedCommand {
+	for _, candidate := range candidates {
+		if candidate.SideEffect == nil && candidate.Script == original {
 			continue
 		}
-		filtered = append(filtered, candidate)
+		candidate.RuleName = ruleName
+		dst = append(dst, candidate)
 	}
-	return filtered
+	return dst
 }

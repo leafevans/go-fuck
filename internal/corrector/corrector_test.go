@@ -1,6 +1,7 @@
 package corrector
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/leafevans/go-fuck/v2/internal/conf"
@@ -172,7 +173,30 @@ func TestGetRulesDoesNotMutateRegisteredRules(t *testing.T) {
 	}
 }
 
-func TestFilterUnchanged(t *testing.T) {
+func TestGetRulesKeepsTieOrderWithPriorityOverrides(t *testing.T) {
+	resetCorrectorState(t)
+	conf.Current().Rules = []string{"quotation_marks", "git_push"}
+	registered := rules.Get("git_push")
+	priority := registered.Priority
+	conf.Current().Priority = map[string]int{"git_push": priority, "quotation_marks": priority}
+	var want []string
+	for _, rule := range rules.All() {
+		if rule.Name == "git_push" || rule.Name == "quotation_marks" {
+			want = append(want, rule.Name)
+		}
+	}
+	got := GetRules()
+	if len(got) != 2 || got[0].Name != want[0] || got[1].Name != want[1] || got[0].Priority != got[1].Priority {
+		t.Fatalf("rules with tied priorities = %v, want %v at priority %d", got, want, priority)
+	}
+	for _, rule := range got {
+		if rule == registered {
+			t.Fatal("overridden rule must not share the registered instance")
+		}
+	}
+}
+
+func TestAppendCorrections(t *testing.T) {
 	command := types.NewCommand("git status", "")
 	sideEffect := func(*types.Command, string) error { return nil }
 	candidates := []*types.CorrectedCommand{
@@ -181,8 +205,40 @@ func TestFilterUnchanged(t *testing.T) {
 		{Script: "git status --short"},
 	}
 
-	got := filterUnchanged(command, candidates)
-	if len(got) != 2 || got[0] != candidates[1] || got[1] != candidates[2] {
-		t.Fatalf("filterUnchanged() = %q, want the side-effect and changed suggestions", got)
+	prior := &types.CorrectedCommand{Script: "git diff", RuleName: "previous"}
+	got := appendCorrections([]*types.CorrectedCommand{prior}, command.Script, "example", candidates)
+	if !slices.Equal(got, []*types.CorrectedCommand{prior, candidates[1], candidates[2]}) {
+		t.Fatalf("appendCorrections() = %q, want previous and both useful suggestions", got)
+	}
+	if prior.RuleName != "previous" || candidates[0].RuleName != "" || got[1].RuleName != "example" || got[2].RuleName != "example" {
+		t.Fatalf("rule name assigned incorrectly: %q, dropped candidate: %q", got, candidates[0])
+	}
+}
+
+func TestOrganizeCommandsDeduplicationPathsAgree(t *testing.T) {
+	resetCorrectorState(t)
+	first := &types.CorrectedCommand{Script: "same", Priority: 99}
+	withEffect := &types.CorrectedCommand{Script: "same", SideEffect: organizeEffectOne, Priority: 2}
+	tied := &types.CorrectedCommand{Script: "other", Priority: 2}
+	commands := []*types.CorrectedCommand{first, withEffect, tied, {Script: "same", Priority: 1}, {Script: "same", SideEffect: organizeEffectOne, Priority: 3}}
+	want := []*types.CorrectedCommand{first, withEffect, tied}
+	for _, size := range []int{5, 16, 17, 32} {
+		input := slices.Clone(commands)
+		for len(input) < size {
+			input = append(input, commands[4])
+		}
+		if got := OrganizeCommands(input); !slices.Equal(got, want) {
+			t.Errorf("OrganizeCommands() with %d inputs = %v, want %v", size, got, want)
+		}
+	}
+}
+
+func TestGetCorrectedCommandsAppliesPriorityOverride(t *testing.T) {
+	resetCorrectorState(t)
+	conf.Current().Rules = []string{"git_push"}
+	conf.Current().Priority = map[string]int{"git_push": 7}
+	got := GetCorrectedCommands(types.NewCommand("git push", benchmarkGitPushOutput()))
+	if len(got) != 1 || got[0].Priority != 7 || got[0].RuleName != "git_push" {
+		t.Fatalf("GetCorrectedCommands() = %v, want git_push correction with priority 7", got)
 	}
 }
