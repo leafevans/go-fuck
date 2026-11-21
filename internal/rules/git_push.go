@@ -31,7 +31,10 @@ func gitPushNewCommand(command *types.Command) ([]string, error) {
 				return nil, nil
 			}
 			script.WriteString(command.Script[:span[1]])
-			script.WriteString(" --set-upstream " + shell.Quote(hints[0][1]) + " " + shell.Quote(hints[0][2]))
+			script.WriteString(" --set-upstream ")
+			script.WriteString(shell.Quote(hints[0][1]))
+			script.WriteByte(' ')
+			script.WriteString(shell.Quote(hints[0][2]))
 		} else {
 			switch word {
 			case "-u", "--set-upstream":
