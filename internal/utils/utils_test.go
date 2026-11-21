@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 	"testing"
 
@@ -354,6 +355,32 @@ func TestGetValidHistoryWithoutCurrent(t *testing.T) {
 			t.Errorf("GetValidHistoryWithoutCurrent(%q) = %q, want %q",
 				testCase.script, got, testCase.expected)
 		}
+	}
+}
+
+func TestGetValidHistoryRespectsAliasBoundaries(t *testing.T) {
+	cases := []struct {
+		name    string
+		entries []string
+		want    []string
+	}{
+		{"shared prefix", []string{"fd src", "fzf --filter file"}, []string{"fd src", "fzf --filter file"}},
+		{"alias options", []string{"ls failed", "f --yes", "ls valid"}, []string{"ls valid"}},
+		{"alias tab", []string{"ls failed", "f\t--yes", "ls valid"}, []string{"ls valid"}},
+		{"indented alias", []string{"ls failed", "  f", "ls valid"}, []string{"ls valid"}},
+		{"command whitespace", []string{"ls\tfile", "  ls spaced", "cd directory"}, []string{"ls\tfile", "  ls spaced", "cd directory"}},
+		{"consecutive corrections", []string{"ls failed", "f", "f --yes", "ls valid"}, []string{"ls valid"}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			resetUtilsState(t)
+			t.Setenv("TF_ALIAS", "f")
+			t.Setenv("PATH", fakeExecutableDir(t, "ls", "fd", "fzf"))
+			shells.Set(&historyShell{Generic: shells.NewGeneric(), entries: tc.entries})
+			if got := GetValidHistoryWithoutCurrent(types.NewCommand("ls current", "")); !slices.Equal(got, tc.want) {
+				t.Fatalf("GetValidHistoryWithoutCurrent() = %q, want %q", got, tc.want)
+			}
+		})
 	}
 }
 

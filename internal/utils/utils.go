@@ -5,58 +5,15 @@ package utils
 import (
 	"path/filepath"
 	"slices"
-	"strings"
 	"sync"
 
 	"github.com/leafevans/go-fuck/v2/internal/conf"
-	"github.com/leafevans/go-fuck/v2/internal/shells"
 	"github.com/leafevans/go-fuck/v2/internal/types"
 )
 
 // GetAlias returns the alias name that invoked go-fuck.
 func GetAlias() string {
 	return conf.Alias()
-}
-
-// GetValidHistoryWithoutCurrent returns the history entries that can be
-// suggested as corrected commands.
-func GetValidHistoryWithoutCurrent(command *types.Command) []string {
-	history := shells.Current().GetHistory()
-	alias := GetAlias()
-
-	filtered := make([]string, 0, len(history))
-	previous := ""
-	hasPrevious := false
-	for _, line := range history {
-		if hasPrevious && line != alias {
-			filtered = append(filtered, previous)
-		}
-		previous = line
-		hasPrevious = true
-	}
-	if hasPrevious {
-		filtered = append(filtered, previous)
-	}
-
-	shell := shells.Current()
-	// GetAllExecutables populates the cached executable set as a side effect.
-	GetAllExecutables()
-	builtins := make(map[string]bool, len(shell.BuiltinCommands()))
-	for _, name := range shell.BuiltinCommands() {
-		builtins[name] = true
-	}
-
-	valid := make([]string, 0, len(filtered))
-	for _, line := range filtered {
-		if strings.HasPrefix(line, alias) || line == command.Script {
-			continue
-		}
-		executable, _, _ := strings.Cut(line, " ")
-		if executableSet[executable] || builtins[executable] {
-			valid = append(valid, line)
-		}
-	}
-	return valid
 }
 
 // IsApp reports whether the command is a call to one of the given
