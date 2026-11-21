@@ -36,3 +36,80 @@ func cargoClosestTarget(missing string, targets []string) string {
 	}
 	return target
 }
+
+func cargoGlobalOption(name string) commandOption {
+	switch name {
+	case "--config", "--color", "--directory", "-C", "-Z":
+		return valueOption
+	case "-v", "-vv", "--verbose", "-q", "--quiet", "--frozen", "--locked", "--offline":
+		return flagOption
+	default:
+		return unknownOption
+	}
+}
+
+func cargoSubcommandIndex(words []commandWord) int {
+	index := 1
+	if len(words) > index && strings.HasPrefix(words[index].text, "+") {
+		index++
+	}
+	return subcommandIndex(words, index, cargoGlobalOption)
+}
+
+func cargoTargetOption(name string) commandOption {
+	switch name {
+	case "--bin", "--bench", "--example", "--test", "--features", "-F", "--package", "-p", "--exclude",
+		"--manifest-path", "--target", "--target-dir", "--profile", "--jobs", "-j", "--message-format":
+		return valueOption
+	case "--release", "-r", "--workspace", "--all", "--all-features", "--no-default-features", "--no-run",
+		"--all-targets", "--lib", "--bins", "--benches", "--examples", "--tests", "--doc", "--no-fail-fast":
+		return flagOption
+	default:
+		return cargoGlobalOption(name)
+	}
+}
+
+// cargoReplaceTarget edits a unique value of the specified Cargo selector,
+// ignoring other option values and arguments passed to the test or binary.
+func cargoReplaceTarget(script, option, missing, replacement string) []string {
+	words := simpleCommandWords(script)
+	index := cargoSubcommandIndex(words)
+	if index < 0 {
+		return nil
+	}
+	var target commandWord
+	var prefix string
+	for index++; index < len(words); {
+		word := words[index]
+		if word.text == "--" {
+			break
+		}
+		if !strings.HasPrefix(word.text, "-") {
+			index++
+			continue
+		}
+		end, ok := optionEnd(words, index, cargoTargetOption)
+		if !ok {
+			return nil
+		}
+		name, value, inline := strings.Cut(word.text, "=")
+		if name == option {
+			candidate, candidatePrefix := word, name+"="
+			if !inline {
+				candidate, candidatePrefix = words[index+1], ""
+				value = candidate.text
+			}
+			if value == missing {
+				if target.end != 0 {
+					return nil
+				}
+				target, prefix = candidate, candidatePrefix
+			}
+		}
+		index = end
+	}
+	if target.end == 0 {
+		return nil
+	}
+	return replaceCommandWord(script, target, prefix, replacement)
+}

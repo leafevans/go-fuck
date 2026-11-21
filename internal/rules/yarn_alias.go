@@ -17,15 +17,15 @@ func yarnAliasMatch(command *types.Command) bool {
 
 // yarnAliasNewCommand replaces the unknown alias with the suggested one.
 func yarnAliasNewCommand(command *types.Command) ([]string, error) {
-	parts := command.ScriptParts()
-	if len(parts) < 2 {
+	words := simpleCommandWords(command.Script)
+	if len(words) < 2 || words[1].text == "" || strings.HasPrefix(words[1].text, "-") {
 		return nil, nil
 	}
 	match := yarnAliasSuggestion.FindStringSubmatch(command.Output)
 	if match == nil {
 		return nil, nil
 	}
-	return []string{utils.ReplaceArgument(command.Script, parts[1], match[1])}, nil
+	return replaceCommandWord(command.Script, words[1], "", match[1]), nil
 }
 
 func init() {

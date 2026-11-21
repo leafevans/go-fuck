@@ -1,8 +1,6 @@
 package rules
 
 import (
-	"strings"
-
 	"github.com/leafevans/go-fuck/v2/internal/types"
 	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
@@ -16,8 +14,8 @@ const cargoBenchTargetsMarker = "available bench targets:"
 // cargoMissingBenchTargetMatch reports whether cargo could not find a bench
 // target.
 func cargoMissingBenchTargetMatch(command *types.Command) bool {
-	parts := command.ScriptParts()
-	if len(parts) < 2 || !strings.EqualFold(parts[1], "bench") {
+	words := simpleCommandWords(command.Script)
+	if index := cargoSubcommandIndex(words); index < 0 || words[index].text != "bench" {
 		return false
 	}
 	return cargoMissingBenchTarget.MatchString(command.Output) &&
@@ -36,7 +34,7 @@ func cargoMissingBenchTargetNewCommand(command *types.Command) ([]string, error)
 	if target == "" {
 		return nil, nil
 	}
-	return []string{utils.ReplaceArgument(command.Script, match[1], target)}, nil
+	return cargoReplaceTarget(command.Script, "--bench", match[1], target), nil
 }
 
 func init() {

@@ -292,6 +292,8 @@ var registryGuardHelperFiles = map[string]bool{
 	"registry.go":                    true,
 	"git_command_edit.go":            true,
 	"git_command_edit_test.go":       true,
+	"command_edit.go":                true,
+	"command_edit_test.go":           true,
 	"lazy_regexp.go":                 true,
 	"allocations_test.go":            true,
 	"testhelpers_test.go":            true,

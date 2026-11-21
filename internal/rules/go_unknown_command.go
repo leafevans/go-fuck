@@ -73,27 +73,27 @@ func goCommandGroup(name string) bool { return name == "mod" || name == "work" }
 // goUnknownCommandNewCommand replaces the unknown command with the closest
 // one.
 func goUnknownCommandNewCommand(command *types.Command) ([]string, error) {
-	parts := command.ScriptParts()
-	if len(parts) < 2 {
+	words := simpleCommandWords(command.Script)
+	if len(words) < 2 || strings.HasPrefix(words[1].text, "-") {
 		return nil, nil
 	}
 	index := 1
 	var candidates []string
-	if goCommandGroup(parts[1]) {
-		if len(parts) < 3 {
+	if goCommandGroup(words[1].text) {
+		if len(words) < 3 || strings.HasPrefix(words[2].text, "-") {
 			return nil, nil
 		}
 		index = 2
-		candidates = goUnknownCommandParseCommands(goHelpOutput(parts[1]))
+		candidates = goUnknownCommandParseCommands(goHelpOutput(words[1].text))
 	} else {
 		candidates = goUnknownCommandCommands()
 	}
-	target := parts[index]
+	target := words[index].text
 	closest := utils.GetClosest(target, candidates, 0.6, false)
-	if closest == "" || closest == target || (index == 2 && target == parts[1]) {
+	if index == 2 && target == words[1].text {
 		return nil, nil
 	}
-	return utils.ReplaceArguments(command.Script, target, []string{closest}), nil
+	return replaceCommandWord(command.Script, words[index], "", closest), nil
 }
 
 func init() {

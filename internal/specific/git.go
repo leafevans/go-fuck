@@ -16,14 +16,6 @@ import (
 // GIT_TRACE is enabled.
 var gitAliasExpansion = regexp.MustCompile(`trace: alias expansion: ([^ \t\r\n]+) => ([^\r\n]+)`)
 
-// gitWord locates shell words while retaining their byte offsets, so expanding
-// a subcommand does not rewrite the quoting of unrelated arguments.
-var gitWord = regexp.MustCompile(`^(?:[^ \t\r\n;&|<>()'"\\]|\\.|'[^']*'|"(?:[^"\\]|\\.)*")+`)
-
-var gitFishWord = regexp.MustCompile(`^(?:[^ \t\r\n;&|<>()'"\\]|\\.|'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")+`)
-
-var gitPowerShellWord = regexp.MustCompile("^(?:[^ \\t\\r\\n;&|<>()'\"`]|`.|'(?:[^']|'')*'|\"(?:[^\"`]|`.)*\")+")
-
 // GitSupportMatch wraps a match function so that it only runs for git (or hub)
 // commands and with git aliases expanded.
 func GitSupportMatch(fn func(*types.Command) bool) func(*types.Command) bool {
@@ -133,35 +125,6 @@ func GitCommandPathWords(script string, shell shells.Shell) iter.Seq2[[2]int, st
 	return func(yield func([2]int, string) bool) { walkGitWords(script, shell, true, yield) }
 }
 
-// gitShellWord reads just one word. Ordinary unquoted arguments are slices of
-// the input. Delegate quoted and escaped words to the caller's shell.
-func gitShellWord(rest string, shell shells.Shell) (string, int) {
-	for i := 0; i < len(rest); i++ {
-		switch rest[i] {
-		case ' ', '\t', '\r', '\n', ';', '&', '|', '<', '>', '(', ')':
-			return rest[:i], i
-		case '\'', '"', '\\', '`':
-			pattern := gitWord
-			switch shell.(type) {
-			case *shells.Fish:
-				pattern = gitFishWord
-			case *shells.Powershell:
-				pattern = gitPowerShellWord
-			}
-			raw := pattern.FindString(rest)
-			if raw == "" || len(raw) < len(rest) && !strings.ContainsRune(" \t\r\n;&|<>()", rune(rest[len(raw)])) {
-				return "", 0
-			}
-			parts := shell.SplitCommand(raw)
-			if len(parts) != 1 {
-				return "", 0
-			}
-			return parts[0], len(raw)
-		}
-	}
-	return rest, len(rest)
-}
-
 func walkGitWords(script string, shell shells.Shell, includePaths bool, yield func([2]int, string) bool) bool {
 	pos := 0
 	skipValue, global := false, true
@@ -172,7 +135,7 @@ func walkGitWords(script string, shell shells.Shell, includePaths bool, yield fu
 		if pos == len(script) || script[pos] == '#' {
 			break
 		}
-		word, size := gitShellWord(script[pos:], shell)
+		word, size := shells.ReadWord(script[pos:], shell)
 		if size == 0 {
 			return false
 		}

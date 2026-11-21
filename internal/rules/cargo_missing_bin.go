@@ -29,7 +29,7 @@ func cargoMissingBinNewCommand(command *types.Command) ([]string, error) {
 	if target == "" {
 		return nil, nil
 	}
-	return []string{utils.ReplaceArgument(command.Script, missing, target)}, nil
+	return cargoReplaceTarget(command.Script, "--bin", missing, target), nil
 }
 
 func init() {

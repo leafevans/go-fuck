@@ -31,7 +31,7 @@ func cargoMissingExampleTargetNewCommand(command *types.Command) ([]string, erro
 	if target == "" {
 		return nil, nil
 	}
-	return []string{utils.ReplaceArgument(command.Script, match[1], target)}, nil
+	return cargoReplaceTarget(command.Script, "--example", match[1], target), nil
 }
 
 func init() {

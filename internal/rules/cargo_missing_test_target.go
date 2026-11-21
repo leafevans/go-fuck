@@ -1,8 +1,6 @@
 package rules
 
 import (
-	"strings"
-
 	"github.com/leafevans/go-fuck/v2/internal/types"
 	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
@@ -16,8 +14,8 @@ const cargoTestTargetsMarker = "available test targets:"
 // cargoMissingTestTargetMatch reports whether cargo could not find a test
 // target.
 func cargoMissingTestTargetMatch(command *types.Command) bool {
-	parts := command.ScriptParts()
-	if len(parts) < 2 || !strings.EqualFold(parts[1], "test") {
+	words := simpleCommandWords(command.Script)
+	if index := cargoSubcommandIndex(words); index < 0 || words[index].text != "test" {
 		return false
 	}
 	return cargoMissingTestTarget.MatchString(command.Output) &&
@@ -36,7 +34,7 @@ func cargoMissingTestTargetNewCommand(command *types.Command) ([]string, error) 
 	if target == "" {
 		return nil, nil
 	}
-	return []string{utils.ReplaceArgument(command.Script, match[1], target)}, nil
+	return cargoReplaceTarget(command.Script, "--test", match[1], target), nil
 }
 
 func init() {

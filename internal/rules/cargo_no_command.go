@@ -19,6 +19,8 @@ var cargoNoCommandSuggestionRegexps = []*lazyRegexp{
 	newRegexp("a similar subcommand exists: [`']([^`']*)[`']"),
 }
 
+var cargoUnrecognizedSubcommand = newRegexp("unrecognized subcommand [`']([^`']+)[`']")
+
 // cargoNoCommandSuggestion returns the subcommand suggested by cargo, if the
 // output carries one.
 func cargoNoCommandSuggestion(output string) string {
@@ -43,12 +45,19 @@ func cargoNoCommandMatch(command *types.Command) bool {
 
 // cargoNoCommandNewCommand replaces the misspelled subcommand.
 func cargoNoCommandNewCommand(command *types.Command) ([]string, error) {
-	parts := command.ScriptParts()
-	suggestion := cargoNoCommandSuggestion(command.Output)
-	if len(parts) < 2 || suggestion == "" {
+	words := simpleCommandWords(command.Script)
+	index := cargoSubcommandIndex(words)
+	if index < 0 {
 		return nil, nil
 	}
-	return []string{utils.ReplaceArgument(command.Script, parts[1], suggestion)}, nil
+	expected := words[index].text
+	for _, pattern := range []*lazyRegexp{cargoNoSuchCommand, cargoUnrecognizedSubcommand} {
+		if match := pattern.FindStringSubmatch(command.Output); match != nil {
+			expected = match[1]
+			break
+		}
+	}
+	return replaceSubcommand(command.Script, words, index, expected, cargoNoCommandSuggestion(command.Output)), nil
 }
 
 func init() {

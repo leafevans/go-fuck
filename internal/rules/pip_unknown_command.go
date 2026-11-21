@@ -22,6 +22,17 @@ func pipUnknownCommandMatch(command *types.Command) bool {
 		strings.Contains(command.Output, "maybe you meant")
 }
 
+func pipGlobalOption(name string) commandOption {
+	switch name {
+	case "--python", "--log", "--proxy", "--retries", "--timeout", "--trusted-host", "--cert", "--client-cert", "--cache-dir":
+		return valueOption
+	case "--isolated", "--require-virtualenv", "-v", "-vv", "-vvv", "--verbose", "-q", "--quiet", "--no-cache-dir", "--disable-pip-version-check":
+		return flagOption
+	default:
+		return unknownOption
+	}
+}
+
 // pipUnknownCommandNewCommand replaces the unknown pip command with the
 // suggested one.
 func pipUnknownCommandNewCommand(command *types.Command) ([]string, error) {
@@ -30,11 +41,12 @@ func pipUnknownCommandNewCommand(command *types.Command) ([]string, error) {
 	if broken == nil || suggested == nil {
 		return nil, nil
 	}
-	return []string{utils.ReplaceArgument(command.Script, broken[1], suggested[1])}, nil
+	words := simpleCommandWords(command.Script)
+	return replaceSubcommand(command.Script, words, subcommandIndex(words, 1, pipGlobalOption), broken[1], suggested[1]), nil
 }
 
 func init() {
 	register(types.NewRule("pip_unknown_command",
 		specific.SudoSupportMatch(utils.ForApp([]string{"pip", "pip2", "pip3"}, 0, pipUnknownCommandMatch)),
-		pipUnknownCommandNewCommand))
+		specific.SudoSupportNew(pipUnknownCommandNewCommand)))
 }

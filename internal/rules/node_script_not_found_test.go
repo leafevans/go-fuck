@@ -6,10 +6,16 @@ import (
 	"testing"
 )
 
-// nodeCannotFindModuleOutput is the Node.js error for a missing script file.
-const nodeCannotFindModuleOutput = "Error: Cannot find module '/proj/mian.js'\n" +
-	"    at Module._resolveFilename (node:internal/modules/cjs/loader:1476:15)\n" +
-	"  code: 'MODULE_NOT_FOUND'\n"
+func nodeCannotFindModuleOutput(t *testing.T, name string) string {
+	t.Helper()
+	path, err := filepath.Abs(name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return "Error: Cannot find module '" + path + "'\n" +
+		"    at Module._resolveFilename (node:internal/modules/cjs/loader:1476:15)\n" +
+		"  code: 'MODULE_NOT_FOUND'\n"
+}
 
 // stubNodeDirectoryFiles replaces the file list of the rule.
 func stubNodeDirectoryFiles(t *testing.T, names []string) {
@@ -27,11 +33,12 @@ func TestRuleNodeScriptNotFound(t *testing.T) {
 	}
 
 	stubNodeDirectoryFiles(t, []string{"main.js", "lib.js"})
-	assertMatch(t, rule, "node mian.js", nodeCannotFindModuleOutput)
+	output := nodeCannotFindModuleOutput(t, "mian.js")
+	assertMatch(t, rule, "node mian.js", output)
 	assertNotMatch(t, rule, "node mian.js", "")
 	assertNotMatch(t, rule, "node mian.js", "Error: Cannot find module '/proj/mian.js'\n")
-	assertNotMatch(t, rule, "python mian.py", nodeCannotFindModuleOutput)
-	assertNewCommands(t, rule, "node mian.js", nodeCannotFindModuleOutput,
+	assertNotMatch(t, rule, "python mian.py", output)
+	assertNewCommands(t, rule, "node mian.js", output,
 		[]string{"node main.js"})
 
 	stubNodeDirectoryFiles(t, []string{"main.js"})
@@ -92,7 +99,7 @@ func TestNodeScriptNotFoundEdges(t *testing.T) {
 	assertNotMatch(t, rule, "node mian.js", "code: 'MODULE_NOT_FOUND'\n")
 	// No close file means no suggestion.
 	stubNodeDirectoryFiles(t, []string{"unrelated.js"})
-	assertNotMatch(t, rule, "node mian.js", nodeCannotFindModuleOutput)
+	assertNotMatch(t, rule, "node mian.js", nodeCannotFindModuleOutput(t, "mian.js"))
 }
 
 func TestNodeDirectoryFiles(t *testing.T) {
@@ -110,4 +117,11 @@ func TestNodeDirectoryFiles(t *testing.T) {
 	if names := nodeDirectoryFiles(filepath.Join(dir, "missing")); names != nil {
 		t.Fatalf("nodeDirectoryFiles(missing) = %q", names)
 	}
+}
+
+func TestNodeScriptReplacementDoesNotBecomeOption(t *testing.T) {
+	resetTestState(t)
+	stubNodeDirectoryFiles(t, []string{"-main.js"})
+	assertNewCommands(t, Get("node_script_not_found"), "node mian.js", nodeCannotFindModuleOutput(t, "mian.js"),
+		[]string{"node ./-main.js"})
 }

@@ -27,26 +27,21 @@ var npmWrongCommandHelpCommands = utils.Memoize(func() []string {
 	return npmWrongCommandParseHelp(string(output))
 })
 
-// npmWrongCommandFirst returns the first non-flag argument of the command.
-func npmWrongCommandFirst(parts []string) string {
-	if len(parts) == 0 {
-		return ""
+func npmGlobalOption(name string) commandOption {
+	switch name {
+	case "--prefix", "--cache", "--registry", "--userconfig", "--globalconfig", "--loglevel", "--workspace", "-w":
+		return valueOption
+	case "--global", "-g", "--force", "-f", "--silent", "-s", "--verbose", "--workspaces", "--no-workspaces":
+		return flagOption
+	default:
+		return unknownOption
 	}
-	for _, part := range parts[1:] {
-		if !strings.HasPrefix(part, "-") {
-			return part
-		}
-	}
-	return ""
 }
 
 // npmWrongCommandMatch reports whether an unknown npm command was used.
 func npmWrongCommandMatch(command *types.Command) bool {
-	parts := command.ScriptParts()
-	if len(parts) == 0 {
-		return false
-	}
-	if parts[0] != "npm" || npmWrongCommandFirst(parts) == "" {
+	words := simpleCommandWords(command.Script)
+	if len(words) == 0 || words[0].text != "npm" || subcommandIndex(words, 1, npmGlobalOption) < 0 {
 		return false
 	}
 	return strings.Contains(command.Output, npmWrongCommandListing) ||
@@ -120,22 +115,27 @@ func npmWrongCommandAvailableCommands(commandOutput string) []string {
 // npmWrongCommandNewCommand replaces the unknown command with the closest npm
 // command.
 func npmWrongCommandNewCommand(command *types.Command) ([]string, error) {
-	wrongCommand := npmWrongCommandFirst(command.ScriptParts())
-	if wrongCommand == "" {
+	words := simpleCommandWords(command.Script)
+	index := subcommandIndex(words, 1, npmGlobalOption)
+	if index < 0 {
 		return nil, nil
+	}
+	wrongCommand := words[index].text
+	for line := range strings.SplitSeq(command.Output, "\n") {
+		if reported, ok := strings.CutPrefix(strings.TrimSpace(line), npmWrongCommandUnknown); ok &&
+			strings.Trim(reported, `"`) != wrongCommand {
+			return nil, nil
+		}
 	}
 	fixed := utils.GetClosestDefault(wrongCommand, npmWrongCommandAvailableCommands(command.Output))
-	if fixed == "" {
-		return nil, nil
-	}
-	return []string{utils.ReplaceArgument(command.Script, wrongCommand, fixed)}, nil
+	return replaceCommandWord(command.Script, words[index], "", fixed), nil
 }
 
 func init() {
 	// Python: enabled_by_default = npm_available
 	rule := types.NewRule("npm_wrong_command",
 		specific.SudoSupportMatch(utils.ForApp([]string{"npm"}, 0, npmWrongCommandMatch)),
-		npmWrongCommandNewCommand)
+		specific.SudoSupportNew(npmWrongCommandNewCommand))
 	rule.EnabledByDefault = specific.NpmAvailable()
 	register(rule)
 }

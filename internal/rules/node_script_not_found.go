@@ -2,7 +2,7 @@ package rules
 
 import (
 	"os"
-
+	"path/filepath"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -76,48 +76,72 @@ func nodeScriptName(name string) bool {
 // nodeScriptNotFoundMatch reports whether Node.js failed to load a missing
 // file.
 func nodeScriptNotFoundMatch(command *types.Command) bool {
-	parts := command.ScriptParts()
-	if len(parts) == 0 || !strings.EqualFold(parts[0], "node") {
-		return false
-	}
-	if !strings.Contains(command.Output, "MODULE_NOT_FOUND") {
-		return false
-	}
-	match := nodeCannotFindModule.FindStringSubmatch(command.Output)
-	if match == nil {
-		return false
-	}
-	path := match[1]
-	if !nodeAbsolutePath(path) {
-		return false
-	}
-	base := nodePathBase(path)
-	if !nodeScriptName(base) {
-		return false
-	}
-	return nodeScriptClosest(path) != ""
+	_, _, ok := nodeMissingEntryPoint(command)
+	return ok
 }
 
-// nodeScriptNotFoundNewCommand replaces the missing file with the closest one.
-func nodeScriptNotFoundNewCommand(command *types.Command) ([]string, error) {
+func nodeRuntimeOption(name string) commandOption {
+	switch name {
+	case "-r", "--require", "--import", "--env-file", "--env-file-if-exists":
+		return valueOption
+	case "--trace-warnings", "--no-warnings", "--enable-source-maps", "--no-deprecation":
+		return flagOption
+	default:
+		return unknownOption
+	}
+}
+
+func nodeMissingEntryPoint(command *types.Command) (commandWord, string, bool) {
+	if !strings.Contains(command.Output, "MODULE_NOT_FOUND") || strings.Contains(command.Output, "Require stack:") {
+		return commandWord{}, "", false
+	}
 	match := nodeCannotFindModule.FindStringSubmatch(command.Output)
-	if match == nil {
+	if match == nil || !nodeAbsolutePath(match[1]) || !nodeScriptName(nodePathBase(match[1])) {
+		return commandWord{}, "", false
+	}
+	words := simpleCommandWords(command.Script)
+	if len(words) < 2 || !strings.EqualFold(words[0].text, "node") {
+		return commandWord{}, "", false
+	}
+	for i := 1; i < len(words); {
+		if words[i].text == "--" {
+			i++
+			if i == len(words) {
+				break
+			}
+		} else if strings.HasPrefix(words[i].text, "-") {
+			end, ok := optionEnd(words, i, nodeRuntimeOption)
+			if !ok {
+				break
+			}
+			i = end
+			continue
+		}
+		word := words[i]
+		entry, err := filepath.Abs(word.text)
+		if err != nil || entry != filepath.Clean(match[1]) {
+			break
+		}
+		if closest := nodeScriptClosest(match[1]); closest != "" {
+			prefix := word.text[:len(word.text)-len(nodePathBase(word.text))]
+			if prefix == "" && strings.HasPrefix(closest, "-") {
+				prefix = "./"
+			}
+			return word, prefix + closest, true
+		}
+		break
+	}
+	return commandWord{}, "", false
+}
+
+// nodeScriptNotFoundNewCommand replaces only the entry point, not a missing
+// dependency or a similarly named script argument.
+func nodeScriptNotFoundNewCommand(command *types.Command) ([]string, error) {
+	word, replacement, ok := nodeMissingEntryPoint(command)
+	if !ok {
 		return nil, nil
 	}
-	path := match[1]
-	base := nodePathBase(path)
-	closest := nodeScriptClosest(path)
-	if closest == "" {
-		return nil, nil
-	}
-	fixed := utils.ReplaceArgument(command.Script, base, closest)
-	if fixed == command.Script {
-		fixed = strings.Replace(command.Script, path, nodePathDir(path)+"/"+closest, 1)
-	}
-	if fixed == "" || fixed == command.Script {
-		return nil, nil
-	}
-	return []string{fixed}, nil
+	return replaceCommandWord(command.Script, word, "", replacement), nil
 }
 
 func init() {

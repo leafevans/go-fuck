@@ -37,7 +37,8 @@ func cargoUnknownCommandNewCommand(command *types.Command) ([]string, error) {
 	for _, match := range matches {
 		suggestions = append(suggestions, match[1])
 	}
-	return utils.ReplaceArguments(command.Script, broken, suggestions), nil
+	words := simpleCommandWords(command.Script)
+	return replaceSubcommand(command.Script, words, cargoSubcommandIndex(words), broken, suggestions...), nil
 }
 
 func init() {
