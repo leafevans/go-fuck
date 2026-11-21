@@ -234,3 +234,24 @@ func TestPowershellAliasPassesEqualsInformationCommands(t *testing.T) {
 		t.Fatalf("go-fuck invocation = %+v, want --alias=myfuck passed through", recorded)
 	}
 }
+
+func TestPowershellAliasPassesSessionVersion(t *testing.T) {
+	resetShellsState(t)
+	output, _ := runPowershellAliasRaw(t, "$env:GOFUCK_POWERSHELL_VERSION = 'previous'", `
+function go-fuck { 'reported:' + $env:GOFUCK_POWERSHELL_VERSION }
+fuck -v
+'expected:' + $PSVersionTable.PSVersion.ToString()
+'restored:' + $env:GOFUCK_POWERSHELL_VERSION
+Remove-Item Env:GOFUCK_POWERSHELL_VERSION
+fuck --version
+'removed:' + (-not (Test-Path Env:GOFUCK_POWERSHELL_VERSION))
+`)
+	lines := strings.Split(strings.ReplaceAll(strings.TrimSpace(string(output)), "\r\n", "\n"), "\n")
+	if len(lines) != 5 || !strings.HasPrefix(lines[1], "expected:") {
+		t.Fatalf("unexpected PowerShell output: %q", output)
+	}
+	want := "reported:" + strings.TrimPrefix(lines[1], "expected:")
+	if lines[0] != want || lines[2] != "restored:previous" || lines[3] != want || lines[4] != "removed:True" {
+		t.Fatalf("version not passed and restored correctly: %q", output)
+	}
+}

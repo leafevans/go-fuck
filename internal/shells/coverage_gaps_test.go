@@ -30,20 +30,6 @@ func TestQuotePowerShellString(t *testing.T) {
 	}
 }
 
-// TestPowershellVersionFallsBackToPwsh covers the pwsh fallback of
-// powershellVersion.
-func TestPowershellVersionFallsBackToPwsh(t *testing.T) {
-	stubShellRunOutput(t, func(name string, args ...string) string {
-		if name == "pwsh" {
-			return "PowerShell 7.4.1"
-		}
-		return ""
-	})
-	if got := powershellVersion(); got != "7.4.1" {
-		t.Fatalf("powershellVersion() = %q, want 7.4.1", got)
-	}
-}
-
 // TestBashProfileConfigurationFallback covers the ~/.bash_profile configuration
 // path.
 func TestBashProfileConfigurationFallback(t *testing.T) {

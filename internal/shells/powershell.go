@@ -1,10 +1,14 @@
 package shells
 
 import (
+	"context"
 	"fmt"
+	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/leafevans/go-fuck/v2/internal/consts"
 	"github.com/leafevans/go-fuck/v2/internal/instant"
@@ -295,15 +299,39 @@ func quotePowerShellString(value string) string {
 	return "'" + strings.ReplaceAll(value, "'", "''") + "'"
 }
 
-// powershellVersion returns the PowerShell version.
+// powershellVersion trusts the calling alias rather than guessing an edition
+// from PATH. Older aliases report only the executable path.
 func powershellVersion() string {
-	if output := runOutput("powershell.exe", "$PSVersionTable.PSVersion"); output != "" {
-		lines := strings.Split(output, newline)
-		return strings.Join(strings.Fields(lines[len(lines)-1]), ".")
+	if version := strings.TrimSpace(env(consts.PowerShellVersionEnv)); version != "" {
+		return version
 	}
-	fields := strings.Fields(runOutput("pwsh", "--version"))
-	if len(fields) == 0 {
+	executable := env(consts.ShellPathEnv)
+	if !filepath.IsAbs(executable) {
 		return ""
 	}
-	return fields[len(fields)-1]
+	switch strings.ToLower(filepath.Base(executable)) {
+	case "powershell.exe", "pwsh.exe", "pwsh":
+		// Loading the user's profile can start another go-fuck shell logger.
+		return runPowershellVersionProbe(executable, "-NoLogo", "-NoProfile", "-NonInteractive",
+			"-Command", "$PSVersionTable.PSVersion.ToString()")
+	default:
+		return ""
+	}
+}
+
+var runPowershellVersionProbe = func(name string, args ...string) string {
+	return powershellProbeOutput(2*time.Second, name, args...)
+}
+
+func powershellProbeOutput(timeout time.Duration, name string, args ...string) string {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, name, args...)
+	// A descendant may keep the output pipe open after PowerShell exits.
+	cmd.WaitDelay = 250 * time.Millisecond
+	output, err := cmd.Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(output))
 }

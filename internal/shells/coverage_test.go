@@ -105,10 +105,6 @@ func TestVersionFunctions(t *testing.T) {
 			return "fish, version 3.6.0"
 		case "tcsh":
 			return "tcsh 6.24.00"
-		case "powershell.exe":
-			return "5.1.2.3"
-		case "pwsh":
-			return "PowerShell 7.4.0"
 		}
 		return ""
 	})
@@ -124,12 +120,8 @@ func TestVersionFunctions(t *testing.T) {
 	if got := tcshVersion(); got != "6.24.00" {
 		t.Fatalf("tcshVersion() = %q", got)
 	}
-	if got := powershellVersion(); got != "5.1.2.3" {
-		t.Fatalf("powershellVersion() = %q", got)
-	}
-
 	stubShellRunOutput(t, func(string, ...string) string { return "" })
-	if fishVersion() != "" || tcshVersion() != "" || powershellVersion() != "" {
+	if fishVersion() != "" || tcshVersion() != "" {
 		t.Fatal("version functions should return an empty string without output")
 	}
 }

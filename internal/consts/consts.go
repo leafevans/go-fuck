@@ -42,7 +42,7 @@ func SetExecutableName(raw string) {
 // It is a variable so that release builds can override it at link time:
 //
 //	go build -ldflags "-X github.com/leafevans/go-fuck/v2/internal/consts.Version=v1.2.3"
-var Version = "2.34.1"
+var Version = "2.34.2"
 
 // Rule defaults.
 const (
@@ -112,6 +112,9 @@ const AliasVersionEnv = "TF_ALIAS_VERSION"
 // --list-rules and --json) through to go-fuck instead of capturing their
 // output as a corrected command.
 const AliasVersion = "3"
+
+// PowerShellVersionEnv carries the current session's version for information commands.
+const PowerShellVersionEnv = "GOFUCK_POWERSHELL_VERSION"
 
 // Environment variables of the instant mode.
 const (

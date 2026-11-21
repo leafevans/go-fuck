@@ -3,6 +3,8 @@ package shells
 import (
 	"fmt"
 	"strings"
+
+	"github.com/leafevans/go-fuck/v2/internal/consts"
 )
 
 // informationalCommands lists the go-fuck flags that print information instead
@@ -79,9 +81,13 @@ func powershellAliasGuard(aliasName, executable string) string {
 		"            $env:TF_ALIAS = \"%[2]s\";\n"+
 		"            $env:TF_ALIAS_VERSION = \"3\";\n"+
 		"            try { $env:GOFUCK_SHELL = (Get-Process -Id $PID).Path } catch { };\n"+
-		"            & %[3]s @args;\n"+
+		"            $__gofuck_previous_version = $env:%[4]s;\n"+
+		"            try {\n"+
+		"                $env:%[4]s = $PSVersionTable.PSVersion.ToString();\n"+
+		"                & %[3]s @args;\n"+
+		"            } finally { $env:%[4]s = $__gofuck_previous_version; };\n"+
 		"            return;\n"+
 		"        };\n"+
 		"    };\n",
-		strings.Join(quoted, ", "), aliasName, executable)
+		strings.Join(quoted, ", "), aliasName, executable, consts.PowerShellVersionEnv)
 }
