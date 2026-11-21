@@ -151,6 +151,7 @@ check_setup() {
 check_alias bash
 bash "$(dirname "$0")/check-bash-history.sh" "$bin" "$work" || fail "bash history correction failed"
 check_alias zsh
+bash "$(dirname "$0")/check-zsh-history.sh" "$bin" "$work" || fail "zsh history correction failed"
 check_alias fish
 check_alias tcsh
 check_instant_alias bash
