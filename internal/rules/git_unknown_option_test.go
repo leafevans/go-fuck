@@ -35,4 +35,15 @@ func TestRuleGitUnknownOption(t *testing.T) {
 
 	assertNewCommands(t, rule, "git push --set-upstrem origin main", "error: unknown option `set-upstrem'",
 		nil)
+
+	t.Run("preserves a path named like the rejected option", func(t *testing.T) {
+		const output = "error: unknown option `brnach'\nusage: git status [<options>] [--] [<pathspec>...]\n    -b, --[no-]branch     show branch information\n"
+		const script = "git status --brnach -- --brnach"
+		assertMatch(t, rule, script, output)
+		assertNewCommands(t, rule, script, output, []string{"git status --branch -- --brnach"})
+		for _, notOption := range []string{"git status -- --brnach", "git -C --brnach status", "git status --brnach --brnach"} {
+			assertNotMatch(t, rule, notOption, output)
+			assertNewCommands(t, rule, notOption, output, nil)
+		}
+	})
 }

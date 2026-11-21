@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"github.com/leafevans/go-fuck/v2/internal/shells"
 	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
 	"github.com/leafevans/go-fuck/v2/internal/utils"
@@ -42,23 +43,32 @@ func gitUnknownOptionCandidates(commandOutput string) []string {
 // gitUnknownOptionMatch reports whether git rejected a long option that is part
 // of the command line and printed the usage list to correct it.
 func gitUnknownOptionMatch(command *types.Command) bool {
+	_, _, _, ok := gitUnknownOptionCorrection(command)
+	return ok
+}
+
+func gitUnknownOptionCorrection(command *types.Command) (start, end int, option string, ok bool) {
 	broken := gitUnknownOptionBroken(command.Output)
 	if broken == "" {
-		return false
+		return 0, 0, "", false
 	}
-	return utils.Contains(command.ScriptParts(), "--"+broken) &&
-		len(gitUnknownOptionCandidates(command.Output)) > 0
+	broken = "--" + broken
+	start, end, ok = specific.GitOptionSpan(command.Script, broken, shells.Current())
+	if !ok {
+		return 0, 0, "", false
+	}
+	option = utils.GetClosest(broken, gitUnknownOptionCandidates(command.Output), 0.8, false)
+	return start, end, option, option != "" && option != broken
 }
 
 // gitUnknownOptionNewCommand replaces the rejected option with the closest
 // valid option from the usage list.
 func gitUnknownOptionNewCommand(command *types.Command) ([]string, error) {
-	broken := gitUnknownOptionBroken(command.Output)
-	closest := utils.GetClosest("--"+broken, gitUnknownOptionCandidates(command.Output), 0.8, false)
-	if closest == "" {
+	start, end, option, ok := gitUnknownOptionCorrection(command)
+	if !ok {
 		return nil, nil
 	}
-	return []string{utils.ReplaceArgument(command.Script, "--"+broken, closest)}, nil
+	return []string{command.Script[:start] + option + command.Script[end:]}, nil
 }
 
 func init() {
