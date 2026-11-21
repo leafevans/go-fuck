@@ -24,6 +24,12 @@ func GetRules() []*types.Rule {
 
 func configuredRules(settings *conf.Settings) []*types.Rule {
 	enabled := make([]*types.Rule, 0, rules.Count())
+	if len(settings.Priority) == 0 {
+		walkEnabledRules(settings, func(rule *types.Rule) {
+			enabled = append(enabled, rule)
+		})
+		return enabled
+	}
 	walkEnabledRules(settings, func(rule *types.Rule) {
 		if priority, overridden := settings.Priority[rule.Name]; overridden {
 			configured := *rule
@@ -32,11 +38,9 @@ func configuredRules(settings *conf.Settings) []*types.Rule {
 		}
 		enabled = append(enabled, rule)
 	})
-	if len(settings.Priority) != 0 {
-		slices.SortStableFunc(enabled, func(left, right *types.Rule) int {
-			return cmp.Compare(left.Priority, right.Priority)
-		})
-	}
+	slices.SortStableFunc(enabled, func(left, right *types.Rule) int {
+		return cmp.Compare(left.Priority, right.Priority)
+	})
 	return enabled
 }
 

@@ -17,12 +17,11 @@ var hasExistsScriptPathExists = func(path string) bool {
 
 // hasExistsScriptMatch reports whether the executable exists as a local file.
 func hasExistsScriptMatch(command *types.Command) bool {
-	parts := command.ScriptParts()
-	if len(parts) == 0 {
+	if !strings.Contains(command.Output, "command not found") {
 		return false
 	}
-	return hasExistsScriptPathExists(parts[0]) &&
-		strings.Contains(command.Output, "command not found")
+	parts := command.ScriptParts()
+	return len(parts) > 0 && hasExistsScriptPathExists(parts[0])
 }
 
 // hasExistsScriptNewCommand runs the local file explicitly.
