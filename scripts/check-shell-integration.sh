@@ -66,8 +66,10 @@ check_alias() {
       ;;
     tcsh)
       env TF_SHELL=tcsh "$bin" --alias >"$work/alias-tcsh"
-      tcsh -f -c "eval `cat '$work/alias-tcsh'`; alias fuck >/dev/null" ||
+      tcsh -f -c "source '$work/alias-tcsh'; alias fuck" >"$work/defined-tcsh" ||
         fail "tcsh cannot evaluate the generated alias"
+      grep -q 'setenv TF_ALIAS fuck' "$work/defined-tcsh" ||
+        fail "tcsh did not define the generated alias"
       ;;
     *)
       fail "unknown shell $shell"
