@@ -3,6 +3,7 @@
 package specific
 
 import (
+	"iter"
 	"regexp"
 	"strings"
 
@@ -76,36 +77,66 @@ func expandGitAliasesForShell(command *types.Command, shell shells.Shell) *types
 // GitSubcommandSpan locates the expected subcommand, skipping Git's global
 // options and their values.
 func GitSubcommandSpan(script, expected string, shell shells.Shell) (int, int, bool) {
-	previousEnd := 0
-	skipValue := false
-	for index, span := range gitWord.FindAllStringIndex(script, -1) {
-		if strings.TrimSpace(script[previousEnd:span[0]]) != "" {
-			return 0, 0, false
-		}
-		previousEnd = span[1]
-		if index == 0 {
-			continue
-		}
-		parts := shell.SplitCommand(script[span[0]:span[1]])
-		if len(parts) != 1 {
-			return 0, 0, false
-		}
-		if skipValue {
-			skipValue = false
-			continue
-		}
-		word := parts[0]
-		if word == "--" {
-			return 0, 0, false
-		}
-		if strings.HasPrefix(word, "-") {
-			switch word {
-			case "-C", "-c", "--git-dir", "--work-tree", "--namespace", "--config-env", "--super-prefix", "--attr-source":
-				skipValue = true
-			}
-			continue
-		}
+	for span, word := range gitCommandWords(script, shell) {
 		return span[0], span[1], word == expected
 	}
 	return 0, 0, false
+}
+
+// GitOptionSpan locates an option after the subcommand but before pathspecs.
+func GitOptionSpan(script, expected string, shell shells.Shell) (int, int, bool) {
+	subcommand := true
+	var start, end int
+	for span, word := range gitCommandWords(script, shell) {
+		if !subcommand && word == expected {
+			// One occurrence may be the value of another option. Git's hint
+			// does not identify which to change when the same word repeats.
+			if end != 0 {
+				return 0, 0, false
+			}
+			start, end = span[0], span[1]
+		}
+		subcommand = false
+	}
+	return start, end, end != 0
+}
+
+// gitCommandWords yields the subcommand and its arguments up to the first --.
+func gitCommandWords(script string, shell shells.Shell) iter.Seq2[[]int, string] {
+	return func(yield func([]int, string) bool) {
+		previousEnd := 0
+		skipValue, global := false, true
+		for index, span := range gitWord.FindAllStringIndex(script, -1) {
+			if strings.TrimSpace(script[previousEnd:span[0]]) != "" {
+				return
+			}
+			previousEnd = span[1]
+			if index == 0 {
+				continue
+			}
+			parts := shell.SplitCommand(script[span[0]:span[1]])
+			if len(parts) != 1 {
+				return
+			}
+			if skipValue {
+				skipValue = false
+				continue
+			}
+			word := parts[0]
+			if word == "--" {
+				return
+			}
+			if global && strings.HasPrefix(word, "-") {
+				switch word {
+				case "-C", "-c", "--git-dir", "--work-tree", "--namespace", "--config-env", "--super-prefix", "--attr-source":
+					skipValue = true
+				}
+				continue
+			}
+			global = false
+			if !yield(span, word) {
+				return
+			}
+		}
+	}
 }

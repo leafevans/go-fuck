@@ -23,6 +23,28 @@ func TestRuleGitTwoDashes(t *testing.T) {
 		assertMatch(t, rule, "git rebase -continue", gitTwoDashesOutput("--continue"))
 	})
 
+	t.Run("current Git hint changes only the option", func(t *testing.T) {
+		const output = "trace: inspecting `repo`\r\nerror: did you mean `--short` (with two dashes)?\r\n"
+		const script = `git -C "my repo" status -short --branch -- -short`
+		assertMatch(t, rule, script, output)
+		assertNewCommands(t, rule, script, output, []string{`git -C "my repo" status --short --branch -- -short`})
+	})
+
+	t.Run("ignores hints without a matching option", func(t *testing.T) {
+		for _, script := range []string{
+			"git status --short",
+			"git status -shorter",
+			"git status -short -short",
+			"git -C -short status",
+			"git status -- -short",
+			`git status -- "a -short path"`,
+		} {
+			output := gitTwoDashesOutput("--short")
+			assertNotMatch(t, rule, script, output)
+			assertNewCommands(t, rule, script, output, nil)
+		}
+	})
+
 	t.Run("does not match long options", func(t *testing.T) {
 		for _, script := range []string{
 			"git add --patch",
