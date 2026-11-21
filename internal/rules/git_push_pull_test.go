@@ -62,6 +62,7 @@ func TestRuleGitPushPull(t *testing.T) {
 			{"git push", "git pull && git push"},
 			{"git push nvbn", "git pull nvbn && git push nvbn"},
 			{"git push nvbn master", "git pull nvbn master && git push nvbn master"},
+			{"git -C 'repo dir' push origin main", "git -C 'repo dir' pull origin main && git -C 'repo dir' push origin main"},
 		}
 		for _, output := range []string{gitPushPullError, gitPushPullRemoteWorkError} {
 			for _, testCase := range cases {

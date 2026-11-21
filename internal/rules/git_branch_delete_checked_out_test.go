@@ -30,6 +30,7 @@ func TestRuleGitBranchDeleteCheckedOut(t *testing.T) {
 	}{
 		{"git branch -d foo", "git checkout master && git branch -D foo"},
 		{"git branch -D foo", "git checkout master && git branch -D foo"},
+		{"git -C 'repo dir' branch -d foo", "git -C 'repo dir' checkout master && git -C 'repo dir' branch -D foo"},
 	}
 	for _, testCase := range cases {
 		t.Run("new_command/"+testCase.script, func(t *testing.T) {

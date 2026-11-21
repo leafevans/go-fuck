@@ -13,7 +13,7 @@ func gitSwitchUnknownBranchOutput(branch string) string {
 func gitSwitchStubBranches(t *testing.T, branches ...string) {
 	t.Helper()
 	original := gitCheckoutBranches
-	gitCheckoutBranches = func() []string { return branches }
+	gitCheckoutBranches = func(string) []string { return branches }
 	t.Cleanup(func() { gitCheckoutBranches = original })
 }
 
@@ -34,8 +34,10 @@ func TestRuleGitSwitchUnknownBranch(t *testing.T) {
 
 	assertNewCommands(t, rule, "git switch feture", gitSwitchUnknownBranchOutput("feture"),
 		[]string{"git switch feature", "git switch -c feture"})
+	assertNewCommands(t, rule, "git -C 'repo dir' switch feture", gitSwitchUnknownBranchOutput("feture"),
+		[]string{"git -C 'repo dir' switch feature", "git -C 'repo dir' switch -c feture"})
 
-	gitCheckoutBranches = func() []string { return nil }
+	gitCheckoutBranches = func(string) []string { return nil }
 	assertNewCommands(t, rule, "git switch feture", gitSwitchUnknownBranchOutput("feture"),
 		[]string{"git switch -c feture"})
 }

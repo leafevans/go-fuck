@@ -26,6 +26,7 @@ func TestRuleGitMerge(t *testing.T) {
 		{"git merge local", "git merge remote/local"},
 		{"git merge -m \"test\" local", "git merge -m \"test\" remote/local"},
 		{"git merge -m \"test local\" local", "git merge -m \"test local\" remote/local"},
+		{"git -C 'repo dir' merge local", "git -C 'repo dir' merge remote/local"},
 	}
 	for _, testCase := range commandCases {
 		t.Run("new_command/"+testCase.script, func(t *testing.T) {

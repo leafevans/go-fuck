@@ -176,7 +176,7 @@ From a source checkout, the update scripts install prebuilt binaries into
 
 ```sh
 sh scripts/update-go-fuck.sh                  # Linux or macOS
-sh scripts/update-go-fuck.sh v2.32.0 /path/to/bin
+sh scripts/update-go-fuck.sh v2.33.0 /path/to/bin
 ```
 
 ```powershell

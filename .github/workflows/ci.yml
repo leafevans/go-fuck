@@ -183,6 +183,45 @@ jobs:
           eval "$(go-fuck --alias)"
           type fuck
 
+  packaging-windows:
+    name: Packaging (Scoop)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: stable
+          cache: true
+      - name: Install with Scoop
+        shell: pwsh
+        run: |
+          go test ./packaging -count=1
+          $expected = (Get-Content bucket/go-fuck.json -Raw | ConvertFrom-Json).version
+          $scoop = Get-Command scoop -ErrorAction SilentlyContinue
+          if (-not $scoop) {
+            Invoke-RestMethod -Uri "https://get.scoop.sh" | Invoke-Expression
+            $scoopPath = Join-Path $env:USERPROFILE "scoop\shims\scoop.cmd"
+            if (-not (Test-Path -LiteralPath $scoopPath)) { throw "Scoop installation failed" }
+          } else {
+            $scoopPath = $scoop.Source
+          }
+          & $scoopPath bucket add go-fuck https://github.com/leafevans/go-fuck
+          if ($LASTEXITCODE -ne 0) { throw "adding the Scoop bucket failed" }
+          & $scoopPath install go-fuck
+          if ($LASTEXITCODE -ne 0) { throw "installing with Scoop failed" }
+          $prefix = (& $scoopPath prefix go-fuck | Out-String).Trim()
+          $goFuck = Join-Path $prefix "go-fuck.exe"
+          if (-not (Test-Path -LiteralPath $goFuck -PathType Leaf)) {
+            throw "Scoop did not install go-fuck.exe"
+          }
+          $version = (& $goFuck --version 2>&1 | Out-String).Trim()
+          if ($version -notmatch "^go-fuck $([regex]::Escape($expected)) using Go ") {
+            throw "unexpected Scoop binary version: $version"
+          }
+          Write-Host $version
+
   shell-integration:
     name: Shell integration
     runs-on: ubuntu-latest

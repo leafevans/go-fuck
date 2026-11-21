@@ -1,11 +1,8 @@
 package rules
 
 import (
-	"os/exec"
-
 	"strings"
 
-	"github.com/leafevans/go-fuck/v2/internal/shells"
 	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
 	"github.com/leafevans/go-fuck/v2/internal/utils"
@@ -16,8 +13,8 @@ var gitCheckoutPathspec = newRegexp(`error: pathspec '([^']*)' did not match any
 
 // gitCheckoutBranches returns the local and remote branch names. It is a
 // variable so that tests do not need git to be installed.
-var gitCheckoutBranches = func() []string {
-	output, err := exec.Command("git", "branch", "-a", "--no-color", "--no-column").Output()
+var gitCheckoutBranches = func(script string) []string {
+	output, err := gitRepositoryOutput(script, "checkout", "branch", "-a", "--no-color", "--no-column")
 	if err != nil {
 		return nil
 	}
@@ -54,8 +51,7 @@ func gitCheckoutParseBranches(commandOutput string) []string {
 // competes with the git_add rule there. go-fuck limits this rule to the
 // checkout command it is named after.
 func gitCheckoutMatch(command *types.Command) bool {
-	parts := command.ScriptParts()
-	if len(parts) < 2 || parts[1] != "checkout" {
+	if !gitHasSubcommand(command.Script, "checkout") {
 		return false
 	}
 	return strings.Contains(command.Output, "did not match any file(s) known to git") &&
@@ -69,25 +65,20 @@ func gitCheckoutNewCommand(command *types.Command) ([]string, error) {
 		return nil, nil
 	}
 	missingFile := pathspecMatch[1]
-	closestBranch := utils.GetClosest(missingFile, gitCheckoutBranches(), 0.6, false)
+	closestBranch := utils.GetClosest(missingFile, gitCheckoutBranches(command.Script), 0.6, false)
 
 	newCommands := []string{}
 	if closestBranch != "" {
-		newCommands = append(newCommands,
-			utils.ReplaceArgument(command.Script, missingFile, closestBranch))
+		if corrected, ok := gitReplaceArgument(command.Script, missingFile, closestBranch, false); ok {
+			newCommands = append(newCommands, corrected)
+		}
 	}
 
-	parts := command.ScriptParts()
-	if len(parts) > 1 && parts[1] == "checkout" {
-		newCommands = append(newCommands,
-			utils.ReplaceArgument(command.Script, "checkout", "checkout -b"))
+	corrected, ok := gitInsertAfterSubcommand(command.Script, "checkout", "-b")
+	if !ok {
+		return nil, nil
 	}
-
-	if len(newCommands) == 0 {
-		newCommands = append(newCommands,
-			shells.Current().And("git branch "+missingFile, command.Script))
-	}
-	return newCommands, nil
+	return append(newCommands, corrected), nil
 }
 
 func init() {

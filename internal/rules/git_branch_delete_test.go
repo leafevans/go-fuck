@@ -21,4 +21,6 @@ func TestRuleGitBranchDelete(t *testing.T) {
 
 	assertNewCommands(t, rule, "git branch -d branch", gitBranchDeleteOutput(),
 		[]string{"git branch -D branch"})
+	assertNewCommands(t, rule, "git -C 'repo dir' branch -d branch", gitBranchDeleteOutput(),
+		[]string{"git -C 'repo dir' branch -D branch"})
 }

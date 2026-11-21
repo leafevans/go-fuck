@@ -3,9 +3,9 @@ package rules
 import (
 	"strings"
 
+	"github.com/leafevans/go-fuck/v2/internal/shells"
 	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
-	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // gitFetchClobberTagError matches the rejection that git fetch prints when a
@@ -15,24 +15,29 @@ const gitFetchClobberTagError = "would clobber existing tag"
 // gitFetchClobberTagMatch reports whether git fetch refused to update a tag.
 func gitFetchClobberTagMatch(command *types.Command) bool {
 	return strings.Contains(command.Output, gitFetchClobberTagError) &&
-		utils.Contains(command.ScriptParts(), "fetch")
+		gitHasSubcommand(command.Script, "fetch")
 }
 
 // gitFetchClobberTagNewCommand refetches the tags and overwrites the local
 // ones.
 func gitFetchClobberTagNewCommand(command *types.Command) ([]string, error) {
-	parts := command.ScriptParts()
-	arguments := "fetch"
-	if !utils.Contains(parts, "--tags") {
-		arguments += " --tags"
+	flags := []string{}
+	if _, _, ok := specific.GitOptionSpan(command.Script, "--tags", shells.Current()); !ok {
+		flags = append(flags, "--tags")
 	}
-	if !utils.Contains(parts, "--force") && !utils.Contains(parts, "-f") {
-		arguments += " --force"
+	_, _, longForce := specific.GitOptionSpan(command.Script, "--force", shells.Current())
+	_, _, shortForce := specific.GitOptionSpan(command.Script, "-f", shells.Current())
+	if !longForce && !shortForce {
+		flags = append(flags, "--force")
 	}
-	if arguments == "fetch" {
+	if len(flags) == 0 {
 		return nil, nil
 	}
-	return []string{utils.ReplaceArgument(command.Script, "fetch", arguments)}, nil
+	corrected, ok := gitInsertAfterSubcommand(command.Script, "fetch", strings.Join(flags, " "))
+	if !ok {
+		return nil, nil
+	}
+	return []string{corrected}, nil
 }
 
 func init() {

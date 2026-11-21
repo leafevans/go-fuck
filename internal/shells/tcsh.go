@@ -69,6 +69,67 @@ func (t *Tcsh) Quote(s string) string {
 	return builder.String()
 }
 
+// SplitCommand splits a tcsh command line. Tcsh keeps history expansion active
+// inside single quotes, so Quote escapes "!" and newlines with a backslash;
+// those escapes have to be decoded here.
+func (t *Tcsh) SplitCommand(command string) []string {
+	return splitTcsh(command)
+}
+
+func splitTcsh(command string) []string {
+	var (
+		args    []string
+		current strings.Builder
+		inWord  bool
+	)
+	flush := func() {
+		if inWord {
+			args = append(args, current.String())
+			current.Reset()
+			inWord = false
+		}
+	}
+	runes := []rune(command)
+	for index := 0; index < len(runes); index++ {
+		switch ch := runes[index]; {
+		case ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n':
+			flush()
+		case ch == '\'':
+			inWord = true
+			for index++; index < len(runes); index++ {
+				if runes[index] == '\'' {
+					break
+				}
+				if runes[index] == '\\' && index+1 < len(runes) &&
+					(runes[index+1] == '!' || runes[index+1] == '\n') {
+					index++
+				}
+				current.WriteRune(runes[index])
+			}
+		case ch == '"':
+			inWord = true
+			for index++; index < len(runes); index++ {
+				if runes[index] == '"' {
+					break
+				}
+				if runes[index] == '\\' && index+1 < len(runes) {
+					index++
+				}
+				current.WriteRune(runes[index])
+			}
+		case ch == '\\' && index+1 < len(runes):
+			index++
+			current.WriteRune(runes[index])
+			inWord = true
+		default:
+			current.WriteRune(ch)
+			inWord = true
+		}
+	}
+	flush()
+	return args
+}
+
 // InstantModeAlias falls back to the regular alias because instant mode is not
 // supported.
 func (t *Tcsh) InstantModeAlias(aliasName string) string {

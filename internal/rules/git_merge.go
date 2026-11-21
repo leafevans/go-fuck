@@ -5,7 +5,6 @@ import (
 
 	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
-	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // gitMergeUnknownBranch matches the branch that git could not merge.
@@ -16,7 +15,7 @@ var gitMergeRemoteBranch = newRegexp(`Did you mean this\?\n\t([^\n]+)`)
 
 // gitMergeMatch reports whether git suggested a similar remote branch.
 func gitMergeMatch(command *types.Command) bool {
-	return strings.Contains(command.Script, "merge") &&
+	return gitHasSubcommand(command.Script, "merge") &&
 		strings.Contains(command.Output, " - not something we can merge") &&
 		strings.Contains(command.Output, "Did you mean this?")
 }
@@ -28,7 +27,11 @@ func gitMergeNewCommand(command *types.Command) ([]string, error) {
 	if unknownMatch == nil || remoteMatch == nil {
 		return nil, nil
 	}
-	return []string{utils.ReplaceArgument(command.Script, unknownMatch[1], remoteMatch[1])}, nil
+	corrected, ok := gitReplaceArgument(command.Script, unknownMatch[1], remoteMatch[1], false)
+	if !ok {
+		return nil, nil
+	}
+	return []string{corrected}, nil
 }
 
 func init() {

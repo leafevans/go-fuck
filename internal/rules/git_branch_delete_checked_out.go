@@ -6,14 +6,14 @@ import (
 	"github.com/leafevans/go-fuck/v2/internal/shells"
 	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
-	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // gitBranchDeleteCheckedOutMatch reports whether git refused to delete the
 // currently checked out branch.
 func gitBranchDeleteCheckedOutMatch(command *types.Command) bool {
-	return (strings.Contains(command.Script, "branch -d") ||
-		strings.Contains(command.Script, "branch -D")) &&
+	_, _, lower := specific.GitOptionSpan(command.Script, "-d", shells.Current())
+	_, _, upper := specific.GitOptionSpan(command.Script, "-D", shells.Current())
+	return gitHasSubcommand(command.Script, "branch") && (lower || upper) &&
 		strings.Contains(command.Output, "error: Cannot delete branch '") &&
 		strings.Contains(command.Output, "' checked out at '")
 }
@@ -21,9 +21,23 @@ func gitBranchDeleteCheckedOutMatch(command *types.Command) bool {
 // gitBranchDeleteCheckedOutNewCommand checks out master and force deletes the
 // branch.
 func gitBranchDeleteCheckedOutNewCommand(command *types.Command) ([]string, error) {
+	corrected := command.Script
+	if _, _, ok := specific.GitOptionSpan(command.Script, "-d", shells.Current()); ok {
+		var replaced bool
+		corrected, replaced = gitReplaceArgument(command.Script, "-d", "-D", false)
+		if !replaced {
+			return nil, nil
+		}
+	} else if _, _, ok := specific.GitOptionSpan(command.Script, "-D", shells.Current()); !ok {
+		return nil, nil
+	}
+	checkout, ok := gitCommandWithSubcommand(command.Script, "branch", "checkout master")
+	if !ok {
+		return nil, nil
+	}
 	return []string{shells.Current().And(
-		"git checkout master",
-		utils.ReplaceArgument(command.Script, "-d", "-D"))}, nil
+		checkout,
+		corrected)}, nil
 }
 
 func init() {

@@ -12,7 +12,7 @@ on:
           - published
           - repository
       version:
-        description: AUR package version including pkgrel (for example 2.31.22-1)
+        description: AUR package version including pkgrel (for example 2.33.0-1)
         required: true
         type: string
 

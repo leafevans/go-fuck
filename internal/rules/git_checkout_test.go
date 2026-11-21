@@ -1,6 +1,10 @@
 package rules
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/leafevans/go-fuck/v2/internal/types"
+)
 
 // gitCheckoutDidNotMatch builds the output git prints for an unknown branch or
 // file.
@@ -10,6 +14,20 @@ func gitCheckoutDidNotMatch(target string, didYouForget bool) string {
 		output += "\nDid you forget to 'git add'?'"
 	}
 	return output
+}
+
+func TestGitCheckoutNewCommandRejectsMalformedCommands(t *testing.T) {
+	resetTestState(t)
+	if commands, err := gitCheckoutNewCommand(types.NewCommand("git checkout known", "")); err != nil || commands != nil {
+		t.Fatalf("missing pathspec produced %q, %v", commands, err)
+	}
+	original := gitCheckoutBranches
+	gitCheckoutBranches = func(string) []string { return nil }
+	t.Cleanup(func() { gitCheckoutBranches = original })
+	if commands, err := gitCheckoutNewCommand(types.NewCommand(
+		"git status unknown", gitCheckoutDidNotMatch("unknown", false))); err != nil || commands != nil {
+		t.Fatalf("non-checkout command produced %q, %v", commands, err)
+	}
 }
 
 func TestRuleGitCheckout(t *testing.T) {
@@ -71,10 +89,12 @@ func TestRuleGitCheckout(t *testing.T) {
 		{"", "git checkout unknown", "unknown", []string{"git checkout -b unknown"}},
 		{"  test-random-branch-123", "git checkout tst-rdm-brnch-123", "tst-rdm-brnch-123",
 			[]string{"git checkout test-random-branch-123", "git checkout -b tst-rdm-brnch-123"}},
+		{"", "git -C 'repo dir' checkout unknown", "unknown",
+			[]string{"git -C 'repo dir' checkout -b unknown"}},
 	}
 	for _, testCase := range commandCases {
 		branches := testCase.branches
-		gitCheckoutBranches = func() []string { return gitCheckoutParseBranches(branches) }
+		gitCheckoutBranches = func(string) []string { return gitCheckoutParseBranches(branches) }
 		t.Run("new_command/"+testCase.script, func(t *testing.T) {
 			assertNewCommands(t, rule, testCase.script, gitCheckoutDidNotMatch(testCase.target, false),
 				testCase.want)

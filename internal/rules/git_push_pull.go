@@ -6,13 +6,12 @@ import (
 	"github.com/leafevans/go-fuck/v2/internal/shells"
 	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
-	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // gitPushPullMatch reports whether a push was rejected because the remote
 // contains work that is not integrated locally.
 func gitPushPullMatch(command *types.Command) bool {
-	return strings.Contains(command.Script, "push") &&
+	return gitHasSubcommand(command.Script, "push") &&
 		strings.Contains(command.Output, "! [rejected]") &&
 		strings.Contains(command.Output, "failed to push some refs to") &&
 		(strings.Contains(command.Output,
@@ -23,7 +22,10 @@ func gitPushPullMatch(command *types.Command) bool {
 
 // gitPushPullNewCommand pulls the remote changes and retries the push.
 func gitPushPullNewCommand(command *types.Command) ([]string, error) {
-	pull := utils.ReplaceArgument(command.Script, "push", "pull")
+	pull, ok := gitReplaceSubcommand(command.Script, "push", "pull")
+	if !ok {
+		return nil, nil
+	}
 	return []string{shells.Current().And(pull, command.Script)}, nil
 }
 

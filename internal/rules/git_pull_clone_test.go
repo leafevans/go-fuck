@@ -30,5 +30,8 @@ func TestRuleGitPullClone(t *testing.T) {
 		assertNewCommands(t, rule, "git pull git@github.com:mcarton/thefuck.git",
 			gitPullCloneError,
 			[]string{"git clone git@github.com:mcarton/thefuck.git"})
+		assertNewCommands(t, rule, "git -C 'repo dir' pull origin main",
+			gitPullCloneError,
+			[]string{"git -C 'repo dir' clone origin main"})
 	})
 }

@@ -13,11 +13,8 @@ var gitSwitchUnknownBranchReference = newRegexp(`fatal: invalid reference: (\S+)
 // gitSwitchUnknownBranchMatch reports whether git switch failed because the
 // branch does not exist.
 func gitSwitchUnknownBranchMatch(command *types.Command) bool {
-	parts := command.ScriptParts()
-	if len(parts) < 2 || parts[1] != "switch" {
-		return false
-	}
-	return gitSwitchUnknownBranchReference.MatchString(command.Output)
+	return gitHasSubcommand(command.Script, "switch") &&
+		gitSwitchUnknownBranchReference.MatchString(command.Output)
 }
 
 // gitSwitchUnknownBranchNewCommand suggests the closest existing branch or
@@ -30,11 +27,14 @@ func gitSwitchUnknownBranchNewCommand(command *types.Command) ([]string, error) 
 	missing := match[1]
 
 	newCommands := []string{}
-	if closest := utils.GetClosest(missing, gitCheckoutBranches(), 0.6, false); closest != "" {
-		newCommands = append(newCommands, utils.ReplaceArgument(command.Script, missing, closest))
+	if closest := utils.GetClosest(missing, gitCheckoutBranches(command.Script), 0.6, false); closest != "" {
+		if corrected, ok := gitReplaceArgument(command.Script, missing, closest, false); ok {
+			newCommands = append(newCommands, corrected)
+		}
 	}
-	newCommands = append(newCommands,
-		utils.ReplaceArgument(command.Script, "switch", "switch -c"))
+	if corrected, ok := gitInsertAfterSubcommand(command.Script, "switch", "-c"); ok {
+		newCommands = append(newCommands, corrected)
+	}
 	return newCommands, nil
 }
 

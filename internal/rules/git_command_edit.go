@@ -65,6 +65,42 @@ func gitReplaceArgument(script, before, after string, includePaths bool) (string
 	return script[:start] + shell.Quote(after) + script[end:], true
 }
 
+// gitReplaceSubcommand replaces the top-level Git operation without touching
+// a branch, path, or option with the same text.
+func gitReplaceSubcommand(script, before, after string) (string, bool) {
+	start, end, ok := specific.GitSubcommandSpan(script, before, shells.Current())
+	if !ok {
+		return "", false
+	}
+	return script[:start] + shells.Current().Quote(after) + script[end:], true
+}
+
+// gitOperationWordSpan returns the first word after the Git subcommand.
+func gitOperationWordSpan(script, subcommand string) ([2]int, string, bool) {
+	first := true
+	for span, word := range specific.GitCommandWords(script, shells.Current()) {
+		if first {
+			if word != subcommand {
+				return [2]int{}, "", false
+			}
+			first = false
+			continue
+		}
+		return span, word, true
+	}
+	return [2]int{}, "", false
+}
+
+// gitReplaceOperation replaces the nested operation, for example "add" in
+// "git remote add origin URL".
+func gitReplaceOperation(script, subcommand, before, after string) (string, bool) {
+	span, word, ok := gitOperationWordSpan(script, subcommand)
+	if !ok || word != before {
+		return "", false
+	}
+	return script[:span[0]] + shells.Current().Quote(after) + script[span[1]:], true
+}
+
 // gitInsertAfterSubcommand adds flags without changing unrelated arguments.
 func gitInsertAfterSubcommand(script, subcommand, flags string) (string, bool) {
 	_, end, ok := specific.GitSubcommandSpan(script, subcommand, shells.Current())
@@ -72,4 +108,14 @@ func gitInsertAfterSubcommand(script, subcommand, flags string) (string, bool) {
 		return "", false
 	}
 	return script[:end] + " " + flags + script[end:], true
+}
+
+// gitCommandWithSubcommand keeps Git's global repository selectors when
+// producing a command with different arguments.
+func gitCommandWithSubcommand(script, subcommand, replacement string) (string, bool) {
+	start, _, ok := specific.GitSubcommandSpan(script, subcommand, shells.Current())
+	if !ok {
+		return "", false
+	}
+	return strings.TrimRight(script[:start], " \t") + " " + replacement, true
 }

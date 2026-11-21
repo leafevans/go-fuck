@@ -10,8 +10,8 @@ import (
 // FuzzGitQuotedArgument checks that every supported shell round-trips an
 // argument without losing its byte boundary or changing unrelated text.
 func FuzzGitQuotedArgument(f *testing.F) {
-	for index, argument := range []string{"master", "repo dir", "it's", `back\slash`, "", "line\nbreak"} {
-		f.Add(argument, uint8(index%3))
+	for index, argument := range []string{"master", "repo dir", "it's", `back\slash`, "", "line\nbreak", "careful!"} {
+		f.Add(argument, uint8(index%6))
 	}
 	f.Fuzz(func(t *testing.T, argument string, shellIndex uint8) {
 		if !utf8.ValidString(argument) || argument == "--" {
@@ -22,7 +22,8 @@ func FuzzGitQuotedArgument(f *testing.F) {
 		}
 		shell := []shells.Shell{
 			shells.NewBash(), shells.NewFish(), shells.NewPowershell(),
-		}[shellIndex%3]
+			shells.NewZsh(), shells.NewTcsh(), shells.NewGeneric(),
+		}[shellIndex%6]
 		quoted := shell.Quote(argument)
 		script := "git -C " + shell.Quote("project dir") + " log " + quoted + " -- " + quoted
 		start, end, ok := GitArgumentSpan(script, argument, shell, false)

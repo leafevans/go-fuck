@@ -37,7 +37,10 @@ func TestGitArgumentSpanAcrossShells(t *testing.T) {
 		shell shells.Shell
 	}{
 		{"bash", shells.NewBash()},
+		{"generic", shells.NewGeneric()},
+		{"zsh", shells.NewZsh()},
 		{"fish", shells.NewFish()},
+		{"tcsh", shells.NewTcsh()},
 		{"powershell", shells.NewPowershell()},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

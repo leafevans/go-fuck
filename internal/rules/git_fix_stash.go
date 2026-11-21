@@ -22,28 +22,29 @@ var gitFixStashCommands = []string{
 
 // gitFixStashMatch reports whether a mistyped git stash subcommand was used.
 func gitFixStashMatch(command *types.Command) bool {
-	parts := command.ScriptParts()
-	return len(parts) > 1 && parts[1] == "stash" && strings.Contains(command.Output, "usage:")
+	return gitHasSubcommand(command.Script, "stash") && strings.Contains(command.Output, "usage:")
 }
 
 // gitFixStashNewCommand replaces the subcommand with its closest match or
 // inserts the save subcommand.
 func gitFixStashNewCommand(command *types.Command) ([]string, error) {
-	parts := command.ScriptParts()
-	if len(parts) < 3 {
+	_, stashCommand, ok := gitOperationWordSpan(command.Script, "stash")
+	if !ok {
 		return nil, nil
 	}
-	stashCommand := parts[2]
 	fixed := utils.GetClosest(stashCommand, gitFixStashCommands, 0.6, false)
 	if fixed != "" {
-		return []string{utils.ReplaceArgument(command.Script, stashCommand, fixed)}, nil
+		corrected, ok := gitReplaceOperation(command.Script, "stash", stashCommand, fixed)
+		if !ok {
+			return nil, nil
+		}
+		return []string{corrected}, nil
 	}
-
-	fixedParts := make([]string, 0, len(parts)+1)
-	fixedParts = append(fixedParts, parts[:2]...)
-	fixedParts = append(fixedParts, "save")
-	fixedParts = append(fixedParts, parts[2:]...)
-	return []string{strings.Join(fixedParts, " ")}, nil
+	corrected, ok := gitInsertAfterSubcommand(command.Script, "stash", "save")
+	if !ok {
+		return nil, nil
+	}
+	return []string{corrected}, nil
 }
 
 func init() {

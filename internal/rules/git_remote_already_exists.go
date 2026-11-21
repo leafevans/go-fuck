@@ -3,6 +3,8 @@ package rules
 import (
 	"strings"
 
+	"github.com/leafevans/go-fuck/v2/internal/shells"
+	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
 	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
@@ -15,22 +17,38 @@ var gitRemoteAlreadyExistsError = newRegexp(`(?m)^(?:error|fatal): remote (\S+) 
 // the remote already exists. Flags between "add" and the remote name are not
 // supported, because "git remote set-url" does not accept the same flags.
 func gitRemoteAlreadyExistsMatch(command *types.Command) bool {
-	return strings.Contains(command.Script, "remote add ") &&
-		!strings.Contains(command.Script, "remote add -") &&
-		gitRemoteAlreadyExistsError.MatchString(command.Output)
+	_, ok := gitRemoteAlreadyExistsCorrection(command)
+	return ok
 }
 
 // gitRemoteAlreadyExistsNewCommand changes the remote instead of trying to add
 // it again.
 func gitRemoteAlreadyExistsNewCommand(command *types.Command) ([]string, error) {
-	if !gitRemoteAlreadyExistsMatch(command) {
-		return nil, nil
-	}
-	corrected := utils.ReplaceArgument(command.Script, "add", "set-url")
-	if corrected == command.Script {
+	corrected, ok := gitRemoteAlreadyExistsCorrection(command)
+	if !ok {
 		return nil, nil
 	}
 	return []string{corrected}, nil
+}
+
+func gitRemoteAlreadyExistsCorrection(command *types.Command) (string, bool) {
+	if !gitRemoteAlreadyExistsError.MatchString(command.Output) {
+		return "", false
+	}
+	operation, _, ok := gitOperationWordSpan(command.Script, "remote")
+	if !ok {
+		return "", false
+	}
+	for span, word := range specific.GitCommandWords(command.Script, shells.Current()) {
+		if span[0] <= operation[1] {
+			continue
+		}
+		if strings.HasPrefix(word, "-") {
+			return "", false
+		}
+		break
+	}
+	return gitReplaceOperation(command.Script, "remote", "add", "set-url")
 }
 
 func init() {

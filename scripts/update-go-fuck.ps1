@@ -12,7 +12,7 @@ the Linux archive, then installs it through Ubuntu's own shell.
 
 .EXAMPLE
 ./update-go-fuck.ps1
-./update-go-fuck.ps1 -Version 2.11.0
+./update-go-fuck.ps1 -Version 2.33.0
 ./update-go-fuck.ps1 -SkipWsl
 #>
 [CmdletBinding()]

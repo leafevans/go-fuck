@@ -40,6 +40,7 @@ func TestRuleGitFixStash(t *testing.T) {
 		{"git stash opp", "git stash pop"},
 		{"git stash Some message", "git stash save Some message"},
 		{"git stash saev Some message", "git stash save Some message"},
+		{"git -C 'repo dir' stash saev message", "git -C 'repo dir' stash save message"},
 	}
 	for _, testCase := range commandCases {
 		t.Run("new_command/"+testCase.script, func(t *testing.T) {

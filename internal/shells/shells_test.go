@@ -84,6 +84,30 @@ func TestFishSplitCommand(t *testing.T) {
 	}
 }
 
+func TestTcshSplitCommand(t *testing.T) {
+	tcsh := NewTcsh()
+	for _, tc := range []struct {
+		command string
+		want    []string
+	}{
+		{"git log master", []string{"git", "log", "master"}},
+		{`git log "double quoted"`, []string{"git", "log", "double quoted"}},
+		{`git log escaped\ space`, []string{"git", "log", "escaped space"}},
+	} {
+		if got := tcsh.SplitCommand(tc.command); !reflect.DeepEqual(got, tc.want) {
+			t.Errorf("SplitCommand(%q) = %q, want %q", tc.command, got, tc.want)
+		}
+	}
+	for _, value := range []string{
+		"master", "repo dir", "it's", `back\slash`, "careful!", "line\nbreak",
+	} {
+		parts := tcsh.SplitCommand("git log " + tcsh.Quote(value))
+		if len(parts) != 3 || parts[2] != value {
+			t.Errorf("tcsh round trip for %q = %q", value, parts)
+		}
+	}
+}
+
 func TestGenericSplitCommand(t *testing.T) {
 	shell := NewGeneric()
 	parts := shell.SplitCommand("echo hello" + string(rune(92)) + " world")

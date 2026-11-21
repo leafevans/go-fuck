@@ -26,5 +26,7 @@ func TestRuleGitFetchClobberTag(t *testing.T) {
 		[]string{"git fetch --force --tags"})
 	assertNewCommands(t, rule, "git fetch origin", gitFetchClobberTagOutput(),
 		[]string{"git fetch --tags --force origin"})
+	assertNewCommands(t, rule, "git -C 'repo dir' fetch origin", gitFetchClobberTagOutput(),
+		[]string{"git -C 'repo dir' fetch --tags --force origin"})
 	assertNewCommands(t, rule, "git fetch --tags --force", gitFetchClobberTagOutput(), nil)
 }
