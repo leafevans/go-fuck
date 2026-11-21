@@ -206,6 +206,31 @@ func TestGetRawCommandMarkedBashHistory(t *testing.T) {
 	assertRawCommand(t, getRawCommand(&argumentparser.Args{}), nil)
 }
 
+func TestShortAliasHistoryBoundaries(t *testing.T) {
+	resetRawCommandState(t, t.TempDir())
+	t.Setenv("TF_ALIAS", "f")
+	for _, tc := range []struct {
+		shell   shells.Shell
+		history string
+		want    []string
+	}{
+		{shells.NewGeneric(), "git status\nf --yes", []string{"git status"}},
+		{shells.NewBash(), rawCommandMarker + "\t fd\n\t f\t--yes", []string{"fd"}},
+		{shells.NewBash(), rawCommandMarker + "\t f\n\t f --yes", nil},
+		{shells.NewZsh(), rawCommandMarker + "f --yes", nil},
+		{shells.NewZsh(), rawCommandMarker + "fd", []string{"fd"}},
+		{shells.NewPowershell(), "F --yes", nil},
+		{shells.NewPowershell(), "fd", []string{"fd"}},
+		{shells.NewPowershell(), "f --yes\nWrite-Output ok", []string{"f --yes\nWrite-Output ok"}},
+	} {
+		t.Run(tc.shell.Name()+"/"+tc.history, func(t *testing.T) {
+			shells.Set(tc.shell)
+			t.Setenv("TF_HISTORY", tc.history)
+			assertRawCommand(t, getRawCommand(&argumentparser.Args{}), tc.want)
+		})
+	}
+}
+
 func TestGetRawCommandMarkedZshHistory(t *testing.T) {
 	resetRawCommandState(t, t.TempDir())
 	shells.Set(shells.NewZsh())

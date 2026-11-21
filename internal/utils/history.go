@@ -24,13 +24,13 @@ func GetValidHistoryWithoutCurrent(command *types.Command) []string {
 
 	valid := make([]string, 0, len(history))
 	for i, line := range history {
-		executable := historyExecutable(line)
+		executable := HistoryExecutable(line)
 		if executable == alias || line == command.Script {
 			continue
 		}
 		// An alias invocation marks the preceding entry as a failed command.
 		// Compare complete names so a short alias such as f does not hide fd.
-		if i+1 < len(history) && historyExecutable(history[i+1]) == alias {
+		if i+1 < len(history) && HistoryExecutable(history[i+1]) == alias {
 			continue
 		}
 		if executableSet[executable] || builtins[executable] {
@@ -40,8 +40,8 @@ func GetValidHistoryWithoutCurrent(command *types.Command) []string {
 	return valid
 }
 
-// historyExecutable reads the leading name without allocating argument slices.
-func historyExecutable(line string) string {
+// HistoryExecutable reads the leading name without allocating argument slices.
+func HistoryExecutable(line string) string {
 	line = strings.TrimLeft(line, " \t\r\n")
 	if end := strings.IndexAny(line, " \t\r\n"); end >= 0 {
 		return line[:end]

@@ -55,6 +55,16 @@ try {
         $reply = fuck --json --no-rerun --output-from 'captured output' --force-command $command | Out-String | ConvertFrom-Json
         Assert 'alias preserves quoted command' ($reply.command -ceq $command) $reply.command
         Assert 'alias preserves spaced input path' ($reply.output -match 'not a git command') $reply.output
+        Invoke-Expression ((& $Exe --alias f) -join "`n")
+        Set-Content -LiteralPath 'history-probe.txt' -Value 'short-alias-result'
+        $timestamp = [DateTime]::Now
+        Add-History -InputObject ([pscustomobject]@{
+            Id = [long]1; CommandLine = 'Get-Content history-probe.tx'
+            ExecutionStatus = [System.Management.Automation.Runspaces.PipelineState]::Completed
+            StartExecutionTime = $timestamp; EndExecutionTime = $timestamp
+        })
+        $output = @(f --yes)
+        Assert 'short alias executes only the corrected history command' ($output.Count -eq 1 -and $output[0] -ceq 'short-alias-result') ($output -join ' | ')
         Assert 'alias leaves profile unchanged' ((Get-FileHash -LiteralPath $PROFILE).Hash -eq $profileHash) $PROFILE
     } finally {
         $PROFILE = $savedProfile

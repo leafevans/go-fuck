@@ -193,6 +193,9 @@ func getRawCommand(args *argumentparser.Args) []string {
 	alias := conf.Alias()
 
 	for _, command := range slices.Backward(lines) {
+		if utils.HistoryExecutable(command) == alias {
+			continue
+		}
 		diff := utils.SequenceRatio(alias, command)
 		if diff < consts.DiffWithAlias || utils.IsExecutable(command) {
 			return []string{command}
@@ -252,12 +255,12 @@ func bashMarkedRawCommand(payload string) []string {
 		return singleMarkedCommand(payload)
 	}
 	lastEntry := trimFCEntry(strings.Join(lines[last:], "\n"))
-	if isAliasLike(lastEntry) {
+	if isAliasCall(lastEntry) {
 		if last == 0 {
 			return nil
 		}
 		previous := trimFCEntry(strings.Join(lines[:last], "\n"))
-		if previous == "" {
+		if previous == "" || isAliasCall(previous) {
 			return nil
 		}
 		return []string{previous}
@@ -275,13 +278,9 @@ func trimFCEntry(entry string) string {
 	return strings.TrimRight(entry, "\r\n")
 }
 
-// isAliasLike reports whether a single line command looks like a call to the
-// alias itself.
-func isAliasLike(command string) bool {
-	if strings.Contains(command, "\n") {
-		return false
-	}
-	return utils.SequenceRatio(conf.Alias(), command) >= consts.DiffWithAlias
+// isAliasCall excludes the alias itself, never a whole multiline command.
+func isAliasCall(command string) bool {
+	return !strings.Contains(command, "\n") && utils.HistoryExecutable(command) == conf.Alias()
 }
 
 // zshMarkedRawCommand returns the previous entry that the zsh alias reads from
@@ -289,7 +288,7 @@ func isAliasLike(command string) bool {
 // breaks.
 func zshMarkedRawCommand(payload string) []string {
 	command := strings.TrimRight(payload, "\r\n")
-	if command == "" || isAliasLike(command) {
+	if command == "" || isAliasCall(command) {
 		return nil
 	}
 	return []string{command}
@@ -319,10 +318,8 @@ func powerShellRawCommand(history string) []string {
 	}
 	// The previous command can be a call to the alias itself, for example when
 	// the alias is invoked twice in a row.
-	if !strings.Contains(command, string(rune(10))) {
-		if utils.SequenceRatio(conf.Alias(), command) >= consts.DiffWithAlias {
-			return nil
-		}
+	if !strings.Contains(command, "\n") && strings.EqualFold(utils.HistoryExecutable(command), conf.Alias()) {
+		return nil
 	}
 	return []string{command}
 }
