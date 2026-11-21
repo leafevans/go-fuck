@@ -32,6 +32,8 @@ func TestRuleGitHookBypass(t *testing.T) {
 			assertNotMatch(t, rule, script, "")
 		})
 	}
+	assertNotMatch(t, rule, "git log commit", "")
+	assertNewCommands(t, rule, "git -C 'repo dir' commit -m 'commit message'", "", []string{"git -C 'repo dir' commit --no-verify -m 'commit message'"})
 
 	commandCases := []struct {
 		script string

@@ -3,7 +3,6 @@ package rules
 import (
 	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
-	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // gitHookBypassCommands lists the commands that run git hooks.
@@ -11,9 +10,8 @@ var gitHookBypassCommands = []string{"am", "commit", "push"}
 
 // gitHookBypassMatch reports whether a command that runs git hooks is used.
 func gitHookBypassMatch(command *types.Command) bool {
-	parts := command.ScriptParts()
 	for _, hookedCommand := range gitHookBypassCommands {
-		if utils.Contains(parts, hookedCommand) {
+		if gitHasSubcommand(command.Script, hookedCommand) {
 			return true
 		}
 	}
@@ -22,11 +20,9 @@ func gitHookBypassMatch(command *types.Command) bool {
 
 // gitHookBypassNewCommand adds --no-verify to the hooked command.
 func gitHookBypassNewCommand(command *types.Command) ([]string, error) {
-	parts := command.ScriptParts()
 	for _, hookedCommand := range gitHookBypassCommands {
-		if utils.Contains(parts, hookedCommand) {
-			return []string{utils.ReplaceArgument(
-				command.Script, hookedCommand, hookedCommand+" --no-verify")}, nil
+		if corrected, ok := gitInsertAfterSubcommand(command.Script, hookedCommand, "--no-verify"); ok {
+			return []string{corrected}, nil
 		}
 	}
 	return nil, nil

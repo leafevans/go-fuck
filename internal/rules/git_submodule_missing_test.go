@@ -6,7 +6,7 @@ import "testing"
 func stubGitSubmodulePaths(t *testing.T, paths []string) {
 	t.Helper()
 	original := gitSubmodulePathsCommand
-	gitSubmodulePathsCommand = func() []string { return paths }
+	gitSubmodulePathsCommand = func(string) []string { return paths }
 	t.Cleanup(func() { gitSubmodulePathsCommand = original })
 }
 
@@ -32,4 +32,5 @@ func TestRuleGitSubmoduleMissing(t *testing.T) {
 	assertNewCommands(t, rule, "git submodule update vendor/fooo",
 		"error: pathspec 'vendor/fooo' did not match any file(s) known to git\n",
 		[]string{"git submodule update vendor/foo"})
+	assertNewCommands(t, rule, "git -C vendor/fooo submodule update -- vendor/fooo", "error: pathspec 'vendor/fooo' did not match any file(s) known to git\n", []string{"git -C vendor/fooo submodule update -- vendor/foo"})
 }

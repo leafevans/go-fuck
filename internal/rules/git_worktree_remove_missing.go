@@ -1,11 +1,12 @@
 package rules
 
 import (
-	"os/exec"
 	"path/filepath"
 
 	"strings"
 
+	"github.com/leafevans/go-fuck/v2/internal/shells"
+	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
 	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
@@ -16,8 +17,8 @@ var gitWorktreeRemoveMissingPattern = newRegexp(`(?m)^fatal: '([^']+)' is not a 
 
 // gitWorktreePathsCommand lists the registered worktree paths. It is a
 // variable so that tests do not depend on the repository that runs them.
-var gitWorktreePathsCommand = func() []string {
-	output, err := exec.Command("git", "worktree", "list", "--porcelain").Output()
+var gitWorktreePathsCommand = func(script string) []string {
+	output, err := gitRepositoryOutput(script, "worktree", "worktree", "list", "--porcelain")
 	if err != nil {
 		return nil
 	}
@@ -57,8 +58,8 @@ func canonicalWorktreePath(path string) string {
 // closestWorktreePath returns the original worktree path that is closest to
 // the path from the error. The directory names are compared instead of the
 // whole paths, because all worktrees usually share the same parent directory.
-func closestWorktreePath(missing string) string {
-	paths := gitWorktreePathsCommand()
+func closestWorktreePath(script, missing string) string {
+	paths := gitWorktreePathsCommand(script)
 	names := make([]string, 0, len(paths))
 	for _, path := range paths {
 		names = append(names, filepath.Base(canonicalWorktreePath(path)))
@@ -78,37 +79,37 @@ func closestWorktreePath(missing string) string {
 // gitWorktreeRemoveMissingMatch reports whether "git worktree remove" failed
 // because the path is not a worktree and another worktree path is close to it.
 func gitWorktreeRemoveMissingMatch(command *types.Command) bool {
-	if !strings.Contains(command.Script, "worktree remove ") {
-		return false
-	}
-	missing, ok := gitWorktreeRemoveMissingName(command.Output)
-	if !ok || missing == "" {
-		return false
-	}
-	return closestWorktreePath(missing) != ""
+	_, ok := gitWorktreeRemoveMissingCorrection(command)
+	return ok
 }
 
 // gitWorktreeRemoveMissingNewCommand replaces the missing path with the
 // closest registered worktree.
 func gitWorktreeRemoveMissingNewCommand(command *types.Command) ([]string, error) {
-	if !strings.Contains(command.Script, "worktree remove ") {
-		return nil, nil
-	}
-	missing, ok := gitWorktreeRemoveMissingName(command.Output)
-	if !ok || missing == "" {
-		return nil, nil
-	}
-	closest := closestWorktreePath(missing)
-	if closest == "" {
-		return nil, nil
-	}
-	// A worktree path can contain spaces and is usually quoted, so replace the
-	// path as a substring instead of replacing a shell argument.
-	corrected := strings.Replace(command.Script, missing, closest, 1)
-	if corrected == command.Script {
+	corrected, ok := gitWorktreeRemoveMissingCorrection(command)
+	if !ok {
 		return nil, nil
 	}
 	return []string{corrected}, nil
+}
+
+func gitWorktreeRemoveMissingCorrection(command *types.Command) (string, bool) {
+	if !gitHasOperation(command.Script, "worktree", "remove") {
+		return "", false
+	}
+	missing, ok := gitWorktreeRemoveMissingName(command.Output)
+	if !ok || missing == "" {
+		return "", false
+	}
+	start, end, ok := specific.GitArgumentSpan(command.Script, missing, shells.Current(), true)
+	if !ok {
+		return "", false
+	}
+	closest := closestWorktreePath(command.Script, missing)
+	if closest == "" {
+		return "", false
+	}
+	return command.Script[:start] + shells.Current().Quote(closest) + command.Script[end:], true
 }
 
 // gitWorktreeRemoveMissingName returns the path from a worktree error.

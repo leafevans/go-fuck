@@ -5,18 +5,21 @@ import (
 
 	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
-	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // gitTagForceMatch reports whether git tag failed because the tag exists.
 func gitTagForceMatch(command *types.Command) bool {
-	return utils.Contains(command.ScriptParts(), "tag") &&
+	return gitHasSubcommand(command.Script, "tag") &&
 		strings.Contains(command.Output, "already exists")
 }
 
 // gitTagForceNewCommand forces the tag creation.
 func gitTagForceNewCommand(command *types.Command) ([]string, error) {
-	return []string{utils.ReplaceArgument(command.Script, "tag", "tag --force")}, nil
+	corrected, ok := gitInsertAfterSubcommand(command.Script, "tag", "--force")
+	if !ok {
+		return nil, nil
+	}
+	return []string{corrected}, nil
 }
 
 func init() {

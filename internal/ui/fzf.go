@@ -65,10 +65,7 @@ func fzfCandidates(commands []*types.CorrectedCommand) ([]string, map[string]*ty
 		if !seen.Add(command) {
 			continue
 		}
-		base := logs.CommandText(command.Script)
-		if command.SideEffect != nil {
-			base += "  (+side effect)"
-		}
+		base := logs.CandidateText(command.Script, command.SideEffect != nil)
 		label := base
 		for number := 2; byLabel[label] != nil; number++ {
 			label = base + "  [" + strconv.Itoa(number) + "]"

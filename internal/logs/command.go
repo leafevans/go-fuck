@@ -26,3 +26,14 @@ func CommandText(script string) string {
 	}
 	return text.String()
 }
+
+const sideEffectMarker = "(+side effect)"
+
+// CandidateText returns the uncolored label shared by interactive selectors.
+func CandidateText(script string, hasSideEffect bool) string {
+	text := CommandText(script)
+	if hasSideEffect {
+		text += "  " + sideEffectMarker
+	}
+	return text
+}

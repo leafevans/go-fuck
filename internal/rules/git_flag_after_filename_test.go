@@ -19,14 +19,19 @@ func TestRuleGitFlagAfterFilename(t *testing.T) {
 		{"git log README.md -p CONTRIBUTING.md", "fatal: bad flag '-p' used after filename",
 			"git log -p README.md CONTRIBUTING.md"},
 		{"git log -p README.md --name-only", "fatal: bad flag '--name-only' used after filename",
-			"git log -p --name-only README.md"},
+			"git log --name-only -p README.md"},
 		{"git log README.md -p", "fatal: option '-p' must come before non-option arguments",
 			"git log -p README.md"},
 		{"git log README.md -p CONTRIBUTING.md", "fatal: option '-p' must come before non-option arguments",
 			"git log -p README.md CONTRIBUTING.md"},
 		{"git log -p README.md --name-only", "fatal: option '--name-only' must come before non-option arguments",
-			"git log -p --name-only README.md"},
+			"git log --name-only -p README.md"},
 	}
+	assertNewCommands(t, rule, "git -C 'repo dir' log 'file name' -p other", "fatal: bad flag '-p' used after filename", []string{"git -C 'repo dir' log -p 'file name' other"})
+	assertNotMatch(t, rule, "git log README.md --format '%s'", "fatal: option '--format' must come before non-option arguments")
+	assertNotMatch(t, rule, "git log -p file", "fatal: bad flag '-p' used after filename")
+	assertNotMatch(t, rule, "git log -- file -p", "fatal: bad flag '-p' used after filename")
+	assertNewCommands(t, rule, "git log 'the file'\t\t--format=%s", "fatal: option '--format=%s' must come before non-option arguments", []string{"git log --format=%s 'the file'"})
 	for _, testCase := range cases {
 		t.Run("match/"+testCase.script, func(t *testing.T) {
 			assertMatch(t, rule, testCase.script, testCase.output)

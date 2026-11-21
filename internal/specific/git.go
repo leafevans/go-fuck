@@ -18,7 +18,9 @@ var gitAliasExpansion = regexp.MustCompile(`trace: alias expansion: ([^ \t\r\n]+
 
 // gitWord locates shell words while retaining their byte offsets, so expanding
 // a subcommand does not rewrite the quoting of unrelated arguments.
-var gitWord = regexp.MustCompile(`(?:[^ \t\r\n'"\\]|\\.|'[^']*'|"(?:[^"\\]|\\.)*")+`)
+var gitWord = regexp.MustCompile(`^(?:[^ \t\r\n;&|<>()'"\\]|\\.|'[^']*'|"(?:[^"\\]|\\.)*")+`)
+
+var gitPowerShellWord = regexp.MustCompile("^(?:[^ \\t\\r\\n;&|<>()'\"`]|`.|'(?:[^']|'')*'|\"(?:[^\"`]|`.)*\")+")
 
 // GitSupportMatch wraps a match function so that it only runs for git (or hub)
 // commands and with git aliases expanded.
@@ -77,7 +79,7 @@ func expandGitAliasesForShell(command *types.Command, shell shells.Shell) *types
 // GitSubcommandSpan locates the expected subcommand, skipping Git's global
 // options and their values.
 func GitSubcommandSpan(script, expected string, shell shells.Shell) (int, int, bool) {
-	for span, word := range gitCommandWords(script, shell) {
+	for span, word := range GitCommandWords(script, shell) {
 		return span[0], span[1], word == expected
 	}
 	return 0, 0, false
@@ -85,58 +87,113 @@ func GitSubcommandSpan(script, expected string, shell shells.Shell) (int, int, b
 
 // GitOptionSpan locates an option after the subcommand but before pathspecs.
 func GitOptionSpan(script, expected string, shell shells.Shell) (int, int, bool) {
-	subcommand := true
+	return GitArgumentSpan(script, expected, shell, false)
+}
+
+// GitArgumentSpan locates a unique argument following the Git subcommand.
+// Arguments after the pathspec separator are included only when requested.
+func GitArgumentSpan(script, expected string, shell shells.Shell, includePaths bool) (int, int, bool) {
+	first := true
 	var start, end int
-	for span, word := range gitCommandWords(script, shell) {
-		if !subcommand && word == expected {
-			// One occurrence may be the value of another option. Git's hint
-			// does not identify which to change when the same word repeats.
+	separator := false
+	valid := walkGitWords(script, shell, includePaths, func(span [2]int, word string) bool {
+		if first {
+			first = false
+			return true
+		}
+		if !separator && word == "--" {
+			separator = true
+			return true
+		}
+		if word == expected {
 			if end != 0 {
-				return 0, 0, false
+				end = 0
+				return false
 			}
 			start, end = span[0], span[1]
 		}
-		subcommand = false
+		return true
+	})
+	if !valid || end == 0 {
+		return 0, 0, false
 	}
-	return start, end, end != 0
+	return start, end, true
 }
 
-// gitCommandWords yields the subcommand and its arguments up to the first --.
-func gitCommandWords(script string, shell shells.Shell) iter.Seq2[[]int, string] {
-	return func(yield func([]int, string) bool) {
-		previousEnd := 0
-		skipValue, global := false, true
-		for index, span := range gitWord.FindAllStringIndex(script, -1) {
-			if strings.TrimSpace(script[previousEnd:span[0]]) != "" {
-				return
+// GitCommandWords yields the subcommand and arguments before the pathspec separator.
+// Each span identifies the original shell word in script.
+func GitCommandWords(script string, shell shells.Shell) iter.Seq2[[2]int, string] {
+	return func(yield func([2]int, string) bool) { walkGitWords(script, shell, false, yield) }
+}
+
+// GitCommandPathWords also yields the separator and literal path arguments.
+func GitCommandPathWords(script string, shell shells.Shell) iter.Seq2[[2]int, string] {
+	return func(yield func([2]int, string) bool) { walkGitWords(script, shell, true, yield) }
+}
+
+// gitShellWord reads just one word. Ordinary unquoted arguments are slices of
+// the input. Delegate quoted and escaped words to the caller's shell.
+func gitShellWord(rest string, shell shells.Shell) (string, int) {
+	for i := 0; i < len(rest); i++ {
+		switch rest[i] {
+		case ' ', '\t', '\r', '\n', ';', '&', '|', '<', '>', '(', ')':
+			return rest[:i], i
+		case '\'', '"', '\\', '`':
+			pattern := gitWord
+			if _, ok := shell.(*shells.Powershell); ok {
+				pattern = gitPowerShellWord
 			}
-			previousEnd = span[1]
-			if index == 0 {
-				continue
+			raw := pattern.FindString(rest)
+			if raw == "" || len(raw) < len(rest) && !strings.ContainsRune(" \t\r\n;&|<>()", rune(rest[len(raw)])) {
+				return "", 0
 			}
-			parts := shell.SplitCommand(script[span[0]:span[1]])
+			parts := shell.SplitCommand(raw)
 			if len(parts) != 1 {
-				return
+				return "", 0
 			}
-			if skipValue {
-				skipValue = false
-				continue
-			}
-			word := parts[0]
-			if word == "--" {
-				return
-			}
-			if global && strings.HasPrefix(word, "-") {
-				switch word {
-				case "-C", "-c", "--git-dir", "--work-tree", "--namespace", "--config-env", "--super-prefix", "--attr-source":
-					skipValue = true
-				}
-				continue
-			}
-			global = false
-			if !yield(span, word) {
-				return
-			}
+			return parts[0], len(raw)
 		}
 	}
+	return rest, len(rest)
+}
+
+func walkGitWords(script string, shell shells.Shell, includePaths bool, yield func([2]int, string) bool) bool {
+	pos := 0
+	skipValue, global := false, true
+	for index := 0; pos < len(script); index++ {
+		for pos < len(script) && (script[pos] == ' ' || script[pos] == '\t') {
+			pos++
+		}
+		if pos == len(script) || script[pos] == '#' {
+			break
+		}
+		word, size := gitShellWord(script[pos:], shell)
+		if size == 0 {
+			return false
+		}
+		span := [2]int{pos, pos + size}
+		pos += size
+		if index == 0 {
+			continue
+		}
+		if skipValue {
+			skipValue = false
+			continue
+		}
+		if word == "--" && !includePaths {
+			break
+		}
+		if global && strings.HasPrefix(word, "-") {
+			switch word {
+			case "-C", "-c", "--git-dir", "--work-tree", "--namespace", "--config-env", "--super-prefix", "--attr-source":
+				skipValue = true
+			}
+			continue
+		}
+		global = false
+		if !yield(span, word) {
+			break
+		}
+	}
+	return true
 }

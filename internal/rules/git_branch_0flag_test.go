@@ -3,8 +3,8 @@ package rules
 import "testing"
 
 // gitBranch0flagExistsOutput is the output git prints for an existing branch.
-func gitBranch0flagExistsOutput() string {
-	return "fatal: A branch named 'bar' already exists."
+func gitBranch0flagExistsOutput(flag string) string {
+	return "fatal: A branch named '" + flag + "' already exists."
 }
 
 func TestRuleGitBranch0flag(t *testing.T) {
@@ -24,7 +24,7 @@ func TestRuleGitBranch0flag(t *testing.T) {
 		"git branch 0D foo",
 	} {
 		t.Run("match/"+script, func(t *testing.T) {
-			assertMatch(t, rule, script, gitBranch0flagExistsOutput())
+			assertMatch(t, rule, script, gitBranch0flagExistsOutput(script[len("git branch "):len("git branch ")+2]))
 		})
 	}
 
@@ -44,16 +44,16 @@ func TestRuleGitBranch0flag(t *testing.T) {
 		script string
 		want   string
 	}{
-		{"git branch 0a", "git branch -D 0a && git branch -a"},
-		{"git branch 0v", "git branch -D 0v && git branch -v"},
-		{"git branch 0d foo", "git branch -D 0d && git branch -d foo"},
-		{"git branch 0D foo", "git branch -D 0D && git branch -D foo"},
-		{"git branch 0l 'maint-*'", "git branch -D 0l && git branch -l 'maint-*'"},
-		{"git branch 0u upstream", "git branch -D 0u && git branch -u upstream"},
+		{"git branch 0a", "git branch -a"},
+		{"git branch 0v", "git branch -v"},
+		{"git branch 0d foo", "git branch -d foo"},
+		{"git branch 0D foo", "git branch -D foo"},
+		{"git branch 0l 'maint-*'", "git branch -l 'maint-*'"},
+		{"git branch 0u upstream", "git branch -u upstream"},
 	}
 	for _, testCase := range existingBranchCases {
 		t.Run("new_command_branch_exists/"+testCase.script, func(t *testing.T) {
-			assertNewCommands(t, rule, testCase.script, gitBranch0flagExistsOutput(),
+			assertNewCommands(t, rule, testCase.script, gitBranch0flagExistsOutput(testCase.script[len("git branch "):len("git branch ")+2]),
 				[]string{testCase.want})
 		})
 	}
@@ -71,4 +71,7 @@ func TestRuleGitBranch0flag(t *testing.T) {
 				"fatal: Not a valid object name: 'bar'.", []string{testCase.want})
 		})
 	}
+	assertNotMatch(t, rule, "git branch feature 0d", gitBranch0flagExistsOutput("0d"))
+	assertNotMatch(t, rule, "git branch 0d foo", gitBranch0flagExistsOutput("bar"))
+	assertNewCommands(t, rule, "git -C '0d repo' branch 0d 0d", gitBranch0flagExistsOutput("0d"), []string{"git -C '0d repo' branch -d 0d"})
 }

@@ -5,21 +5,22 @@ import (
 
 	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
-	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // gitCommitAddMatch reports whether git complained that nothing was staged.
 func gitCommitAddMatch(command *types.Command) bool {
-	return utils.Contains(command.ScriptParts(), "commit") &&
+	return gitHasSubcommand(command.Script, "commit") &&
 		strings.Contains(command.Output, "no changes added to commit")
 }
 
 // gitCommitAddNewCommand stages changes before committing again.
 func gitCommitAddNewCommand(command *types.Command) ([]string, error) {
-	return []string{
-		utils.ReplaceArgument(command.Script, "commit", "commit -a"),
-		utils.ReplaceArgument(command.Script, "commit", "commit -p"),
-	}, nil
+	all, ok := gitInsertAfterSubcommand(command.Script, "commit", "-a")
+	if !ok {
+		return nil, nil
+	}
+	patch, _ := gitInsertAfterSubcommand(command.Script, "commit", "-p")
+	return []string{all, patch}, nil
 }
 
 func init() {

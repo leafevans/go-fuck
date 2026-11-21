@@ -3,29 +3,54 @@ package rules
 import (
 	"strings"
 
+	"github.com/leafevans/go-fuck/v2/internal/shells"
 	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
-	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // gitDiffNoIndexMatch reports whether two files were compared without the
 // --no-index flag.
 func gitDiffNoIndexMatch(command *types.Command) bool {
-	parts := command.ScriptParts()
 	files := 0
-	for index := 2; index < len(parts); index++ {
-		if !strings.HasPrefix(parts[index], "-") {
+	first, paths := true, false
+	for _, word := range specific.GitCommandPathWords(command.Script, shells.Current()) {
+		switch {
+		case first:
+			if word != "diff" {
+				return false
+			}
+			first = false
+		case paths:
+			files++
+		case word == "--":
+			paths = true
+		case strings.HasPrefix(word, "-"):
+			// Only count operands when the option cannot consume the next word.
+			if !gitDiffStandaloneOption(word) {
+				return false
+			}
+		default:
 			files++
 		}
 	}
-	return strings.Contains(command.Script, "diff") &&
-		!strings.Contains(command.Script, "--no-index") &&
-		files == 2
+	return files == 2
+}
+
+func gitDiffStandaloneOption(word string) bool {
+	switch word {
+	case "-p", "--patch", "--stat", "--name-only", "--name-status", "--shortstat", "--numstat", "--summary", "--raw", "--color", "--no-color", "--color-words", "--word-diff", "--exit-code", "--quiet", "--check", "--minimal", "--binary", "-w", "-b":
+		return true
+	}
+	return strings.HasPrefix(word, "--") && strings.Contains(word, "=")
 }
 
 // gitDiffNoIndexNewCommand adds the --no-index flag.
 func gitDiffNoIndexNewCommand(command *types.Command) ([]string, error) {
-	return []string{utils.ReplaceArgument(command.Script, "diff", "diff --no-index")}, nil
+	corrected, ok := gitInsertAfterSubcommand(command.Script, "diff", "--no-index")
+	if !ok {
+		return nil, nil
+	}
+	return []string{corrected}, nil
 }
 
 func init() {

@@ -1,8 +1,6 @@
 package rules
 
 import (
-	"os/exec"
-
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -15,21 +13,21 @@ var gitSubmoduleMissingPattern = newRegexp(`error: pathspec '([^']+)' did not ma
 
 // gitSubmodulePathsCommand lists the configured submodule paths. It is a
 // variable so that tests do not depend on the repository that runs them.
-var gitSubmodulePathsCommand = func() []string {
-	output, err := exec.Command("git", "submodule", "status").Output()
+var gitSubmodulePathsCommand = func(script string) []string {
+	output, err := gitRepositoryOutput(script, "submodule", "ls-files", "--stage", "-z")
 	if err != nil {
 		return nil
 	}
 	return parseSubmodulePaths(string(output))
 }
 
-// parseSubmodulePaths extracts the paths from "git submodule status" output.
+// parseSubmodulePaths extracts gitlinks from the NUL-delimited index records.
 func parseSubmodulePaths(output string) []string {
 	paths := []string{}
-	for line := range strings.SplitSeq(output, "\n") {
-		fields := strings.Fields(line)
-		if len(fields) >= 2 {
-			paths = append(paths, fields[1])
+	for record := range strings.SplitSeq(output, "\x00") {
+		meta, path, ok := strings.Cut(record, "\t")
+		if ok && strings.HasPrefix(meta, "160000 ") && strings.HasSuffix(meta, " 0") && path != "" {
+			paths = append(paths, path)
 		}
 	}
 	return paths
@@ -45,7 +43,7 @@ func gitSubmoduleMissingMatch(command *types.Command) bool {
 	if !ok || missing == "" {
 		return false
 	}
-	closest := utils.GetClosest(missing, gitSubmodulePathsCommand(), 0.6, false)
+	closest := utils.GetClosest(missing, gitSubmodulePathsCommand(command.Script), 0.6, false)
 	return closest != "" && closest != missing
 }
 
@@ -59,12 +57,12 @@ func gitSubmoduleMissingNewCommand(command *types.Command) ([]string, error) {
 	if !ok || missing == "" {
 		return nil, nil
 	}
-	closest := utils.GetClosest(missing, gitSubmodulePathsCommand(), 0.6, false)
+	closest := utils.GetClosest(missing, gitSubmodulePathsCommand(command.Script), 0.6, false)
 	if closest == "" || closest == missing {
 		return nil, nil
 	}
-	corrected := strings.Replace(command.Script, missing, closest, 1)
-	if corrected == command.Script {
+	corrected, ok := gitReplaceArgument(command.Script, missing, closest, true)
+	if !ok {
 		return nil, nil
 	}
 	return []string{corrected}, nil
@@ -73,8 +71,7 @@ func gitSubmoduleMissingNewCommand(command *types.Command) ([]string, error) {
 // gitSubmoduleCommandUsesPath reports whether script is a "git submodule"
 // subcommand that takes an existing submodule path.
 func gitSubmoduleCommandUsesPath(script string) bool {
-	return strings.Contains(script, "submodule update ") ||
-		strings.Contains(script, "submodule status ")
+	return gitHasOperation(script, "submodule", "update", "status")
 }
 
 // gitSubmoduleMissingName returns the missing path from a git error.

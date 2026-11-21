@@ -1,8 +1,6 @@
 package rules
 
 import (
-	"os/exec"
-
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -15,8 +13,8 @@ var gitTagMissingPattern = newRegexp(`(?m)^error: tag '([^']+)' not found\.$`)
 
 // gitTagNamesCommand lists the tag names. It is a variable so that tests do
 // not depend on the repository that runs them.
-var gitTagNamesCommand = func() []string {
-	output, err := exec.Command("git", "tag", "--list").Output()
+var gitTagNamesCommand = func(script string) []string {
+	output, err := gitRepositoryOutput(script, "tag", "tag", "--list")
 	if err != nil {
 		return nil
 	}
@@ -33,7 +31,7 @@ func gitTagMissingMatch(command *types.Command) bool {
 	if !ok || missing == "" {
 		return false
 	}
-	closest := utils.GetClosest(missing, gitTagNamesCommand(), 0.6, false)
+	closest := utils.GetClosest(missing, gitTagNamesCommand(command.Script), 0.6, false)
 	return closest != "" && closest != missing
 }
 
@@ -46,12 +44,12 @@ func gitTagMissingNewCommand(command *types.Command) ([]string, error) {
 	if !ok || missing == "" {
 		return nil, nil
 	}
-	closest := utils.GetClosest(missing, gitTagNamesCommand(), 0.6, false)
+	closest := utils.GetClosest(missing, gitTagNamesCommand(command.Script), 0.6, false)
 	if closest == "" || closest == missing {
 		return nil, nil
 	}
-	corrected := utils.ReplaceArgument(command.Script, missing, closest)
-	if corrected == command.Script {
+	corrected, ok := gitReplaceArgument(command.Script, missing, closest, false)
+	if !ok {
 		return nil, nil
 	}
 	return []string{corrected}, nil
@@ -60,17 +58,7 @@ func gitTagMissingNewCommand(command *types.Command) ([]string, error) {
 // gitTagCommandUsesName reports whether script is a "git tag" subcommand that
 // takes an existing tag name.
 func gitTagCommandUsesName(script string) bool {
-	for _, prefix := range []string{
-		"tag -d ",
-		"tag --delete ",
-		"tag -v ",
-		"tag --verify ",
-	} {
-		if strings.Contains(script, prefix) {
-			return true
-		}
-	}
-	return false
+	return gitHasOperation(script, "tag", "-d", "--delete", "-v", "--verify")
 }
 
 // gitTagMissingName returns the missing tag name from a git error.

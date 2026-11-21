@@ -6,7 +6,7 @@ import "testing"
 func stubGitLocalBranches(t *testing.T, names []string) {
 	t.Helper()
 	original := gitLocalBranchesCommand
-	gitLocalBranchesCommand = func() []string { return names }
+	gitLocalBranchesCommand = func(string) []string { return names }
 	t.Cleanup(func() { gitLocalBranchesCommand = original })
 }
 
@@ -36,4 +36,6 @@ func TestRuleGitBranchMissing(t *testing.T) {
 		[]string{"git branch -m feature renamed"})
 	assertNewCommands(t, rule, "git -C repo branch -d featre", "error: branch 'featre' not found\n",
 		[]string{"git -C repo branch -d feature"})
+	assertNewCommands(t, rule, "git -C featre branch -d featre", "error: branch 'featre' not found\n", []string{"git -C featre branch -d feature"})
+	assertNewCommands(t, rule, "git branch -d featre featre", "error: branch 'featre' not found\n", nil)
 }

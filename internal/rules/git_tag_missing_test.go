@@ -6,7 +6,7 @@ import "testing"
 func stubGitTagNames(t *testing.T, names []string) {
 	t.Helper()
 	original := gitTagNamesCommand
-	gitTagNamesCommand = func() []string { return names }
+	gitTagNamesCommand = func(string) []string { return names }
 	t.Cleanup(func() { gitTagNamesCommand = original })
 }
 
@@ -33,4 +33,5 @@ func TestRuleGitTagMissing(t *testing.T) {
 		[]string{"git tag -d v1.0.0"})
 	assertNewCommands(t, rule, "git tag -v v1.0.0x", "error: tag 'v1.0.0x' not found.\n",
 		[]string{"git tag -v v1.0.0"})
+	assertNewCommands(t, rule, "git -C v1.0.0x tag -d v1.0.0x", "error: tag 'v1.0.0x' not found.\n", []string{"git -C v1.0.0x tag -d v1.0.0"})
 }

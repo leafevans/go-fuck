@@ -55,7 +55,6 @@ func TestRuleGitMainMaster(t *testing.T) {
 	}{
 		{"git checkout main", "main", "git checkout master"},
 		{"git checkout master", "master", "git checkout main"},
-		{"git checkout wibble", "wibble", "git checkout wibble"},
 	}
 	for _, testCase := range commandCases {
 		t.Run("new_command/"+testCase.script, func(t *testing.T) {
@@ -63,4 +62,12 @@ func TestRuleGitMainMaster(t *testing.T) {
 				[]string{testCase.want})
 		})
 	}
+	assertNewCommands(t, rule, "git log -1 master -- docs/master.md", "fatal: bad revision 'master'", []string{"git log -1 main -- docs/master.md"})
+	assertNotMatch(t, rule, "git log master master", "fatal: bad revision 'master'")
+	assertNotMatch(t, rule, "git log -- master", "fatal: bad revision 'master'")
+	assertNotMatch(t, rule, "git log --grep master", "fatal: bad revision 'master'")
+	assertNotMatch(t, rule, "git log master", "unrelated error 'master'")
+	assertNotMatch(t, rule, "git log master main", "fatal: bad revision 'master' and 'main'")
+	assertNotMatch(t, rule, "git rm master", "error: pathspec 'master' did not match any file(s) known to git")
+	assertNewCommands(t, rule, "git switch master", "fatal: invalid reference: master", []string{"git switch main"})
 }

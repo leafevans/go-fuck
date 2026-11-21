@@ -8,40 +8,41 @@ import (
 	"github.com/leafevans/go-fuck/v2/internal/types"
 )
 
-// gitBranch0flagFirst returns the first two character argument that starts
-// with "0", or an empty string.
-func gitBranch0flagFirst(parts []string) string {
-	for _, part := range parts {
-		if len(part) == 2 && strings.HasPrefix(part, "0") {
-			return part
-		}
-	}
-	return ""
-}
-
 // gitBranch0flagMatch reports whether a branch flag was mistyped with a zero.
 func gitBranch0flagMatch(command *types.Command) bool {
-	parts := command.ScriptParts()
-	return len(parts) > 1 && parts[1] == "branch" && gitBranch0flagFirst(parts) != ""
+	_, ok := gitBranch0flagCorrection(command)
+	return ok
 }
 
-// gitBranch0flagNewCommand replaces the zero with a dash. When the branch
-// already exists, the old branch is deleted first.
+// gitBranch0flagNewCommand replaces the zero with a dash.
 func gitBranch0flagNewCommand(command *types.Command) ([]string, error) {
-	branchName := gitBranch0flagFirst(command.ScriptParts())
-	if branchName == "" {
+	corrected, ok := gitBranch0flagCorrection(command)
+	if !ok {
 		return nil, nil
 	}
+	return []string{corrected}, nil
+}
 
-	fixedFlag := strings.ReplaceAll(branchName, "0", "-")
-	fixedScript := strings.ReplaceAll(command.Script, branchName, fixedFlag)
-
-	if strings.Contains(command.Output, "A branch named '") &&
-		strings.Contains(command.Output, "' already exists.") {
-		deleteBranch := "git branch -D " + branchName
-		return []string{shells.Current().And(deleteBranch, fixedScript)}, nil
+func gitBranch0flagCorrection(command *types.Command) (string, bool) {
+	first := true
+	for span, word := range specific.GitCommandWords(command.Script, shells.Current()) {
+		if first {
+			if word != "branch" {
+				return "", false
+			}
+			first = false
+			continue
+		}
+		if len(word) != 2 || word[0] != '0' || !strings.ContainsRune("adDflruv", rune(word[1])) {
+			return "", false
+		}
+		if !strings.Contains(command.Output, "A branch named '"+word+"' already exists") &&
+			!strings.Contains(command.Output, "Not a valid object name:") {
+			return "", false
+		}
+		return command.Script[:span[0]] + "-" + word[1:] + command.Script[span[1]:], true
 	}
-	return []string{fixedScript}, nil
+	return "", false
 }
 
 func init() {

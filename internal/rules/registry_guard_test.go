@@ -290,6 +290,8 @@ func allExpectedRuleNames() []string {
 // implement or test a single rule. They are skipped by the file guards.
 var registryGuardHelperFiles = map[string]bool{
 	"registry.go":                    true,
+	"git_command_edit.go":            true,
+	"git_command_edit_test.go":       true,
 	"lazy_regexp.go":                 true,
 	"allocations_test.go":            true,
 	"testhelpers_test.go":            true,

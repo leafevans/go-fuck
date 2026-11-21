@@ -1,8 +1,6 @@
 package rules
 
 import (
-	"os/exec"
-
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -18,8 +16,8 @@ var gitBranchMissingPatterns = []*lazyRegexp{
 
 // gitLocalBranchesCommand lists the local branch names. It is a variable so
 // that tests do not depend on the repository that runs them.
-var gitLocalBranchesCommand = func() []string {
-	output, err := exec.Command("git", "branch", "--list", "--format=%(refname:short)").Output()
+var gitLocalBranchesCommand = func(script string) []string {
+	output, err := gitRepositoryOutput(script, "branch", "branch", "--list", "--format=%(refname:short)")
 	if err != nil {
 		return nil
 	}
@@ -36,7 +34,7 @@ func gitBranchMissingMatch(command *types.Command) bool {
 	if !ok || missing == "" {
 		return false
 	}
-	closest := utils.GetClosest(missing, gitLocalBranchesCommand(), 0.6, false)
+	closest := utils.GetClosest(missing, gitLocalBranchesCommand(command.Script), 0.6, false)
 	return closest != "" && closest != missing
 }
 
@@ -50,12 +48,12 @@ func gitBranchMissingNewCommand(command *types.Command) ([]string, error) {
 	if !ok || missing == "" {
 		return nil, nil
 	}
-	closest := utils.GetClosest(missing, gitLocalBranchesCommand(), 0.6, false)
+	closest := utils.GetClosest(missing, gitLocalBranchesCommand(command.Script), 0.6, false)
 	if closest == "" || closest == missing {
 		return nil, nil
 	}
-	corrected := utils.ReplaceArgument(command.Script, missing, closest)
-	if corrected == command.Script {
+	corrected, ok := gitReplaceArgument(command.Script, missing, closest, false)
+	if !ok {
 		return nil, nil
 	}
 	return []string{corrected}, nil
@@ -64,19 +62,7 @@ func gitBranchMissingNewCommand(command *types.Command) ([]string, error) {
 // gitBranchCommandUsesName reports whether script is a "git branch" subcommand
 // that takes an existing branch name as its first argument.
 func gitBranchCommandUsesName(script string) bool {
-	for _, prefix := range []string{
-		"branch -d ",
-		"branch -D ",
-		"branch --delete ",
-		"branch -m ",
-		"branch -M ",
-		"branch --move ",
-	} {
-		if strings.Contains(script, prefix) {
-			return true
-		}
-	}
-	return false
+	return gitHasOperation(script, "branch", "-d", "-D", "--delete", "-m", "-M", "--move")
 }
 
 // gitBranchMissingName returns the missing branch name from a git error.

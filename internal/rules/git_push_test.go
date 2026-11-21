@@ -18,6 +18,7 @@ func gitPushBitbucketOutput() string {
 }
 
 func TestRuleGitPush(t *testing.T) {
+	resetTestState(t)
 	rule := Get("git_push")
 	if rule == nil {
 		t.Fatal("git_push rule is not registered")
@@ -44,7 +45,8 @@ func TestRuleGitPush(t *testing.T) {
 		{"git push --quiet", "master", "git push --set-upstream origin master --quiet"},
 		{"git push --quiet origin", "master", "git push --set-upstream origin master --quiet"},
 		{"git -c test=test push --quiet origin", "master", "git -c test=test push --set-upstream origin master --quiet"},
-		{"git push", "test's", "git push --set-upstream origin test" + backslash + "'s"},
+		{"git push", "test's", `git push --set-upstream origin 'test'"'"'s'`},
+		{"git -C 'dir with spaces' push --quiet", "main", "git -C 'dir with spaces' push --set-upstream origin main --quiet"},
 		{"git push --force", "master", "git push --set-upstream origin master --force"},
 		{"git push --force-with-lease", "master", "git push --set-upstream origin master --force-with-lease"},
 	}
@@ -52,4 +54,5 @@ func TestRuleGitPush(t *testing.T) {
 		assertNewCommands(t, rule, testCase.script, gitPushOutput(testCase.branch),
 			[]string{testCase.want})
 	}
+	assertNewCommands(t, rule, "git push ''", gitPushOutput("master"), []string{"git push --set-upstream origin master"})
 }

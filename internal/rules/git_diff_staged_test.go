@@ -9,13 +9,13 @@ func TestRuleGitDiffStaged(t *testing.T) {
 		t.Fatal("git_diff_staged rule is not registered")
 	}
 
-	for _, script := range []string{"git diff foo", "git diff"} {
+	for _, script := range []string{"git diff foo", "git diff", "git -C --staged diff -- --staged"} {
 		t.Run("match/"+script, func(t *testing.T) {
 			assertMatch(t, rule, script, "")
 		})
 	}
 
-	for _, script := range []string{"git diff --staged", "git tag", "git branch", "git log"} {
+	for _, script := range []string{"git diff --staged", "git diff --cached", "git diff --no-index a b", "git tag", "git branch", "git log"} {
 		t.Run("not_match/"+script, func(t *testing.T) {
 			assertNotMatch(t, rule, script, "")
 		})

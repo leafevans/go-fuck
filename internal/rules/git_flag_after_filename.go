@@ -3,9 +3,9 @@ package rules
 import (
 	"strings"
 
+	"github.com/leafevans/go-fuck/v2/internal/shells"
 	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
-	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // gitFlagAfterFilenameFlagPattern matches a flag that was put after a
@@ -32,35 +32,40 @@ func gitFlagAfterFilenameBadFlag(commandOutput string) string {
 
 // gitFlagAfterFilenameMatch reports whether only the flag position is wrong.
 func gitFlagAfterFilenameMatch(command *types.Command) bool {
-	return gitFlagAfterFilenameBadFlag(command.Output) != ""
+	corrected, _ := gitFlagAfterFilenameNewCommand(command)
+	return len(corrected) != 0
 }
 
 // gitFlagAfterFilenameNewCommand moves the flag before the filename.
 func gitFlagAfterFilenameNewCommand(command *types.Command) ([]string, error) {
 	badFlag := gitFlagAfterFilenameBadFlag(command.Output)
-	if badFlag == "" {
+	// These switches do not take a separate value. Moving an arbitrary option
+	// could detach it from its value and change the meaning of the command.
+	if !gitDiffStandaloneOption(badFlag) {
 		return nil, nil
 	}
 
-	parts := append([]string{}, command.ScriptParts()...)
-	badFlagIndex := utils.Index(parts, badFlag)
-	if badFlagIndex < 0 {
+	start, end, ok := specific.GitOptionSpan(command.Script, badFlag, shells.Current())
+	if !ok {
 		return nil, nil
 	}
-
-	filenameIndex := -1
-	for index := badFlagIndex - 1; index >= 0; index-- {
-		if len(parts[index]) > 0 && parts[index][0] != '-' {
-			filenameIndex = index
+	var subcommandEnd int
+	hasOperand := false
+	for span, word := range specific.GitCommandWords(command.Script, shells.Current()) {
+		if span[0] >= start {
 			break
 		}
+		if subcommandEnd == 0 {
+			subcommandEnd = span[1]
+		} else if !strings.HasPrefix(word, "-") {
+			hasOperand = true
+		}
 	}
-	if filenameIndex < 0 {
+	if !hasOperand {
 		return nil, nil
 	}
-
-	parts[badFlagIndex], parts[filenameIndex] = parts[filenameIndex], parts[badFlagIndex]
-	return []string{strings.Join(parts, " ")}, nil
+	beforeFlag := strings.TrimRight(command.Script[subcommandEnd:start], " \t")
+	return []string{command.Script[:subcommandEnd] + " " + command.Script[start:end] + beforeFlag + command.Script[end:]}, nil
 }
 
 func init() {

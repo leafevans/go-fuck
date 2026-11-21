@@ -1,8 +1,6 @@
 package rules
 
 import (
-	"os/exec"
-
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/types"
@@ -19,8 +17,8 @@ var gitUnknownRemotePatterns = []*lazyRegexp{
 
 // gitRemoteNamesCommand lists the configured remotes. It is a variable so that
 // tests do not depend on the repository that runs them.
-var gitRemoteNamesCommand = func() []string {
-	output, err := exec.Command("git", "remote").Output()
+var gitRemoteNamesCommand = func(script string) []string {
+	output, err := gitRepositoryOutput(script, "remote", "remote")
 	if err != nil {
 		return nil
 	}
@@ -38,7 +36,7 @@ func gitUnknownRemoteMatch(command *types.Command) bool {
 	if !ok || missing == "" {
 		return false
 	}
-	closest := utils.GetClosest(missing, gitRemoteNamesCommand(), 0.6, false)
+	closest := utils.GetClosest(missing, gitRemoteNamesCommand(command.Script), 0.6, false)
 	return closest != "" && closest != missing
 }
 
@@ -52,12 +50,12 @@ func gitUnknownRemoteNewCommand(command *types.Command) ([]string, error) {
 	if !ok || missing == "" {
 		return nil, nil
 	}
-	closest := utils.GetClosest(missing, gitRemoteNamesCommand(), 0.6, false)
+	closest := utils.GetClosest(missing, gitRemoteNamesCommand(command.Script), 0.6, false)
 	if closest == "" || closest == missing {
 		return nil, nil
 	}
-	corrected := utils.ReplaceArgument(command.Script, missing, closest)
-	if corrected == command.Script {
+	corrected, ok := gitReplaceArgument(command.Script, missing, closest, false)
+	if !ok {
 		return nil, nil
 	}
 	return []string{corrected}, nil
@@ -67,20 +65,7 @@ func gitUnknownRemoteNewCommand(command *types.Command) ([]string, error) {
 // subcommand that takes an existing remote name. "add" reports a different
 // error.
 func gitRemoteCommandUsesName(script string) bool {
-	for _, prefix := range []string{
-		"remote remove ",
-		"remote rm ",
-		"remote rename ",
-		"remote get-url ",
-		"remote set-url ",
-		"remote show ",
-		"remote prune ",
-	} {
-		if strings.Contains(script, prefix) {
-			return true
-		}
-	}
-	return false
+	return gitHasOperation(script, "remote", "remove", "rm", "rename", "get-url", "set-url", "show", "prune")
 }
 
 // gitUnknownRemoteName returns the unknown remote name from a git error.

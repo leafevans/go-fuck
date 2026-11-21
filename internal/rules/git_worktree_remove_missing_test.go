@@ -6,7 +6,7 @@ import "testing"
 func stubGitWorktreePaths(t *testing.T, paths []string) {
 	t.Helper()
 	original := gitWorktreePathsCommand
-	gitWorktreePathsCommand = func() []string { return paths }
+	gitWorktreePathsCommand = func(string) []string { return paths }
 	t.Cleanup(func() { gitWorktreePathsCommand = original })
 }
 
@@ -32,6 +32,8 @@ func TestRuleGitWorktreeRemoveMissing(t *testing.T) {
 	assertNotMatch(t, rule, "git worktree add /repo/new feature",
 		"fatal: '/repo/featre' is not a working tree\n")
 	assertNotMatch(t, rule, "git worktree remove /repo/featre", "")
+	assertNewCommands(t, rule, "git -C /repo/featre worktree remove /repo/featre", "fatal: '/repo/featre' is not a working tree\n", []string{"git -C /repo/featre worktree remove /repo/feature"})
+	assertNotMatch(t, rule, "git worktree remove /repo/featre /repo/featre", "fatal: '/repo/featre' is not a working tree\n")
 
 	stubGitWorktreePaths(t, []string{"/repo/feature", "/repo/with space"})
 	assertNewCommands(t, rule, "git worktree remove /repo/featre",

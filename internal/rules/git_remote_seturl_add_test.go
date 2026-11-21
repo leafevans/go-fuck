@@ -31,6 +31,9 @@ func TestRuleGitRemoteSeturlAdd(t *testing.T) {
 			{"git remote remove origin", ""},
 			{"git remote prune origin", ""},
 			{"git remote set-branches origin branch", ""},
+			{"git remote remove set-url", "fatal: No such remote"},
+			{"git remote set-url --delete origin url", "fatal: No such remote"},
+			{"git remote set-url origin new-url old-url", "fatal: No such remote"},
 		}
 		for _, testCase := range cases {
 			assertNotMatch(t, rule, testCase.script, testCase.output)
@@ -39,6 +42,8 @@ func TestRuleGitRemoteSeturlAdd(t *testing.T) {
 
 	t.Run("new command adds the remote", func(t *testing.T) {
 		stubGitRemotes(t, nil)
+		assertNewCommands(t, rule,
+			"git -C set-url remote set-url origin 'set-url'", "", []string{"git -C set-url remote add origin 'set-url'"})
 		assertNewCommands(t, rule,
 			"git remote set-url origin git@github.com:nvbn/thefuck.git", "",
 			[]string{"git remote add origin git@github.com:nvbn/thefuck.git"})

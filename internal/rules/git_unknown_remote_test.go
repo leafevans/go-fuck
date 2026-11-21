@@ -6,7 +6,7 @@ import "testing"
 func stubGitRemotes(t *testing.T, names []string) {
 	t.Helper()
 	original := gitRemoteNamesCommand
-	gitRemoteNamesCommand = func() []string { return names }
+	gitRemoteNamesCommand = func(string) []string { return names }
 	t.Cleanup(func() { gitRemoteNamesCommand = original })
 }
 
@@ -42,4 +42,5 @@ func TestRuleGitUnknownRemote(t *testing.T) {
 	assertNewCommands(t, rule, "git remote set-url orign https://example.com/x",
 		"error: No such remote 'orign'\n",
 		[]string{"git remote set-url origin https://example.com/x"})
+	assertNewCommands(t, rule, "git -C orign remote remove orign", "error: No such remote: 'orign'\n", []string{"git -C orign remote remove origin"})
 }

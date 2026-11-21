@@ -5,18 +5,21 @@ import (
 
 	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
-	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // gitAddForceMatch reports whether git refused to add ignored files.
 func gitAddForceMatch(command *types.Command) bool {
-	return utils.Contains(command.ScriptParts(), "add") &&
+	return gitHasSubcommand(command.Script, "add") &&
 		strings.Contains(command.Output, "Use -f if you really want to add them.")
 }
 
 // gitAddForceNewCommand adds the --force flag to git add.
 func gitAddForceNewCommand(command *types.Command) ([]string, error) {
-	return []string{utils.ReplaceArgument(command.Script, "add", "add --force")}, nil
+	corrected, ok := gitInsertAfterSubcommand(command.Script, "add", "--force")
+	if !ok {
+		return nil, nil
+	}
+	return []string{corrected}, nil
 }
 
 func init() {

@@ -3,53 +3,55 @@ package rules
 import (
 	"strings"
 
+	"github.com/leafevans/go-fuck/v2/internal/shells"
 	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
-	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // gitPushUpstream matches the commands suggested by git.
-var gitPushUpstream = newRegexp("git push (.*)")
+var gitPushUpstream = newRegexp(`(?m)^[ \t]*git push --set-upstream ([^\s-][^\s]*) ([^\s-][^\s]*)[ \t]*\r?$`)
 
 // gitPushMatch reports whether git suggested setting an upstream branch.
 func gitPushMatch(command *types.Command) bool {
-	if !utils.Contains(command.ScriptParts(), "push") {
-		return false
-	}
-	return strings.Contains(command.Output, "git push --set-upstream")
+	return strings.Contains(command.Output, "git push --set-upstream") && gitHasSubcommand(command.Script, "push")
 }
 
 // gitPushNewCommand uses the upstream command suggested by git.
 func gitPushNewCommand(command *types.Command) ([]string, error) {
-	parts := append([]string{}, command.ScriptParts()...)
-	upstreamIndex := utils.Index(parts, "--set-upstream")
-	if upstreamIndex < 0 {
-		upstreamIndex = utils.Index(parts, "-u")
-	}
-
-	if upstreamIndex >= 0 {
-		parts = append(parts[:upstreamIndex], parts[upstreamIndex+1:]...)
-		// In case of "git push -u" there is no argument to remove.
-		if len(parts) > upstreamIndex {
-			parts = append(parts[:upstreamIndex], parts[upstreamIndex+1:]...)
-		}
-	} else {
-		// Only the repository and refspec are allowed here; git's suggestion
-		// contains them, so they would be duplicated otherwise.
-		pushIndex := utils.Index(parts, "push") + 1
-		for len(parts) > pushIndex && parts[len(parts)-1][0] != '-' {
-			parts = parts[:len(parts)-1]
-		}
-	}
-
-	matches := gitPushUpstream.FindAllStringSubmatch(command.Output, -1)
-	if len(matches) == 0 {
+	hints := gitPushUpstream.FindAllStringSubmatch(command.Output, 2)
+	if len(hints) != 1 {
 		return nil, nil
 	}
-	arguments := strings.ReplaceAll(
-		strings.TrimSpace(matches[len(matches)-1][1]), "'", backslash+"'")
-	script := utils.ReplaceArgument(strings.Join(parts, " "), "push", "push "+arguments)
-	return []string{script}, nil
+	shell := shells.Current()
+	var script strings.Builder
+	end, operands := 0, 0
+	for span, word := range specific.GitCommandWords(command.Script, shell) {
+		if end == 0 {
+			if word != "push" {
+				return nil, nil
+			}
+			script.WriteString(command.Script[:span[1]])
+			script.WriteString(" --set-upstream " + shell.Quote(hints[0][1]) + " " + shell.Quote(hints[0][2]))
+		} else {
+			switch word {
+			case "-u", "--set-upstream":
+			case "--quiet", "-q", "--verbose", "-v", "--force", "-f", "--force-with-lease", "--dry-run", "-n", "--porcelain", "--atomic", "--no-verify":
+				script.WriteString(command.Script[end:span[1]])
+			default:
+				// A separate option value or shell operator cannot be safely
+				// distinguished from a refspec in an arbitrary command.
+				if strings.HasPrefix(word, "-") || strings.ContainsAny(word, ";&|<>()`$") || operands == 2 {
+					return nil, nil
+				}
+				operands++
+			}
+		}
+		end = span[1]
+	}
+	if end == 0 || strings.TrimSpace(command.Script[end:]) != "" {
+		return nil, nil
+	}
+	return []string{script.String() + command.Script[end:]}, nil
 }
 
 func init() {

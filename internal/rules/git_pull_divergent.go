@@ -5,7 +5,6 @@ import (
 
 	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
-	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // gitPullDivergentError matches the fatal error that git prints when a pull
@@ -17,16 +16,18 @@ const gitPullDivergentError = "Need to specify how to reconcile divergent branch
 // have diverged and the strategy is not configured.
 func gitPullDivergentMatch(command *types.Command) bool {
 	return strings.Contains(command.Output, gitPullDivergentError) &&
-		utils.Contains(command.ScriptParts(), "pull")
+		gitHasSubcommand(command.Script, "pull")
 }
 
 // gitPullDivergentNewCommand retries the pull with the strategy that git
 // offers in its hint: merge first, then rebase.
 func gitPullDivergentNewCommand(command *types.Command) ([]string, error) {
-	return []string{
-		utils.ReplaceArgument(command.Script, "pull", "pull --no-rebase"),
-		utils.ReplaceArgument(command.Script, "pull", "pull --rebase"),
-	}, nil
+	merge, ok := gitInsertAfterSubcommand(command.Script, "pull", "--no-rebase")
+	if !ok {
+		return nil, nil
+	}
+	rebase, _ := gitInsertAfterSubcommand(command.Script, "pull", "--rebase")
+	return []string{merge, rebase}, nil
 }
 
 func init() {

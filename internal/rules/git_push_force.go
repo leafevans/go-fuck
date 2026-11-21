@@ -5,13 +5,12 @@ import (
 
 	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
-	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // gitPushForceMatch reports whether a push was rejected because the remote
 // branch is ahead.
 func gitPushForceMatch(command *types.Command) bool {
-	return strings.Contains(command.Script, "push") &&
+	return gitHasSubcommand(command.Script, "push") &&
 		strings.Contains(command.Output, "! [rejected]") &&
 		strings.Contains(command.Output, "failed to push some refs to") &&
 		strings.Contains(command.Output,
@@ -20,7 +19,11 @@ func gitPushForceMatch(command *types.Command) bool {
 
 // gitPushForceNewCommand forces the push with a lease.
 func gitPushForceNewCommand(command *types.Command) ([]string, error) {
-	return []string{utils.ReplaceArgument(command.Script, "push", "push --force-with-lease")}, nil
+	corrected, ok := gitInsertAfterSubcommand(command.Script, "push", "--force-with-lease")
+	if !ok {
+		return nil, nil
+	}
+	return []string{corrected}, nil
 }
 
 func init() {

@@ -74,7 +74,7 @@ func sideEffectSuffix(hasSideEffect bool) string {
 	if !hasSideEffect {
 		return ""
 	}
-	return "  " + accent("(+side effect)")
+	return "  " + accent(sideEffectMarker)
 }
 
 // ShowCorrectedCommand prints the selected command without the confirmation

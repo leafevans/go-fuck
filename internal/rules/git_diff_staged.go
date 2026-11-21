@@ -1,22 +1,34 @@
 package rules
 
 import (
-	"strings"
-
+	"github.com/leafevans/go-fuck/v2/internal/shells"
 	"github.com/leafevans/go-fuck/v2/internal/specific"
 	"github.com/leafevans/go-fuck/v2/internal/types"
-	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
 // gitDiffStagedMatch reports whether git diff was called without --staged.
 func gitDiffStagedMatch(command *types.Command) bool {
-	return strings.Contains(command.Script, "diff") &&
-		!strings.Contains(command.Script, "--staged")
+	first := true
+	for _, word := range specific.GitCommandWords(command.Script, shells.Current()) {
+		if first && word != "diff" {
+			return false
+		}
+		first = false
+		switch word {
+		case "--staged", "--cached", "--no-index":
+			return false
+		}
+	}
+	return !first
 }
 
 // gitDiffStagedNewCommand adds the --staged flag.
 func gitDiffStagedNewCommand(command *types.Command) ([]string, error) {
-	return []string{utils.ReplaceArgument(command.Script, "diff", "diff --staged")}, nil
+	corrected, ok := gitInsertAfterSubcommand(command.Script, "diff", "--staged")
+	if !ok {
+		return nil, nil
+	}
+	return []string{corrected}, nil
 }
 
 func init() {
