@@ -2,12 +2,12 @@
   "$schema": "https://raw.githubusercontent.com/ScoopInstaller/Scoop/master/schema.json",
   "architecture": {
     "64bit": {
-      "hash": "d012d44bf48a2bce6a407c73b7e308794091c5cc650b225937a8c328aa2efcda",
-      "url": "https://github.com/leafevans/go-fuck/releases/download/v2.34.0/go-fuck_2.34.0_windows_amd64.zip"
+      "hash": "e609b6e33681bb11f8559ca9bbb810b78e17ad5c23981bb8e93b22e071d56c59",
+      "url": "https://github.com/leafevans/go-fuck/releases/download/v2.34.1/go-fuck_2.34.1_windows_amd64.zip"
     },
     "arm64": {
-      "hash": "d05bebf705653a9e82339cb14870e574875a439ac9bc552551dfee6884283fee",
-      "url": "https://github.com/leafevans/go-fuck/releases/download/v2.34.0/go-fuck_2.34.0_windows_arm64.zip"
+      "hash": "9a5682e5ae758f62792d926ddfddbe97a5ec9a16c122f5938ff0bb78ab300746",
+      "url": "https://github.com/leafevans/go-fuck/releases/download/v2.34.1/go-fuck_2.34.1_windows_arm64.zip"
     }
   },
   "autoupdate": {
@@ -27,5 +27,5 @@
   "description": "Blazingly fast reimplementation of thefuck in Go.",
   "homepage": "https://github.com/leafevans/go-fuck",
   "license": "MIT",
-  "version": "2.34.0"
+  "version": "2.34.1"
 }
