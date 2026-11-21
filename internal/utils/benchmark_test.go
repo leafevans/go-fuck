@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -49,6 +50,24 @@ func BenchmarkSequenceRatio(b *testing.B) {
 	b.ReportAllocs()
 	for b.Loop() {
 		SequenceRatio("git push --set-upstream origin main", "git branch")
+	}
+}
+
+func BenchmarkSequenceRatioLong(b *testing.B) {
+	path := strings.Repeat("common-directory/", 12) + "file.txt"
+	unicodePath := strings.Repeat("\u76ee\u5f55\u6587\u4ef6/", 24) + "\u62a5\u544a.txt"
+	for _, pair := range []struct{ name, left, right string }{
+		{"SharedPath", "git add " + path, "git restore " + path},
+		{"Substring", "git restore -- " + path, "git restore -- " + path + " --staged"},
+		{"Unicode", "git add " + unicodePath, "git restore " + unicodePath},
+		{"ShortLeft", "checkout", "git " + path + " checkout -- " + path},
+	} {
+		b.Run(pair.name, func(b *testing.B) {
+			b.ReportAllocs()
+			for b.Loop() {
+				SequenceRatio(pair.left, pair.right)
+			}
+		})
 	}
 }
 

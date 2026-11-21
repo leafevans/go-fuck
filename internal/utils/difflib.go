@@ -3,6 +3,8 @@ package utils
 import (
 	"cmp"
 	"slices"
+	"strings"
+	"unicode/utf8"
 )
 
 // SequenceRatio returns the similarity of two strings, mirroring the
@@ -11,6 +13,16 @@ import (
 func SequenceRatio(a, b string) float64 {
 	if a == b {
 		return 1
+	}
+	shorter, longer := a, b
+	if len(a) > len(b) {
+		shorter, longer = b, a
+	}
+	// A complete substring achieves the maximum possible match. Require valid
+	// UTF-8 because byte containment is not equivalent to rune containment
+	// for malformed strings.
+	if len(longer) >= 64 && strings.Contains(longer, shorter) && utf8.ValidString(shorter) && utf8.ValidString(longer) {
+		return realQuickRatio(utf8.RuneCountInString(a), utf8.RuneCountInString(b))
 	}
 	var matcher sequenceMatcher
 	return matcher.ratio([]rune(a), []rune(b))
