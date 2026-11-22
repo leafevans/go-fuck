@@ -77,9 +77,11 @@ jobs:
       - name: Build
         run: go build -trimpath -o go-fuck.exe ./cmd/go-fuck
       - name: Check with Windows PowerShell 5.1
+        timeout-minutes: 2
         shell: powershell
         run: ./.github/scripts/powershell-integration.ps1 -Exe ./go-fuck.exe
       - name: Check with PowerShell 7
+        timeout-minutes: 2
         shell: pwsh
         run: ./.github/scripts/powershell-integration.ps1 -Exe ./go-fuck.exe
 

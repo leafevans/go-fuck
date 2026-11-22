@@ -181,6 +181,30 @@ try {
     # without turning the native stderr lines into PowerShell error records.
     $version = cmd /c "`"$Exe`" --version 2>&1"
     Assert "version mentions PowerShell" ($version -match "PowerShell") ($version -join " | ")
+    $expectedShell = 'PowerShell ' + $PSVersionTable.PSVersion.ToString()
+    $savedVersion = $env:GOFUCK_POWERSHELL_VERSION
+    $savedCaller = $env:GOFUCK_SHELL
+    $savedErrorAction = $ErrorActionPreference
+    try {
+        # Redirected version output is on stderr, even on success.
+        $ErrorActionPreference = 'Continue'
+        Remove-Item Env:GOFUCK_POWERSHELL_VERSION -ErrorAction SilentlyContinue
+        $version = (& $Exe -v --debug 2>&1 | ForEach-Object { $_.ToString() }) -join "`n"
+        Assert 'legacy caller path probes the current PowerShell' ($LASTEXITCODE -eq 0 -and $version.Contains($expectedShell)) $version
+
+        Remove-Item Env:GOFUCK_SHELL -ErrorAction SilentlyContinue
+        $version = (& $Exe -v 2>&1 | ForEach-Object { $_.ToString() }) -join "`n"
+        Assert 'direct version works without caller metadata' ($LASTEXITCODE -eq 0 -and $version.Contains('PowerShell')) $version
+
+        $env:PATH = (Split-Path -Parent $Exe) + ';' + $savedPath
+        $version = (fuck -v --debug 2>&1 | ForEach-Object { $_.ToString() }) -join "`n"
+        Assert 'alias reports the current PowerShell' ($LASTEXITCODE -eq 0 -and $version.Contains($expectedShell)) $version
+    } finally {
+        $ErrorActionPreference = $savedErrorAction
+        $env:PATH = $savedPath
+        $env:GOFUCK_POWERSHELL_VERSION = $savedVersion
+        $env:GOFUCK_SHELL = $savedCaller
+    }
 }
 finally {
     Pop-Location
