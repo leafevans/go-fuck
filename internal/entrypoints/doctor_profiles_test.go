@@ -1,10 +1,9 @@
-//go:build windows
-
 package entrypoints
 
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -67,6 +66,9 @@ func TestDoctorInstantProfileWithoutInstantLine(t *testing.T) {
 }
 
 func TestDoctorUsesSamePowerShellProfilesForAliasAndInstantChecks(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("current PowerShell session profiles are only detected on Windows")
+	}
 	t.Cleanup(conf.Reset)
 	conf.Reset()
 	t.Setenv("GOFUCK_CAPTURE_MODE", "auto")

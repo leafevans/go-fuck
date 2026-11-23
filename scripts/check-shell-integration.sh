@@ -34,11 +34,12 @@ fail() {
 
 env -u NO_COLOR "$bin" --version >/dev/null 2>&1 || fail "go-fuck --version failed"
 
+# Regular aliases use rerun initialization so these checks do not start a logger.
 check_alias() {
   shell=$1
   case "$shell" in
     bash)
-      env TF_SHELL=bash "$bin" --alias >"$work/alias-bash"
+      env TF_SHELL=bash "$bin" --alias --capture-mode=rerun >"$work/alias-bash"
       PATH="$(dirname "$bin"):$PATH" timeout 15 bash --noprofile --norc -eu -c '
         cd "$1"
         export HOME="$PWD" TF_SHELL=bash
@@ -55,17 +56,17 @@ check_alias() {
         fail "bash cannot evaluate the generated alias"
       ;;
     zsh)
-      env TF_SHELL=zsh "$bin" --alias >"$work/alias-zsh"
+      env TF_SHELL=zsh "$bin" --alias --capture-mode=rerun >"$work/alias-zsh"
       zsh -f -c 'eval "$(<"$1")"; type fuck >/dev/null' _ "$work/alias-zsh" ||
         fail "zsh cannot evaluate the generated alias"
       ;;
     fish)
-      env TF_SHELL=fish "$bin" --alias >"$work/alias-fish"
+      env TF_SHELL=fish "$bin" --alias --capture-mode=rerun >"$work/alias-fish"
       fish --no-config -c 'source $argv[1]; functions -q fuck' "$work/alias-fish" ||
         fail "fish cannot evaluate the generated alias"
       ;;
     tcsh)
-      env TF_SHELL=tcsh "$bin" --alias >"$work/alias-tcsh"
+      env TF_SHELL=tcsh "$bin" --alias --capture-mode=rerun >"$work/alias-tcsh"
       tcsh -f -c "source '$work/alias-tcsh'; alias fuck" >"$work/defined-tcsh" ||
         fail "tcsh cannot evaluate the generated alias"
       grep -q 'setenv TF_ALIAS fuck' "$work/defined-tcsh" ||

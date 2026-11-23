@@ -41,6 +41,7 @@ try {
     $env:GOFUCK_SHELL = (Get-Process -Id $PID).Path
     $env:GOFUCK_WAIT_COMMAND = "20"
 
+    # Rerun initialization defines the alias without starting an interactive logger.
     # Exercise the installed alias with a real binary, without user input.
     $savedPath = $env:PATH
     try {
@@ -49,13 +50,13 @@ try {
         $PROFILE = Join-Path $root 'test profile.ps1'
         Set-Content -LiteralPath $PROFILE -Value 'profile sentinel'
         $profileHash = (Get-FileHash -LiteralPath $PROFILE).Hash
-        Invoke-Expression ((& $Exe --alias) -join "`n")
+        Invoke-Expression ((& $Exe --alias --capture-mode=rerun) -join "`n")
         Set-Content -LiteralPath 'captured output' -Value 'not a git command' -Encoding ASCII
         $command = "git stats -- 'two words'"
         $reply = fuck --json --no-rerun --output-from 'captured output' --force-command $command | Out-String | ConvertFrom-Json
         Assert 'alias preserves quoted command' ($reply.command -ceq $command) $reply.command
         Assert 'alias preserves spaced input path' ($reply.output -match 'not a git command') $reply.output
-        Invoke-Expression ((& $Exe --alias f) -join "`n")
+        Invoke-Expression ((& $Exe --alias f --capture-mode=rerun) -join "`n")
         Set-Content -LiteralPath 'history-probe.txt' -Value 'short-alias-result'
         $timestamp = [DateTime]::Now
         Add-History -InputObject ([pscustomobject]@{
@@ -152,7 +153,7 @@ try {
     $env:GOFUCK_ARGS_FILE = Join-Path $root "stub-args.txt"
     # Match the documented profile initialization, which interpolates output
     # lines into one string and therefore requires statement terminators.
-    Invoke-Expression "$(& $Exe --alias)"
+    Invoke-Expression "$(& $Exe --alias --capture-mode=rerun)"
     fuck
     $recorded = Get-Content -LiteralPath $env:GOFUCK_ARGS_FILE -Raw
     $quoted = 'git commit -m ' + [char]34 + 'hello world' + [char]34

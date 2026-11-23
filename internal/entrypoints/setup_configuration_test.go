@@ -3,6 +3,7 @@ package entrypoints
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -19,6 +20,9 @@ func TestSetupIgnoresCommentedConfiguration(t *testing.T) {
 				path = filepath.Join(home, "profile.ps1")
 				line = `iex "$(go-fuck --alias)"`
 				active = `iex "$(go-fuck --alias --capture-mode=auto --enable-experimental-instant-mode)"`
+				if runtime.GOOS != "windows" {
+					active = `iex "$(go-fuck --alias --capture-mode=auto)"`
+				}
 				stubPowerShellProfiles(t, []string{path})
 			}
 			comment := "# " + line + "\n"

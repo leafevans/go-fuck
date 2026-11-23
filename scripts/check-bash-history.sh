@@ -10,7 +10,7 @@ printf '%s\n' '#!/bin/sh' 'case "$*" in *x) echo typo >&2; exit 1;; esac' 'echo 
 chmod +x history-bin/fd
 ln -s fd history-bin/fzf
 export PATH="$PWD/history-bin:$(dirname "$bin"):$PATH"
-source <("$bin" --alias f)
+source <("$bin" --alias f --capture-mode=rerun)
 printf '%s\n' 'fd wrong' 'fd wrongx' 'f --yes' 'fzf --filter file' 'git stash' > "$HISTFILE"
 
 # The fake tools echo their arguments, so stdout must contain only the

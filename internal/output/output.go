@@ -25,7 +25,8 @@ import (
 // The second return value reports whether the output could be obtained; it is
 // false when output is unavailable, including when re-running is disabled.
 func GetOutput(script, expanded string, allowRerun bool) (string, bool) {
-	if conf.Current().InstantMode {
+	mode := conf.Current().CaptureMode
+	if mode == "auto" || mode == "instant" {
 		if logPath := instant.LogPath(); logPath != "" {
 			if logOutput, ok := instant.LastOutput(logPath, script); ok {
 				logs.Debug("Read output from the instant mode log: %s", logOutput)
@@ -36,7 +37,7 @@ func GetOutput(script, expanded string, allowRerun bool) (string, bool) {
 			logs.Debug("No instant mode log path is set")
 		}
 	}
-	if !allowRerun {
+	if mode == "instant" || !allowRerun {
 		return "", false
 	}
 	commandOutput, ok := Rerun(expanded)

@@ -14,7 +14,7 @@ env -i PATH="$PWD/bin:$(dirname "$bin"):/usr/bin:/bin" HOME="$PWD" ZDOTDIR="$PWD
   timeout 15 zsh -fis >actual <<'ZSH'
 HISTSIZE=100 SAVEHIST=100
 setopt EXTENDED_HISTORY INC_APPEND_HISTORY
-eval "$(go-fuck --alias f)"
+eval "$(go-fuck --alias f --capture-mode=rerun)"
 fdd
 fd
 f --yes
@@ -22,7 +22,7 @@ f --yes >repeated.out 2>repeated.err
 exit
 ZSH
 
-# One successful seed command and one correction; the second alias must do neither.
+# Consecutive corrections skip alias invocations and find the same failed command.
 printf '%s\n' 'fdd ran' 'fdd ran' | diff -u - actual
-test ! -s repeated.out
-grep -Fq 'No usable command in shell history' repeated.err
+printf '%s\n' 'fdd ran' | diff -u - repeated.out
+grep -Fq 'Suggest a similar command from shell history' repeated.err

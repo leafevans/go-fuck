@@ -57,7 +57,8 @@ jobs:
         shell: pwsh
         run: |
           go build -trimpath -o "$env:RUNNER_TEMP\go-fuck.exe" ./cmd/go-fuck
-          $alias = (& "$env:RUNNER_TEMP\go-fuck.exe" --alias) -join "`n"
+          $env:PATH = "$env:RUNNER_TEMP;$env:PATH"
+          $alias = (& "$env:RUNNER_TEMP\go-fuck.exe" --alias --capture-mode=rerun) -join "`n"
           Invoke-Expression $alias
           if (-not (Get-Command fuck -ErrorAction SilentlyContinue)) {
             throw "the PowerShell alias was not defined"
@@ -182,7 +183,7 @@ jobs:
         run: go-fuck --version
       - name: Check the bash alias
         run: |
-          eval "$(go-fuck --alias)"
+          eval "$(go-fuck --alias --capture-mode=rerun)"
           type fuck
 
   packaging-windows:
