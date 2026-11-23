@@ -323,6 +323,7 @@ var runPowershellVersionProbe = func(name string, args ...string) string {
 	return powershellProbeOutput(2*time.Second, name, args...)
 }
 
+// powershellProbeOutput runs a short-lived PowerShell probe with a timeout.
 func powershellProbeOutput(timeout time.Duration, name string, args ...string) string {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()

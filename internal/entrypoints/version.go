@@ -13,6 +13,7 @@ import (
 	"github.com/leafevans/go-fuck/v2/internal/utils"
 )
 
+// printVersion writes the version summary, or a themed banner on a terminal.
 func printVersion(verbose bool) {
 	if !logs.OutputIsTerminal() {
 		shell := shells.Current()

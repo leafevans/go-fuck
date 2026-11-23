@@ -59,6 +59,7 @@ type sequenceMatcher struct {
 	large  []int
 }
 
+// ratio returns the similarity score between left and right in [0, 1].
 func (m *sequenceMatcher) ratio(left, right []rune) float64 {
 	length := len(left) + len(right)
 	if length == 0 {

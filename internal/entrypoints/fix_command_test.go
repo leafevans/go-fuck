@@ -287,3 +287,81 @@ func TestMainJSONEmptyCommand(t *testing.T) {
 		}
 	}
 }
+
+func TestFixCommandReportsSettingsLoadFailure(t *testing.T) {
+	resetEntrypointsState(t)
+	settingsPath := filepath.Join(conf.UserDir(), "settings.json")
+	if err := os.MkdirAll(filepath.Dir(settingsPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(settingsPath, []byte("{invalid"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	buffer := &bytes.Buffer{}
+	logs.SetOutput(buffer)
+
+	code, _, stderr := runMain(t, "go-fuck", "--force-command", "   ")
+	if code != 0 {
+		t.Fatalf("Main() = %d, want 0; stderr = %s", code, stderr)
+	}
+	if !strings.Contains(buffer.String(), "Can't load settings") {
+		t.Fatalf("log output = %q, want a settings load failure", buffer.String())
+	}
+}
+
+func TestMainFixCommandEmptyRawCommand(t *testing.T) {
+	cases := []struct {
+		name string
+		args []string
+	}{
+		{name: "text output", args: []string{"go-fuck"}},
+		{name: "json output", args: []string{"go-fuck", "--json"}},
+	}
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			resetEntrypointsState(t)
+			t.Setenv("TF_ALIAS", "go-fuck-coverage-alias")
+			t.Setenv("TF_HISTORY", "go-fuck-coverage-alias")
+
+			if code, _, stderr := runMain(t, testCase.args...); code != 0 {
+				t.Fatalf("Main(%v) = %d, want 0; stderr = %s", testCase.args, code, stderr)
+			}
+		})
+	}
+}
+
+func TestMainFixCommandBlankCommand(t *testing.T) {
+	resetEntrypointsState(t)
+	if code, _, stderr := runMain(t, "go-fuck", "--force-command", "   "); code != 0 {
+		t.Fatalf("Main() = %d, want 0; stderr = %s", code, stderr)
+	}
+}
+
+func TestGetRawCommandMarkedGenericShell(t *testing.T) {
+	resetRawCommandState(t, t.TempDir())
+	shells.Set(shells.NewGeneric())
+	t.Setenv("TF_HISTORY", rawCommandMarker+"git status")
+
+	assertRawCommand(t, getRawCommand(&argumentparser.Args{}), []string{"git status"})
+}
+
+func TestGetRawCommandBashMarkedEdgeCases(t *testing.T) {
+	resetRawCommandState(t, t.TempDir())
+	shells.Set(shells.NewBash())
+
+	// The entry before the alias call is empty.
+	t.Setenv("TF_HISTORY", rawCommandMarker+"\t \n\t fuck")
+	assertRawCommand(t, getRawCommand(&argumentparser.Args{}), nil)
+
+	// The last entry is empty and does not look like the alias.
+	t.Setenv("TF_HISTORY", rawCommandMarker+"\t ")
+	assertRawCommand(t, getRawCommand(&argumentparser.Args{}), nil)
+}
+
+func TestGetRawCommandPowerShellEmptyHistory(t *testing.T) {
+	resetRawCommandState(t, t.TempDir())
+	shells.Set(shells.NewPowershell())
+	t.Setenv("TF_HISTORY", "\n\n")
+
+	assertRawCommand(t, getRawCommand(&argumentparser.Args{}), nil)
+}

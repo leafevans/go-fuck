@@ -19,6 +19,7 @@ type pkgFileResult struct {
 // getPkgFile runs pkgfile once per command.
 var getPkgFile = utils.Memoize1(lookupPkgFile)
 
+// lookupPkgFile runs pkgfile to find Arch Linux packages providing command.
 func lookupPkgFile(command string) pkgFileResult {
 	if command == "" {
 		return pkgFileResult{}
@@ -77,6 +78,7 @@ func ArchlinuxDefault() bool {
 	return enabled
 }
 
+// archlinuxEnv detects the preferred Arch Linux package manager helper.
 func archlinuxEnv(available func(string) bool) (enabledByDefault bool, pacman string) {
 	switch {
 	case available("yay"):

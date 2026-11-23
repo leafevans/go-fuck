@@ -43,6 +43,7 @@ func expandGitAliases(command *types.Command) *types.Command {
 	return expandGitAliasesForShell(command, shells.Current())
 }
 
+// expandGitAliasesForShell replaces a git alias in command using git trace output.
 func expandGitAliasesForShell(command *types.Command, shell shells.Shell) *types.Command {
 	if command.Output == "" || !strings.Contains(command.Output, "trace: alias expansion:") {
 		return command
@@ -125,6 +126,7 @@ func GitCommandPathWords(script string, shell shells.Shell) iter.Seq2[[2]int, st
 	return func(yield func([2]int, string) bool) { walkGitWords(script, shell, true, yield) }
 }
 
+// walkGitWords visits git subcommand and argument spans in script until yield returns false.
 func walkGitWords(script string, shell shells.Shell, includePaths bool, yield func([2]int, string) bool) bool {
 	pos := 0
 	skipValue, global := false, true

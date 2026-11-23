@@ -1,3 +1,5 @@
+// Command coveragecheck reports total statement coverage from a Go coverage
+// profile and optionally enforces a minimum percentage threshold.
 package main
 
 import (

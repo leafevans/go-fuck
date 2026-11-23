@@ -169,3 +169,24 @@ func TestPowershellQuoteRoundTrips(t *testing.T) {
 		t.Fatalf("PowerShell received %q, want %q", got, values)
 	}
 }
+
+// TestPowershellChainWithoutCommands covers the empty command list of
+// powershellChain.
+func TestPowershellChainWithoutCommands(t *testing.T) {
+	if got := NewPowershell().And(); got != "" {
+		t.Fatalf("And() = %q, want an empty string", got)
+	}
+	if got := NewPowershell().Or(); got != "" {
+		t.Fatalf("Or() = %q, want an empty string", got)
+	}
+}
+
+// TestQuotePowerShellString covers quotePowerShellString.
+func TestQuotePowerShellString(t *testing.T) {
+	if got, want := quotePowerShellString("it's"), "'it''s'"; got != want {
+		t.Fatalf("quotePowerShellString() = %q, want %q", got, want)
+	}
+	if got, want := quotePowerShellString("/tmp/go-fuck.log"), "'/tmp/go-fuck.log'"; got != want {
+		t.Fatalf("quotePowerShellString() = %q, want %q", got, want)
+	}
+}

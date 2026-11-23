@@ -112,6 +112,7 @@ func scanPath() *pathScan {
 	return scanPathWith(os.Getenv("PATH"), GetAlias(), conf.Current().ExcludedSearchPathPrefixes)
 }
 
+// scanPathWith returns the cached executable scan for the given PATH inputs.
 func scanPathWith(path, alias string, excluded []string) *pathScan {
 	key := pathSearchKey{path, strings.ToLower(alias), strings.Join(excluded, "\x00")}
 

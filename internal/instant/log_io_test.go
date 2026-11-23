@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/leafevans/go-fuck/v2/internal/consts"
+	"runtime"
 )
 
 func TestReadLogKeepsNewestBytes(t *testing.T) {
@@ -84,5 +85,44 @@ func TestTrimFileNegativeKeep(t *testing.T) {
 	}
 	if len(data) != 0 {
 		t.Fatalf("trimFile(-5) left %q", string(data))
+	}
+}
+
+// TestRingWriterStatFailure covers the stat error branch of RingWriter.Write.
+func TestRingWriterStatFailure(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "ring.log")
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0o600)
+	if err != nil {
+		t.Fatalf("open log: %v", err)
+	}
+	writer := NewRingWriter(file)
+	if err := file.Close(); err != nil {
+		t.Fatalf("close log: %v", err)
+	}
+	if _, err := writer.Write([]byte("data")); err == nil {
+		t.Fatal("Write() of a closed file returned no error")
+	}
+}
+
+// TestRingWriterTrimFailure covers the branches of Write that clamp the kept
+// bytes and report a failed trimming pass.
+func TestRingWriterTrimFailure(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "ring.log")
+	if err := os.WriteFile(path, []byte("old"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	file, err := os.Open(path)
+	if err != nil {
+		t.Fatalf("open log: %v", err)
+	}
+	defer file.Close()
+
+	writer := NewRingWriter(file)
+	data := make([]byte, consts.LogSizeInBytes+1)
+	if _, err := writer.Write(data); err == nil {
+		if runtime.GOOS != "windows" {
+			t.Skip("the read only log could be truncated (running as root?)")
+		}
+		t.Fatal("Write() of a read only log returned no error")
 	}
 }

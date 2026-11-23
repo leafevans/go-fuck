@@ -87,6 +87,7 @@ func fixCommand(args *argumentparser.Args) int {
 	return 0
 }
 
+// reportMissingCommand writes the empty-command result in JSON or text mode.
 func reportMissingCommand(json bool) int {
 	if json {
 		return printJSON(nil, nil)

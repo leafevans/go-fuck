@@ -1,3 +1,8 @@
+// Command clean removes generated build, coverage, benchmark and distribution
+// artifacts passed on the command line.
+//
+// Missing paths are ignored so Task clean commands stay idempotent across
+// Linux, macOS and Windows.
 package main
 
 import (

@@ -39,7 +39,7 @@ $ fuck
 6. [First steps](#first-steps)
 7. [How it works](#how-it-works)
 8. [Instant mode](#instant-mode)
-9. [Machine readable output](#machine-readable-output)
+9. [Preview and machine readable output](#preview-and-machine-readable-output)
 10. [Settings](#settings)
 11. [Confirmation keys](#confirmation-keys)
 12. [Rules](#rules)
@@ -63,7 +63,7 @@ $ fuck
 ### Benchmarks
 
 The correction hot path and the shell history parser have Go benchmarks
-(`make bench`); they do not depend on the installed tools. Measured on an AMD Ryzen 7 7730U (16 logical CPUs) with Go 1.27:
+(`task bench`); they do not depend on the installed tools. Measured on an AMD Ryzen 7 7730U (16 logical CPUs) with Go 1.27:
 
 | Benchmark                                                          | Result      |
 | ------------------------------------------------------------------ | ----------- |
@@ -79,7 +79,7 @@ dominated by deliberately re-running the failed command. An interpreter based
 implementation pays for interpreter and module import startup before the first
 rule runs, which a native binary does not need.
 CI compares the allocated bytes and objects per operation of every benchmark with
-`benchmarks/baseline.txt` (`make bench-guard`); timing is not compared because it
+`benchmarks/baseline.txt` (`task bench-guard`); timing is not compared because it
 depends on the runner. To record an intentional allocation change, regenerate the
 baseline with `go run ./tools/benchguard -bench benchmark.txt -baseline benchmarks/baseline.txt -update`.
 
@@ -201,10 +201,10 @@ checksum on both sides and then performs an atomic WSL install.
 ```bash
 git clone https://github.com/leafevans/go-fuck.git
 cd go-fuck
-make build          # or: go build -o go-fuck ./cmd/go-fuck
+task build          # or: go build -o go-fuck ./cmd/go-fuck
 ```
 
-`make install` runs `go install ./cmd/go-fuck` instead. On Windows the build produces
+`task install` runs `go install ./cmd/go-fuck` instead. On Windows the build produces
 `go-fuck.exe`.
 
 ## Shell setup
@@ -976,8 +976,8 @@ The list below is generated from the compiled rules:
 Regenerate it after adding or renaming a rule:
 
 ```bash
-go run ./tools/gen-rule-list   # or: make rules-list
-make rules-list-check          # fail when README.md is out of date
+go run ./tools/gen-rule-list   # or: task rules-list
+task rules-list-check          # fail when README.md is out of date
 ```
 
 The same names can be used in the `rules`, `exclude_rules` and `priority` settings.
@@ -1033,7 +1033,7 @@ Adding a rule to the binary still follows the porting workflow:
 2. Create `internal/rules/<rule_name>.go` and `internal/rules/<rule_name>_test.go`, port the test
    cases from thefuck and register the rule from an `init` function.
 3. Run the checks described in [CONTRIBUTING.md](CONTRIBUTING.md).
-4. Regenerate the rule list in this file with `make rules-list`.
+4. Regenerate the rule list in this file with `task rules-list`.
 
 JSON rules are the lightweight option for local and machine specific corrections; compiled-in rules
 are the right place for generally useful rules and for rules that need to inspect files or run
@@ -1064,13 +1064,13 @@ go-fuck is a reimplementation, not a drop-in replacement for every thefuck featu
 ## Contributing
 
 Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for the development setup, the
-`make` targets and the conventions. In short:
+Task targets and the conventions. In short:
 
 ```bash
 go build ./...
 go test ./... -count=1
 go vet ./...
-make fmt-check
+task fmt-check
 ```
 
 Commits follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`,

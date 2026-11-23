@@ -211,6 +211,7 @@ type logSink struct {
 	writer io.Writer
 }
 
+// Write writes p to the underlying terminal log under the sink mutex.
 func (s *logSink) Write(p []byte) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -318,6 +319,7 @@ type pipeWriter struct {
 	handle syscall.Handle
 }
 
+// Write sends p to the pseudo console input pipe.
 func (w pipeWriter) Write(p []byte) (int, error) {
 	written := 0
 	for written < len(p) {

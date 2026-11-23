@@ -6,9 +6,9 @@ the project, which checks CI runs and the conventions used in the repository.
 ## Prerequisites
 
 - [Go](https://go.dev/dl/) 1.27 or newer (`encoding/json/v2`).
-- [GNU make](https://www.gnu.org/software/make/) for the convenience targets. It is optional; every
-  target documents the equivalent Go command below.
-- [golangci-lint](https://golangci-lint.run/) v2 for `make lint` (CI installs it automatically).
+- [Task](https://taskfile.dev/installation/) for the convenience tasks. It is optional; every task
+  documents the equivalent Go command below.
+- [golangci-lint](https://golangci-lint.run/) v2 for `task lint` (CI installs it automatically).
 - `git` and a GitHub account for opening pull requests.
 
 The project uses the Go standard library only, so no module downloads are needed to build or test it.
@@ -22,34 +22,34 @@ go build ./...
 go test ./... -count=1
 ```
 
-## Make targets
+## Task targets
 
-| Target                  | Description                                                                |
-| ----------------------- | -------------------------------------------------------------------------- |
-| `make` / `make help`    | print the list of targets                                                  |
-| `make build`            | build `go-fuck` (`go-fuck.exe` on Windows)                                 |
-| `make test`             | run the test suite                                                         |
-| `make test-race`        | run the test suite with the race detector (needs a C compiler)             |
-| `make cover`            | run the test suite with coverage and print the total                       |
-| `make bench`            | run the benchmarks (`go test ./internal/... -run '^$' -bench . -benchmem`) |
-| `make bench-guard`      | compare benchmark allocations with `benchmarks/baseline.txt`              |
-| `make fuzz`             | run each native fuzz target for 20s as a local smoke test                  |
-| `make vet`              | run `go vet`                                                               |
-| `make fmt`              | format all Go files with `gofmt -s -w`                                     |
-| `make fmt-check`        | fail when a Go file is not formatted                                       |
-| `make lint`             | run `golangci-lint` with `.golangci.yml`                                   |
-| `make install`          | run `go install ./cmd/go-fuck`                                             |
-| `make clean`            | remove the binary and the GoReleaser output                                |
-| `make packaging`        | regenerate Homebrew/Scoop manifests for `VERSION` from `CHECKSUMS`         |
-| `make packaging-check`  | validate that the committed distribution manifests are consistent          |
-| `make rules-list`       | regenerate the rule list in `README.md`                                    |
-| `make rules-list-check` | fail when the `README.md` rule list is out of date                         |
+| Target                   | Description                                                                |
+| ------------------------ | -------------------------------------------------------------------------- |
+| `task`                   | print the list of tasks                                                    |
+| `task build`             | build `go-fuck` (`go-fuck.exe` on Windows)                                 |
+| `task test`              | run the test suite                                                         |
+| `task test-race`         | run the test suite with the race detector (needs a C compiler)             |
+| `task cover`             | run the test suite with coverage and print the total                       |
+| `task bench`             | run the benchmarks (`go test ./internal/... -run '^$' -bench . -benchmem`) |
+| `task bench-guard`       | compare benchmark allocations with `benchmarks/baseline.txt`               |
+| `task fuzz`              | run each native fuzz target for 20s as a local smoke test                  |
+| `task vet`               | run `go vet`                                                               |
+| `task fmt`               | format all Go files with `gofmt -s -w`                                     |
+| `task fmt-check`         | fail when a Go file is not formatted                                       |
+| `task lint`              | run `golangci-lint` with `.golangci.yml`                                   |
+| `task install`           | run `go install ./cmd/go-fuck`                                             |
+| `task clean`             | remove built binaries, coverage, benchmark and GoReleaser artifacts        |
+| `task packaging`         | regenerate Homebrew/Scoop manifests for `VERSION` from `CHECKSUMS`         |
+| `task packaging-check`   | validate that the committed distribution manifests are consistent          |
+| `task rules-list`        | regenerate the rule list in `README.md`                                    |
+| `task rules-list-check`  | fail when the `README.md` rule list is out of date                         |
 
 The same fuzz targets also run daily in CI, in the `Fuzz` workflow. The test suite also guards the
 allocation count of the rule-matching hot path, and CI publishes benchmark results as a build artifact.
 The CI benchmark job compares the allocated bytes and objects per operation with
 the committed `benchmarks/baseline.txt` and fails on a regression
-(`make bench-guard` does the same locally). Timing is not compared because it depends on
+(`task bench-guard` does the same locally). Timing is not compared because it depends on
 the runner. When a change intentionally changes the allocations, regenerate the baseline:
 
 ```bash
@@ -57,8 +57,8 @@ go test ./internal/... -run '^$' -bench . -benchmem -count=1 > benchmark.txt
 go run ./tools/benchguard -bench benchmark.txt -baseline benchmarks/baseline.txt -update
 ```
 
-The recipes avoid POSIX-only commands so that they work on Windows as well: small helper programs in
-`tools/` replace shell tricks such as `rm -rf` and `test -z "$(gofmt -l .)"`. If make is not
+The tasks avoid POSIX-only commands so that they work on Windows as well: small helper programs in
+`tools/` replace shell tricks such as `rm -rf` and `test -z "$(gofmt -l .)"`. If Task is not
 available, run the underlying commands:
 
 ```bash
@@ -73,23 +73,30 @@ go run ./tools/gen-rule-list
 
 ## Project layout
 
-| Path                 | Contents                                                   |
-| -------------------- | ---------------------------------------------------------- |
-| `cmd/go-fuck`        | the command's `main` package                               |
-| `internal/`          | implementation packages (rules, shells, settings, UI, ...) |
-| `internal/rules/`    | one file and one test file per correction rule             |
-| `tools/`             | small helper programs used by the Makefile and CI          |
-| `scripts/`           | `cmd.exe` and PowerShell shims                             |
-| `.github/workflows/` | CI and release workflows                                   |
-| `PORTING.md`         | how the rules are ported from thefuck                      |
-| `README.md`          | user documentation; the rule list is generated             |
+| Path                 | Contents                                                            |
+| -------------------- | ------------------------------------------------------------------- |
+| `cmd/go-fuck`        | the command's `main` package                                        |
+| `internal/`          | implementation packages (rules, shells, settings, UI, ...)          |
+| `internal/rules/`    | one file and one test file per correction rule                      |
+| `Taskfile.yml`       | cross-platform build, test and release helper tasks                 |
+| `tools/`             | small helper programs used by the Taskfile and CI                   |
+| `scripts/`           | shell shims, release updaters, AUR/manifest scripts and CI checks   |
+| `packaging/`         | AUR recipe (`aur/`), manifest consistency tests and packaging guide |
+| `Formula/`           | Homebrew formula (`go-fuck.rb`)                                     |
+| `bucket/`            | Scoop manifest (`go-fuck.json`)                                     |
+| `benchmarks/`        | allocation baseline (`baseline.txt`) and candidate benchmark notes  |
+| `docs/`              | demo GIFs referenced by `README.md`                                 |
+| `release-notes/`     | per-version release notes validated by CI                           |
+| `.github/workflows/` | CI and release workflows                                            |
+| `PORTING.md`         | how the rules are ported from thefuck                               |
+| `README.md`          | user documentation; the rule list is generated                      |
 
 ## Code style
 
-- **Formatting.** Run `gofmt -s -w .` (`make fmt`). CI fails when any file is not formatted.
+- **Formatting.** Run `gofmt -s -w .` (`task fmt`). CI fails when any file is not formatted.
   Comments and identifiers must be in English.
 - **Vetting.** `go vet ./...` must be clean.
-- **Linting.** `make lint` runs `golangci-lint` with the repository configuration; keep the
+- **Linting.** `task lint` runs `golangci-lint` with the repository configuration; keep the
   build green.
 - **Standard library only.** Do not add third-party module dependencies. `go.mod` intentionally has
   no `require` block. If something cannot be done with the standard library, open an issue first.
@@ -115,11 +122,11 @@ the test helpers, is [PORTING.md](PORTING.md). The short version:
 1. Read PORTING.md completely.
 2. Add `internal/rules/<rule_name>.go` with the match function, the correction function and an
    `init` function that registers the rule. Use the rule name from the Python module.
-3. Add `internal/rules/<rule_name>_test.go`, porting the test cases from
-   `thefuck/tests/rules/test_<rule_name>.py`.
+3. Add `internal/rules/<rule_name>_test.go`, porting the test cases from a
+   local checkout of upstream thefuck (`tests/rules/test_<rule_name>.py`).
 4. Run `go test ./internal/rules -run 'TestRule' -count=1`, `go build ./...` and
    `go vet ./...`.
-5. Regenerate the rule list with `make rules-list` and commit the `README.md` change.
+5. Regenerate the rule list with `task rules-list` and commit the `README.md` change.
 6. Do not edit files shared by several rules (`registry.go`, `testhelpers_test.go`) unless the
    change applies to every rule.
 7. Reuse the shared helpers instead of copying parsing code: `cobra_suggestions.go` for Cobra's
@@ -196,11 +203,11 @@ chore(ci): test on Go 1.27 and stable
 - [ ] `go build ./...` succeeds.
 - [ ] `go test ./... -count=1` succeeds.
 - [ ] `go vet ./...` is clean.
-- [ ] `make fmt-check` (or `gofmt -s -l .`) reports nothing.
-- [ ] `make lint` (or the CI lint job) is clean.
+- [ ] `task fmt-check` (or `gofmt -s -l .`) reports nothing.
+- [ ] `task lint` (or the CI lint job) is clean.
 - [ ] New behavior is covered by tests; ported rules include the Python test cases.
-- [ ] `make rules-list` was run when rules were added or renamed, and
-      `make rules-list-check` passes.
+- [ ] `task rules-list` was run when rules were added or renamed, and
+      `task rules-list-check` passes.
 - [ ] User facing changes are reflected in `README.md` and `PORTING.md` when relevant.
 - [ ] Commits follow Conventional Commits and the branch is based on the latest `main`.
 - [ ] CI is green on Linux, macOS and Windows.

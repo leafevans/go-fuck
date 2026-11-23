@@ -265,7 +265,7 @@ jobs:
         run: |
           files="$(gofmt -s -l .)"
           if [ -n "$files" ]; then
-            echo "::error::The following Go files are not formatted; run 'make fmt':"
+            echo "::error::The following Go files are not formatted; run 'task fmt':"
             echo "$files"
             exit 1
           fi

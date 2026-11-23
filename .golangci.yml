@@ -61,8 +61,6 @@ linters:
       - path: _test\.go
         linters:
           - misspell
-    paths:
-      - thefuck
 
 formatters:
   enable:
@@ -73,5 +71,3 @@ formatters:
       simplify: true
   exclusions:
     generated: lax
-    paths:
-      - thefuck

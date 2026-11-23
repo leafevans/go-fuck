@@ -8,11 +8,13 @@ import (
 	"strings"
 	"testing"
 
+	"fmt"
 	"github.com/leafevans/go-fuck/v2/internal/conf"
 	"github.com/leafevans/go-fuck/v2/internal/consts"
 	"github.com/leafevans/go-fuck/v2/internal/instant"
 	"github.com/leafevans/go-fuck/v2/internal/logs"
 	"github.com/leafevans/go-fuck/v2/internal/types"
+	"path/filepath"
 )
 
 // captureOutput replaces standard output and standard error while fn runs.
@@ -247,4 +249,65 @@ func TestMainForceCommand(t *testing.T) {
 	if !strings.Contains(stdout, "echo "+string(rune(34))+"hello"+string(rune(34))) {
 		t.Fatalf("stdout = %q, want the corrected command", stdout)
 	}
+}
+
+// helperEnv selects the behavior of the test binary when it is executed as a
+// fake external program.
+const helperEnv = "GOFUCK_ENTRYPOINT_HELPER"
+
+// TestMain lets the test binary act as a fake external program.
+func TestMain(m *testing.M) {
+	if mode := os.Getenv(helperEnv); mode != "" {
+		os.Exit(runHelper(mode))
+	}
+	os.Exit(m.Run())
+}
+
+// runHelper implements the fake program modes.
+func runHelper(mode string) int {
+	switch mode {
+	case "profile":
+		fmt.Print("/tmp/go-fuck-fake-profile.ps1")
+		return 0
+	case "profile-empty":
+		fmt.Print("   ")
+		return 0
+	case "fail":
+		return 3
+	}
+	return 2
+}
+
+// installFakeExecutable copies the test binary into a temporary directory under
+// the given name and points PATH at it.
+func installFakeExecutable(t *testing.T, name, mode string) {
+	t.Helper()
+	executable, err := os.Executable()
+	if err != nil {
+		t.Fatalf("os.Executable() error = %v", err)
+	}
+	data, err := os.ReadFile(executable)
+	if err != nil {
+		t.Fatalf("read the test binary: %v", err)
+	}
+	fileName := name
+	if runtime.GOOS == "windows" {
+		fileName += ".exe"
+	}
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, fileName), data, 0o755); err != nil {
+		t.Fatalf("write the fake executable: %v", err)
+	}
+	t.Setenv("PATH", dir)
+	t.Setenv(helperEnv, mode)
+}
+
+// makeReadOnly removes the write permission of a file. Tests that depend on the
+// permission being enforced skip themselves when running as root.
+func makeReadOnly(t *testing.T, path string) {
+	t.Helper()
+	if err := os.Chmod(path, 0o444); err != nil {
+		t.Fatalf("make %s read only: %v", path, err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(path, 0o644) })
 }

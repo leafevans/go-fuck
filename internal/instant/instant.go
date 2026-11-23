@@ -98,6 +98,7 @@ func (c logCall) echoIndex(script string, parts []string) int {
 	return wrappedEchoIndex(lines, trimmed)
 }
 
+// hasCommandSuffix reports whether line ends with command at a token boundary.
 func hasCommandSuffix(line, command string) bool {
 	if !strings.HasSuffix(line, command) {
 		return false

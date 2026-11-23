@@ -82,6 +82,7 @@ func PreviewCommands(commands []*types.CorrectedCommand) {
 	}
 }
 
+// showCommand renders the currently highlighted suggestion to stderr.
 func showCommand(command *types.CorrectedCommand) {
 	logs.ShowCorrectedCommand(command.Script, command.SideEffect != nil, command.Explanation(), command.BeforeRun())
 }

@@ -1,0 +1,123 @@
+# Taskfile for go-fuck.
+#
+# The tasks only invoke the Go toolchain and the helper programs in tools/.
+# Task is available on Linux, macOS and Windows, so contributors do not need
+# GNU make. Use `task` to list the available commands.
+
+version: "3"
+
+vars:
+  GO: go
+  BINARY: go-fuck
+  GOLANGCI_LINT: golangci-lint
+  COVER_PROFILE: '{{.ROOT_DIR}}/coverage.out'
+  VERSION: ""
+  CHECKSUMS: dist/checksums.txt
+  AUR_SOURCE: ""
+  LDFLAGS: ""
+  EXE:
+    sh: go env GOEXE
+
+tasks:
+  default:
+    desc: List available tasks
+    silent: true
+    cmds:
+      - task --list
+
+  build:
+    desc: Build the go-fuck binary for the current platform
+    cmds:
+      - '{{.GO}} build -trimpath -ldflags "{{.LDFLAGS}}" -o {{.BINARY}}{{.EXE}} ./cmd/go-fuck'
+
+  test:
+    desc: Run the test suite
+    cmds:
+      - '{{.GO}} test ./... -count=1'
+
+  test-race:
+    desc: Run the test suite with the race detector enabled
+    cmds:
+      - '{{.GO}} test -race ./... -count=1'
+
+  cover:
+    desc: Run the test suite with coverage and print the total
+    cmds:
+      - '{{.GO}} test ./... -count=1 -coverprofile="{{.COVER_PROFILE}}"'
+      - '{{.GO}} run ./tools/coveragecheck -profile "{{.COVER_PROFILE}}"'
+
+  bench:
+    desc: Run the benchmarks
+    cmds:
+      - '{{.GO}} test ./internal/... -run=^$ -bench . -benchmem'
+
+  bench-guard:
+    desc: Compare the benchmark allocations with the committed baseline
+    cmds:
+      - '{{.GO}} test ./internal/... -run=^$ -bench . -benchmem -count=1 > benchmark.txt'
+      - '{{.GO}} run ./tools/benchguard -bench benchmark.txt -baseline benchmarks/baseline.txt'
+
+  fuzz:
+    desc: Run each native fuzz target briefly as a local smoke test
+    cmds:
+      - '{{.GO}} test ./internal/argumentparser -run=^$ -fuzz=^FuzzParse$ -fuzztime=20s'
+      - '{{.GO}} test ./internal/conf -run=^$ -fuzz=^FuzzSettingsFile$ -fuzztime=20s'
+      - '{{.GO}} test ./internal/customrules -run=^$ -fuzz=^FuzzCustomRulePipeline$ -fuzztime=20s'
+      - '{{.GO}} test ./internal/entrypoints -run=^$ -fuzz=^FuzzJSONOutput$ -fuzztime=20s'
+      - '{{.GO}} test ./internal/entrypoints -run=^$ -fuzz=^FuzzMarkedRawCommand$ -fuzztime=20s'
+      - '{{.GO}} test ./internal/instant -run=^$ -fuzz=^FuzzLastOutput$ -fuzztime=20s'
+      - '{{.GO}} test ./internal/instant -run=^$ -fuzz=^FuzzSanitize$ -fuzztime=20s'
+      - '{{.GO}} test ./internal/instant -run=^$ -fuzz=^FuzzStripOSC$ -fuzztime=20s'
+      - '{{.GO}} test ./internal/rules -run=^$ -fuzz=^FuzzRules$ -fuzztime=20s'
+      - '{{.GO}} test ./internal/shells -run=^$ -fuzz=^FuzzSplit$ -fuzztime=20s'
+      - '{{.GO}} test ./internal/specific -run=^$ -fuzz=^FuzzGitQuotedArgument$ -fuzztime=20s'
+
+  vet:
+    desc: Run go vet on all packages
+    cmds:
+      - '{{.GO}} vet ./...'
+
+  fmt:
+    desc: Format all Go files with gofmt -s
+    cmds:
+      - 'gofmt -s -w .'
+
+  fmt-check:
+    desc: Fail when a Go file is not formatted
+    cmds:
+      - '{{.GO}} run ./tools/checkfmt'
+
+  lint:
+    desc: Run golangci-lint with the repository configuration
+    cmds:
+      - '{{.GOLANGCI_LINT}} run'
+
+  install:
+    desc: Install the go-fuck command with go install
+    cmds:
+      - '{{.GO}} install ./cmd/go-fuck'
+
+  clean:
+    desc: Remove built binaries, coverage, benchmark and GoReleaser artifacts
+    cmds:
+      - '{{.GO}} run ./tools/clean {{.BINARY}} {{.BINARY}}.exe dist benchmark.txt coverage coverage.out coverage-audit.out coverage-linux-audit.out coveragecheck.exe'
+
+  packaging:
+    desc: Regenerate the distribution manifests for VERSION from CHECKSUMS
+    cmds:
+      - '{{.GO}} run ./tools/update-packaging -version "{{.VERSION}}" -checksums "{{.CHECKSUMS}}" {{if .AUR_SOURCE}}-aur-source "{{.AUR_SOURCE}}"{{end}}'
+
+  packaging-check:
+    desc: Validate the committed distribution manifests
+    cmds:
+      - '{{.GO}} test ./packaging -count=1'
+
+  rules-list:
+    desc: Regenerate the rule list in README.md
+    cmds:
+      - '{{.GO}} run ./tools/gen-rule-list'
+
+  rules-list-check:
+    desc: Fail when the README.md rule list is out of date
+    cmds:
+      - '{{.GO}} run ./tools/gen-rule-list -check'

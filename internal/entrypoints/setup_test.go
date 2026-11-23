@@ -9,6 +9,8 @@ import (
 
 	"github.com/leafevans/go-fuck/v2/internal/argumentparser"
 	"github.com/leafevans/go-fuck/v2/internal/shells"
+
+	"github.com/leafevans/go-fuck/v2/internal/conf"
 )
 
 // readFile reads a file in tests.
@@ -444,6 +446,153 @@ func TestSetupManualConfigurationPaths(t *testing.T) {
 			})
 			if code := setup(&argumentparser.Args{}); code != testCase.want {
 				t.Fatalf("setup() = %d, want %d for %s", code, testCase.want, testCase.path)
+			}
+		})
+	}
+}
+
+func TestSetupReportsSettingsLoadFailure(t *testing.T) {
+	resetEntrypointsState(t)
+	settingsPath := filepath.Join(conf.UserDir(), "settings.json")
+	if err := os.MkdirAll(filepath.Dir(settingsPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(settingsPath, []byte("{invalid"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	code, _, stderr := runMain(t, "go-fuck", "--setup")
+	if code != 0 {
+		t.Fatalf("Main(--setup) = %d, want 0; stderr = %s", code, stderr)
+	}
+	if !strings.Contains(stderr, "can't load settings") {
+		t.Fatalf("stderr = %q, want a settings load failure", stderr)
+	}
+}
+
+func TestSetupAppendFailure(t *testing.T) {
+	configDir := resetEntrypointsState(t)
+	configPath := filepath.Join(configDir, ".bashrc")
+	if err := os.WriteFile(configPath, []byte("export EXISTING=1\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	makeReadOnly(t, configPath)
+
+	code, _, stderr := runMain(t, "go-fuck", "--setup")
+	if code == 0 {
+		t.Skip("the read only configuration file could be written (running as root?)")
+	}
+	if code != 1 || !strings.Contains(stderr, "can't update") {
+		t.Fatalf("Main(--setup) = %d, stderr = %q, want a failed update", code, stderr)
+	}
+}
+
+func TestSetupReplaceInstantModeLineFailure(t *testing.T) {
+	configDir := resetEntrypointsState(t)
+	configPath := filepath.Join(configDir, ".bashrc")
+	legacy := "eval $(go-fuck --alias --enable-experimental-instant-mode)\n"
+	if err := os.WriteFile(configPath, []byte(legacy), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	makeReadOnly(t, configPath)
+
+	code, _, stderr := runMain(t, "go-fuck", "--setup", "--enable-experimental-instant-mode")
+	if code == 0 {
+		t.Skip("the read only configuration file could be written (running as root?)")
+	}
+	if code != 1 || !strings.Contains(stderr, "can't update") {
+		t.Fatalf("Main(--setup) = %d, stderr = %q, want a failed update", code, stderr)
+	}
+}
+
+func TestSetupPowerShellFailures(t *testing.T) {
+	t.Run("profile is a directory", func(t *testing.T) {
+		resetEntrypointsState(t)
+		t.Setenv("TF_SHELL", "powershell")
+		stubPowerShellProfiles(t, []string{t.TempDir()})
+
+		code, _, stderr := runMain(t, "go-fuck", "--setup")
+		if code != 1 || !strings.Contains(stderr, "can't read") {
+			t.Fatalf("Main(--setup) = %d, stderr = %q, want a failed read", code, stderr)
+		}
+	})
+
+	t.Run("profile directory cannot be created", func(t *testing.T) {
+		resetEntrypointsState(t)
+		t.Setenv("TF_SHELL", "powershell")
+		var profile string
+		if runtime.GOOS == "windows" {
+			// A path below a regular file is reported as a missing file on
+			// Windows, so the profile lookup passes and creating its directory
+			// fails.
+			blocker := filepath.Join(t.TempDir(), "blocker")
+			if err := os.WriteFile(blocker, nil, 0o644); err != nil {
+				t.Fatal(err)
+			}
+			profile = filepath.Join(blocker, "Documents", "profile.ps1")
+		} else {
+			// A read only parent directory makes the profile lookup report a
+			// missing file and creating its directory fail.
+			parent := t.TempDir()
+			if err := os.Chmod(parent, 0o500); err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() { _ = os.Chmod(parent, 0o755) })
+			profile = filepath.Join(parent, "Documents", "profile.ps1")
+		}
+		stubPowerShellProfiles(t, []string{profile})
+
+		code, _, stderr := runMain(t, "go-fuck", "--setup")
+		if code == 0 {
+			t.Skip("the missing profile directory could be created (running as root?)")
+		}
+		if code != 1 || !strings.Contains(stderr, "can't create") {
+			t.Fatalf("Main(--setup) = %d, stderr = %q, want a failed directory creation", code, stderr)
+		}
+	})
+
+	t.Run("profile cannot be appended", func(t *testing.T) {
+		resetEntrypointsState(t)
+		t.Setenv("TF_SHELL", "powershell")
+		profile := filepath.Join(t.TempDir(), "profile.ps1")
+		if err := os.WriteFile(profile, nil, 0o644); err != nil {
+			t.Fatal(err)
+		}
+		makeReadOnly(t, profile)
+		stubPowerShellProfiles(t, []string{profile})
+
+		code, _, stderr := runMain(t, "go-fuck", "--setup")
+		if code == 0 {
+			t.Skip("the read only profile could be written (running as root?)")
+		}
+		if code != 1 || !strings.Contains(stderr, "can't update") {
+			t.Fatalf("Main(--setup) = %d, stderr = %q, want a failed update", code, stderr)
+		}
+	})
+}
+
+func TestPowerShellProfileFakeExecutable(t *testing.T) {
+	cases := []struct {
+		name     string
+		mode     string
+		wantPath string
+		wantOK   bool
+	}{
+		{name: "reports a profile", mode: "profile", wantPath: "/tmp/go-fuck-fake-profile.ps1", wantOK: true},
+		{name: "fails", mode: "fail"},
+		{name: "reports an empty profile", mode: "profile-empty"},
+	}
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			resetEntrypointsState(t)
+			installFakeExecutable(t, "pwsh", testCase.mode)
+
+			path, ok := powerShellProfile("pwsh")
+			if ok != testCase.wantOK {
+				t.Fatalf("powerShellProfile() = %q, %t, want ok = %t", path, ok, testCase.wantOK)
+			}
+			if path != testCase.wantPath {
+				t.Fatalf("powerShellProfile() = %q, want %q", path, testCase.wantPath)
 			}
 		})
 	}

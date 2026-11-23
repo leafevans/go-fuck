@@ -161,7 +161,8 @@ Return an error instead of panicking. Never print to stdout from a side effect.
 
 ## Tests
 
-Port the corresponding test file from `thefuck/tests/rules/test_<name>.py`.
+Port the corresponding test file from a local checkout of upstream thefuck
+(`tests/rules/test_<name>.py`).
 Keep the fixture strings byte for byte where possible. Use table driven tests
 and `t.Run` subtests.
 

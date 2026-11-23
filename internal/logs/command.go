@@ -27,6 +27,7 @@ func CommandText(script string) string {
 	return text.String()
 }
 
+// needsCommandEscape reports whether char could alter terminal layout or text direction.
 func needsCommandEscape(char rune) bool {
 	return unicode.IsControl(char) || unicode.Is(unicode.Bidi_Control, char) || char == '\u2028' || char == '\u2029'
 }
@@ -42,6 +43,7 @@ func CandidateText(script, reason, beforeRun string) string {
 	return text + suggestionDetails(reason, beforeRun)
 }
 
+// suggestionDetails formats the optional explanation and side-effect notice.
 func suggestionDetails(reason, beforeRun string) string {
 	var text string
 	if reason != "" {
@@ -53,6 +55,7 @@ func suggestionDetails(reason, beforeRun string) string {
 	return text
 }
 
+// styledSuggestionDetails renders suggestionDetails with muted terminal styling.
 func styledSuggestionDetails(reason, beforeRun string) string {
 	if details := suggestionDetails(reason, beforeRun); details != "" {
 		return muted(details)

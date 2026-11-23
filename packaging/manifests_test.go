@@ -1,3 +1,5 @@
+// Package packaging_test validates consistency across the Homebrew, Scoop and
+// AUR distribution manifests.
 package packaging_test
 
 import (
@@ -6,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -41,7 +44,7 @@ func unquote(value string) string {
 // quotedList splits a space separated list of shell quoted values.
 func quotedList(value string) []string {
 	values := []string{}
-	for _, part := range strings.Fields(value) {
+	for part := range strings.FieldsSeq(value) {
 		values = append(values, strings.Trim(part, "'"))
 	}
 	return values
@@ -49,12 +52,7 @@ func quotedList(value string) []string {
 
 // containsString reports whether values contains value.
 func containsString(values []string, value string) bool {
-	for _, candidate := range values {
-		if candidate == value {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(values, value)
 }
 
 // validHash reports whether hash is a lowercase SHA-256 hex string.

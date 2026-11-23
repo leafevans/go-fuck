@@ -354,3 +354,11 @@ func TestGenericSplitCommandPythonFixtures(t *testing.T) {
 		})
 	}
 }
+
+// TestSplitUnterminatedDoubleQuote covers the unterminated double quoted string
+// branch of Split.
+func TestSplitUnterminatedDoubleQuote(t *testing.T) {
+	if _, err := Split("echo \"abc\\"); err != ErrUnterminatedQuote {
+		t.Fatalf("Split() error = %v, want ErrUnterminatedQuote", err)
+	}
+}

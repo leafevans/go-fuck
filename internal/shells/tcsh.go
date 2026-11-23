@@ -76,6 +76,7 @@ func (t *Tcsh) SplitCommand(command string) []string {
 	return splitTcsh(command)
 }
 
+// splitTcsh splits command into arguments following tcsh quoting and escaping rules.
 func splitTcsh(command string) []string {
 	var (
 		args    []string

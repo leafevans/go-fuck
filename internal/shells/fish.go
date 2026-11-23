@@ -78,6 +78,7 @@ func (f *Fish) SplitCommand(command string) []string {
 	return splitFish(command)
 }
 
+// splitFish splits command into arguments following fish quoting and escaping rules.
 func splitFish(command string) []string {
 	var (
 		args    []string

@@ -59,7 +59,7 @@ func run(path string, check bool) error {
 
 	if check {
 		if updated != original {
-			return fmt.Errorf("%s is out of date; run %q to regenerate it", path, "make rules-list")
+			return fmt.Errorf("%s is out of date; run %q to regenerate it", path, "task rules-list")
 		}
 		fmt.Printf("%s: rule list is up to date\n", path)
 		return nil

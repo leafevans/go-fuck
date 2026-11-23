@@ -22,6 +22,7 @@ func GetRules() []*types.Rule {
 	return configuredRules(conf.Current())
 }
 
+// configuredRules returns the enabled rules ordered by effective priority.
 func configuredRules(settings *conf.Settings) []*types.Rule {
 	enabled := make([]*types.Rule, 0, rules.Count())
 	if len(settings.Priority) == 0 {
@@ -44,6 +45,7 @@ func configuredRules(settings *conf.Settings) []*types.Rule {
 	return enabled
 }
 
+// walkEnabledRules calls visit for each rule enabled by settings.
 func walkEnabledRules(settings *conf.Settings, visit func(*types.Rule)) {
 	if len(settings.ExcludeRules) == 0 && len(settings.Rules) == 1 && settings.Rules[0] == consts.AllEnabled {
 		for _, rule := range rules.All() {

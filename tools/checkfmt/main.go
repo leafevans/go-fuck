@@ -1,3 +1,7 @@
+// Command checkfmt reports Go files that are not formatted with gofmt -s.
+//
+// It exits with status 0 when all checked paths are formatted, or 1 when
+// unformatted files are found or gofmt fails.
 package main
 
 import (
@@ -40,7 +44,7 @@ func run(paths []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stdout, "gofmt: all Go files are formatted")
 		return 0
 	}
-	fmt.Fprintln(stderr, "gofmt: the following files are not formatted; run \"make fmt\":")
+	fmt.Fprintln(stderr, "gofmt: the following files are not formatted; run \"task fmt\":")
 	fmt.Fprintln(stderr, unformatted)
 	return 1
 }

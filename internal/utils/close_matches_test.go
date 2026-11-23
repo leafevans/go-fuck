@@ -6,6 +6,8 @@ import (
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/leafevans/go-fuck/v2/internal/conf"
 )
 
 func TestGetCloseMatchesAgreesWithFullSort(t *testing.T) {
@@ -43,5 +45,17 @@ func TestGetCloseMatchesKeepsLaterTies(t *testing.T) {
 	}
 	if got := GetUniqueClosest("at", candidates, 2.0/3); got != "" {
 		t.Fatalf("GetUniqueClosest() = %q, want no unique match", got)
+	}
+}
+
+// TestGetCloseMatchesWithoutLimit covers the zero limit branch of
+// GetCloseMatches.
+func TestGetCloseMatchesWithoutLimit(t *testing.T) {
+	conf.Reset()
+	t.Cleanup(conf.Reset)
+	conf.Current().NumCloseMatches = 0
+
+	if got := GetCloseMatches("x", []string{"y"}, 0, 0.1); got != nil {
+		t.Fatalf("GetCloseMatches() = %q, want nil", got)
 	}
 }
