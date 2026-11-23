@@ -166,13 +166,8 @@ func TestExpandHome(t *testing.T) {
 	}
 }
 
-// TestDoctorPowerShellAliasCheck covers the profile lookup used for PowerShell,
-// where $PROFILE is a variable and the alias can only be found by asking the
-// installed flavors for their profile paths.
+// TestDoctorPowerShellAliasCheck covers the results for resolved profiles.
 func TestDoctorPowerShellAliasCheck(t *testing.T) {
-	original := doctorPowerShellProfiles
-	t.Cleanup(func() { doctorPowerShellProfiles = original })
-
 	t.Run("alias found in one flavor", func(t *testing.T) {
 		dir := t.TempDir()
 		configured := filepath.Join(dir, "Microsoft.PowerShell_profile.ps1")
@@ -183,9 +178,7 @@ func TestDoctorPowerShellAliasCheck(t *testing.T) {
 		if err := os.WriteFile(plain, []byte("Set-Alias ll Get-ChildItem\n"), 0o644); err != nil {
 			t.Fatal(err)
 		}
-		doctorPowerShellProfiles = func() []string { return []string{configured, plain} }
-
-		check := doctorPowerShellAliasCheck()
+		check := doctorPowerShellAliasCheck([]string{configured, plain})
 		if check.Status != doctorOK {
 			t.Fatalf("status = %q, want ok: %+v", check.Status, check)
 		}
@@ -199,9 +192,7 @@ func TestDoctorPowerShellAliasCheck(t *testing.T) {
 		if err := os.WriteFile(profile, []byte("Set-Alias ll Get-ChildItem\n"), 0o644); err != nil {
 			t.Fatal(err)
 		}
-		doctorPowerShellProfiles = func() []string { return []string{profile} }
-
-		check := doctorPowerShellAliasCheck()
+		check := doctorPowerShellAliasCheck([]string{profile})
 		if check.Status != doctorWarn || !strings.Contains(check.Message, profile) {
 			t.Fatalf("status = %q, message = %q, want a warning for the profile", check.Status, check.Message)
 		}
@@ -212,18 +203,14 @@ func TestDoctorPowerShellAliasCheck(t *testing.T) {
 
 	t.Run("profiles cannot be read", func(t *testing.T) {
 		profile := filepath.Join(t.TempDir(), "missing", "profile.ps1")
-		doctorPowerShellProfiles = func() []string { return []string{profile} }
-
-		check := doctorPowerShellAliasCheck()
+		check := doctorPowerShellAliasCheck([]string{profile})
 		if check.Status != doctorInfo || !strings.Contains(check.Message, profile) {
 			t.Fatalf("status = %q, message = %q, want info for the unreadable profile", check.Status, check.Message)
 		}
 	})
 
 	t.Run("no profiles", func(t *testing.T) {
-		doctorPowerShellProfiles = func() []string { return nil }
-
-		check := doctorPowerShellAliasCheck()
+		check := doctorPowerShellAliasCheck(nil)
 		if check.Status != doctorInfo || !strings.Contains(check.Message, "no PowerShell profile found") {
 			t.Fatalf("status = %q, message = %q, want info without profiles", check.Status, check.Message)
 		}

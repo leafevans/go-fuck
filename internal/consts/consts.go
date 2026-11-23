@@ -116,6 +116,9 @@ const AliasVersion = "3"
 // PowerShellVersionEnv carries the current session's version for information commands.
 const PowerShellVersionEnv = "GOFUCK_POWERSHELL_VERSION"
 
+// PowerShellProfileEnv carries the invoking session's $PROFILE path for doctor.
+const PowerShellProfileEnv = "GOFUCK_POWERSHELL_PROFILE"
+
 // Environment variables of the instant mode.
 const (
 	// InstantModeEnv is set by the instant mode alias inside the logged shell.

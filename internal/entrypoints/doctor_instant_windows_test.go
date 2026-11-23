@@ -5,10 +5,10 @@ package entrypoints
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/leafevans/go-fuck/v2/internal/consts"
-	"github.com/leafevans/go-fuck/v2/internal/shells"
 )
 
 // instantProfile returns a temporary PowerShell profile with the given lines.
@@ -25,19 +25,6 @@ func instantProfile(t *testing.T, lines ...string) string {
 	return path
 }
 
-// stubInstantProfiles points the doctor at the given profile files.
-func stubInstantProfiles(t *testing.T, paths ...string) {
-	t.Helper()
-	originalShell := shells.Current()
-	originalProfiles := powerShellProfiles
-	shells.Set(shells.NewPowershell())
-	powerShellProfiles = func() []string { return paths }
-	t.Cleanup(func() {
-		powerShellProfiles = originalProfiles
-		shells.Set(originalShell)
-	})
-}
-
 const instantProfileLine = "iex \"$(go-fuck --alias --enable-experimental-instant-mode)\""
 
 func TestDoctorInstantProfileOrder(t *testing.T) {
@@ -45,11 +32,11 @@ func TestDoctorInstantProfileOrder(t *testing.T) {
 	t.Setenv(consts.LegacyOutputLogEnv, "")
 
 	broken := instantProfile(t, instantProfileLine, "function prompt { \"PS> \" }")
-	stubInstantProfiles(t, broken)
-	if path, problem := doctorInstantProfileProblem(); !problem || path != broken {
+	profiles := []string{broken}
+	if path, problem := doctorInstantProfileProblem(profiles); !problem || path != broken {
 		t.Fatalf("doctorInstantProfileProblem() = %q, %t, want the broken profile", path, problem)
 	}
-	if got := doctorInstantCheck(); got.Status != doctorWarn {
+	if got := doctorInstantCheck(profiles); got.Status != doctorWarn {
 		t.Fatalf("doctorInstantCheck() = %+v, want warn", got)
 	}
 }
@@ -59,11 +46,11 @@ func TestDoctorInstantProfileOrderIsFine(t *testing.T) {
 	t.Setenv(consts.LegacyOutputLogEnv, "")
 
 	good := instantProfile(t, "function prompt { \"PS> \" }", instantProfileLine)
-	stubInstantProfiles(t, good)
-	if _, problem := doctorInstantProfileProblem(); problem {
+	profiles := []string{good}
+	if _, problem := doctorInstantProfileProblem(profiles); problem {
 		t.Fatal("doctorInstantProfileProblem() reported a correct profile")
 	}
-	if got := doctorInstantCheck(); got.Status != doctorInfo {
+	if got := doctorInstantCheck(profiles); got.Status != doctorInfo {
 		t.Fatalf("doctorInstantCheck() = %+v, want info", got)
 	}
 }
@@ -73,8 +60,52 @@ func TestDoctorInstantProfileWithoutInstantLine(t *testing.T) {
 	t.Setenv(consts.LegacyOutputLogEnv, "")
 
 	plain := instantProfile(t, "function prompt { \"PS> \" }")
-	stubInstantProfiles(t, plain)
-	if _, problem := doctorInstantProfileProblem(); problem {
+	if _, problem := doctorInstantProfileProblem([]string{plain}); problem {
 		t.Fatal("doctorInstantProfileProblem() reported a profile without the instant mode line")
+	}
+}
+
+func TestDoctorUsesSamePowerShellProfilesForAliasAndInstantChecks(t *testing.T) {
+	active := instantProfile(t, instantProfileLine, "function prompt { 'PS> ' }")
+	fallback := instantProfile(t, instantProfileLine, "function global:prompt { 'PS> ' }")
+	executable, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv(consts.OutputLogEnv, "")
+	t.Setenv(consts.LegacyOutputLogEnv, "")
+	original := doctorPowerShellProfiles
+	t.Cleanup(func() { doctorPowerShellProfiles = original })
+
+	for _, tt := range []struct {
+		name, sessionPath, wantPath string
+		wantLookups                 int
+	}{
+		{"current session", active, active, 0},
+		{"older alias", "", fallback, 1},
+		{"relative path", "profile.ps1", fallback, 1},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv(consts.PowerShellProfileEnv, tt.sessionPath)
+			lookups := 0
+			doctorPowerShellProfiles = func() []string {
+				lookups++
+				return []string{fallback}
+			}
+			checks := doctorChecks(doctorReport{Binary: executable}, doctorShellState{
+				Name: "powershell", Info: "PowerShell", ConfigPath: "$profile",
+			})
+			if lookups != tt.wantLookups {
+				t.Errorf("profile lookups = %d, want %d", lookups, tt.wantLookups)
+			}
+			alias := findDoctorCheck(t, checks, "alias")
+			if alias.Status != doctorOK || !strings.Contains(alias.Message, tt.wantPath) {
+				t.Errorf("alias check = %+v, want ok for %q", alias, tt.wantPath)
+			}
+			instant := findDoctorCheck(t, checks, "instant")
+			if instant.Status != doctorWarn || !strings.Contains(instant.Hint, tt.wantPath) {
+				t.Errorf("instant check = %+v, want warning for %q", instant, tt.wantPath)
+			}
+		})
 	}
 }

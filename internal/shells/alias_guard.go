@@ -82,12 +82,17 @@ func powershellAliasGuard(aliasName, executable string) string {
 		"            $env:TF_ALIAS_VERSION = \"3\";\n"+
 		"            try { $env:GOFUCK_SHELL = (Get-Process -Id $PID).Path } catch { };\n"+
 		"            $__gofuck_previous_version = $env:%[4]s;\n"+
+		"            $__gofuck_previous_profile = $env:%[5]s;\n"+
 		"            try {\n"+
 		"                $env:%[4]s = $PSVersionTable.PSVersion.ToString();\n"+
+		"                $env:%[5]s = [string]$PROFILE;\n"+
 		"                & %[3]s @args;\n"+
-		"            } finally { $env:%[4]s = $__gofuck_previous_version; };\n"+
+		"            } finally {\n"+
+		"                $env:%[4]s = $__gofuck_previous_version;\n"+
+		"                $env:%[5]s = $__gofuck_previous_profile;\n"+
+		"            };\n"+
 		"            return;\n"+
 		"        };\n"+
 		"    };\n",
-		strings.Join(quoted, ", "), aliasName, executable, consts.PowerShellVersionEnv)
+		strings.Join(quoted, ", "), aliasName, executable, consts.PowerShellVersionEnv, consts.PowerShellProfileEnv)
 }

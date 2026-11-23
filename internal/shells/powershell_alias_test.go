@@ -255,3 +255,24 @@ fuck --version
 		t.Fatalf("version not passed and restored correctly: %q", output)
 	}
 }
+
+func TestPowershellAliasPassesSessionProfile(t *testing.T) {
+	resetShellsState(t)
+	output, _ := runPowershellAliasRaw(t, "$env:GOFUCK_POWERSHELL_PROFILE = 'previous'", `
+function go-fuck { 'reported:' + $env:GOFUCK_POWERSHELL_PROFILE }
+fuck --doctor --json
+'expected:' + [string]$PROFILE
+'restored:' + $env:GOFUCK_POWERSHELL_PROFILE
+Remove-Item Env:GOFUCK_POWERSHELL_PROFILE
+fuck --doctor
+'removed:' + (-not (Test-Path Env:GOFUCK_POWERSHELL_PROFILE))
+`)
+	lines := strings.Split(strings.ReplaceAll(strings.TrimSpace(string(output)), "\r\n", "\n"), "\n")
+	if len(lines) != 5 || !strings.HasPrefix(lines[1], "expected:") {
+		t.Fatalf("unexpected PowerShell output: %q", output)
+	}
+	want := "reported:" + strings.TrimPrefix(lines[1], "expected:")
+	if lines[0] != want || lines[2] != "restored:previous" || lines[3] != want || lines[4] != "removed:True" {
+		t.Fatalf("profile not passed and restored correctly: %q", output)
+	}
+}

@@ -17,13 +17,13 @@ func TestDoctorInstantCheck(t *testing.T) {
 	t.Setenv(consts.OutputLogEnv, "")
 	t.Setenv(consts.LegacyOutputLogEnv, "")
 
-	if got := doctorInstantCheck(); got.Status != doctorInfo || !strings.Contains(got.Message, "not enabled") {
+	if got := doctorInstantCheck(nil); got.Status != doctorInfo || !strings.Contains(got.Message, "not enabled") {
 		t.Fatalf("disabled instant check = %+v", got)
 	}
 
 	missing := filepath.Join(t.TempDir(), "missing.log")
 	t.Setenv(consts.OutputLogEnv, missing)
-	if got := doctorInstantCheck(); got.Status != doctorWarn {
+	if got := doctorInstantCheck(nil); got.Status != doctorWarn {
 		t.Fatalf("missing log check = %+v, want warn", got)
 	}
 
@@ -32,7 +32,7 @@ func TestDoctorInstantCheck(t *testing.T) {
 		t.Fatalf("write log: %v", err)
 	}
 	t.Setenv(consts.OutputLogEnv, empty)
-	if got := doctorInstantCheck(); got.Status != doctorInfo || !strings.Contains(got.Message, "no output yet") {
+	if got := doctorInstantCheck(nil); got.Status != doctorInfo || !strings.Contains(got.Message, "no output yet") {
 		t.Fatalf("empty log check = %+v", got)
 	}
 
@@ -41,7 +41,7 @@ func TestDoctorInstantCheck(t *testing.T) {
 		t.Fatalf("write log: %v", err)
 	}
 	t.Setenv(consts.OutputLogEnv, withoutMarker)
-	if got := doctorInstantCheck(); got.Status != doctorWarn || !strings.Contains(got.Message, "prompt marker") {
+	if got := doctorInstantCheck(nil); got.Status != doctorWarn || !strings.Contains(got.Message, "prompt marker") {
 		t.Fatalf("unmarked log check = %+v, want warn", got)
 	}
 
@@ -50,7 +50,7 @@ func TestDoctorInstantCheck(t *testing.T) {
 		t.Fatalf("write log: %v", err)
 	}
 	t.Setenv(consts.OutputLogEnv, valid)
-	if got := doctorInstantCheck(); got.Status != doctorOK {
+	if got := doctorInstantCheck(nil); got.Status != doctorOK {
 		t.Fatalf("valid log check = %+v, want ok", got)
 	}
 }

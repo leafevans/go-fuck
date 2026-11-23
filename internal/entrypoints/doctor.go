@@ -64,8 +64,7 @@ var (
 	doctorIsAvailable  = utils.IsAvailable
 	doctorLoadSettings = func() (*conf.Settings, error) { return conf.Load(&conf.Args{}) }
 	doctorCollectShell = collectDoctorShellState
-	// doctorPowerShellProfiles returns the profile files of the installed
-	// PowerShell flavors. It is a variable so tests can replace the lookup.
+	// doctorPowerShellProfiles is the fallback when the alias did not pass $PROFILE.
 	doctorPowerShellProfiles = powerShellProfiles
 )
 
@@ -146,12 +145,24 @@ func doctorChecks(report doctorReport, shell doctorShellState) []doctorCheck {
 	if wslCheck, ok := doctorWSLInteropCheck(); ok {
 		checks = append(checks, wslCheck)
 	}
-	checks = append(checks, doctorAliasCheck(shell))
+	var profiles []string
+	if shell.ConfigPath == "$profile" {
+		// The current session can supply its real profile without starting another shell.
+		if path := os.Getenv(consts.PowerShellProfileEnv); filepath.IsAbs(path) {
+			profiles = []string{path}
+		} else {
+			profiles = doctorPowerShellProfiles()
+		}
+	}
+	checks = append(checks, doctorAliasCheck(shell, profiles))
 	checks = append(checks, doctorSettingsCheck())
 	checks = append(checks, doctorRulesCheck())
 	checks = append(checks, doctorHistoryCheck(shell))
 	checks = append(checks, doctorFzfCheck())
-	checks = append(checks, doctorInstantCheck())
+	if runtime.GOOS != "windows" {
+		profiles = nil
+	}
+	checks = append(checks, doctorInstantCheck(profiles))
 	return checks
 }
 
@@ -173,7 +184,7 @@ func doctorShellCheck(shell doctorShellState) doctorCheck {
 }
 
 // doctorAliasCheck reports whether the alias is configured.
-func doctorAliasCheck(shell doctorShellState) doctorCheck {
+func doctorAliasCheck(shell doctorShellState, profiles []string) doctorCheck {
 	check := doctorCheck{Name: "alias"}
 	switch {
 	case shell.ConfigPath == "":
@@ -181,7 +192,7 @@ func doctorAliasCheck(shell doctorShellState) doctorCheck {
 		check.Message = "the shell does not have a configuration file to inspect"
 		check.Hint = "run go-fuck --alias and add its output to your shell configuration"
 	case shell.ConfigPath == "$profile":
-		return doctorPowerShellAliasCheck()
+		return doctorPowerShellAliasCheck(profiles)
 	case strings.HasPrefix(shell.ConfigPath, "$"):
 		check.Status = doctorInfo
 		check.Message = "the " + shell.ConfigPath + " profile cannot be checked automatically"
@@ -197,12 +208,9 @@ func doctorAliasCheck(shell doctorShellState) doctorCheck {
 	return check
 }
 
-// doctorPowerShellAliasCheck looks for the alias line in the profile of every
-// installed PowerShell flavor. PowerShell reports a variable ($PROFILE) instead
-// of a path, so the profiles have to be resolved through the executables first.
-func doctorPowerShellAliasCheck() doctorCheck {
+// doctorPowerShellAliasCheck looks for the alias line in the resolved profiles.
+func doctorPowerShellAliasCheck(profiles []string) doctorCheck {
 	check := doctorCheck{Name: "alias"}
-	profiles := doctorPowerShellProfiles()
 	found := []string{}
 	inspected := []string{}
 	for _, profile := range profiles {
@@ -335,7 +343,7 @@ func doctorFzfCheck() doctorCheck {
 
 // doctorInstantCheck reports the state of the instant mode and validates the
 // terminal log when a logged shell is active.
-func doctorInstantCheck() doctorCheck {
+func doctorInstantCheck(profiles []string) doctorCheck {
 	check := doctorCheck{Name: "instant"}
 	if !instant.Supported() {
 		check.Status = doctorInfo
@@ -345,7 +353,7 @@ func doctorInstantCheck() doctorCheck {
 
 	logPath := instant.LogPath()
 	if logPath == "" {
-		if path, problem := doctorInstantProfileProblem(); problem {
+		if path, problem := doctorInstantProfileProblem(profiles); problem {
 			check.Status = doctorWarn
 			check.Message = "the instant mode line is not the last prompt definition"
 			check.Hint = "move the instant mode line to the end of " + path
@@ -384,12 +392,9 @@ func doctorInstantCheck() doctorCheck {
 // definition follows the instant mode line. Such a definition hides the prompt
 // marker, so the log reader can no longer split the terminal log into command
 // calls.
-func doctorInstantProfileProblem() (string, bool) {
-	if runtime.GOOS != "windows" || shells.Current().Name() != "powershell" {
-		return "", false
-	}
-	for _, path := range powerShellProfiles() {
-		data, err := os.ReadFile(path)
+func doctorInstantProfileProblem(profiles []string) (string, bool) {
+	for _, path := range profiles {
+		data, err := doctorReadFile(expandHome(path))
 		if err != nil {
 			continue
 		}
