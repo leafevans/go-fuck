@@ -219,6 +219,7 @@ var expectedExtraRuleNames = []string{
 	"gh_unknown_command",
 	"gh_unknown_flag",
 	"git_amend_initial_commit",
+	"git_branch_create_flag",
 	"git_branch_missing",
 	"git_checkout_unstaged",
 	"git_dubious_ownership",

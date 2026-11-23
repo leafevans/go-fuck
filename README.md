@@ -706,14 +706,17 @@ separate choices. The fzf prompt also respects `no_colors` and `NO_COLOR`.
 
 The built-in rules are compiled into the binary, and declarative JSON rules can be loaded from the
 configuration directory (see [Creating custom rules](#creating-custom-rules)). Each rule decides
-whether it applies to a failed command and returns one or more corrected commands. There are 251
-built-in rules: 169 ported from the reference implementation plus 82 go-fuck specific rules for
+whether it applies to a failed command and returns one or more corrected commands. There are 252
+built-in rules: 169 ported from the reference implementation plus 83 go-fuck specific rules for
 failures that thefuck does not handle, including the GitHub and GitLab CLIs, kubectl/kind/kustomize,
 uv, cargo, Helm, pnpm, the npm, pnpm, yarn and uv lock file checks, the Go toolchain and go.sum,
 Node.js, bun, Deno, Docker Compose, just, Poetry, make, the go-task runner, minikube, Bundler,
 Chocolatey, the .NET CLI, rustup toolchains, the Dart and Flutter command-line tools, the uv and Cargo
 project setup corrections, the PowerShell file operation and cmd.exe corrections, git switch and safe.directory corrections and divergent, clobbered or blocked
-git operations. The list below is generated from the compiled rules:
+git operations. For example, `git_branch_create_flag` switches between `git switch -c` and
+`git checkout -b` when Git rejects the other command's branch-creation flag.
+
+The list below is generated from the compiled rules:
 
 <!-- RULES_LIST_START -->
 - `adb_unknown_command`
@@ -788,6 +791,7 @@ git operations. The list below is generated from the compiled rules:
 - `git_amend_initial_commit`
 - `git_bisect_usage`
 - `git_branch_0flag`
+- `git_branch_create_flag`
 - `git_branch_delete`
 - `git_branch_delete_checked_out`
 - `git_branch_exists`
