@@ -67,6 +67,10 @@ func TestDoctorInstantProfileWithoutInstantLine(t *testing.T) {
 
 func TestDoctorUsesSamePowerShellProfilesForAliasAndInstantChecks(t *testing.T) {
 	active := instantProfile(t, instantProfileLine, "function prompt { 'PS> ' }")
+	hostProfile := filepath.Join(filepath.Dir(active), "Microsoft.PowerShell_profile.ps1")
+	if err := os.WriteFile(hostProfile, []byte("# No alias in the current-host profile.\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
 	fallback := instantProfile(t, instantProfileLine, "function global:prompt { 'PS> ' }")
 	executable, err := os.Executable()
 	if err != nil {
@@ -81,7 +85,7 @@ func TestDoctorUsesSamePowerShellProfilesForAliasAndInstantChecks(t *testing.T) 
 		name, sessionPath, wantPath string
 		wantLookups                 int
 	}{
-		{"current session", active, active, 0},
+		{"current session, alias in all-hosts profile", hostProfile, active, 0},
 		{"older alias", "", fallback, 1},
 		{"relative path", "profile.ps1", fallback, 1},
 	} {

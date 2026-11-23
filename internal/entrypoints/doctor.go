@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/argumentparser"
@@ -153,6 +154,7 @@ func doctorChecks(report doctorReport, shell doctorShellState) []doctorCheck {
 		} else {
 			profiles = doctorPowerShellProfiles()
 		}
+		profiles = doctorPowerShellUserProfiles(profiles)
 	}
 	checks = append(checks, doctorAliasCheck(shell, profiles))
 	checks = append(checks, doctorSettingsCheck())
@@ -206,6 +208,20 @@ func doctorAliasCheck(shell doctorShellState, profiles []string) doctorCheck {
 		check.Hint = "run go-fuck --setup to add it"
 	}
 	return check
+}
+
+// doctorPowerShellUserProfiles includes the all-hosts profile next to each
+// current-host profile. PowerShell loads both from the same user directory.
+func doctorPowerShellUserProfiles(hostProfiles []string) []string {
+	profiles := make([]string, 0, 2*len(hostProfiles))
+	for _, host := range hostProfiles {
+		for _, path := range []string{filepath.Join(filepath.Dir(host), "profile.ps1"), host} {
+			if !slices.Contains(profiles, path) {
+				profiles = append(profiles, path)
+			}
+		}
+	}
+	return profiles
 }
 
 // doctorPowerShellAliasCheck looks for the alias line in the resolved profiles.

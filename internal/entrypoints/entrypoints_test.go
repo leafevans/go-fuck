@@ -2,19 +2,19 @@ package entrypoints
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
 
-	"fmt"
 	"github.com/leafevans/go-fuck/v2/internal/conf"
 	"github.com/leafevans/go-fuck/v2/internal/consts"
 	"github.com/leafevans/go-fuck/v2/internal/instant"
 	"github.com/leafevans/go-fuck/v2/internal/logs"
 	"github.com/leafevans/go-fuck/v2/internal/types"
-	"path/filepath"
 )
 
 // captureOutput replaces standard output and standard error while fn runs.

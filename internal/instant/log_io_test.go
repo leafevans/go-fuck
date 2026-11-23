@@ -3,11 +3,11 @@ package instant
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
 	"github.com/leafevans/go-fuck/v2/internal/consts"
-	"runtime"
 )
 
 func TestReadLogKeepsNewestBytes(t *testing.T) {

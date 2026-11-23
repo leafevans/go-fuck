@@ -3,17 +3,17 @@
 package instant
 
 import (
+	"errors"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
-	"errors"
 	"github.com/leafevans/go-fuck/v2/internal/consts"
-	"syscall"
 )
 
 // TestRunLoggedShell starts an interactive bash on a pseudo terminal, feeds a

@@ -7,9 +7,10 @@ import (
 	"strings"
 	"testing"
 
+	"io"
+
 	"github.com/leafevans/go-fuck/v2/internal/conf"
 	"github.com/leafevans/go-fuck/v2/internal/consts"
-	"io"
 
 	"github.com/leafevans/go-fuck/v2/internal/logs"
 )

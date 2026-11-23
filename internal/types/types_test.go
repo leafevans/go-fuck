@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"errors"
+
 	"github.com/leafevans/go-fuck/v2/internal/conf"
 	"github.com/leafevans/go-fuck/v2/internal/consts"
 	"github.com/leafevans/go-fuck/v2/internal/logs"
