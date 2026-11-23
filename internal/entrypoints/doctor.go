@@ -4,6 +4,7 @@ import (
 	"encoding/json/jsontext"
 	json "encoding/json/v2"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -454,12 +455,14 @@ func doctor(args *argumentparser.Args) int {
 	if args.JSON {
 		encoded, err := json.Marshal(report, jsontext.WithIndent("  "))
 		if err != nil {
-			fmt.Fprintln(os.Stderr, consts.ExecutableName()+": cannot encode the report: "+err.Error())
+			renderer := logs.NewRenderer(os.Stderr)
+			fmt.Fprintln(os.Stderr, renderer.Diagnostic(logs.StatusFail,
+				consts.ExecutableName()+": cannot encode the report: "+err.Error()))
 			return 1
 		}
 		fmt.Fprintln(os.Stdout, string(encoded))
 	} else {
-		printDoctorReport(report)
+		printDoctorReport(os.Stdout, report)
 	}
 	for _, check := range report.Checks {
 		if check.Status == doctorFail {
@@ -486,24 +489,23 @@ func sanitizeDoctorReport(report *doctorReport) {
 }
 
 // printDoctorReport prints the report for humans.
-func printDoctorReport(report doctorReport) {
-	fmt.Fprintln(os.Stdout, logs.Strong("go-fuck doctor"))
-	fmt.Fprintln(os.Stdout)
+func printDoctorReport(w io.Writer, report doctorReport) {
+	renderer := logs.NewRenderer(w)
+	fmt.Fprintln(w, renderer.Title("doctor"))
+	fmt.Fprintln(w)
 	for _, check := range report.Checks {
-		label := fmt.Sprintf("%-6s", string(check.Status))
+		status := logs.StatusInfo
 		switch check.Status {
 		case doctorOK:
-			label = logs.Success(label)
+			status = logs.StatusOK
 		case doctorWarn:
-			label = logs.Accent(label)
+			status = logs.StatusWarn
 		case doctorFail:
-			label = logs.Failure(label)
-		default:
-			label = logs.Muted(label)
+			status = logs.StatusFail
 		}
-		fmt.Fprintf(os.Stdout, "  %-9s %s %s\n", check.Name, label, check.Message)
+		fmt.Fprintln(w, renderer.TableRow(check.Name, status, check.Message))
 		if check.Hint != "" {
-			fmt.Fprintf(os.Stdout, "  %-9s %-6s %s\n", "", "", logs.Muted(check.Hint))
+			fmt.Fprintln(w, renderer.TableHint(check.Hint))
 		}
 	}
 }

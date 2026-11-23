@@ -58,19 +58,25 @@ func TestRenderVerboseBanner(t *testing.T) {
 
 func TestPrintVersionFallsBackToPlainLine(t *testing.T) {
 	buffer := resetLogsState(t)
-	PrintVersion(VersionInfo{Version: "1.2.3", GoVersion: "go1.22", Shell: "Bash 5.2"}, false)
+	PrintVersion(buffer, VersionInfo{Version: "1.2.3", GoVersion: "go1.22", Shell: "Bash 5.2"}, false)
 	if got, want := buffer.String(), "go-fuck 1.2.3 using Go go1.22 and Bash 5.2"+newline; got != want {
 		t.Fatalf("PrintVersion() = %q, want %q", got, want)
 	}
 }
 
-// TestOutputIsTerminal checks that a test buffer is not reported as a
+// TestIsTerminal checks that a test buffer is not reported as a
 // terminal, which lets callers skip the interactive version banner work.
-func TestOutputIsTerminal(t *testing.T) {
+func TestIsTerminal(t *testing.T) {
 	_ = resetLogsState(t)
-	if OutputIsTerminal() {
-		t.Fatal("OutputIsTerminal() = true for a buffer, want false")
+	if IsTerminal(&testBufferWriter{}) {
+		t.Fatal("IsTerminal() = true for a buffer, want false")
 	}
+}
+
+type testBufferWriter struct{}
+
+func (*testBufferWriter) Write(data []byte) (int, error) {
+	return len(data), nil
 }
 
 // setBannerEnvironment isolates the environment variables that influence the

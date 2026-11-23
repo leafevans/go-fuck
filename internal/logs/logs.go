@@ -1,7 +1,8 @@
-// Package logs implements the console output of go-fuck.
+// Package logs implements the console output and presentation of go-fuck.
 //
-// All diagnostics are written to stderr so that stdout stays reserved for the
-// corrected command. Colors are disabled with the no_colors setting.
+// Diagnostics are written to stderr. Command entrypoints write normal
+// information to stdout and use NewRenderer so pipes never receive terminal
+// escape sequences.
 package logs
 
 import (
@@ -37,13 +38,15 @@ func SetOutput(w io.Writer) {
 
 // Warn writes a highlighted warning message.
 func Warn(title string) {
-	fmt.Fprintf(out, "%s %s\n", accent("[WARN]"), title)
+	renderer := NewRenderer(out)
+	fmt.Fprintln(out, renderer.Diagnostic(StatusWarn, title))
 }
 
 // Exception writes a highlighted warning followed by the error trace.
 func Exception(title string, err error) {
+	renderer := NewRenderer(out)
 	fmt.Fprintf(out, "%s %s:\n%s%s\n\n",
-		accent("[WARN]"), title, trace(err), muted("----------------------------"))
+		renderer.StatusLabel(StatusWarn), title, trace(err), renderer.Muted("----------------------------"))
 }
 
 // trace renders an error, including its wrapped chain.
@@ -61,7 +64,8 @@ func RuleFailed(ruleName string, err error) {
 
 // Failed writes a plain error message.
 func Failed(msg string) {
-	fmt.Fprintf(out, "%s %s\n", failure(failureSymbol), failure(msg))
+	renderer := NewRenderer(out)
+	fmt.Fprintln(out, renderer.Diagnostic(StatusFail, msg))
 }
 
 // NewLine writes a line separator to the log output.
@@ -70,19 +74,20 @@ func NewLine() {
 }
 
 // sideEffectSuffix returns the marker appended to commands that change state.
-func sideEffectSuffix(hasSideEffect bool) string {
+func sideEffectSuffix(renderer Renderer, hasSideEffect bool) string {
 	if !hasSideEffect {
 		return ""
 	}
-	return "  " + accent(sideEffectMarker)
+	return "  " + renderer.Accent(sideEffectMarker)
 }
 
 // ShowCorrectedCommand prints the selected command without the confirmation
 // prompt.
 func ShowCorrectedCommand(script string, hasSideEffect bool, reason, beforeRun string) {
+	renderer := NewRenderer(out)
 	fmt.Fprintf(out, "%s%s %s%s%s\n",
-		consts.UserCommandMark, accent(selectionSymbol), strong(CommandText(script)),
-		sideEffectSuffix(hasSideEffect), styledSuggestionDetails(reason, beforeRun))
+		consts.UserCommandMark, renderer.Accent(selectionSymbol), renderer.Strong(CommandText(script)),
+		sideEffectSuffix(renderer, hasSideEffect), styledSuggestionDetails(reason, beforeRun))
 }
 
 // ConfirmText prints the interactive confirmation prompt for a command.
@@ -90,22 +95,26 @@ func ShowCorrectedCommand(script string, hasSideEffect bool, reason, beforeRun s
 // The prompt uses the same selection symbol, ember accents and "·" separators
 // as the version banner, so all interactive output shares one visual language.
 func ConfirmText(script string, hasSideEffect bool, reason, beforeRun string) {
+	renderer := NewRenderer(out)
 	fmt.Fprintf(out, "%s%s%s %s%s%s  %s%s%s%s%s%s%s",
-		consts.UserCommandMark, "\r\x1b[2K", accent(selectionSymbol), strong(CommandText(script)),
-		sideEffectSuffix(hasSideEffect), styledSuggestionDetails(reason, beforeRun),
-		muted("["), success("enter"), muted(" "+separatorSymbol+" "),
-		muted("↑↓"), muted(" "+separatorSymbol+" "), failure("ctrl+c"), muted("]"))
+		consts.UserCommandMark, "\r\x1b[2K", renderer.Accent(selectionSymbol), renderer.Strong(CommandText(script)),
+		sideEffectSuffix(renderer, hasSideEffect), styledSuggestionDetails(reason, beforeRun),
+		renderer.Muted("["), renderer.Accent("enter"), renderer.Muted(" "+separatorSymbol+" "),
+		renderer.Muted("↑↓"), renderer.Muted(" "+separatorSymbol+" "), renderer.Failure("ctrl+c"), renderer.Muted("]"))
 }
 
 // PreviewHeader introduces the non-executable preview on the diagnostic stream.
 func PreviewHeader() {
-	fmt.Fprintln(out, accent("Preview:"), "original command not re-run; suggestions not applied.")
+	renderer := NewRenderer(out)
+	fmt.Fprintf(out, "%s %s\n", renderer.Title("preview"),
+		renderer.Muted("original command not re-run; suggestions not applied."))
 }
 
 // Debug writes a debug message when the debug setting is enabled.
 func Debug(format string, args ...any) {
 	if conf.Current().Debug {
-		fmt.Fprintf(out, "%s %s\n", muted("DEBUG:"), fmt.Sprintf(format, args...))
+		renderer := NewRenderer(out)
+		fmt.Fprintf(out, "%s %s\n", renderer.Muted("DEBUG"), fmt.Sprintf(format, args...))
 	}
 }
 
@@ -125,9 +134,4 @@ func DebugTime(message string) func() {
 	return func() {
 		Debug("%s took: %s", message, time.Since(started))
 	}
-}
-
-// Version reports the go-fuck, Go and shell versions.
-func Version(version, goVersion, shellInfo string) {
-	fmt.Fprintf(out, "%s %s using Go %s and %s\n", consts.AppName, version, goVersion, shellInfo)
 }

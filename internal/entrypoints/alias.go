@@ -2,6 +2,7 @@ package entrypoints
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/leafevans/go-fuck/v2/internal/argumentparser"
 	"github.com/leafevans/go-fuck/v2/internal/conf"
@@ -16,10 +17,10 @@ func printAlias(args *argumentparser.Args) int {
 	}
 
 	if args.EnableExperimentalInstantMode {
-		fmt.Println(shells.Current().InstantModeAlias(args.Alias))
+		fmt.Fprintln(os.Stdout, shells.Current().InstantModeAlias(args.Alias))
 		return 0
 	}
 
-	fmt.Println(shells.Current().AppAlias(args.Alias))
+	fmt.Fprintln(os.Stdout, shells.Current().AppAlias(args.Alias))
 	return 0
 }

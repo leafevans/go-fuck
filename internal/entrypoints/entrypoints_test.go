@@ -91,33 +91,36 @@ func resetEntrypointsState(t *testing.T) string {
 
 func TestMainVersion(t *testing.T) {
 	resetEntrypointsState(t)
-	buffer := &bytes.Buffer{}
-	logs.SetOutput(buffer)
 
-	code, _, _ := runMain(t, "go-fuck", "--version")
+	code, stdout, stderr := runMain(t, "go-fuck", "--version")
 	if code != 0 {
 		t.Fatalf("Main() = %d, want 0", code)
 	}
-	output := buffer.String()
-	if !strings.Contains(output, "go-fuck") || !strings.Contains(output, "using Go") {
-		t.Fatalf("version output = %q", output)
+	if stderr != "" {
+		t.Fatalf("version stderr = %q, want empty", stderr)
 	}
-	if !strings.Contains(output, "Bash") {
-		t.Fatalf("version output does not contain the detected shell: %q", output)
+	if !strings.Contains(stdout, "go-fuck") || !strings.Contains(stdout, "using Go") {
+		t.Fatalf("version output = %q", stdout)
+	}
+	if !strings.Contains(stdout, "Bash") {
+		t.Fatalf("version output does not contain the detected shell: %q", stdout)
 	}
 }
 
 func TestMainHelp(t *testing.T) {
 	resetEntrypointsState(t)
-	code, _, stderr := runMain(t, "go-fuck", "--help")
+	code, stdout, stderr := runMain(t, "go-fuck", "--help")
 	if code != 0 {
 		t.Fatalf("Main() = %d, want 0", code)
 	}
-	if !strings.Contains(stderr, "usage: go-fuck") {
-		t.Fatalf("help output = %q", stderr)
+	if stderr != "" {
+		t.Fatalf("help stderr = %q, want empty", stderr)
 	}
-	if !strings.Contains(stderr, "--alias") {
-		t.Fatalf("help output = %q", stderr)
+	if !strings.Contains(stdout, "go-fuck help") || !strings.Contains(stdout, "Usage") {
+		t.Fatalf("help output = %q", stdout)
+	}
+	if !strings.Contains(stdout, "--alias") {
+		t.Fatalf("help output = %q", stdout)
 	}
 }
 
@@ -129,6 +132,9 @@ func TestMainAlias(t *testing.T) {
 	}
 	if !strings.Contains(stdout, "TF_ALIAS") || !strings.Contains(stdout, "go-fuck") {
 		t.Fatalf("alias output = %q", stdout)
+	}
+	if strings.Contains(stdout, "\x1b[") || strings.Contains(stdout, "go-fuck alias") {
+		t.Fatalf("alias output is not raw shell code: %q", stdout)
 	}
 }
 
@@ -235,6 +241,9 @@ func TestMainUnknownFlag(t *testing.T) {
 	}
 	if !strings.Contains(stderr, "usage: go-fuck") {
 		t.Fatalf("usage output = %q", stderr)
+	}
+	if !strings.Contains(stderr, "FAIL") {
+		t.Fatalf("stderr = %q, want the shared failure status", stderr)
 	}
 }
 func TestMainForceCommand(t *testing.T) {

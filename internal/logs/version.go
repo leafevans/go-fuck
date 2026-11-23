@@ -37,30 +37,27 @@ type VersionInfo struct {
 	Module string
 }
 
-// PrintVersion prints the version banner.
+// PrintVersion prints the version banner to w.
 //
 // A plain one line version is printed when the output is not a terminal, so
 // scripts, pipes and tests keep the previous behavior. Interactive terminals
 // get a compact colored banner; verbose adds the config, instant mode, fzf and
 // alias details.
-func PrintVersion(info VersionInfo, verbose bool) {
-	if !isTerminal(out) {
-		Version(info.Version, info.GoVersion, info.Shell)
+func PrintVersion(w io.Writer, info VersionInfo, verbose bool) {
+	if !IsTerminal(w) {
+		fmt.Fprint(w, VersionLine(info.Version, info.GoVersion, info.Shell))
 		return
 	}
-	fmt.Fprint(out, renderBanner(info, verbose))
+	fmt.Fprint(w, renderBanner(info, verbose))
 }
 
-// OutputIsTerminal reports whether the standard output is a terminal.
-//
-// Callers can use it to skip work that is only needed for the interactive
-// version banner, for example detecting the shell version.
-func OutputIsTerminal() bool {
-	return isTerminal(out)
+// VersionLine returns the plain one-line version summary.
+func VersionLine(version, goVersion, shellInfo string) string {
+	return fmt.Sprintf("%s %s using Go %s and %s\n", consts.AppName, version, goVersion, shellInfo)
 }
 
-// isTerminal reports whether w is a character device such as a terminal.
-func isTerminal(w io.Writer) bool {
+// IsTerminal reports whether w is a character device such as a terminal.
+func IsTerminal(w io.Writer) bool {
 	file, ok := w.(*os.File)
 	if !ok {
 		return false

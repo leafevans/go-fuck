@@ -117,6 +117,22 @@ configuration file evaluates `go-fuck --alias`. To update a running shell immedi
 again (`eval "$(go-fuck --alias)"` in bash and zsh, `iex "$(go-fuck --alias)"` in PowerShell) or run
 `go-fuck --setup`. go-fuck warns when it detects an alias of an older format.
 
+## Upgrading from 2.35.x
+
+No settings, shell initialization or JSON migration is required. The next minor release standardizes
+the human-readable command interface and output streams:
+
+- `--help` and `--version` now write their normal information to stdout instead of stderr.
+- `--setup` success and reload messages now write to stdout; warnings and failures stay on stderr.
+- Human-readable reports use one `go-fuck <command>` heading and `OK`/`INFO`/`WARN`/`FAIL` status
+  vocabulary. Styling is limited to interactive terminals; pipes, `NO_COLOR` and `no_colors` remain
+  plain.
+- `--alias` remains raw shell code on stdout, and `--json` plus non-terminal `--list-rules` output
+  remain unchanged machine-readable contracts.
+
+Existing shell aliases already pass `--help` and `--version` through to go-fuck, so they do not need
+to be regenerated for this change.
+
 ## Future releases
 
 - **Patch** releases contain bug fixes and documentation changes.

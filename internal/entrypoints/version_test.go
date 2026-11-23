@@ -63,10 +63,10 @@ func TestPrintVersionRedirected(t *testing.T) {
 		shell   string
 	}{{false, "Bash"}, {true, "Bash 5.2"}} {
 		output.Reset()
-		printVersion(tc.verbose)
+		printVersionTo(&output, tc.verbose)
 		want := consts.AppName + " " + consts.Version + " using Go " + runtime.Version() + " and " + tc.shell + "\n"
 		if got := output.String(); got != want {
-			t.Errorf("printVersion(%t) = %q, want %q", tc.verbose, got, want)
+			t.Errorf("printVersionTo(%t) = %q, want %q", tc.verbose, got, want)
 		}
 	}
 }

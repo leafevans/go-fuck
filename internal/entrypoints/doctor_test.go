@@ -1,6 +1,7 @@
 package entrypoints
 
 import (
+	"bytes"
 	json "encoding/json/v2"
 	"os"
 	"path/filepath"
@@ -11,6 +12,24 @@ import (
 	"github.com/leafevans/go-fuck/v2/internal/conf"
 	"github.com/leafevans/go-fuck/v2/internal/consts"
 )
+
+func TestPrintDoctorReportPlain(t *testing.T) {
+	var output bytes.Buffer
+	printDoctorReport(&output, doctorReport{Checks: []doctorCheck{
+		{Name: "version", Status: doctorOK, Message: "2.35.1"},
+		{Name: "alias", Status: doctorWarn, Message: "missing", Hint: "run go-fuck --setup"},
+		{Name: "binary", Status: doctorFail, Message: "not found"},
+		{Name: "history", Status: doctorInfo, Message: "not checked"},
+	}})
+	for _, want := range []string{"go-fuck doctor", "OK", "WARN", "FAIL", "INFO", "run go-fuck --setup"} {
+		if !strings.Contains(output.String(), want) {
+			t.Fatalf("doctor output %q does not contain %q", output.String(), want)
+		}
+	}
+	if strings.Contains(output.String(), "\x1b[") {
+		t.Fatalf("buffered doctor output contains ANSI sequences: %q", output.String())
+	}
+}
 
 // writeTestFile creates a file below dir, creating the parent directories.
 func writeTestFile(t *testing.T, path, content string) {

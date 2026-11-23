@@ -145,7 +145,7 @@ func TestSelectCommandWithConfirmationAbort(t *testing.T) {
 	if selected := SelectCommand(commands); selected != nil {
 		t.Fatalf("SelectCommand() = %v, want nil", selected)
 	}
-	want := consts.UserCommandMark + "\r\x1b[2K› ls  [enter · ↑↓ · ctrl+c]" + newline + "× Aborted" + newline
+	want := consts.UserCommandMark + "\r\x1b[2K› ls  [enter · ↑↓ · ctrl+c]" + newline + "FAIL Aborted" + newline
 	if got := logOutput(); got != want {
 		t.Fatalf("unexpected output: %q, want %q", got, want)
 	}
@@ -235,7 +235,7 @@ func TestSelectCommandFzfAbort(t *testing.T) {
 	if selected := SelectCommand([]*types.CorrectedCommand{{Script: "ls"}}); selected != nil {
 		t.Fatalf("SelectCommand() = %v, want nil", selected)
 	}
-	if got, want := logOutput(), newline+"× Aborted"+newline; got != want {
+	if got, want := logOutput(), newline+"FAIL Aborted"+newline; got != want {
 		t.Fatalf("unexpected log output: %q, want %q", got, want)
 	}
 }

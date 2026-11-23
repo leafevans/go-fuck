@@ -1,5 +1,5 @@
 ​​​​​​​​​​[2K› git branch  [enter · ↑↓ · ctrl+c]
 ​​​​​​​​​​› git add .  (+side effect)
-[WARN] instant mode is not supported for Fish Shell
-× No fucks given
-DEBUG: trying rule: git_push
+WARN instant mode is not supported for Fish Shell
+FAIL No fucks given
+DEBUG trying rule: git_push

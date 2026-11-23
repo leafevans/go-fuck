@@ -40,20 +40,23 @@ var powerShellProfiles = func() []string {
 // is configured instead of the regular alias. Shells without instant mode
 // support fall back to the regular alias and report a warning.
 func setup(args *argumentparser.Args) int {
+	renderer := logs.NewRenderer(os.Stdout)
+	fmt.Fprintf(os.Stdout, "%s\n\n", renderer.Title("setup"))
+
 	if _, err := conf.Load(&conf.Args{Debug: args.Debug}); err != nil {
-		fmt.Fprintln(os.Stderr, logs.FailureLine(fmt.Sprintf("can't load settings: %v", err)))
+		printSetupFailure("can't load settings: %v", err)
 	}
 
 	shell := shells.Current()
 	configuration := shell.HowToConfigure()
 	if configuration == nil || configuration.Content == "" || configuration.Path == "" {
-		fmt.Fprintln(os.Stderr, logs.WarningLine(fmt.Sprintf("can't configure the %s shell automatically", shell.FriendlyName())))
+		printSetupWarning("can't configure the %s shell automatically", shell.FriendlyName())
 		return 1
 	}
 
 	if args.EnableExperimentalInstantMode {
 		if configuration.InstantContent == "" {
-			fmt.Fprintln(os.Stderr, logs.WarningLine(fmt.Sprintf("instant mode is not supported for %s, configuring the regular alias instead", shell.FriendlyName())))
+			printSetupWarning("instant mode is not supported for %s, configuring the regular alias instead", shell.FriendlyName())
 		} else {
 			instantConfiguration := *configuration
 			instantConfiguration.Content = configuration.InstantContent
@@ -82,13 +85,13 @@ func setup(args *argumentparser.Args) int {
 			printManualConfiguration(configuration)
 			return 0
 		}
-		fmt.Fprintln(os.Stderr, logs.FailureLine(fmt.Sprintf("can't read %s: %v", path, err)))
+		printSetupFailure("can't read %s: %v", path, err)
 		return 1
 	}
 
 	if hasConfigurationLine(existing, configuration.Content) {
 		printConfigured(shell.FriendlyName(), path, true)
-		fmt.Fprintf(os.Stderr, "%s %s\n", logs.Muted("Reload it with:"), logs.Strong(configuration.Reload))
+		printReload(configuration.Reload)
 		return 0
 	}
 
@@ -97,22 +100,22 @@ func setup(args *argumentparser.Args) int {
 	// not append a second initialization line.
 	if args.EnableExperimentalInstantMode {
 		if changed, err := replaceInstantModeLine(path, existing, configuration.Content); err != nil {
-			fmt.Fprintln(os.Stderr, logs.FailureLine(fmt.Sprintf("can't update %s: %v", path, err)))
+			printSetupFailure("can't update %s: %v", path, err)
 			return 1
 		} else if changed {
 			printConfigured(shell.FriendlyName(), path, false)
-			fmt.Fprintf(os.Stderr, "%s %s\n", logs.Muted("Reload it with:"), logs.Strong(configuration.Reload))
+			printReload(configuration.Reload)
 			return 0
 		}
 	}
 
 	if err := appendConfigurationLine(path, configuration.Content, existing); err != nil {
-		fmt.Fprintln(os.Stderr, logs.FailureLine(fmt.Sprintf("can't update %s: %v", path, err)))
+		printSetupFailure("can't update %s: %v", path, err)
 		return 1
 	}
 
 	printConfigured(shell.FriendlyName(), path, false)
-	fmt.Fprintf(os.Stderr, "%s %s\n", logs.Muted("Reload it with:"), logs.Strong(configuration.Reload))
+	printReload(configuration.Reload)
 	return 0
 }
 
@@ -136,12 +139,12 @@ func setupPowerShell(shell shells.Shell, configuration *shells.Configuration) in
 	for _, path := range paths {
 		existing, err := os.ReadFile(path)
 		if err != nil && !os.IsNotExist(err) {
-			fmt.Fprintln(os.Stderr, logs.FailureLine(fmt.Sprintf("can't read %s: %v", path, err)))
+			printSetupFailure("can't read %s: %v", path, err)
 			return 1
 		}
 		if os.IsNotExist(err) {
 			if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-				fmt.Fprintln(os.Stderr, logs.FailureLine(fmt.Sprintf("can't create %s: %v", filepath.Dir(path), err)))
+				printSetupFailure("can't create %s: %v", filepath.Dir(path), err)
 				return 1
 			}
 			existing = nil
@@ -152,7 +155,7 @@ func setupPowerShell(shell shells.Shell, configuration *shells.Configuration) in
 			continue
 		}
 		if err := appendConfigurationLine(path, configuration.Content, existing); err != nil {
-			fmt.Fprintln(os.Stderr, logs.FailureLine(fmt.Sprintf("can't update %s: %v", path, err)))
+			printSetupFailure("can't update %s: %v", path, err)
 			return 1
 		}
 		printConfigured(shell.FriendlyName(), path, false)
@@ -160,7 +163,7 @@ func setupPowerShell(shell shells.Shell, configuration *shells.Configuration) in
 	}
 
 	if configured > 0 || alreadyConfigured > 0 {
-		fmt.Fprintf(os.Stderr, "%s %s\n", logs.Muted("Reload it with:"), logs.Strong(configuration.Reload))
+		printReload(configuration.Reload)
 	}
 	return 0
 }
@@ -303,18 +306,38 @@ func appendConfigurationLine(path, content string, existing []byte) error {
 
 // printConfigured reports that the shell configuration was found or updated.
 func printConfigured(shellName, path string, alreadyConfigured bool) {
+	renderer := logs.NewRenderer(os.Stdout)
 	state := "is now configured for"
 	if alreadyConfigured {
 		state = "is already configured for"
 	}
-	fmt.Fprintf(os.Stderr, "%s %s %s (%s).\n",
-		logs.Strong("go-fuck"), state, logs.Accent(shellName), logs.Muted(path))
+	fmt.Fprintf(os.Stdout, "%s %s %s %s\n",
+		renderer.StatusLabel(logs.StatusOK), renderer.Strong(shellName), state, renderer.Muted(path))
 }
 
 // printManualConfiguration prints the line that has to be added manually.
 func printManualConfiguration(configuration *shells.Configuration) {
-	fmt.Fprintf(os.Stderr, "%s %s\n\n  %s\n\n%s %s\n",
-		logs.Strong("Add the following line to"), logs.Muted(configuration.Path),
-		logs.Strong(configuration.Content),
-		logs.Muted("Then reload it with:"), logs.Strong(configuration.Reload))
+	renderer := logs.NewRenderer(os.Stdout)
+	fmt.Fprintf(os.Stdout, "%s %s %s\n\n  %s\n\n%s %s\n",
+		renderer.StatusLabel(logs.StatusInfo), "Add the following line to", renderer.Muted(configuration.Path),
+		renderer.Strong(configuration.Content),
+		renderer.Muted("Then reload with:"), renderer.Strong(configuration.Reload))
+}
+
+// printReload prints the command that reloads the shell configuration.
+func printReload(command string) {
+	renderer := logs.NewRenderer(os.Stdout)
+	fmt.Fprintf(os.Stdout, "%s %s\n", renderer.Muted("Reload with:"), renderer.Strong(command))
+}
+
+// printSetupFailure reports a failed setup step on stderr.
+func printSetupFailure(format string, args ...any) {
+	renderer := logs.NewRenderer(os.Stderr)
+	fmt.Fprintln(os.Stderr, renderer.Diagnostic(logs.StatusFail, fmt.Sprintf(format, args...)))
+}
+
+// printSetupWarning reports a recoverable setup warning on stderr.
+func printSetupWarning(format string, args ...any) {
+	renderer := logs.NewRenderer(os.Stderr)
+	fmt.Fprintln(os.Stderr, renderer.Diagnostic(logs.StatusWarn, fmt.Sprintf(format, args...)))
 }

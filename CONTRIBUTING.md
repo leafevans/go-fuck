@@ -100,10 +100,10 @@ go run ./tools/gen-rule-list
   build green.
 - **Standard library only.** Do not add third-party module dependencies. `go.mod` intentionally has
   no `require` block. If something cannot be done with the standard library, open an issue first.
-- **Errors.** Return errors instead of panicking. Wrap errors with `%w` so callers can inspect them
-  with `errors.Is`/`errors.As`. Rules must not print to stdout; stdout is reserved for the
-  corrected command that the shell alias evaluates. Use the helpers in `internal/logs` for user
-  facing messages, which go to stderr.
+- **Errors and output streams.** Return errors instead of panicking. Wrap errors with `%w` so callers
+  can inspect them with `errors.Is`/`errors.As`. Rules must not print directly. Normal information
+  commands write to stdout; warnings, errors, debug messages and correction-flow diagnostics write
+  to stderr. Use the writer-aware renderers in `internal/logs` so redirected output stays plain.
 - **Documentation.** Every package has a package comment, and exported identifiers are documented
   following the usual Go doc conventions.
 - **Platform specifics.** Keep OS specific code in files with `_windows.go`/`_unix.go` suffixes

@@ -39,12 +39,15 @@ func TestMainSetupBash(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	code, _, stderr := runMain(t, "go-fuck", "--setup")
+	code, stdout, stderr := runMain(t, "go-fuck", "--setup")
 	if code != 0 {
 		t.Fatalf("Main(--setup) = %d, want 0; stderr = %s", code, stderr)
 	}
-	if !strings.Contains(stderr, "now configured") {
-		t.Fatalf("stderr = %q, want a success message", stderr)
+	if !strings.Contains(stdout, "now configured") {
+		t.Fatalf("stdout = %q, want a success message", stdout)
+	}
+	if stderr != "" {
+		t.Fatalf("stderr = %q, want empty", stderr)
 	}
 	content := readFile(t, configPath)
 	if !strings.Contains(content, "export EXISTING=1") {
@@ -54,12 +57,15 @@ func TestMainSetupBash(t *testing.T) {
 		t.Fatalf("configuration contains %d alias lines, want 1: %q", got, content)
 	}
 
-	code, _, stderr = runMain(t, "go-fuck", "--setup")
+	code, stdout, stderr = runMain(t, "go-fuck", "--setup")
 	if code != 0 {
 		t.Fatalf("second Main(--setup) = %d, want 0", code)
 	}
-	if !strings.Contains(stderr, "already configured") {
-		t.Fatalf("stderr = %q, want an already configured message", stderr)
+	if !strings.Contains(stdout, "already configured") {
+		t.Fatalf("stdout = %q, want an already configured message", stdout)
+	}
+	if stderr != "" {
+		t.Fatalf("stderr = %q, want empty", stderr)
 	}
 	if got := strings.Count(readFile(t, configPath), "go-fuck --alias"); got != 1 {
 		t.Fatalf("configuration contains %d alias lines after the second run, want 1", got)
@@ -110,12 +116,15 @@ func TestMainSetupManualPowerShell(t *testing.T) {
 	t.Setenv("TF_SHELL", "pwsh")
 	stubPowerShellProfiles(t, nil)
 
-	code, _, stderr := runMain(t, "go-fuck", "--setup")
+	code, stdout, stderr := runMain(t, "go-fuck", "--setup")
 	if code != 0 {
 		t.Fatalf("Main(--setup) = %d, want 0", code)
 	}
-	if !strings.Contains(stderr, "Add the following line") || !strings.Contains(stderr, "go-fuck --alias") {
-		t.Fatalf("stderr = %q, want manual configuration instructions", stderr)
+	if !strings.Contains(stdout, "Add the following line") || !strings.Contains(stdout, "go-fuck --alias") {
+		t.Fatalf("stdout = %q, want manual configuration instructions", stdout)
+	}
+	if stderr != "" {
+		t.Fatalf("stderr = %q, want empty", stderr)
 	}
 }
 
@@ -133,15 +142,18 @@ func TestMainSetupPowerShell(t *testing.T) {
 	missingProfile := filepath.Join(configDir, "Documents", "PowerShell", "Microsoft.PowerShell_profile.ps1")
 	stubPowerShellProfiles(t, []string{existingProfile, missingProfile})
 
-	code, _, stderr := runMain(t, "go-fuck", "--setup")
+	code, stdout, stderr := runMain(t, "go-fuck", "--setup")
 	if code != 0 {
 		t.Fatalf("Main(--setup) = %d, want 0; stderr = %s", code, stderr)
 	}
-	if got := strings.Count(stderr, "now configured"); got != 2 {
-		t.Fatalf("stderr = %q, want two success messages", stderr)
+	if got := strings.Count(stdout, "now configured"); got != 2 {
+		t.Fatalf("stdout = %q, want two success messages", stdout)
 	}
-	if !strings.Contains(stderr, existingProfile) || !strings.Contains(stderr, missingProfile) {
-		t.Fatalf("stderr = %q, want both profile paths", stderr)
+	if !strings.Contains(stdout, existingProfile) || !strings.Contains(stdout, missingProfile) {
+		t.Fatalf("stdout = %q, want both profile paths", stdout)
+	}
+	if stderr != "" {
+		t.Fatalf("stderr = %q, want empty", stderr)
 	}
 
 	if content := readFile(t, existingProfile); !strings.Contains(content, "# existing profile") {
@@ -154,12 +166,15 @@ func TestMainSetupPowerShell(t *testing.T) {
 		t.Fatalf("created profile contains %d alias lines, want 1", got)
 	}
 
-	code, _, stderr = runMain(t, "go-fuck", "--setup")
+	code, stdout, stderr = runMain(t, "go-fuck", "--setup")
 	if code != 0 {
 		t.Fatalf("second Main(--setup) = %d, want 0", code)
 	}
-	if !strings.Contains(stderr, "already configured") {
-		t.Fatalf("stderr = %q, want an already configured message", stderr)
+	if !strings.Contains(stdout, "already configured") {
+		t.Fatalf("stdout = %q, want an already configured message", stdout)
+	}
+	if stderr != "" {
+		t.Fatalf("stderr = %q, want empty", stderr)
 	}
 	if got := strings.Count(readFile(t, existingProfile), "go-fuck --alias"); got != 1 {
 		t.Fatalf("existing profile contains %d alias lines after the second run, want 1", got)
@@ -195,12 +210,15 @@ func TestMainSetupInstantModeUnsupportedShell(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	code, _, stderr := runMain(t, "go-fuck", "--setup", "--enable-experimental-instant-mode")
+	code, stdout, stderr := runMain(t, "go-fuck", "--setup", "--enable-experimental-instant-mode")
 	if code != 0 {
 		t.Fatalf("Main(--setup --enable-experimental-instant-mode) = %d, want 0; stderr = %s", code, stderr)
 	}
 	if !strings.Contains(stderr, "instant mode is not supported") {
 		t.Fatalf("stderr = %q, want an instant mode warning", stderr)
+	}
+	if !strings.Contains(stdout, "now configured") {
+		t.Fatalf("stdout = %q, want the regular alias success message", stdout)
 	}
 	content := readFile(t, configPath)
 	if strings.Contains(content, "--enable-experimental-instant-mode") {
@@ -233,12 +251,15 @@ func TestMainSetupMissingConfigFile(t *testing.T) {
 	resetEntrypointsState(t)
 	t.Setenv("TF_SHELL", "zsh")
 
-	code, _, stderr := runMain(t, "go-fuck", "--setup")
+	code, stdout, stderr := runMain(t, "go-fuck", "--setup")
 	if code != 0 {
 		t.Fatalf("Main(--setup) = %d, want 0", code)
 	}
-	if !strings.Contains(stderr, "~/.zshrc") {
-		t.Fatalf("stderr = %q, want the zsh configuration path", stderr)
+	if !strings.Contains(stdout, "~/.zshrc") {
+		t.Fatalf("stdout = %q, want the zsh configuration path", stdout)
+	}
+	if stderr != "" {
+		t.Fatalf("stderr = %q, want empty", stderr)
 	}
 }
 

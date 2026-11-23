@@ -19,14 +19,6 @@ func TestThemeStyles(t *testing.T) {
 			t.Fatalf("%s(value) = %q", name, got)
 		}
 	}
-	failureLine := FailureLine("boom")
-	if !strings.Contains(failureLine, "boom") {
-		t.Fatalf("FailureLine() = %q", failureLine)
-	}
-	warningLine := WarningLine("careful")
-	if !strings.Contains(warningLine, "careful") || !strings.Contains(warningLine, "WARN") {
-		t.Fatalf("WarningLine() = %q", warningLine)
-	}
 	_ = ColorsEnabled()
 }
 

@@ -12,13 +12,19 @@ func TestPlainHelp(t *testing.T) {
 	if strings.Contains(help, "\x1b[") {
 		t.Fatalf("plain help contains escape sequences: %q", help)
 	}
-	for _, want := range []string{"usage: go-fuck", "Magnificent app", "options:", "-v, --version"} {
+	for _, want := range []string{"go-fuck help", "Usage", "Description", "Options", "-h, --help", "-v, --version"} {
 		if !strings.Contains(help, want) {
 			t.Fatalf("plain help does not contain %q:\n%s", want, help)
 		}
 	}
-	if !strings.Contains(help, "  -v, --version                        show program's version number and exit") {
-		t.Fatalf("plain help options are not aligned:\n%s", help)
+	for _, line := range strings.Split(help, "\n") {
+		if !strings.Contains(line, "-h, --help") {
+			continue
+		}
+		if column := strings.Index(line, "show this help and exit"); column != 2+helpOptionWidth {
+			t.Fatalf("plain help description starts at column %d, want %d:\n%s",
+				column, 2+helpOptionWidth, help)
+		}
 	}
 }
 
@@ -32,12 +38,12 @@ func TestStyledHelp(t *testing.T) {
 	if !strings.Contains(help, "\x1b[") {
 		t.Fatalf("styled help has no escape sequences: %q", help)
 	}
-	for _, want := range []string{"usage:", "options:", "-v, --version", "Magnificent app"} {
+	for _, want := range []string{"go-fuck", "help", "Usage", "Options", "-v, --version", "Magnificent app"} {
 		if !strings.Contains(help, want) {
 			t.Fatalf("styled help does not contain %q:\n%s", want, help)
 		}
 	}
-	if !strings.Contains(help, "show program's version number and exit") {
+	if !strings.Contains(help, "show version information and exit") {
 		t.Fatalf("styled help lost an option description:\n%s", help)
 	}
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/leafevans/go-fuck/v2/internal/argumentparser"
 	"github.com/leafevans/go-fuck/v2/internal/consts"
+	"github.com/leafevans/go-fuck/v2/internal/logs"
 	"github.com/leafevans/go-fuck/v2/internal/shells"
 	"github.com/leafevans/go-fuck/v2/internal/system"
 )
@@ -24,14 +25,16 @@ func dispatch() int {
 
 	args, err := argumentparser.Parse(os.Args)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, consts.ExecutableName()+": "+err.Error())
-		fmt.Fprintln(os.Stderr, argumentparser.Usage())
+		renderer := logs.NewRenderer(os.Stderr)
+		fmt.Fprintln(os.Stderr, renderer.Diagnostic(logs.StatusFail,
+			consts.ExecutableName()+": "+err.Error()))
+		fmt.Fprintln(os.Stderr, argumentparser.UsageFor(os.Stderr))
 		return 2
 	}
 
 	switch {
 	case args.Help:
-		fmt.Fprintln(os.Stderr, argumentparser.Help())
+		fmt.Fprint(os.Stdout, argumentparser.HelpFor(os.Stdout))
 		return 0
 	case args.Version:
 		ensureShell()
@@ -54,7 +57,7 @@ func dispatch() int {
 		ensureShell()
 		return fixCommand(args)
 	default:
-		fmt.Fprintln(os.Stderr, argumentparser.Usage())
+		fmt.Fprintln(os.Stderr, argumentparser.UsageFor(os.Stderr))
 		return 0
 	}
 }
@@ -74,8 +77,10 @@ func ensureShell() {
 func recoverEntrypoints(fn func() int) (code int) {
 	defer func() {
 		if recovered := recover(); recovered != nil {
-			fmt.Fprintln(os.Stderr, consts.ExecutableName()+": internal error: "+fmt.Sprint(recovered))
-			fmt.Fprintln(os.Stderr, "Please report this at https://github.com/leafevans/go-fuck/issues")
+			renderer := logs.NewRenderer(os.Stderr)
+			fmt.Fprintln(os.Stderr, renderer.Diagnostic(logs.StatusFail,
+				consts.ExecutableName()+": internal error: "+fmt.Sprint(recovered)))
+			fmt.Fprintln(os.Stderr, renderer.Muted("Please report this at https://github.com/leafevans/go-fuck/issues"))
 			code = 1
 		}
 	}()

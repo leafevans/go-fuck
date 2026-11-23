@@ -3,12 +3,14 @@ package entrypoints
 import (
 	json "encoding/json/v2"
 	"fmt"
+	"io"
 	"os"
 	"slices"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/argumentparser"
 	"github.com/leafevans/go-fuck/v2/internal/consts"
+	"github.com/leafevans/go-fuck/v2/internal/logs"
 	"github.com/leafevans/go-fuck/v2/internal/rules"
 	"github.com/leafevans/go-fuck/v2/internal/types"
 )
@@ -50,14 +52,32 @@ func listRules(args *argumentparser.Args) int {
 		}
 		encoded, err := json.Marshal(listed)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, consts.ExecutableName()+": cannot encode the rule list: "+err.Error())
+			renderer := logs.NewRenderer(os.Stderr)
+			fmt.Fprintln(os.Stderr, renderer.Diagnostic(logs.StatusFail,
+				consts.ExecutableName()+": cannot encode the rule list: "+err.Error()))
 			return 1
 		}
 		fmt.Fprintln(os.Stdout, string(encoded))
 		return 0
 	}
-	for _, rule := range all {
-		fmt.Fprintln(os.Stdout, rule.Name)
-	}
+	printTextRules(os.Stdout, all, logs.IsTerminal(os.Stdout))
 	return 0
+}
+
+// printTextRules prints the sorted rule names. A terminal gets a short report
+// heading; redirected output remains one rule name per line.
+func printTextRules(w io.Writer, all []*types.Rule, terminal bool) {
+	renderer := logs.NewRenderer(w)
+	if terminal {
+		fmt.Fprintln(w, renderer.Title("rules"))
+		fmt.Fprintln(w)
+		fmt.Fprintln(w, renderer.Diagnostic(logs.StatusInfo, fmt.Sprintf("%d built-in rules", len(all))))
+		fmt.Fprintln(w)
+	}
+	for _, rule := range all {
+		if terminal {
+			fmt.Fprint(w, "  ")
+		}
+		fmt.Fprintln(w, rule.Name)
+	}
 }

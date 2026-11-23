@@ -230,7 +230,7 @@ func TestRuleFailureIsReported(t *testing.T) {
 	firstLine, _, _ := strings.Cut(buffer.String(), string(rune(10)))
 	// The warning prefix is colored, so the label and the title are checked
 	// separately instead of relying on one contiguous string.
-	if !strings.Contains(firstLine, "[WARN]") || !strings.Contains(firstLine, "Rule test:") {
+	if !strings.Contains(firstLine, "WARN") || !strings.Contains(firstLine, "Rule test:") {
 		t.Fatalf("unexpected log output: %q", buffer.String())
 	}
 }

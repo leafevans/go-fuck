@@ -8,6 +8,8 @@ package argumentparser
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v2/internal/conf"
@@ -171,23 +173,23 @@ type helpOption struct {
 
 // helpOptions lists the command line options in help order.
 var helpOptions = []helpOption{
-	{"-v, --version", "show program's version number and exit"},
-	{"-a, --alias [ALIAS]", "[custom-alias-name] prints alias for current shell"},
-	{"--setup", "configure the shell alias in the shell configuration file"},
-	{"-l, --shell-logger SHELL_LOGGER", "log shell output to the file"},
-	{"--enable-experimental-instant-mode", "enable instant mode for the alias initialization"},
-	{"-h, --help", "show this help message and exit"},
-	{"-d, --debug", "enable debug output"},
+	{"-h, --help", "show this help and exit"},
+	{"-v, --version", "show version information and exit"},
+	{"-a, --alias[=ALIAS]", "print the shell alias; ALIAS overrides TF_ALIAS"},
+	{"--setup", "write the alias to the shell configuration file"},
+	{"-l, --shell-logger FILE", "log shell output to FILE"},
+	{"--enable-experimental-instant-mode", "configure instant mode during alias setup"},
+	{"-d, --debug", "print debug information to stderr"},
 	{"--doctor", "print a diagnostic report of the shell integration"},
 	{"--list-rules", "print the names of the built-in rules and exit"},
-	{"--force-command FORCE_COMMAND", "fix this command instead of the previous one"},
-	{"--output-from FILE", "read the output of the fixed command from FILE (or stdin with -) instead of re-running it"},
+	{"--force-command CMD", "fix CMD instead of the previous command"},
+	{"--output-from FILE", "read failed command output from FILE (or stdin with -) instead of re-running it"},
 	{"--no-rerun", "do not re-run the original command to collect its output"},
 	{"--preview", "show suggestions without re-running the original or applying a fix"},
-	{"--json", "print suggestions without executing them (use --no-rerun to avoid re-running the original)"},
-	{"-y, --yes, --yeah, --hard", "execute fixed command without confirmation"},
-	{"-r, --repeat", "repeat on failure"},
-	{"command", "command that should be fixed"},
+	{"--json", "print suggestions without executing them"},
+	{"-y, --yes, --yeah, --hard", "execute the fixed command without confirmation"},
+	{"-r, --repeat", "repeat when the corrected command fails"},
+	{"command ...", "command to fix"},
 }
 
 // helpOptionWidth is the width of the option column so that the descriptions
@@ -196,14 +198,24 @@ const helpOptionWidth = 37
 
 // Usage returns the one line usage message.
 func Usage() string {
-	return usageText(logs.OutputIsTerminal() && logs.ColorsEnabled())
+	return UsageFor(os.Stderr)
+}
+
+// UsageFor returns the one line usage message for w.
+func UsageFor(w io.Writer) string {
+	return usageText(logs.IsTerminal(w) && logs.ColorsEnabled())
+}
+
+// usageFlags returns the command-line flags without the executable name.
+func usageFlags() string {
+	return "[-h] [-v] [-a [ALIAS]] [-l FILE] [--setup] " +
+		"[--enable-experimental-instant-mode] [-d] [--doctor] [--list-rules] " +
+		"[--force-command CMD] [--output-from FILE] [--no-rerun] [--preview] [--json] [-y | -r] [command ...]"
 }
 
 // usageText returns the usage line, optionally styled with the ember theme.
 func usageText(styled bool) string {
-	rest := consts.ExecutableName() + " [-v] [-a [ALIAS]] [-l SHELL_LOGGER] [--setup] " +
-		"[--enable-experimental-instant-mode] [-h] [-d] [--doctor] [--list-rules] " +
-		"[--force-command FORCE_COMMAND] [--output-from FILE] [--no-rerun] [--preview] [--json] [-y | -r] [command ...]"
+	rest := consts.ExecutableName() + " " + usageFlags()
 	if !styled {
 		return "usage: " + rest
 	}
@@ -213,22 +225,40 @@ func usageText(styled bool) string {
 
 // Help returns the full help message.
 func Help() string {
-	return helpText(logs.OutputIsTerminal() && logs.ColorsEnabled())
+	return HelpFor(os.Stdout)
+}
+
+// HelpFor returns the full help message for w.
+func HelpFor(w io.Writer) string {
+	return helpText(logs.IsTerminal(w) && logs.ColorsEnabled())
 }
 
 // helpText returns the full help message, optionally styled with the ember
 // theme.
 func helpText(styled bool) string {
-	lines := []string{
-		usageText(styled),
-		"",
-		"Magnificent app which corrects your previous console command.",
-		"",
-		"options:",
-	}
+	app := consts.ExecutableName()
+	title := app + " help"
+	usage := app + " " + usageFlags()
 	if styled {
-		lines[2] = logs.Muted(lines[2])
-		lines[4] = logs.Accent(lines[4])
+		title = logs.Strong(app) + " " + logs.Accent("help")
+		usage = logs.Strong(app) + " " + logs.Muted(usageFlags())
+	}
+	heading := func(text string) string {
+		if styled {
+			return logs.Accent(text)
+		}
+		return text
+	}
+	lines := []string{
+		title,
+		"",
+		heading("Usage"),
+		"  " + usage,
+		"",
+		heading("Description"),
+		"  Magnificent app which corrects your previous console command.",
+		"",
+		heading("Options"),
 	}
 	for _, option := range helpOptions {
 		flags := fmt.Sprintf("%-*s", helpOptionWidth, option.flags)

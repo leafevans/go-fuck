@@ -28,7 +28,7 @@ func resetLogsState(t *testing.T) *bytes.Buffer {
 func TestWarn(t *testing.T) {
 	buffer := resetLogsState(t)
 	Warn("title")
-	if got, want := buffer.String(), "[WARN] title"+newline; got != want {
+	if got, want := buffer.String(), "WARN title"+newline; got != want {
 		t.Fatalf("Warn() wrote %q, want %q", got, want)
 	}
 }
@@ -39,8 +39,8 @@ func TestWarnWithColors(t *testing.T) {
 	conf.Current().NoColors = false
 	Warn("title")
 	got := buffer.String()
-	if !strings.Contains(got, foreYellow) || !strings.Contains(got, "[WARN]") || !strings.Contains(got, "title") {
-		t.Fatalf("Warn() wrote %q, want colored output", got)
+	if strings.Contains(got, "\x1b[") || !strings.Contains(got, "WARN") || !strings.Contains(got, "title") {
+		t.Fatalf("Warn() wrote %q, want plain output for a non-terminal buffer", got)
 	}
 }
 
@@ -48,7 +48,7 @@ func TestException(t *testing.T) {
 	buffer := resetLogsState(t)
 	Exception("Can't do it", errors.New("boom"))
 	got := buffer.String()
-	if !strings.Contains(got, "[WARN] Can't do it:") {
+	if !strings.Contains(got, "WARN Can't do it:") {
 		t.Fatalf("Exception() wrote %q", got)
 	}
 	if !strings.Contains(got, "boom") {
@@ -62,7 +62,7 @@ func TestException(t *testing.T) {
 func TestRuleFailed(t *testing.T) {
 	buffer := resetLogsState(t)
 	RuleFailed("test", errors.New("denied"))
-	if !strings.Contains(buffer.String(), "[WARN] Rule test:") {
+	if !strings.Contains(buffer.String(), "WARN Rule test:") {
 		t.Fatalf("RuleFailed() wrote %q", buffer.String())
 	}
 }
@@ -70,7 +70,7 @@ func TestRuleFailed(t *testing.T) {
 func TestFailed(t *testing.T) {
 	buffer := resetLogsState(t)
 	Failed("No fucks given")
-	if got, want := buffer.String(), "× No fucks given"+newline; got != want {
+	if got, want := buffer.String(), "FAIL No fucks given"+newline; got != want {
 		t.Fatalf("Failed() wrote %q, want %q", got, want)
 	}
 }
@@ -109,7 +109,7 @@ func TestDebug(t *testing.T) {
 
 	conf.Current().Debug = true
 	Debug("hello %s", "world")
-	if got, want := buffer.String(), "DEBUG: hello world"+newline; got != want {
+	if got, want := buffer.String(), "DEBUG hello world"+newline; got != want {
 		t.Fatalf("Debug() wrote %q, want %q", got, want)
 	}
 }
@@ -119,7 +119,7 @@ func TestDebugTime(t *testing.T) {
 	conf.Current().Debug = true
 	stop := DebugTime("Total")
 	stop()
-	if got := buffer.String(); !strings.Contains(got, "DEBUG: Total took:") {
+	if got := buffer.String(); !strings.Contains(got, "DEBUG Total took:") {
 		t.Fatalf("DebugTime() wrote %q", got)
 	}
 }
@@ -132,13 +132,11 @@ func TestNewLine(t *testing.T) {
 	}
 }
 
-func TestVersion(t *testing.T) {
-	buffer := resetLogsState(t)
-	Version("1.2.3", "go1.22", "Bash 5.2")
-	got := buffer.String()
+func TestVersionLine(t *testing.T) {
+	got := VersionLine("1.2.3", "go1.22", "Bash 5.2")
 	for _, part := range []string{consts.AppName, "1.2.3", "go1.22", "Bash 5.2"} {
 		if !strings.Contains(got, part) {
-			t.Fatalf("Version() wrote %q, want it to contain %q", got, part)
+			t.Fatalf("VersionLine() = %q, want it to contain %q", got, part)
 		}
 	}
 }

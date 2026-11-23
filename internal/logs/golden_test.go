@@ -58,13 +58,9 @@ func TestGoldenBanner(t *testing.T) {
 }
 
 // goldenMessages renders the interactive diagnostics used by the golden test.
-func goldenMessages(t *testing.T, truecolor bool) string {
+func goldenMessages(t *testing.T) string {
 	t.Helper()
 	buffer := resetLogsState(t)
-	if truecolor {
-		setBannerEnvironment(t, "xterm-256color", "truecolor", "", "")
-		conf.Current().NoColors = false
-	}
 	ConfirmText("git branch", false, "", "")
 	buffer.WriteString(newline)
 	ShowCorrectedCommand("git add .", true, "", "")
@@ -75,20 +71,7 @@ func goldenMessages(t *testing.T, truecolor bool) string {
 	return buffer.String()
 }
 
-// TestGoldenMessages locks the confirmation prompt and the diagnostics for the
-// plain and the 24 bit color profiles.
+// TestGoldenMessages locks the plain confirmation prompt and diagnostics.
 func TestGoldenMessages(t *testing.T) {
-	cases := []struct {
-		name      string
-		truecolor bool
-		wantFile  string
-	}{
-		{"none", false, "messages_none.golden"},
-		{"truecolor", true, "messages_truecolor.golden"},
-	}
-	for _, testCase := range cases {
-		t.Run(testCase.name, func(t *testing.T) {
-			assertGolden(t, testCase.wantFile, goldenMessages(t, testCase.truecolor))
-		})
-	}
+	assertGolden(t, "messages_none.golden", goldenMessages(t))
 }

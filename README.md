@@ -216,8 +216,9 @@ shell, so the setup is the same everywhere and always matches the installed bina
 ### Automatic setup
 
 `go-fuck --setup` writes the alias line to the detected shell's configuration file and prints the
-command that reloads it. Running it again is safe: when the line is already present go-fuck reports
-that the shell is already configured and leaves the file untouched.
+command that reloads it to stdout. Warnings and failures are written to stderr. Running it again is
+safe: when the line is already present go-fuck reports that the shell is already configured and
+leaves the file untouched.
 
 Pass `--enable-experimental-instant-mode` to configure [instant mode](#instant-mode)
 instead of the regular alias; shells without instant mode support warn and fall back to the regular
@@ -336,10 +337,20 @@ Common options:
 | `--preview`                          | show suggestions without re-running the original command, prompting, or applying a fix; combine with `--json` for structured output |
 | `--json`                             | print suggestions as JSON without executing them; add `--no-rerun` to prevent re-running the original command |
 | `-d`, `--debug`                      | print debug information to stderr                                                                                                                                               |
-| `-v`, `--version`                    | print version/build information: a themed banner in a terminal, one line when piped; `--debug --version` adds the config path, executable path, build module, instant mode, fzf and alias state |
-| `-h`, `--help`                       | print the full option list                                                                                                                                                      |
+| `-v`, `--version`                    | print version/build information to stdout: a themed banner in a terminal, one line when piped; `--debug --version` adds the config path, executable path, build module, instant mode, fzf and alias state |
+| `-h`, `--help`                       | print the full option list to stdout                                                                                                                                            |
+| `-a`, `--alias[=ALIAS]`              | print the evaluable shell alias to stdout; optional `ALIAS` overrides `TF_ALIAS`                                                                                               |
 | `--setup`                            | write the alias to the detected shell's configuration file (bash, zsh, fish, tcsh, PowerShell)                                                                                  |
 | `--enable-experimental-instant-mode` | alias initialization flag: with `--alias` or `--setup`, configure the instant mode (bash/zsh on Linux and macOS, PowerShell on Windows)                                         |
+
+Normal information from the information commands is written to stdout. Warnings, errors, debug
+messages and correction-flow diagnostics are written to stderr. Human-readable output uses the same
+`go-fuck <command>` heading, Ember colors, aligned fields and `OK`/`INFO`/`WARN`/`FAIL` statuses only
+when the destination is a terminal. Pipes, `NO_COLOR` and `no_colors` receive plain text.
+
+`-a` is deliberately unstyled: its stdout is passed directly to `eval`, `source` or `iex`.
+`--json`, `--doctor --json` and `--list-rules --json` are also machine-readable output and are never
+decorated.
 
 ### Troubleshooting
 
@@ -364,6 +375,9 @@ To list the rule names accepted by the `rules`, `exclude_rules` and `priority` s
 ```console
 $ go-fuck --list-rules
 ```
+
+In a terminal the list has a short heading and the rule count. When stdout is piped or redirected,
+the output remains exactly one rule name per line.
 
 `go-fuck --list-rules --json` prints one JSON object per rule with its `name`, `priority`,
 `enabled_by_default`, `requires_output` and `side_effect` fields, which is convenient for

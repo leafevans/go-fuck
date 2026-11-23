@@ -68,7 +68,6 @@ var (
 // covered by the common console fonts.
 const (
 	selectionSymbol = "›"
-	failureSymbol   = "×"
 	separatorSymbol = "·"
 )
 
@@ -183,16 +182,4 @@ func Failure(text string) string {
 // ColorsEnabled reports whether the theme emits color sequences.
 func ColorsEnabled() bool {
 	return detectColorProfile() != colorProfileNone
-}
-
-// FailureLine returns a message with the failure symbol, styled as an error
-// line. It is used by callers that write directly to standard error.
-func FailureLine(message string) string {
-	return failure(failureSymbol + " " + message)
-}
-
-// WarningLine returns a message with the WARN prefix, styled as a warning line.
-// It is used by callers that write directly to standard error.
-func WarningLine(message string) string {
-	return accent("[WARN]") + " " + message
 }

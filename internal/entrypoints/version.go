@@ -1,6 +1,8 @@
 package entrypoints
 
 import (
+	"fmt"
+	"io"
 	"os"
 	"runtime"
 
@@ -15,16 +17,21 @@ import (
 
 // printVersion writes the version summary, or a themed banner on a terminal.
 func printVersion(verbose bool) {
-	if !logs.OutputIsTerminal() {
+	printVersionTo(os.Stdout, verbose)
+}
+
+// printVersionTo writes the version summary to w.
+func printVersionTo(w io.Writer, verbose bool) {
+	if !logs.IsTerminal(w) {
 		shell := shells.Current()
 		name := shell.FriendlyName()
 		if verbose {
 			name = shell.Info()
 		}
-		logs.Version(consts.Version, runtime.Version(), name)
+		fmt.Fprint(w, logs.VersionLine(consts.Version, runtime.Version(), name))
 		return
 	}
-	logs.PrintVersion(versionInfo(verbose), verbose)
+	logs.PrintVersion(w, versionInfo(verbose), verbose)
 }
 
 // versionInfo collects only the fields displayed by the terminal banner.

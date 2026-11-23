@@ -1,6 +1,7 @@
 package entrypoints
 
 import (
+	"bytes"
 	json "encoding/json/v2"
 	"sort"
 	"strings"
@@ -9,6 +10,24 @@ import (
 	"github.com/leafevans/go-fuck/v2/internal/rules"
 	"github.com/leafevans/go-fuck/v2/internal/types"
 )
+
+func TestPrintTextRulesTerminalLayout(t *testing.T) {
+	all := []*types.Rule{{Name: "git_push"}, {Name: "git_status"}}
+
+	var terminal bytes.Buffer
+	printTextRules(&terminal, all, true)
+	for _, want := range []string{"go-fuck rules", "INFO", "2 built-in rules", "  git_push", "  git_status"} {
+		if !strings.Contains(terminal.String(), want) {
+			t.Fatalf("terminal output %q does not contain %q", terminal.String(), want)
+		}
+	}
+
+	var piped bytes.Buffer
+	printTextRules(&piped, all, false)
+	if got, want := piped.String(), "git_push\ngit_status\n"; got != want {
+		t.Fatalf("piped output = %q, want %q", got, want)
+	}
+}
 
 func TestListRules(t *testing.T) {
 	resetEntrypointsState(t)
