@@ -1,11 +1,14 @@
 package entrypoints
 
 import (
+	"bytes"
 	json "encoding/json/v2"
+	"os"
 	"strings"
 	"testing"
 	"unicode/utf8"
 
+	"github.com/leafevans/go-fuck/v2/internal/logs"
 	"github.com/leafevans/go-fuck/v2/internal/types"
 )
 
@@ -118,6 +121,30 @@ func TestPrintJSONIncludesCommandOutput(t *testing.T) {
 	}
 	if result.OutputTruncated {
 		t.Fatalf("OutputTruncated = true, want false")
+	}
+}
+
+func TestPrintJSONReportsWriteError(t *testing.T) {
+	resetEntrypointsState(t)
+	var diagnostics bytes.Buffer
+	logs.SetOutput(&diagnostics)
+
+	file, err := os.CreateTemp(t.TempDir(), "stdout-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := file.Close(); err != nil {
+		t.Fatal(err)
+	}
+	previous := os.Stdout
+	os.Stdout = file
+	t.Cleanup(func() { os.Stdout = previous })
+
+	if code := printJSON(types.NewCommand("git status", ""), nil); code != 1 {
+		t.Errorf("printJSON() = %d, want 1", code)
+	}
+	if !strings.Contains(diagnostics.String(), "Can't write the JSON output") {
+		t.Errorf("missing write error diagnostic: %q", diagnostics.String())
 	}
 }
 
