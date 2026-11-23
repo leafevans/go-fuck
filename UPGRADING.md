@@ -117,10 +117,10 @@ configuration file evaluates `go-fuck --alias`. To update a running shell immedi
 again (`eval "$(go-fuck --alias)"` in bash and zsh, `iex "$(go-fuck --alias)"` in PowerShell) or run
 `go-fuck --setup`. go-fuck warns when it detects an alias of an older format.
 
-## Upgrading from 2.35.x
+## Upgrading from 2.35.x to 2.36.0
 
-No settings, shell initialization or JSON migration is required. The next minor release standardizes
-the human-readable command interface and output streams:
+No settings, shell initialization or JSON migration is required. Version 2.36.0 standardizes the
+human-readable command interface and output streams:
 
 - `--help` and `--version` now write their normal information to stdout instead of stderr.
 - `--setup` success and reload messages now write to stdout; warnings and failures stay on stderr.
