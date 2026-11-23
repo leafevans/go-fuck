@@ -90,6 +90,7 @@ go run ./tools/gen-rule-list
 | `.github/workflows/` | CI and release workflows                                            |
 | `PORTING.md`         | how the rules are ported from thefuck                               |
 | `README.md`          | user documentation; the rule list is generated                      |
+| `README.zh-CN.md`    | Simplified Chinese quick start; the English README is authoritative |
 
 ## Code style
 
@@ -208,7 +209,7 @@ chore(ci): test on Go 1.27 and stable
 - [ ] New behavior is covered by tests; ported rules include the Python test cases.
 - [ ] `task rules-list` was run when rules were added or renamed, and
       `task rules-list-check` passes.
-- [ ] User facing changes are reflected in `README.md` and `PORTING.md` when relevant.
+- [ ] User facing changes update `README.md`, `README.zh-CN.md` and `PORTING.md` when relevant.
 - [ ] Commits follow Conventional Commits and the branch is based on the latest `main`.
 - [ ] CI is green on Linux, macOS and Windows.
 

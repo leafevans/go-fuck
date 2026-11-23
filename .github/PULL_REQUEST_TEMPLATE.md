@@ -18,4 +18,5 @@
 - [ ] `task rules-list-check` passes (the rule list in `README.md` is regenerated)
 - [ ] No third-party module dependencies were added
 - [ ] A new or changed rule has a test, and its fixture is output captured from the real tool
+- [ ] User-facing changes update `README.md` and `README.zh-CN.md` when relevant
 - [ ] The commit messages follow [Conventional Commits](https://www.conventionalcommits.org/)

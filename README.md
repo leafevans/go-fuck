@@ -6,7 +6,9 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/leafevans/go-fuck/v3.svg)](https://pkg.go.dev/github.com/leafevans/go-fuck/v3)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-A blazingly fast reimplementation of [thefuck](https://github.com/nvbn/thefuck) in Go.
+[English](README.md) | [简体中文](README.zh-CN.md)
+
+A fast, dependency-free reimplementation of [thefuck](https://github.com/nvbn/thefuck) in Go.
 
 **Project status:** go-fuck is stable as of **3.0.0**. The settings file and the `--json` output
 are covered by compatibility guarantees (see [UPGRADING.md](UPGRADING.md)).
@@ -29,25 +31,47 @@ $ fuck
 › git push --set-upstream origin main  [enter · ↑↓ · ctrl+c]
 ```
 
+## Quick start
+
+Choose the package manager for your platform:
+
+| Platform             | Recommended installation                                      |
+| -------------------- | ------------------------------------------------------------- |
+| Windows              | `scoop bucket add go-fuck https://github.com/leafevans/go-fuck`, then `scoop install go-fuck` |
+| macOS / Linux        | `brew tap leafevans/go-fuck https://github.com/leafevans/go-fuck`, then `brew trust leafevans/go-fuck` and `brew install go-fuck` |
+| Arch Linux           | `yay -S go-fuck` or `paru -S go-fuck`                         |
+| Any platform with Go | `go install github.com/leafevans/go-fuck/v3/cmd/go-fuck@latest` |
+
+Then configure the shell alias and follow the reload command printed by setup:
+
+```console
+$ go-fuck --setup
+```
+
+After the alias is loaded, run a command that fails and type `fuck` to correct it. See
+[Installation](#installation) for prebuilt archives, checksum verification and other options.
+
 ## Contents
 
-1. [Why Go](#why-go)
-2. [Features](#features)
-3. [Requirements](#requirements)
-4. [Installation](#installation)
-5. [Shell setup](#shell-setup)
-6. [First steps](#first-steps)
-7. [How it works](#how-it-works)
-8. [Terminal capture and instant mode](#terminal-capture-and-instant-mode)
-9. [Preview and machine readable output](#preview-and-machine-readable-output)
-10. [Settings](#settings)
-11. [Confirmation keys](#confirmation-keys)
-12. [Rules](#rules)
-13. [Creating custom rules](#creating-custom-rules)
-14. [Differences from thefuck](#differences-from-thefuck)
-15. [Contributing](#contributing)
-16. [License](#license)
-17. [Acknowledgements](#acknowledgements)
+1. [Quick start](#quick-start)
+2. [Why Go](#why-go)
+3. [Features](#features)
+4. [Requirements](#requirements)
+5. [Installation](#installation)
+6. [Shell setup](#shell-setup)
+7. [First steps](#first-steps)
+8. [How it works](#how-it-works)
+9. [Terminal capture and instant mode](#terminal-capture-and-instant-mode)
+10. [Preview and machine readable output](#preview-and-machine-readable-output)
+11. [Settings](#settings)
+12. [Confirmation keys](#confirmation-keys)
+13. [Rules](#rules)
+14. [Creating custom rules](#creating-custom-rules)
+15. [Differences from thefuck](#differences-from-thefuck)
+16. [Documentation](#documentation)
+17. [Contributing](#contributing)
+18. [License](#license)
+19. [Acknowledgements](#acknowledgements)
 
 ## Why Go
 
@@ -179,7 +203,7 @@ From a source checkout, the update scripts install prebuilt binaries into
 
 ```sh
 sh scripts/update-go-fuck.sh                  # Linux or macOS
-sh scripts/update-go-fuck.sh v2.33.0 /path/to/bin
+sh scripts/update-go-fuck.sh v3.0.1 /path/to/bin
 ```
 
 ```powershell
@@ -399,6 +423,29 @@ older releases evaluate go-fuck's standard output as the corrected command inste
 executed line by line. After upgrading, the alias is refreshed by the next shell start when the
 configuration file evaluates `go-fuck --alias`; to refresh it in a running shell run `go-fuck --setup` or
 evaluate the alias again (go-fuck warns when it detects an outdated alias).
+
+If go-fuck prints `Your shell alias is outdated`, the installed binary is newer than the function
+loaded by the current shell. Corrections can still work, but the old function may not preserve
+multi-line commands or pass information commands through. Reload it without waiting for a restart:
+
+```bash
+# bash or zsh
+eval "$(go-fuck --alias)"
+
+# fish
+go-fuck --alias | source
+
+# tcsh
+eval `go-fuck --alias`
+```
+
+```powershell
+# PowerShell
+iex "$(go-fuck --alias)"
+```
+
+The bare `--alias` follows the configured `capture_mode`; add `--capture-mode=rerun` if you want the
+reloaded function to skip terminal capture.
 
 If `fuck -v` reports an unexpected version, or reports PowerShell inside WSL, another `go-fuck` binary is
 probably earlier in `PATH`. The pre-v2 module — `go install github.com/leafevans/go-fuck/cmd/go-fuck@latest`
@@ -1081,7 +1128,7 @@ external commands.
 go-fuck is a reimplementation, not a drop-in replacement for every thefuck feature:
 
 - **Complete rule port plus extras.** All 169 rules of the reference implementation are ported,
-  plus 82 go-fuck specific rules; the list in [Rules](#rules) is authoritative. Porting conventions
+  plus 83 go-fuck specific rules; the list in [Rules](#rules) is authoritative. Porting conventions
   are documented in [PORTING.md](PORTING.md).
 - **Terminal capture covers Linux, macOS and Windows.** It reads the previous command output from a
   terminal log instead of re-running the command: bash and zsh on Linux and macOS, PowerShell on
@@ -1097,6 +1144,17 @@ go-fuck is a reimplementation, not a drop-in replacement for every thefuck featu
   `GOFUCK_*`.
 - **Explicit alias setup.** Instead of thefuck's first-run detection, go-fuck uses `--setup`, which
   reports what it changed, is safe to run again and configures every installed PowerShell flavor.
+
+## Documentation
+
+| Document                                     | Purpose                                                                 |
+| -------------------------------------------- | ----------------------------------------------------------------------- |
+| [README.zh-CN.md](README.zh-CN.md)           | Simplified Chinese quick start and common workflows                     |
+| [UPGRADING.md](UPGRADING.md)                 | Compatibility promises and migration notes                             |
+| [CONTRIBUTING.md](CONTRIBUTING.md)           | Development setup, tests and pull request requirements                  |
+| [PORTING.md](PORTING.md)                     | Rule interface and conventions for porting rules from thefuck           |
+| [packaging/README.md](packaging/README.md)   | Homebrew, Scoop, AUR, release and local updater workflows               |
+| [SECURITY.md](SECURITY.md)                   | Vulnerability reporting and data handling                               |
 
 ## Contributing
 

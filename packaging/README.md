@@ -180,13 +180,13 @@ SHA256 checksums and replace a locally installed binary:
 
 ```powershell
 ./scripts/update-go-fuck.ps1                 # latest release, Windows and WSL
-./scripts/update-go-fuck.ps1 -Version 2.33.0 # a specific release
+./scripts/update-go-fuck.ps1 -Version 3.0.1 # a specific release
 ./scripts/update-go-fuck.ps1 -SkipWsl
 ```
 
 ```bash
 ./scripts/update-go-fuck.sh                   # latest release
-./scripts/update-go-fuck.sh 2.33.0 ~/.local/bin
+./scripts/update-go-fuck.sh 3.0.1 ~/.local/bin
 ```
 
 The WSL part of the PowerShell script runs `update-go-fuck.sh`, so keep the two
