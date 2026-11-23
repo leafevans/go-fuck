@@ -45,6 +45,14 @@ func configuredRules(settings *conf.Settings) []*types.Rule {
 }
 
 func walkEnabledRules(settings *conf.Settings, visit func(*types.Rule)) {
+	if len(settings.ExcludeRules) == 0 && len(settings.Rules) == 1 && settings.Rules[0] == consts.AllEnabled {
+		for _, rule := range rules.All() {
+			if rule.DefaultEnabled() {
+				visit(rule)
+			}
+		}
+		return
+	}
 	excluded := make(map[string]struct{}, len(settings.ExcludeRules))
 	for _, name := range settings.ExcludeRules {
 		excluded[name] = struct{}{}

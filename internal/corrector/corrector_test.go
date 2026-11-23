@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/leafevans/go-fuck/v2/internal/conf"
+	"github.com/leafevans/go-fuck/v2/internal/consts"
 	"github.com/leafevans/go-fuck/v2/internal/rules"
 	"github.com/leafevans/go-fuck/v2/internal/types"
 )
@@ -38,6 +39,31 @@ func TestGetRulesExcludeRules(t *testing.T) {
 		if rule.Name == "quotation_marks" || rule.Name == "git_push" {
 			t.Fatalf("excluded rule %q was returned", rule.Name)
 		}
+	}
+}
+
+func TestGetRulesDefaultAndOptIn(t *testing.T) {
+	resetCorrectorState(t)
+	settings := conf.Current()
+	settings.Rules = []string{consts.AllEnabled}
+	want := slices.DeleteFunc(slices.Clone(rules.All()), func(rule *types.Rule) bool {
+		return !rule.DefaultEnabled()
+	})
+	if got := GetRules(); !slices.Equal(got, want) {
+		t.Fatal("default rule selection changed membership or order")
+	}
+
+	optIn := rules.Get("rm_root")
+	if optIn == nil || optIn.DefaultEnabled() {
+		t.Fatal("expected rm_root to require opt-in")
+	}
+	settings.Rules = append(settings.Rules, optIn.Name)
+	if !slices.Contains(GetRules(), optIn) {
+		t.Fatal("explicitly enabled rule is missing")
+	}
+	settings.ExcludeRules = []string{optIn.Name}
+	if got := GetRules(); !slices.Equal(got, want) {
+		t.Fatal("exclusion must take precedence over explicit opt-in")
 	}
 }
 
