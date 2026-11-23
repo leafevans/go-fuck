@@ -1,7 +1,7 @@
 package rules
 
 import (
-	"github.com/leafevans/go-fuck/v2/internal/types"
+	"github.com/leafevans/go-fuck/v3/internal/types"
 )
 
 // powerShellExistingItem matches the existing item that New-Item reports.

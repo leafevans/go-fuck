@@ -10,12 +10,13 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"time"
 
-	"github.com/leafevans/go-fuck/v2/internal/conf"
-	"github.com/leafevans/go-fuck/v2/internal/consts"
-	"github.com/leafevans/go-fuck/v2/internal/logs"
-	"github.com/leafevans/go-fuck/v2/internal/output"
-	"github.com/leafevans/go-fuck/v2/internal/shells"
+	"github.com/leafevans/go-fuck/v3/internal/capture"
+	"github.com/leafevans/go-fuck/v3/internal/conf"
+	"github.com/leafevans/go-fuck/v3/internal/consts"
+	"github.com/leafevans/go-fuck/v3/internal/logs"
+	"github.com/leafevans/go-fuck/v3/internal/shells"
 )
 
 // ErrEmptyCommand is returned when an empty command is passed to go-fuck.
@@ -45,7 +46,9 @@ type Command struct {
 	// command. It is only meaningful when HasOutput reports true.
 	Output string
 
-	hasOutput bool
+	hasOutput      bool
+	captureSource  capture.Source
+	captureElapsed time.Duration
 
 	partsOnce sync.Once
 	parts     []string
@@ -53,13 +56,16 @@ type Command struct {
 
 // NewCommand returns a command with a known output.
 func NewCommand(script, output string) *Command {
-	return &Command{Script: script, Output: output, hasOutput: true}
+	return &Command{
+		Script: script, Output: output, hasOutput: true,
+		captureSource: capture.SourceProvided,
+	}
 }
 
 // NewCommandWithoutOutput returns a command whose output could not be
 // obtained, for example because re-running it timed out.
 func NewCommandWithoutOutput(script string) *Command {
-	return &Command{Script: script}
+	return &Command{Script: script, captureSource: capture.SourceNone}
 }
 
 // FromRawScript creates a command from the command line arguments that were
@@ -71,8 +77,19 @@ func FromRawScript(raw []string, allowRerun bool) (*Command, error) {
 	}
 
 	expanded := shells.Current().FromShell(script)
-	commandOutput, ok := output.GetOutput(script, expanded, allowRerun)
-	return &Command{Script: expanded, Output: commandOutput, hasOutput: ok}, nil
+	result := capture.Capture(capture.Request{
+		Script:     script,
+		Expanded:   expanded,
+		AllowRerun: allowRerun,
+		Mode:       capture.Mode(conf.Current().CaptureMode),
+	})
+	return &Command{
+		Script:         expanded,
+		Output:         result.Output,
+		hasOutput:      result.OK,
+		captureSource:  result.Source,
+		captureElapsed: result.Duration,
+	}, nil
 }
 
 // FromScriptAndOutput creates a command from the command line arguments of
@@ -84,9 +101,10 @@ func FromScriptAndOutput(raw []string, commandOutput string) (*Command, error) {
 		return nil, ErrEmptyCommand
 	}
 	return &Command{
-		Script:    shells.Current().FromShell(script),
-		Output:    commandOutput,
-		hasOutput: true,
+		Script:        shells.Current().FromShell(script),
+		Output:        commandOutput,
+		hasOutput:     true,
+		captureSource: capture.SourceProvided,
 	}, nil
 }
 
@@ -98,6 +116,19 @@ func FormatRawScript(raw []string) string {
 // HasOutput reports whether the command output was captured.
 func (c *Command) HasOutput() bool {
 	return c.hasOutput
+}
+
+// CaptureSource reports how the command output was obtained.
+func (c *Command) CaptureSource() capture.Source {
+	if c.captureSource == "" {
+		return capture.SourceNone
+	}
+	return c.captureSource
+}
+
+// CaptureDuration reports how long output capture took.
+func (c *Command) CaptureDuration() time.Duration {
+	return c.captureElapsed
 }
 
 // ScriptParts returns the command split into arguments using shell rules.
@@ -114,7 +145,10 @@ func (c *Command) ScriptParts() []string {
 
 // Update returns a copy of the command with the script and output replaced.
 func (c *Command) Update(script, commandOutput string) *Command {
-	return &Command{Script: script, Output: commandOutput, hasOutput: c.hasOutput}
+	return &Command{
+		Script: script, Output: commandOutput, hasOutput: c.hasOutput,
+		captureSource: c.captureSource, captureElapsed: c.captureElapsed,
+	}
 }
 
 // WithScript returns a copy of the command with the script replaced.

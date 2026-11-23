@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/leafevans/go-fuck/v2/internal/consts"
+	"github.com/leafevans/go-fuck/v3/internal/consts"
 )
 
 // instantModeEnabled reports whether the current shell is the logged shell
@@ -27,10 +27,10 @@ func instantModeEnabled() bool {
 // The code is evaluated instead of defining the alias: it exports the instant
 // mode environment and replaces the current shell with a shell whose terminal
 // output is written to a temporary log.
-func instantModeInitAlias() string {
+func instantModeInitAlias(aliasName string) string {
 	logPath := quoteShellPath(instantModeLogPath())
-	return fmt.Sprintf("export %s=True;\nexport %s=%s;\n%s --shell-logger %s;\nrm -f %s;\nexit",
-		consts.InstantModeEnv, consts.OutputLogEnv, logPath,
+	return fmt.Sprintf("export %s=True;\nexport TF_ALIAS=%s;\nexport %s=%s;\n%s --shell-logger %s;\nrm -f %s;\nexit",
+		consts.InstantModeEnv, aliasName, consts.OutputLogEnv, logPath,
 		consts.ExecutableName(), logPath, logPath)
 }
 

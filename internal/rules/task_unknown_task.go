@@ -1,8 +1,8 @@
 package rules
 
 import (
-	"github.com/leafevans/go-fuck/v2/internal/types"
-	"github.com/leafevans/go-fuck/v2/internal/utils"
+	"github.com/leafevans/go-fuck/v3/internal/types"
+	"github.com/leafevans/go-fuck/v3/internal/utils"
 )
 
 // taskUnknownTask matches the error of go-task for a missing task when it

@@ -21,7 +21,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/leafevans/go-fuck/v2/internal/consts"
+	"github.com/leafevans/go-fuck/v3/internal/consts"
 )
 
 // ErrUnsupported reports that the shell logger is not available on the

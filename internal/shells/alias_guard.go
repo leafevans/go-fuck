@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/leafevans/go-fuck/v2/internal/consts"
+	"github.com/leafevans/go-fuck/v3/internal/consts"
 )
 
 // informationalCommands lists the go-fuck flags that print information instead
@@ -23,6 +23,7 @@ var informationalCommands = []string{
 	"--list-rules",
 	"--json",
 	"--setup",
+	"--explain",
 	"--alias", "-a",
 	"-l", "--shell-logger",
 }
@@ -58,11 +59,11 @@ func fishAliasGuard(aliasName, executable string) string {
 	return fmt.Sprintf("  for __gofuck_option in $argv\n"+
 		"    switch $__gofuck_option\n"+
 		"      case %[1]s '--alias=*' '--shell-logger=*'\n"+
-		"        env TF_SHELL=fish TF_ALIAS=%[2]s %[3]s $argv\n"+
+		"        env TF_SHELL=fish TF_ALIAS=%[2]s TF_ALIAS_VERSION=%[4]s %[3]s $argv\n"+
 		"        return\n"+
 		"    end\n"+
 		"  end\n",
-		informationalCommandList(), aliasName, executable)
+		informationalCommandList(), aliasName, executable, consts.AliasVersion)
 }
 
 // powershellAliasGuard returns the PowerShell code that passes the
@@ -79,7 +80,7 @@ func powershellAliasGuard(aliasName, executable string) string {
 		"            ($__gofuck_option -like '--shell-logger=*')) {\n"+
 		"            $env:TF_SHELL = \"powershell\";\n"+
 		"            $env:TF_ALIAS = \"%[2]s\";\n"+
-		"            $env:TF_ALIAS_VERSION = \"3\";\n"+
+		"            $env:TF_ALIAS_VERSION = \"%[6]s\";\n"+
 		"            try { $env:GOFUCK_SHELL = (Get-Process -Id $PID).Path } catch { };\n"+
 		"            $__gofuck_previous_version = $env:%[4]s;\n"+
 		"            $__gofuck_previous_profile = $env:%[5]s;\n"+
@@ -94,5 +95,6 @@ func powershellAliasGuard(aliasName, executable string) string {
 		"            return;\n"+
 		"        };\n"+
 		"    };\n",
-		strings.Join(quoted, ", "), aliasName, executable, consts.PowerShellVersionEnv, consts.PowerShellProfileEnv)
+		strings.Join(quoted, ", "), aliasName, executable, consts.PowerShellVersionEnv,
+		consts.PowerShellProfileEnv, consts.AliasVersion)
 }

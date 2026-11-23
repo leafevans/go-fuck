@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/v2/internal/argumentparser"
-	"github.com/leafevans/go-fuck/v2/internal/shells"
+	"github.com/leafevans/go-fuck/v3/internal/argumentparser"
+	"github.com/leafevans/go-fuck/v3/internal/shells"
 
-	"github.com/leafevans/go-fuck/v2/internal/conf"
+	"github.com/leafevans/go-fuck/v3/internal/conf"
 )
 
 // readFile reads a file in tests.
@@ -72,6 +72,67 @@ func TestMainSetupBash(t *testing.T) {
 	}
 }
 
+func TestMainSetupMigratesRegularAliasToAutoCapture(t *testing.T) {
+	configDir := resetEntrypointsState(t)
+	t.Setenv("TF_SHELL", "bash")
+	configPath := filepath.Join(configDir, ".bashrc")
+	regular := `eval "$(go-fuck --alias)"`
+	if err := os.WriteFile(configPath, []byte(regular+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	code, stdout, stderr := runMain(t, "go-fuck", "--setup")
+	if code != 0 || stderr != "" || !strings.Contains(stdout, "now configured") {
+		t.Fatalf("setup = %d, %q, %q", code, stdout, stderr)
+	}
+	content := readFile(t, configPath)
+	if strings.Contains(content, regular+"\n") ||
+		!strings.Contains(content, `eval "$(go-fuck --alias --capture-mode=auto --enable-experimental-instant-mode)"`) {
+		t.Fatalf("alias was not migrated to auto capture: %q", content)
+	}
+	if strings.Count(content, "go-fuck --alias") != 1 {
+		t.Fatalf("migration duplicated the alias: %q", content)
+	}
+}
+
+func TestMainSetupCaptureModeRerunKeepsRegularAlias(t *testing.T) {
+	configDir := resetEntrypointsState(t)
+	t.Setenv("TF_SHELL", "bash")
+	configPath := filepath.Join(configDir, ".bashrc")
+	if err := os.WriteFile(configPath, []byte("# existing\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	code, _, stderr := runMain(t, "go-fuck", "--setup", "--capture-mode", "rerun")
+	if code != 0 || stderr != "" {
+		t.Fatalf("setup = %d, %q", code, stderr)
+	}
+	content := readFile(t, configPath)
+	if !strings.Contains(content, `eval "$(go-fuck --alias --capture-mode=rerun)"`) ||
+		strings.Contains(content, "--enable-experimental-instant-mode") {
+		t.Fatalf("rerun setup wrote the wrong alias: %q", content)
+	}
+}
+
+func TestMainSetupRejectsAmbiguousInitializationLines(t *testing.T) {
+	configDir := resetEntrypointsState(t)
+	t.Setenv("TF_SHELL", "bash")
+	configPath := filepath.Join(configDir, ".bashrc")
+	regular := `eval "$(go-fuck --alias)"`
+	original := regular + "\n" + regular + "\n"
+	if err := os.WriteFile(configPath, []byte(original), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	code, _, stderr := runMain(t, "go-fuck", "--setup")
+	if code != 1 || !strings.Contains(stderr, "multiple go-fuck initialization lines") {
+		t.Fatalf("setup = %d, stderr=%q", code, stderr)
+	}
+	if content := readFile(t, configPath); content != original {
+		t.Fatalf("ambiguous configuration was modified: %q", content)
+	}
+}
+
 func TestMainSetupReplacesLegacyInstantModeLine(t *testing.T) {
 	configDir := resetEntrypointsState(t)
 	t.Setenv("TF_SHELL", "zsh")
@@ -86,7 +147,7 @@ func TestMainSetupReplacesLegacyInstantModeLine(t *testing.T) {
 		t.Fatalf("Main(--setup --enable-experimental-instant-mode) = %d, want 0; stderr = %s", code, stderr)
 	}
 	content := readFile(t, configPath)
-	if !strings.Contains(content, "eval \"$(go-fuck --alias --enable-experimental-instant-mode)\"") {
+	if !strings.Contains(content, "eval \"$(go-fuck --alias --capture-mode=instant --enable-experimental-instant-mode)\"") {
 		t.Fatalf("legacy line was not upgraded to the quoted form: %q", content)
 	}
 	if got := strings.Count(content, "--enable-experimental-instant-mode"); got != 1 {
@@ -194,7 +255,8 @@ func TestMainSetupInstantModeBash(t *testing.T) {
 		t.Fatalf("Main(--setup --enable-experimental-instant-mode) = %d, want 0; stderr = %s", code, stderr)
 	}
 	content := readFile(t, configPath)
-	if !strings.Contains(content, "--alias --enable-experimental-instant-mode") {
+	if !strings.Contains(content, "--capture-mode=instant") ||
+		!strings.Contains(content, "--enable-experimental-instant-mode") {
 		t.Fatalf("configuration does not enable instant mode: %q", content)
 	}
 }
@@ -214,8 +276,8 @@ func TestMainSetupInstantModeUnsupportedShell(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("Main(--setup --enable-experimental-instant-mode) = %d, want 0; stderr = %s", code, stderr)
 	}
-	if !strings.Contains(stderr, "instant mode is not supported") {
-		t.Fatalf("stderr = %q, want an instant mode warning", stderr)
+	if !strings.Contains(stderr, "instant capture is not supported") {
+		t.Fatalf("stderr = %q, want an instant capture warning", stderr)
 	}
 	if !strings.Contains(stdout, "now configured") {
 		t.Fatalf("stdout = %q, want the regular alias success message", stdout)
@@ -224,7 +286,7 @@ func TestMainSetupInstantModeUnsupportedShell(t *testing.T) {
 	if strings.Contains(content, "--enable-experimental-instant-mode") {
 		t.Fatalf("unsupported shell was configured with instant mode: %q", content)
 	}
-	if !strings.Contains(content, "go-fuck --alias | source") {
+	if !strings.Contains(content, "go-fuck --alias --capture-mode=rerun | source") {
 		t.Fatalf("regular fish alias was not configured: %q", content)
 	}
 }
@@ -242,7 +304,8 @@ func TestMainSetupInstantModePowerShell(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("Main(--setup --enable-experimental-instant-mode) = %d, want 0; stderr = %s", code, stderr)
 	}
-	if content := readFile(t, profile); !strings.Contains(content, "--alias --enable-experimental-instant-mode") {
+	if content := readFile(t, profile); !strings.Contains(content, "--capture-mode=instant") ||
+		!strings.Contains(content, "--enable-experimental-instant-mode") {
 		t.Fatalf("profile does not enable instant mode: %q", content)
 	}
 }

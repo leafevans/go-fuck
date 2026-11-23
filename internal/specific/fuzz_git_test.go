@@ -4,7 +4,7 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	"github.com/leafevans/go-fuck/v2/internal/shells"
+	"github.com/leafevans/go-fuck/v3/internal/shells"
 )
 
 // FuzzGitQuotedArgument checks that every supported shell round-trips an

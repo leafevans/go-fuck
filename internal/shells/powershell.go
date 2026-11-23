@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/leafevans/go-fuck/v2/internal/consts"
-	"github.com/leafevans/go-fuck/v2/internal/instant"
-	"github.com/leafevans/go-fuck/v2/internal/logs"
+	"github.com/leafevans/go-fuck/v3/internal/consts"
+	"github.com/leafevans/go-fuck/v3/internal/instant"
+	"github.com/leafevans/go-fuck/v3/internal/logs"
 )
 
 // powershellAliasTemplate defines the alias function for PowerShell.
@@ -31,9 +31,18 @@ import (
 const powershellAliasTemplate = `function %[1]s {
 %[3]s    $env:TF_SHELL = "powershell";
     $env:TF_ALIAS = "%[1]s";
-    $env:TF_ALIAS_VERSION = "3";
+    $env:TF_ALIAS_VERSION = "%[4]s";
     try { $env:GOFUCK_SHELL = (Get-Process -Id $PID).Path } catch { };
-    $history = (Get-History -Count 1).CommandLine;
+    $history = @(
+        Get-History -Count 8 |
+            ForEach-Object { $_.CommandLine } |
+            Where-Object {
+                -not [string]::IsNullOrWhiteSpace($_) -and
+                (($_.TrimStart() -split '\s+', 2)[0] -ne "%[1]s")
+            } |
+            Select-Object -Last 1
+    );
+    $history = [string]::Join([Environment]::NewLine, $history);
     $previousHistory = $env:TF_HISTORY;
     try {
         if (-not [string]::IsNullOrWhiteSpace($history)) { $env:TF_HISTORY = $history; }
@@ -64,6 +73,7 @@ const powershellAliasTemplate = `function %[1]s {
 const powershellInstantInitTemplate = `$env:GOFUCK_INSTANT_MODE = "True";
 $env:GOFUCK_OUTPUT_LOG = %[2]s;
 $env:GOFUCK_SHELL = (Get-Process -Id $PID).Path;
+$env:TF_ALIAS = %[3]s;
 & %[1]s --shell-logger %[2]s;
 $code = $LASTEXITCODE;
 if (Test-Path -LiteralPath %[2]s) {
@@ -114,7 +124,7 @@ func NewPowershell() *Powershell {
 // AppAlias returns the PowerShell alias function.
 func (p *Powershell) AppAlias(aliasName string) string {
 	return fmt.Sprintf(powershellAliasTemplate, aliasName, consts.ExecutableName(),
-		powershellAliasGuard(aliasName, consts.ExecutableName()))
+		powershellAliasGuard(aliasName, consts.ExecutableName()), consts.AliasVersion)
 }
 
 // InstantModeAlias returns the alias of the instant mode.
@@ -133,7 +143,8 @@ func (p *Powershell) InstantModeAlias(aliasName string) string {
 		return fmt.Sprintf(powershellInstantMarkedTemplate, marked, p.AppAlias(aliasName))
 	}
 	logPath := quotePowerShellString(instantModeLogPath())
-	return fmt.Sprintf(powershellInstantInitTemplate, consts.ExecutableName(), logPath)
+	return fmt.Sprintf(powershellInstantInitTemplate, consts.ExecutableName(), logPath,
+		quotePowerShellString(aliasName))
 }
 
 // And joins commands so that the next command runs only after the previous one

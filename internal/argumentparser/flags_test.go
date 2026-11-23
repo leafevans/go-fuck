@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/v2/internal/consts"
+	"github.com/leafevans/go-fuck/v3/internal/consts"
 )
 
 func TestParseDoctorAndListRules(t *testing.T) {
@@ -50,6 +50,29 @@ func TestUsageAndHelpMentionNewFlags(t *testing.T) {
 		if !strings.Contains(help, want) {
 			t.Fatalf("Help() does not contain %q:\n%s", want, help)
 		}
+	}
+}
+
+func TestParseCaptureModeAndExplain(t *testing.T) {
+	args, err := Parse([]string{"go-fuck", "--capture-mode", "instant", "--explain"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if args.CaptureMode != "instant" || !args.Explain {
+		t.Fatalf("Parse() = %+v", args)
+	}
+	args, err = Parse([]string{"go-fuck", "--capture-mode=rerun"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if args.CaptureMode != "rerun" {
+		t.Fatalf("CaptureMode = %q", args.CaptureMode)
+	}
+	if _, err := Parse([]string{"go-fuck", "--capture-mode", "sometimes"}); err == nil {
+		t.Fatal("Parse() accepted an invalid capture mode")
+	}
+	if _, err := Parse([]string{"go-fuck", "--capture-mode"}); err == nil {
+		t.Fatal("Parse() accepted a missing capture mode")
 	}
 }
 

@@ -5,9 +5,9 @@ import (
 
 	"strings"
 
-	"github.com/leafevans/go-fuck/v2/internal/conf"
-	"github.com/leafevans/go-fuck/v2/internal/shells"
-	"github.com/leafevans/go-fuck/v2/internal/types"
+	"github.com/leafevans/go-fuck/v3/internal/conf"
+	"github.com/leafevans/go-fuck/v3/internal/shells"
+	"github.com/leafevans/go-fuck/v3/internal/types"
 )
 
 // fixFilePatternSources lists the error formats of the supported tools. The

@@ -7,21 +7,24 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/leafevans/go-fuck/v2/internal/argumentparser"
-	"github.com/leafevans/go-fuck/v2/internal/conf"
-	"github.com/leafevans/go-fuck/v2/internal/consts"
-	"github.com/leafevans/go-fuck/v2/internal/corrector"
-	"github.com/leafevans/go-fuck/v2/internal/logs"
-	"github.com/leafevans/go-fuck/v2/internal/shells"
-	"github.com/leafevans/go-fuck/v2/internal/types"
-	"github.com/leafevans/go-fuck/v2/internal/ui"
-	"github.com/leafevans/go-fuck/v2/internal/utils"
+	"github.com/leafevans/go-fuck/v3/internal/argumentparser"
+	"github.com/leafevans/go-fuck/v3/internal/conf"
+	"github.com/leafevans/go-fuck/v3/internal/consts"
+	"github.com/leafevans/go-fuck/v3/internal/corrector"
+	"github.com/leafevans/go-fuck/v3/internal/logs"
+	"github.com/leafevans/go-fuck/v3/internal/shells"
+	"github.com/leafevans/go-fuck/v3/internal/types"
+	"github.com/leafevans/go-fuck/v3/internal/ui"
+	"github.com/leafevans/go-fuck/v3/internal/utils"
 )
 
 // fixCommand fixes the previous command and prints the corrected command on
 // standard output.
 func fixCommand(args *argumentparser.Args) int {
-	settings, err := conf.Load(&conf.Args{Yes: args.Yes, Debug: args.Debug, Repeat: args.Repeat})
+	settings, err := conf.Load(&conf.Args{
+		Yes: args.Yes, Debug: args.Debug, Repeat: args.Repeat,
+		CaptureMode: args.CaptureMode,
+	})
 	if err != nil {
 		logs.Exception("Can't load settings", err)
 	} else {
@@ -51,7 +54,8 @@ func fixCommand(args *argumentparser.Args) int {
 		}
 		command, err = types.FromScriptAndOutput(rawCommand, commandOutput)
 	} else {
-		command, err = types.FromRawScript(rawCommand, !args.NoRerun && !args.Preview)
+		command, err = types.FromRawScript(rawCommand,
+			!args.NoRerun && !args.Preview && !args.Explain)
 	}
 	if errors.Is(err, types.ErrEmptyCommand) {
 		return reportMissingCommand(args.JSON)
@@ -65,6 +69,13 @@ func fixCommand(args *argumentparser.Args) int {
 
 	if args.JSON {
 		return printJSON(command, corrected)
+	}
+	if args.Explain {
+		ui.ExplainCommands(command, corrected)
+		if len(corrected) == 0 {
+			return 1
+		}
+		return 0
 	}
 	if len(corrected) == 0 {
 		if command.HasOutput() {
@@ -249,31 +260,37 @@ func sanitizeMarkedCommands(commands []string) []string {
 // is usually the alias invocation and is dropped; when the alias call is not
 // in the history, the last entry is the previous command.
 func bashMarkedRawCommand(payload string) []string {
-	lines := strings.Split(payload, "\n")
-	last := -1
-	for i, line := range lines {
-		if strings.HasPrefix(line, "\t ") {
-			last = i
-		}
-	}
-	if last < 0 {
+	entries := bashHistoryEntries(payload)
+	if len(entries) == 0 {
 		return singleMarkedCommand(payload)
 	}
-	lastEntry := trimFCEntry(strings.Join(lines[last:], "\n"))
-	if isAliasCall(lastEntry) {
-		if last == 0 {
-			return nil
+	for _, entry := range slices.Backward(entries) {
+		if entry != "" && !isAliasCall(entry) {
+			return []string{entry}
 		}
-		previous := trimFCEntry(strings.Join(lines[:last], "\n"))
-		if previous == "" || isAliasCall(previous) {
-			return nil
+	}
+	return nil
+}
+
+// bashHistoryEntries splits the output of "fc -ln" into complete history
+// entries. Continuation lines remain attached to their entry.
+func bashHistoryEntries(payload string) []string {
+	lines := strings.Split(payload, "\n")
+	starts := make([]int, 0, len(lines))
+	for index, line := range lines {
+		if strings.HasPrefix(line, "\t ") {
+			starts = append(starts, index)
 		}
-		return []string{previous}
 	}
-	if lastEntry == "" {
-		return nil
+	entries := make([]string, 0, len(starts))
+	for index, start := range starts {
+		end := len(lines)
+		if index+1 < len(starts) {
+			end = starts[index+1]
+		}
+		entries = append(entries, trimFCEntry(strings.Join(lines[start:end], "\n")))
 	}
-	return []string{lastEntry}
+	return entries
 }
 
 // trimFCEntry removes the tab and space that fc adds to the first line of an

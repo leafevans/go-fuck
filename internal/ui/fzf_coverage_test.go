@@ -3,7 +3,7 @@ package ui
 import (
 	"testing"
 
-	"github.com/leafevans/go-fuck/v2/internal/utils"
+	"github.com/leafevans/go-fuck/v3/internal/utils"
 )
 
 func TestRunFzfUnavailable(t *testing.T) {

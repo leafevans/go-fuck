@@ -9,10 +9,10 @@ import (
 
 	"io"
 
-	"github.com/leafevans/go-fuck/v2/internal/conf"
-	"github.com/leafevans/go-fuck/v2/internal/consts"
+	"github.com/leafevans/go-fuck/v3/internal/conf"
+	"github.com/leafevans/go-fuck/v3/internal/consts"
 
-	"github.com/leafevans/go-fuck/v2/internal/logs"
+	"github.com/leafevans/go-fuck/v3/internal/logs"
 )
 
 // resetShellsState resets the global state used by the shells tests.

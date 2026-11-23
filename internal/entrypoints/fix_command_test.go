@@ -9,12 +9,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/v2/internal/argumentparser"
-	"github.com/leafevans/go-fuck/v2/internal/conf"
-	"github.com/leafevans/go-fuck/v2/internal/consts"
-	"github.com/leafevans/go-fuck/v2/internal/logs"
-	"github.com/leafevans/go-fuck/v2/internal/shells"
-	"github.com/leafevans/go-fuck/v2/internal/utils"
+	"github.com/leafevans/go-fuck/v3/internal/argumentparser"
+	"github.com/leafevans/go-fuck/v3/internal/conf"
+	"github.com/leafevans/go-fuck/v3/internal/consts"
+	"github.com/leafevans/go-fuck/v3/internal/logs"
+	"github.com/leafevans/go-fuck/v3/internal/shells"
+	"github.com/leafevans/go-fuck/v3/internal/utils"
 )
 
 // resetRawCommandState isolates the process state used by getRawCommand.
@@ -197,6 +197,9 @@ func TestGetRawCommandMarkedBashHistory(t *testing.T) {
 	assertRawCommand(t, getRawCommand(&argumentparser.Args{}), []string{"git status"})
 
 	t.Setenv("TF_HISTORY", rawCommandMarker+"\t git status\n\t fuck --yes")
+	assertRawCommand(t, getRawCommand(&argumentparser.Args{}), []string{"git status"})
+
+	t.Setenv("TF_HISTORY", rawCommandMarker+"\t git status\n\t fuck\n\t fuck --debug")
 	assertRawCommand(t, getRawCommand(&argumentparser.Args{}), []string{"git status"})
 
 	t.Setenv("TF_HISTORY", rawCommandMarker+"\t fuck")

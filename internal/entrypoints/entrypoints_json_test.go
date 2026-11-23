@@ -8,8 +8,8 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	"github.com/leafevans/go-fuck/v2/internal/logs"
-	"github.com/leafevans/go-fuck/v2/internal/types"
+	"github.com/leafevans/go-fuck/v3/internal/logs"
+	"github.com/leafevans/go-fuck/v3/internal/types"
 )
 
 // jsonTestResult mirrors the machine readable output of --json.

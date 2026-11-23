@@ -31,8 +31,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/leafevans/go-fuck/v2/internal/consts"
-	"github.com/leafevans/go-fuck/v2/internal/types"
+	"github.com/leafevans/go-fuck/v3/internal/consts"
+	"github.com/leafevans/go-fuck/v3/internal/types"
 )
 
 // ruleNamePattern matches the names accepted for custom rules. It uses the

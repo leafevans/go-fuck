@@ -7,8 +7,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/leafevans/go-fuck/v2/internal/logs"
-	"github.com/leafevans/go-fuck/v2/internal/types"
+	"github.com/leafevans/go-fuck/v3/internal/logs"
+	"github.com/leafevans/go-fuck/v3/internal/types"
 )
 
 // jsonOutputLimit is the maximum number of output bytes included in the JSON
@@ -50,6 +50,8 @@ type jsonResult struct {
 	Output string `json:"output,omitempty"`
 	// OutputTruncated reports whether Output was cut at jsonOutputLimit bytes.
 	OutputTruncated bool `json:"output_truncated,omitzero"`
+	// CaptureSource identifies where the command output came from.
+	CaptureSource string `json:"capture_source,omitempty"`
 	// Suggestions are the corrected commands, in the order in which they would
 	// be offered.
 	Suggestions []jsonSuggestion `json:"suggestions"`
@@ -66,6 +68,7 @@ func printJSON(command *types.Command, corrected []*types.CorrectedCommand) int 
 	}
 	if command != nil {
 		result.Command = validUTF8(command.Script)
+		result.CaptureSource = validUTF8(string(command.CaptureSource()))
 		if command.HasOutput() {
 			result.Output, result.OutputTruncated = truncatedOutput(command.Output)
 		}

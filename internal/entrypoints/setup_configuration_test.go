@@ -14,9 +14,11 @@ func TestSetupIgnoresCommentedConfiguration(t *testing.T) {
 			t.Setenv("TF_SHELL", shell)
 			path := filepath.Join(home, ".bashrc")
 			line := `eval "$(go-fuck --alias)"`
+			active := `eval "$(go-fuck --alias --capture-mode=auto --enable-experimental-instant-mode)"`
 			if shell == "powershell" {
 				path = filepath.Join(home, "profile.ps1")
 				line = `iex "$(go-fuck --alias)"`
+				active = `iex "$(go-fuck --alias --capture-mode=auto --enable-experimental-instant-mode)"`
 				stubPowerShellProfiles(t, []string{path})
 			}
 			comment := "# " + line + "\n"
@@ -28,7 +30,7 @@ func TestSetupIgnoresCommentedConfiguration(t *testing.T) {
 					t.Fatalf("setup failed: %d, %s", code, stderr)
 				}
 			}
-			if got := readFile(t, path); got != comment+line+"\n" {
+			if got := readFile(t, path); got != comment+active+"\n" {
 				t.Fatalf("setup did not append exactly one active line: %q", got)
 			}
 		})

@@ -8,11 +8,27 @@ import (
 
 	"errors"
 
-	"github.com/leafevans/go-fuck/v2/internal/conf"
-	"github.com/leafevans/go-fuck/v2/internal/consts"
-	"github.com/leafevans/go-fuck/v2/internal/logs"
-	"github.com/leafevans/go-fuck/v2/internal/shells"
+	"github.com/leafevans/go-fuck/v3/internal/capture"
+	"github.com/leafevans/go-fuck/v3/internal/conf"
+	"github.com/leafevans/go-fuck/v3/internal/consts"
+	"github.com/leafevans/go-fuck/v3/internal/logs"
+	"github.com/leafevans/go-fuck/v3/internal/shells"
 )
+
+func TestCommandCaptureMetadata(t *testing.T) {
+	provided := NewCommand("git branch", "output")
+	if provided.CaptureSource() != capture.SourceProvided || !provided.HasOutput() {
+		t.Fatalf("NewCommand() capture = %q, %t", provided.CaptureSource(), provided.HasOutput())
+	}
+	missing := NewCommandWithoutOutput("git branch")
+	if missing.CaptureSource() != capture.SourceNone || missing.HasOutput() {
+		t.Fatalf("NewCommandWithoutOutput() capture = %q, %t",
+			missing.CaptureSource(), missing.HasOutput())
+	}
+	if updated := provided.WithScript("git status"); updated.CaptureSource() != capture.SourceProvided {
+		t.Fatalf("WithScript() lost capture metadata: %q", updated.CaptureSource())
+	}
+}
 
 // resetTypesState resets the state shared by the tests in this package.
 func resetTypesState(t *testing.T) {

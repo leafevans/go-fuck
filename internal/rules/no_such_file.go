@@ -3,8 +3,8 @@ package rules
 import (
 	"strings"
 
-	"github.com/leafevans/go-fuck/v2/internal/shells"
-	"github.com/leafevans/go-fuck/v2/internal/types"
+	"github.com/leafevans/go-fuck/v3/internal/shells"
+	"github.com/leafevans/go-fuck/v3/internal/types"
 )
 
 // noSuchFilePatterns match the mv and cp errors that are caused by a missing

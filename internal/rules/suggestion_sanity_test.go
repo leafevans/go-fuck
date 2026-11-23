@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/v2/internal/types"
+	"github.com/leafevans/go-fuck/v3/internal/types"
 )
 
 // TestRulesDoNotSuggestTheOriginalCommand guards a class of useless rules: a

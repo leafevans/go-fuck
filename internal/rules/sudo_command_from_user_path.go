@@ -3,8 +3,8 @@ package rules
 import (
 	"strings"
 
-	"github.com/leafevans/go-fuck/v2/internal/types"
-	"github.com/leafevans/go-fuck/v2/internal/utils"
+	"github.com/leafevans/go-fuck/v3/internal/types"
+	"github.com/leafevans/go-fuck/v3/internal/utils"
 )
 
 // sudoCommandFromUserPathPattern matches the command name reported by sudo.

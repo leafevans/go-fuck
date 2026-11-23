@@ -12,9 +12,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/leafevans/go-fuck/v2/internal/conf"
-	"github.com/leafevans/go-fuck/v2/internal/consts"
-	"github.com/leafevans/go-fuck/v2/internal/logs"
+	"github.com/leafevans/go-fuck/v3/internal/conf"
+	"github.com/leafevans/go-fuck/v3/internal/consts"
+	"github.com/leafevans/go-fuck/v3/internal/logs"
 )
 
 // Args holds the parsed command line arguments.
@@ -53,6 +53,11 @@ type Args struct {
 	NoRerun bool
 	// Preview shows suggestions without re-running the original command or applying a fix.
 	Preview bool
+	// Explain prints the capture and execution plan without re-running the
+	// original command, applying side effects or executing a correction.
+	Explain bool
+	// CaptureMode overrides the configured capture policy.
+	CaptureMode string
 	// JSON prints the suggestions as JSON instead of running the interactive
 	// selection and the corrected command.
 	JSON bool
@@ -88,6 +93,14 @@ func Parse(argv []string) (*Args, error) {
 			args.Doctor = true
 		case arg == "--list-rules":
 			args.ListRules = true
+		case arg == "--capture-mode":
+			if i+1 >= len(rest) {
+				return nil, fmt.Errorf("argument --capture-mode: expected one argument")
+			}
+			args.CaptureMode = rest[i+1]
+			i++
+		case strings.HasPrefix(arg, "--capture-mode="):
+			args.CaptureMode = strings.TrimPrefix(arg, "--capture-mode=")
 		case arg == "-y" || arg == "--yes" || arg == "--yeah" || arg == "--hard":
 			args.Yes = true
 		case arg == "-r" || arg == "--repeat":
@@ -134,6 +147,8 @@ func Parse(argv []string) (*Args, error) {
 			args.NoRerun = true
 		case arg == "--preview":
 			args.Preview = true
+		case arg == "--explain":
+			args.Explain = true
 		case strings.HasPrefix(arg, "-"):
 			return nil, fmt.Errorf("unrecognized arguments: %s", arg)
 		default:
@@ -145,6 +160,13 @@ func Parse(argv []string) (*Args, error) {
 	}
 	if args.OutputFrom != "" && args.ForceCommand == "" {
 		return nil, fmt.Errorf("argument --output-from: requires argument --force-command")
+	}
+	if args.CaptureMode != "" {
+		switch args.CaptureMode {
+		case "auto", "instant", "rerun":
+		default:
+			return nil, fmt.Errorf("argument --capture-mode: invalid choice: %s (choose from auto, instant, rerun)", args.CaptureMode)
+		}
 	}
 	return args, nil
 }
@@ -185,7 +207,9 @@ var helpOptions = []helpOption{
 	{"--force-command CMD", "fix CMD instead of the previous command"},
 	{"--output-from FILE", "read failed command output from FILE (or stdin with -) instead of re-running it"},
 	{"--no-rerun", "do not re-run the original command to collect its output"},
+	{"--capture-mode MODE", "select output capture: auto, instant or rerun"},
 	{"--preview", "show suggestions without re-running the original or applying a fix"},
+	{"--explain", "explain capture, rules and execution order without executing"},
 	{"--json", "print suggestions without executing them"},
 	{"-y, --yes, --yeah, --hard", "execute the fixed command without confirmation"},
 	{"-r, --repeat", "repeat when the corrected command fails"},
@@ -210,7 +234,8 @@ func UsageFor(w io.Writer) string {
 func usageFlags() string {
 	return "[-h] [-v] [-a [ALIAS]] [-l FILE] [--setup] " +
 		"[--enable-experimental-instant-mode] [-d] [--doctor] [--list-rules] " +
-		"[--force-command CMD] [--output-from FILE] [--no-rerun] [--preview] [--json] [-y | -r] [command ...]"
+		"[--force-command CMD] [--output-from FILE] [--no-rerun] " +
+		"[--capture-mode MODE] [--preview] [--explain] [--json] [-y | -r] [command ...]"
 }
 
 // usageText returns the usage line, optionally styled with the ember theme.

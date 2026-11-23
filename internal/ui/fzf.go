@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/leafevans/go-fuck/v2/internal/logs"
-	"github.com/leafevans/go-fuck/v2/internal/types"
-	"github.com/leafevans/go-fuck/v2/internal/utils"
+	"github.com/leafevans/go-fuck/v3/internal/logs"
+	"github.com/leafevans/go-fuck/v3/internal/types"
+	"github.com/leafevans/go-fuck/v3/internal/utils"
 )
 
 // errFzfUnavailable is returned when the fzf executable is not installed.

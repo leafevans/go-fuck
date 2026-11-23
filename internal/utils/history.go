@@ -3,8 +3,8 @@ package utils
 import (
 	"strings"
 
-	"github.com/leafevans/go-fuck/v2/internal/shells"
-	"github.com/leafevans/go-fuck/v2/internal/types"
+	"github.com/leafevans/go-fuck/v3/internal/shells"
+	"github.com/leafevans/go-fuck/v3/internal/types"
 )
 
 // GetValidHistoryWithoutCurrent returns the history entries that can be

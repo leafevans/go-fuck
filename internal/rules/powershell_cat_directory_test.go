@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/v2/internal/shells"
+	"github.com/leafevans/go-fuck/v3/internal/shells"
 )
 
 // powerShellCatDirectoryOutput is the error Windows PowerShell prints when

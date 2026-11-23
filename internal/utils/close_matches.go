@@ -5,7 +5,7 @@ import (
 	"slices"
 	"unicode/utf8"
 
-	"github.com/leafevans/go-fuck/v2/internal/conf"
+	"github.com/leafevans/go-fuck/v3/internal/conf"
 )
 
 // realQuickRatio returns a cheap upper bound of the similarity of two strings,

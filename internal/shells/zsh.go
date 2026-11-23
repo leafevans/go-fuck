@@ -4,18 +4,26 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/leafevans/go-fuck/v2/internal/conf"
-	"github.com/leafevans/go-fuck/v2/internal/consts"
+	"github.com/leafevans/go-fuck/v3/internal/conf"
+	"github.com/leafevans/go-fuck/v3/internal/consts"
 )
 
 // zshAliasTemplate defines the alias function for zsh.
 const zshAliasTemplate = `%[1]s () {
 %[5]s    export TF_SHELL=zsh;
     export TF_ALIAS=%[1]s;
-    export TF_ALIAS_VERSION=3;
+    export TF_ALIAS_VERSION=%[6]s;
     TF_SHELL_ALIASES=$(alias);
     export TF_SHELL_ALIASES;
-    TF_HISTORY=$'\x01'"${history[$((HISTCMD-1))]}";
+    __gofuck_i=1;
+    __gofuck_history=;
+    while (( __gofuck_i <= 8 )); do
+        __gofuck_history=${history[$((HISTCMD-__gofuck_i))]};
+        __gofuck_words=(${(z)__gofuck_history});
+        [[ -z $__gofuck_history || ${__gofuck_words[1]} != %[1]s ]] && break;
+        (( __gofuck_i++ ));
+    done;
+    TF_HISTORY=$'\x01'"$__gofuck_history";
     export TF_HISTORY;
     TF_CMD=$(
         %[2]s %[3]s $@
@@ -46,7 +54,7 @@ func (z *Zsh) AppAlias(aliasName string) string {
 	}
 	return fmt.Sprintf(zshAliasTemplate, aliasName, consts.ExecutableName(),
 		consts.ArgumentPlaceholder, alterHistory,
-		posixAliasGuard("zsh", aliasName, consts.ExecutableName()))
+		posixAliasGuard("zsh", aliasName, consts.ExecutableName()), consts.AliasVersion)
 }
 
 // InstantModeAlias returns the alias of the instant mode.
@@ -58,7 +66,7 @@ func (z *Zsh) InstantModeAlias(aliasName string) string {
 	if instantModeEnabled() {
 		return instantModeMarkedAlias(z.AppAlias(aliasName), "%{", "%}", zshInstantModeMarkHook)
 	}
-	return instantModeInitAlias()
+	return instantModeInitAlias(aliasName)
 }
 
 // FromShell expands the aliases exported by the zsh alias.

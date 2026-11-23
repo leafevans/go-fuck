@@ -3,8 +3,6 @@ package entrypoints
 import (
 	"strings"
 	"testing"
-
-	"github.com/leafevans/go-fuck/v2/internal/consts"
 )
 
 func TestMainAliasUsesExecutableName(t *testing.T) {
@@ -14,7 +12,7 @@ func TestMainAliasUsesExecutableName(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("Main(--alias) = %d, want 0", code)
 	}
-	if !strings.Contains(stdout, "gof") || strings.Contains(stdout, consts.AppName) {
+	if !strings.Contains(stdout, "gof --shell-logger") {
 		t.Fatalf("alias output does not use the executable name: %q", stdout)
 	}
 }

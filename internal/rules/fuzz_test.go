@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/leafevans/go-fuck/v2/internal/types"
+	"github.com/leafevans/go-fuck/v3/internal/types"
 )
 
 // FuzzRules checks that no rule panics on an arbitrary command line or output.

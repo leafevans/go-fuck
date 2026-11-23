@@ -4,10 +4,10 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/leafevans/go-fuck/v2/internal/conf"
-	"github.com/leafevans/go-fuck/v2/internal/consts"
-	"github.com/leafevans/go-fuck/v2/internal/rules"
-	"github.com/leafevans/go-fuck/v2/internal/types"
+	"github.com/leafevans/go-fuck/v3/internal/conf"
+	"github.com/leafevans/go-fuck/v3/internal/consts"
+	"github.com/leafevans/go-fuck/v3/internal/rules"
+	"github.com/leafevans/go-fuck/v3/internal/types"
 )
 
 // resetCorrectorState resets the settings used by the tests.

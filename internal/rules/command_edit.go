@@ -3,7 +3,7 @@ package rules
 import (
 	"strings"
 
-	"github.com/leafevans/go-fuck/v2/internal/shells"
+	"github.com/leafevans/go-fuck/v3/internal/shells"
 )
 
 type commandWord struct {

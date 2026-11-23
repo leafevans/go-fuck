@@ -3,9 +3,9 @@ package rules
 import (
 	"os"
 
-	"github.com/leafevans/go-fuck/v2/internal/shells"
-	"github.com/leafevans/go-fuck/v2/internal/specific"
-	"github.com/leafevans/go-fuck/v2/internal/types"
+	"github.com/leafevans/go-fuck/v3/internal/shells"
+	"github.com/leafevans/go-fuck/v3/internal/specific"
+	"github.com/leafevans/go-fuck/v3/internal/types"
 )
 
 // gitAddPathspec matches the path that git did not find. Older git versions

@@ -3,7 +3,7 @@ package rules
 import (
 	"testing"
 
-	"github.com/leafevans/go-fuck/v2/internal/specific"
+	"github.com/leafevans/go-fuck/v3/internal/specific"
 )
 
 // npmRunScriptUsageOutput is the npm help output printed for an unknown

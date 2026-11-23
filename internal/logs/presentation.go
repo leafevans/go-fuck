@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/leafevans/go-fuck/v2/internal/consts"
+	"github.com/leafevans/go-fuck/v3/internal/consts"
 )
 
 // Status is the shared status vocabulary used by human-readable reports.

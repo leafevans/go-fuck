@@ -15,9 +15,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/leafevans/go-fuck/v2/internal/conf"
-	"github.com/leafevans/go-fuck/v2/internal/instant"
-	"github.com/leafevans/go-fuck/v2/internal/logs"
+	"github.com/leafevans/go-fuck/v3/internal/conf"
+	"github.com/leafevans/go-fuck/v3/internal/instant"
+	"github.com/leafevans/go-fuck/v3/internal/logs"
 )
 
 // GetOutput reads the instant log or, if allowed, re-runs the expanded command.
@@ -39,7 +39,7 @@ func GetOutput(script, expanded string, allowRerun bool) (string, bool) {
 	if !allowRerun {
 		return "", false
 	}
-	commandOutput, ok := rerun(expanded)
+	commandOutput, ok := Rerun(expanded)
 	if !ok {
 		return "", false
 	}
@@ -56,8 +56,8 @@ func normalizeOutput(commandOutput string) string {
 	return strings.ReplaceAll(commandOutput, "\r", "")
 }
 
-// rerun runs the command and captures its output.
-func rerun(expanded string) (string, bool) {
+// Rerun runs the command and captures its output.
+func Rerun(expanded string) (string, bool) {
 	settings := conf.Current()
 
 	parts := strings.Fields(expanded)

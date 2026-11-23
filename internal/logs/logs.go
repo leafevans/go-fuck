@@ -11,8 +11,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/leafevans/go-fuck/v2/internal/conf"
-	"github.com/leafevans/go-fuck/v2/internal/consts"
+	"github.com/leafevans/go-fuck/v3/internal/conf"
+	"github.com/leafevans/go-fuck/v3/internal/consts"
 )
 
 // ANSI attributes used by the ember theme. The theme colors themselves are
@@ -108,6 +108,37 @@ func PreviewHeader() {
 	renderer := NewRenderer(out)
 	fmt.Fprintf(out, "%s %s\n", renderer.Title("preview"),
 		renderer.Muted("original command not re-run; suggestions not applied."))
+}
+
+// ExplainHeader starts a non-executing explanation report.
+func ExplainHeader(command, source string, elapsed time.Duration) {
+	renderer := NewRenderer(out)
+	fmt.Fprintln(out, renderer.Title("explain"))
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, renderer.Field("Command", CommandText(command)))
+	fmt.Fprintln(out, renderer.Field("Capture", fmt.Sprintf("%s (%s)", source, elapsed.Round(time.Microsecond))))
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, renderer.Section("Suggestions"))
+}
+
+// ExplainSuggestion prints one suggestion and its non-executing execution plan.
+func ExplainSuggestion(index int, script, rule, reason, beforeRun string) {
+	renderer := NewRenderer(out)
+	fmt.Fprintf(out, "  %d. %s\n", index, renderer.Strong(CommandText(script)))
+	fmt.Fprintf(out, "     %s %s\n", renderer.Muted("Rule:"), CommandText(rule))
+	if reason != "" {
+		fmt.Fprintf(out, "     %s %s\n", renderer.Muted("Why:"), CommandText(reason))
+	}
+	if beforeRun != "" {
+		fmt.Fprintf(out, "     %s %s\n", renderer.Muted("Before:"), CommandText(beforeRun))
+	}
+	fmt.Fprintf(out, "     %s %s\n", renderer.Muted("Execute:"), CommandText(script))
+}
+
+// ExplainEmpty reports that no rule produced a suggestion.
+func ExplainEmpty() {
+	renderer := NewRenderer(out)
+	fmt.Fprintln(out, "  "+renderer.Muted("No suggestions"))
 }
 
 // Debug writes a debug message when the debug setting is enabled.

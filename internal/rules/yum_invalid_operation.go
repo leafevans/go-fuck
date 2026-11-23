@@ -4,9 +4,9 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/leafevans/go-fuck/v2/internal/specific"
-	"github.com/leafevans/go-fuck/v2/internal/types"
-	"github.com/leafevans/go-fuck/v2/internal/utils"
+	"github.com/leafevans/go-fuck/v3/internal/specific"
+	"github.com/leafevans/go-fuck/v3/internal/types"
+	"github.com/leafevans/go-fuck/v3/internal/utils"
 )
 
 // yumInvalidOperationHelp returns the output of yum run without arguments.

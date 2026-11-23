@@ -3,8 +3,8 @@ package rules
 import (
 	"strings"
 
-	"github.com/leafevans/go-fuck/v2/internal/types"
-	"github.com/leafevans/go-fuck/v2/internal/utils"
+	"github.com/leafevans/go-fuck/v3/internal/types"
+	"github.com/leafevans/go-fuck/v3/internal/utils"
 )
 
 // brewUninstallMatch reports whether brew could not uninstall all versions of

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/leafevans/go-fuck/v2/internal/types"
-	"github.com/leafevans/go-fuck/v2/internal/utils"
+	"github.com/leafevans/go-fuck/v3/internal/types"
+	"github.com/leafevans/go-fuck/v3/internal/utils"
 )
 
 // aptGetHandlerPath returns the path of the command-not-found helper script

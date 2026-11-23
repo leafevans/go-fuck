@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/leafevans/go-fuck/v2/internal/consts"
+	"github.com/leafevans/go-fuck/v3/internal/consts"
 )
 
 func TestPowershellVersion(t *testing.T) {

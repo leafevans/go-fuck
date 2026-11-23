@@ -6,8 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/v2/internal/consts"
-	"github.com/leafevans/go-fuck/v2/internal/instant"
+	"github.com/leafevans/go-fuck/v3/internal/conf"
+	"github.com/leafevans/go-fuck/v3/internal/consts"
+	"github.com/leafevans/go-fuck/v3/internal/instant"
 )
 
 func TestDoctorInstantCheck(t *testing.T) {
@@ -16,14 +17,16 @@ func TestDoctorInstantCheck(t *testing.T) {
 	}
 	t.Setenv(consts.OutputLogEnv, "")
 	t.Setenv(consts.LegacyOutputLogEnv, "")
+	t.Cleanup(conf.Reset)
+	conf.Reset()
 
-	if got := doctorInstantCheck(nil); got.Status != doctorInfo || !strings.Contains(got.Message, "not enabled") {
+	if got := doctorCaptureCheck(nil); got.Status != doctorInfo || !strings.Contains(got.Message, "no logged shell") {
 		t.Fatalf("disabled instant check = %+v", got)
 	}
 
 	missing := filepath.Join(t.TempDir(), "missing.log")
 	t.Setenv(consts.OutputLogEnv, missing)
-	if got := doctorInstantCheck(nil); got.Status != doctorWarn {
+	if got := doctorCaptureCheck(nil); got.Status != doctorWarn {
 		t.Fatalf("missing log check = %+v, want warn", got)
 	}
 
@@ -32,7 +35,7 @@ func TestDoctorInstantCheck(t *testing.T) {
 		t.Fatalf("write log: %v", err)
 	}
 	t.Setenv(consts.OutputLogEnv, empty)
-	if got := doctorInstantCheck(nil); got.Status != doctorInfo || !strings.Contains(got.Message, "no output yet") {
+	if got := doctorCaptureCheck(nil); got.Status != doctorInfo || !strings.Contains(got.Message, "no output yet") {
 		t.Fatalf("empty log check = %+v", got)
 	}
 
@@ -41,7 +44,7 @@ func TestDoctorInstantCheck(t *testing.T) {
 		t.Fatalf("write log: %v", err)
 	}
 	t.Setenv(consts.OutputLogEnv, withoutMarker)
-	if got := doctorInstantCheck(nil); got.Status != doctorWarn || !strings.Contains(got.Message, "prompt marker") {
+	if got := doctorCaptureCheck(nil); got.Status != doctorWarn || !strings.Contains(got.Message, "prompt marker") {
 		t.Fatalf("unmarked log check = %+v, want warn", got)
 	}
 
@@ -50,7 +53,7 @@ func TestDoctorInstantCheck(t *testing.T) {
 		t.Fatalf("write log: %v", err)
 	}
 	t.Setenv(consts.OutputLogEnv, valid)
-	if got := doctorInstantCheck(nil); got.Status != doctorOK {
+	if got := doctorCaptureCheck(nil); got.Status != doctorOK {
 		t.Fatalf("valid log check = %+v, want ok", got)
 	}
 }

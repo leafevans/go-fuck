@@ -4,17 +4,17 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/leafevans/go-fuck/v2/internal/conf"
-	"github.com/leafevans/go-fuck/v2/internal/consts"
+	"github.com/leafevans/go-fuck/v3/internal/conf"
+	"github.com/leafevans/go-fuck/v3/internal/consts"
 )
 
 // bashAliasTemplate defines the alias function for bash.
 const bashAliasTemplate = `function %[1]s () {
 %[5]s    export TF_SHELL=bash;
     export TF_ALIAS=%[1]s;
-    export TF_ALIAS_VERSION=3;
+    export TF_ALIAS_VERSION=%[6]s;
     export TF_SHELL_ALIASES=$(alias);
-    export TF_HISTORY=$'\x01'$(fc -ln -2 2>/dev/null);
+    export TF_HISTORY=$'\x01'$(fc -ln -8 2>/dev/null);
     TF_CMD=$(
         %[2]s %[3]s "$@"
     ) && eval "$TF_CMD";
@@ -43,7 +43,7 @@ func (b *Bash) AppAlias(aliasName string) string {
 	}
 	return fmt.Sprintf(bashAliasTemplate, aliasName, consts.ExecutableName(),
 		consts.ArgumentPlaceholder, alterHistory,
-		posixAliasGuard("bash", aliasName, consts.ExecutableName()))
+		posixAliasGuard("bash", aliasName, consts.ExecutableName()), consts.AliasVersion)
 }
 
 // InstantModeAlias returns the alias of the instant mode.
@@ -55,7 +55,7 @@ func (b *Bash) InstantModeAlias(aliasName string) string {
 	if instantModeEnabled() {
 		return instantModeMarkedAlias(b.AppAlias(aliasName), "\\[", "\\]", bashInstantModeMarkHook)
 	}
-	return instantModeInitAlias()
+	return instantModeInitAlias(aliasName)
 }
 
 // FromShell expands the aliases exported by the bash alias.

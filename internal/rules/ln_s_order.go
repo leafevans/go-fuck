@@ -4,9 +4,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/leafevans/go-fuck/v2/internal/specific"
-	"github.com/leafevans/go-fuck/v2/internal/types"
-	"github.com/leafevans/go-fuck/v2/internal/utils"
+	"github.com/leafevans/go-fuck/v3/internal/specific"
+	"github.com/leafevans/go-fuck/v3/internal/types"
+	"github.com/leafevans/go-fuck/v3/internal/utils"
 )
 
 // lnSOrderPathExists reports whether a command argument exists. It is a

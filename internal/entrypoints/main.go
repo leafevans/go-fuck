@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/leafevans/go-fuck/v2/internal/argumentparser"
-	"github.com/leafevans/go-fuck/v2/internal/consts"
-	"github.com/leafevans/go-fuck/v2/internal/logs"
-	"github.com/leafevans/go-fuck/v2/internal/shells"
-	"github.com/leafevans/go-fuck/v2/internal/system"
+	"github.com/leafevans/go-fuck/v3/internal/argumentparser"
+	"github.com/leafevans/go-fuck/v3/internal/consts"
+	"github.com/leafevans/go-fuck/v3/internal/logs"
+	"github.com/leafevans/go-fuck/v3/internal/shells"
+	"github.com/leafevans/go-fuck/v3/internal/system"
 )
 
 // Main is the entry point of the go-fuck command. It returns the process exit
@@ -53,7 +53,7 @@ func dispatch() int {
 	case args.Setup:
 		ensureShell()
 		return setup(args)
-	case args.JSON || args.Preview || args.NoRerun || len(args.Command) > 0 || args.ForceCommand != "" || os.Getenv("TF_HISTORY") != "":
+	case args.JSON || args.Preview || args.Explain || args.NoRerun || len(args.Command) > 0 || args.ForceCommand != "" || os.Getenv("TF_HISTORY") != "":
 		ensureShell()
 		return fixCommand(args)
 	default:

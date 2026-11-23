@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/v2/internal/conf"
+	"github.com/leafevans/go-fuck/v3/internal/conf"
 )
 
 // findDoctorCheck returns the named check of the report.
@@ -107,6 +107,16 @@ func TestDoctorChecksForShellStates(t *testing.T) {
 			t.Fatalf("alias check = %+v", alias)
 		}
 	})
+}
+
+func TestDoctorAliasCheckWarnsForOldFormat(t *testing.T) {
+	t.Setenv("TF_ALIAS_VERSION", "3")
+	check := doctorAliasCheck(doctorShellState{
+		Name: "bash", Info: "Bash 5.2", ConfigPath: "~/.bashrc", AliasFound: true,
+	}, nil)
+	if check.Status != doctorWarn || !strings.Contains(check.Message, "outdated alias") {
+		t.Fatalf("doctorAliasCheck() = %+v", check)
+	}
 }
 
 func TestDoctorFzfCheck(t *testing.T) {

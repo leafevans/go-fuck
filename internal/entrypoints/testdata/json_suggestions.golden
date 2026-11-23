@@ -2,6 +2,7 @@
   "schema_version": 1,
   "command": "git brnch",
   "output": "git: 'brnch' is not a git command.\n",
+  "capture_source": "provided",
   "suggestions": [
     {
       "command": "git branch",

@@ -3,8 +3,8 @@ package entrypoints
 import (
 	"errors"
 
-	"github.com/leafevans/go-fuck/v2/internal/instant"
-	"github.com/leafevans/go-fuck/v2/internal/logs"
+	"github.com/leafevans/go-fuck/v3/internal/instant"
+	"github.com/leafevans/go-fuck/v3/internal/logs"
 )
 
 // shellLogger runs the instant mode shell logger.

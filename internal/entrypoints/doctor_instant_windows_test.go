@@ -8,7 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/v2/internal/consts"
+	"github.com/leafevans/go-fuck/v3/internal/conf"
+	"github.com/leafevans/go-fuck/v3/internal/consts"
 )
 
 // instantProfile returns a temporary PowerShell profile with the given lines.
@@ -36,8 +37,8 @@ func TestDoctorInstantProfileOrder(t *testing.T) {
 	if path, problem := doctorInstantProfileProblem(profiles); !problem || path != broken {
 		t.Fatalf("doctorInstantProfileProblem() = %q, %t, want the broken profile", path, problem)
 	}
-	if got := doctorInstantCheck(profiles); got.Status != doctorWarn {
-		t.Fatalf("doctorInstantCheck() = %+v, want warn", got)
+	if got := doctorCaptureCheck(profiles); got.Status != doctorWarn {
+		t.Fatalf("doctorCaptureCheck() = %+v, want warn", got)
 	}
 }
 
@@ -50,8 +51,8 @@ func TestDoctorInstantProfileOrderIsFine(t *testing.T) {
 	if _, problem := doctorInstantProfileProblem(profiles); problem {
 		t.Fatal("doctorInstantProfileProblem() reported a correct profile")
 	}
-	if got := doctorInstantCheck(profiles); got.Status != doctorInfo {
-		t.Fatalf("doctorInstantCheck() = %+v, want info", got)
+	if got := doctorCaptureCheck(profiles); got.Status != doctorInfo {
+		t.Fatalf("doctorCaptureCheck() = %+v, want info", got)
 	}
 }
 
@@ -66,6 +67,9 @@ func TestDoctorInstantProfileWithoutInstantLine(t *testing.T) {
 }
 
 func TestDoctorUsesSamePowerShellProfilesForAliasAndInstantChecks(t *testing.T) {
+	t.Cleanup(conf.Reset)
+	conf.Reset()
+	t.Setenv("GOFUCK_CAPTURE_MODE", "auto")
 	active := instantProfile(t, instantProfileLine, "function prompt { 'PS> ' }")
 	hostProfile := filepath.Join(filepath.Dir(active), "Microsoft.PowerShell_profile.ps1")
 	if err := os.WriteFile(hostProfile, []byte("# No alias in the current-host profile.\n"), 0o600); err != nil {
@@ -106,9 +110,9 @@ func TestDoctorUsesSamePowerShellProfilesForAliasAndInstantChecks(t *testing.T) 
 			if alias.Status != doctorOK || !strings.Contains(alias.Message, tt.wantPath) {
 				t.Errorf("alias check = %+v, want ok for %q", alias, tt.wantPath)
 			}
-			instant := findDoctorCheck(t, checks, "instant")
+			instant := findDoctorCheck(t, checks, "capture")
 			if instant.Status != doctorWarn || !strings.Contains(instant.Hint, tt.wantPath) {
-				t.Errorf("instant check = %+v, want warning for %q", instant, tt.wantPath)
+				t.Errorf("capture check = %+v, want warning for %q", instant, tt.wantPath)
 			}
 		})
 	}

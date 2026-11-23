@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/v2/internal/shells"
+	"github.com/leafevans/go-fuck/v3/internal/shells"
 )
 
 func TestGitRepositoryOutputUsesSelectedRepository(t *testing.T) {

@@ -220,7 +220,7 @@ distribution manifests are regenerated from the release checksums afterwards (se
 the release assets, runs `tools/update-packaging`, checks the packaging tests and, with
 `-Commit`, commits the regenerated files; `-PushAur` also publishes the AUR package with
 `scripts/push-aur.sh` (Git Bash or WSL, plus an AUR SSH key). After the
-release, check that `go install github.com/leafevans/go-fuck/v2/cmd/go-fuck@latest` resolves the new
+release, check that `go install github.com/leafevans/go-fuck/v3/cmd/go-fuck@latest` resolves the new
 tag.
 
 The project follows [Semantic Versioning](https://semver.org/):
@@ -230,9 +230,9 @@ The project follows [Semantic Versioning](https://semver.org/):
 - The **minor** version is incremented for new features and rules that stay backward compatible.
 - The **patch** version is incremented for bug fixes and documentation only releases.
 
-The major version is part of the Go module path: releases of the 2.x series are published under
-`github.com/leafevans/go-fuck/v2`, which is what allows
-`go install github.com/leafevans/go-fuck/v2/cmd/go-fuck@latest` to resolve the latest release. A
+The major version is part of the Go module path: releases of the 3.x series are published under
+`github.com/leafevans/go-fuck/v3`, which is what allows
+`go install github.com/leafevans/go-fuck/v3/cmd/go-fuck@latest` to resolve the latest release. A
 future major version has to change the module path and the imports together; the
 `internal/consts.TestModulePathMatchesMajorVersion` test fails until they match.
 

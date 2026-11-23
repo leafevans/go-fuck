@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/leafevans/go-fuck/v2/internal/conf"
+	"github.com/leafevans/go-fuck/v3/internal/conf"
 )
 
 // envValue returns the value of a key in an environment slice and the number

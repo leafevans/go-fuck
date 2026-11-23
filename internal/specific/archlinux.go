@@ -6,8 +6,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/leafevans/go-fuck/v2/internal/shells"
-	"github.com/leafevans/go-fuck/v2/internal/utils"
+	"github.com/leafevans/go-fuck/v3/internal/shells"
+	"github.com/leafevans/go-fuck/v3/internal/utils"
 )
 
 // pkgFileResult is the memoized result of a pkgfile lookup.

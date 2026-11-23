@@ -1,18 +1,23 @@
 package entrypoints
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
-	"github.com/leafevans/go-fuck/v2/internal/argumentparser"
-	"github.com/leafevans/go-fuck/v2/internal/conf"
-	"github.com/leafevans/go-fuck/v2/internal/logs"
-	"github.com/leafevans/go-fuck/v2/internal/shells"
-	"github.com/leafevans/go-fuck/v2/internal/system"
+	"github.com/leafevans/go-fuck/v3/internal/argumentparser"
+	"github.com/leafevans/go-fuck/v3/internal/conf"
+	"github.com/leafevans/go-fuck/v3/internal/logs"
+	"github.com/leafevans/go-fuck/v3/internal/shells"
+	"github.com/leafevans/go-fuck/v3/internal/system"
 )
+
+// errAmbiguousInitialization reports that more than one known alias line would
+// be changed, so setup cannot migrate the file safely.
+var errAmbiguousInitialization = errors.New("multiple go-fuck initialization lines found")
 
 // powerShellProfileExecutables are the PowerShell flavors whose profile files
 // are configured, in display order.
@@ -43,7 +48,7 @@ func setup(args *argumentparser.Args) int {
 	renderer := logs.NewRenderer(os.Stdout)
 	fmt.Fprintf(os.Stdout, "%s\n\n", renderer.Title("setup"))
 
-	if _, err := conf.Load(&conf.Args{Debug: args.Debug}); err != nil {
+	if _, err := conf.Load(&conf.Args{Debug: args.Debug, CaptureMode: args.CaptureMode}); err != nil {
 		printSetupFailure("can't load settings: %v", err)
 	}
 
@@ -54,18 +59,36 @@ func setup(args *argumentparser.Args) int {
 		return 1
 	}
 
+	mode := conf.Current().CaptureMode
+	if args.CaptureMode == "" && !args.EnableExperimentalInstantMode &&
+		!conf.Current().CaptureModeExplicit() {
+		mode = "auto"
+	}
 	if args.EnableExperimentalInstantMode {
-		if configuration.InstantContent == "" {
-			printSetupWarning("instant mode is not supported for %s, configuring the regular alias instead", shell.FriendlyName())
-		} else {
-			instantConfiguration := *configuration
-			instantConfiguration.Content = configuration.InstantContent
-			configuration = &instantConfiguration
-		}
+		mode = "instant"
+	}
+	rawRegularContent := configuration.Content
+	rawInstantContent := configuration.InstantContent
+	regularContent := withCaptureMode(rawRegularContent, mode)
+	instantContent := withCaptureMode(rawInstantContent, mode)
+	regularConfiguration := *configuration
+	regularConfiguration.Content = regularContent
+	configuration = &regularConfiguration
+	if (mode == "auto" || mode == "instant") && configuration.InstantContent != "" {
+		instantConfiguration := regularConfiguration
+		instantConfiguration.Content = instantContent
+		configuration = &instantConfiguration
+	} else if mode == "instant" {
+		printSetupWarning("instant capture is not supported for %s, configuring rerun mode instead", shell.FriendlyName())
+		mode = "rerun"
+		regularContent = withCaptureMode(rawRegularContent, mode)
+		regularConfiguration.Content = regularContent
+		configuration = &regularConfiguration
 	}
 
 	if shell.Name() == "powershell" {
-		return setupPowerShell(shell, configuration)
+		return setupPowerShell(shell, configuration, regularContent, instantContent,
+			rawRegularContent, rawInstantContent)
 	}
 
 	if !configuration.CanConfigureAutomatically || strings.HasPrefix(configuration.Path, "$") {
@@ -95,6 +118,16 @@ func setup(args *argumentparser.Args) int {
 		return 0
 	}
 
+	if changed, err := replaceInitializationLine(path, existing, configuration.Content,
+		regularContent, configuration.InstantContent, rawRegularContent, rawInstantContent); err != nil {
+		printSetupFailure("can't update %s: %v", path, err)
+		return 1
+	} else if changed {
+		printConfigured(shell.FriendlyName(), path, false)
+		printReload(configuration.Reload)
+		return 0
+	}
+
 	// Older releases wrote the instant mode line without quoting the eval
 	// argument. Replace that line in place so enabling instant mode again does
 	// not append a second initialization line.
@@ -119,6 +152,15 @@ func setup(args *argumentparser.Args) int {
 	return 0
 }
 
+// withCaptureMode records the selected capture policy in an initialization
+// line so later shell starts do not fall back to an older settings file.
+func withCaptureMode(content, mode string) string {
+	if content == "" || mode == "" {
+		return content
+	}
+	return strings.Replace(content, "--alias", "--alias --capture-mode="+mode, 1)
+}
+
 // setupPowerShell configures the alias in the profile file of every installed
 // PowerShell flavor.
 //
@@ -127,7 +169,8 @@ func setup(args *argumentparser.Args) int {
 // example to OneDrive), so the installed executables report their $PROFILE
 // instead of go-fuck guessing it. Missing profile files and their directories
 // are created, because a fresh PowerShell installation does not have them.
-func setupPowerShell(shell shells.Shell, configuration *shells.Configuration) int {
+func setupPowerShell(shell shells.Shell, configuration *shells.Configuration,
+	regularContent, instantContent, rawRegularContent, rawInstantContent string) int {
 	paths := powerShellProfiles()
 	if len(paths) == 0 {
 		printManualConfiguration(configuration)
@@ -152,6 +195,15 @@ func setupPowerShell(shell shells.Shell, configuration *shells.Configuration) in
 		if hasConfigurationLine(existing, configuration.Content) {
 			printConfigured(shell.FriendlyName(), path, true)
 			alreadyConfigured++
+			continue
+		}
+		if changed, err := replaceInitializationLine(path, existing, configuration.Content,
+			regularContent, instantContent, rawRegularContent, rawInstantContent); err != nil {
+			printSetupFailure("can't update %s: %v", path, err)
+			return 1
+		} else if changed {
+			printConfigured(shell.FriendlyName(), path, false)
+			configured++
 			continue
 		}
 		if err := appendConfigurationLine(path, configuration.Content, existing); err != nil {
@@ -262,21 +314,48 @@ func configurationLineSuffix(line, content string) (string, bool) {
 // Unrelated commands, comments, indentation and line endings are preserved.
 func replaceInstantModeLine(path string, existing []byte, content string) (bool, error) {
 	quoted, ok := strings.CutPrefix(content, `eval "`)
-	if !ok || !strings.HasSuffix(quoted, `"`) {
-		return false, nil
+	legacy := ""
+	if ok && strings.HasSuffix(quoted, `"`) {
+		legacy = "eval " + strings.TrimSuffix(quoted, `"`)
 	}
-	legacy := "eval " + strings.TrimSuffix(quoted, `"`)
-	lines := strings.Split(string(existing), "\n")
-	changed := false
-	for index, line := range lines {
-		if suffix, matches := configurationLineSuffix(line, legacy); matches {
-			indent := line[:len(line)-len(strings.TrimLeft(line, " \t\uFEFF"))]
-			lines[index] = indent + content + suffix
-			changed = true
+	return replaceInitializationLine(path, existing, content, legacy)
+}
+
+// replaceInitializationLine replaces exactly one known initialization line
+// while preserving indentation and trailing comments.
+func replaceInitializationLine(path string, existing []byte, content string, candidates ...string) (bool, error) {
+	allCandidates := make([]string, 0, len(candidates)*2)
+	for _, candidate := range candidates {
+		if candidate == "" {
+			continue
+		}
+		allCandidates = append(allCandidates, candidate)
+		if quoted, ok := strings.CutPrefix(candidate, `eval "`); ok && strings.HasSuffix(quoted, `"`) {
+			allCandidates = append(allCandidates, "eval "+strings.TrimSuffix(quoted, `"`))
 		}
 	}
-	if !changed {
+	lines := strings.Split(string(existing), "\n")
+	matches := 0
+	for index, line := range lines {
+		for _, candidate := range allCandidates {
+			if candidate == "" || candidate == content {
+				continue
+			}
+			suffix, matched := configurationLineSuffix(line, candidate)
+			if !matched {
+				continue
+			}
+			indent := line[:len(line)-len(strings.TrimLeft(line, " \t\uFEFF"))]
+			lines[index] = indent + content + suffix
+			matches++
+			break
+		}
+	}
+	if matches == 0 {
 		return false, nil
+	}
+	if matches > 1 {
+		return false, errAmbiguousInitialization
 	}
 	info, err := os.Stat(path)
 	if err != nil {

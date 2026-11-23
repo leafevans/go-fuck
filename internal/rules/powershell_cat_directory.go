@@ -3,7 +3,7 @@ package rules
 import (
 	"strings"
 
-	"github.com/leafevans/go-fuck/v2/internal/types"
+	"github.com/leafevans/go-fuck/v3/internal/types"
 )
 
 // powerShellCatDirectoryPath matches the path in the error PowerShell prints

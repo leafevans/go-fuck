@@ -3,8 +3,8 @@ package rules
 import (
 	"strings"
 
-	"github.com/leafevans/go-fuck/v2/internal/specific"
-	"github.com/leafevans/go-fuck/v2/internal/types"
+	"github.com/leafevans/go-fuck/v3/internal/specific"
+	"github.com/leafevans/go-fuck/v3/internal/types"
 )
 
 // gitHelpAliasedMatch reports whether git help was called for an alias.

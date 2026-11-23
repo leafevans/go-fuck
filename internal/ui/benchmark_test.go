@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/leafevans/go-fuck/v2/internal/types"
+	"github.com/leafevans/go-fuck/v3/internal/types"
 )
 
 func BenchmarkFzfCandidates(b *testing.B) {

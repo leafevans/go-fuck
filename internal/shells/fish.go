@@ -7,15 +7,22 @@ import (
 	"sync"
 	"time"
 
-	"github.com/leafevans/go-fuck/v2/internal/conf"
-	"github.com/leafevans/go-fuck/v2/internal/consts"
-	"github.com/leafevans/go-fuck/v2/internal/logs"
+	"github.com/leafevans/go-fuck/v3/internal/conf"
+	"github.com/leafevans/go-fuck/v3/internal/consts"
+	"github.com/leafevans/go-fuck/v3/internal/logs"
 )
 
 // fishAliasTemplate defines the alias function for fish.
 const fishAliasTemplate = `function %[1]s -d "Correct your previous console command"
 %[5]s  set -l fucked_up_command $history[1]
-  env TF_SHELL=fish TF_ALIAS=%[1]s TF_ALIAS_VERSION=3 %[2]s $fucked_up_command %[3]s $argv | read --null -l unfucked_command
+  for __gofuck_candidate in $history[1..8]
+    set -l __gofuck_words (string split -m1 ' ' -- $__gofuck_candidate)
+    if test "$__gofuck_words[1]" != "%[1]s"
+      set fucked_up_command $__gofuck_candidate
+      break
+    end
+  end
+  env TF_SHELL=fish TF_ALIAS=%[1]s TF_ALIAS_VERSION=%[6]s %[2]s $fucked_up_command %[3]s $argv | read --null -l unfucked_command
   if test $pipestatus[1] -eq 0; and test -n "$unfucked_command"
     eval $unfucked_command
 %[4]s
@@ -51,7 +58,7 @@ func (f *Fish) AppAlias(aliasName string) string {
 	}
 	return fmt.Sprintf(fishAliasTemplate, aliasName, consts.ExecutableName(),
 		consts.ArgumentPlaceholder, alterHistory,
-		fishAliasGuard(aliasName, consts.ExecutableName()))
+		fishAliasGuard(aliasName, consts.ExecutableName()), consts.AliasVersion)
 }
 
 // InstantModeAlias falls back to the regular alias because instant mode is not

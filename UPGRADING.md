@@ -15,13 +15,14 @@ Starting with **1.0.0**:
   as before. The precedence stays: built-in defaults < `settings.json` < environment < command line
   flags.
 - **JSON output.** `--json` is a stable machine readable contract. `schema_version` is `1` for
-  the whole 1.x and 2.x series. The fields `command`, `output`, `output_truncated` and
+  the whole 1.x, 2.x and 3.x series. The fields `command`, `output`, `output_truncated` and
   `suggestions[].command`, `suggestions[].priority`, `suggestions[].side_effect` keep their
   meaning. New optional fields may be added in minor releases; consumers must ignore unknown fields.
   The document is written to stdout and diagnostics stay on stderr.
 - **Command line.** The flags and behavior documented in the README keep working. A breaking change
   requires a major version.
-- **Instant mode.** Instant mode is opt-in and documented in [README.md](README.md#instant-mode).
+- **Output capture.** `capture_mode` selects `auto`, `instant` or `rerun`, documented in
+  [README.md](README.md#terminal-capture-and-instant-mode).
 - **Versioning.** Releases follow [Semantic Versioning](https://semver.org/); the policy is described
   in [CONTRIBUTING.md](CONTRIBUTING.md#release-and-versioning).
 
@@ -132,6 +133,28 @@ human-readable command interface and output streams:
 
 Existing shell aliases already pass `--help` and `--version` through to go-fuck, so they do not need
 to be regenerated for this change.
+
+## Upgrading from 2.36 to 3.0.0
+
+Version 3.0 changes the default output-capture policy. No JSON migration is required: the schema
+stays at version 1 and `capture_source` is an optional field.
+
+- The Go module moved to `github.com/leafevans/go-fuck/v3`. Build from source with
+  `go install github.com/leafevans/go-fuck/v3/cmd/go-fuck@latest`; the `/v2` path continues to
+  resolve the older 2.x series.
+- New installations use `capture_mode: "auto"`. Supported Bash, Zsh and PowerShell setups start a
+  logged shell and read the previous command output without re-running it.
+- Run `go-fuck --setup` to migrate an existing initialization line. Setup preserves an explicitly
+  configured `capture_mode`, otherwise it migrates the shell to `auto`.
+- `capture_mode: "instant"` never falls back to re-running. `capture_mode: "rerun"` preserves the
+  old behavior explicitly.
+- The deprecated `instant_mode` key and `GOFUCK_INSTANT_MODE` variable are still accepted.
+  `instant_mode: true` maps to `auto`; `instant_mode: false` maps to `rerun` when no explicit
+  `capture_mode` is present.
+- `--enable-experimental-instant-mode` remains as a compatibility alias for
+  `--capture-mode=instant`.
+- Generated aliases use format version 4. Reload or regenerate the alias to skip consecutive alias
+  calls when locating the previous real command.
 
 ## Future releases
 

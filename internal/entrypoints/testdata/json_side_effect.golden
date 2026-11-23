@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
   "command": "git commit",
+  "capture_source": "none",
   "suggestions": [
     {
       "command": "git commit --amend",

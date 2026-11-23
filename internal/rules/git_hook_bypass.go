@@ -1,8 +1,8 @@
 package rules
 
 import (
-	"github.com/leafevans/go-fuck/v2/internal/specific"
-	"github.com/leafevans/go-fuck/v2/internal/types"
+	"github.com/leafevans/go-fuck/v3/internal/specific"
+	"github.com/leafevans/go-fuck/v3/internal/types"
 )
 
 // gitHookBypassCommands lists the commands that run git hooks.

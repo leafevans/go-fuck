@@ -5,8 +5,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/leafevans/go-fuck/v2/internal/consts"
-	"github.com/leafevans/go-fuck/v2/internal/logs"
+	"github.com/leafevans/go-fuck/v3/internal/consts"
+	"github.com/leafevans/go-fuck/v3/internal/logs"
 )
 
 // Tcsh implements the tcsh specific behavior.
@@ -36,12 +36,12 @@ func NewTcsh() *Tcsh {
 // cleared again so a later manual invocation does not reuse a stale history.
 func (t *Tcsh) AppAlias(aliasName string) string {
 	return fmt.Sprintf(
-		"alias %[1]s 'setenv TF_SHELL tcsh && setenv TF_ALIAS %[1]s && "+
+		"alias %[1]s 'setenv TF_SHELL tcsh && setenv TF_ALIAS %[1]s && setenv TF_ALIAS_VERSION %[4]s && "+
 			"set fucked_cmd = \"%[3]shistory -h 2 | head -n 1%[3]s\" && "+
 			"setenv TF_HISTORY \"$fucked_cmd\" && "+
 			"set unfucked_cmd = \"%[3]s%[2]s%[3]s\" && "+
 			"eval \"$unfucked_cmd\" ; unsetenv TF_HISTORY'",
-		aliasName, consts.ExecutableName(), backtick)
+		aliasName, consts.ExecutableName(), backtick, consts.AliasVersion)
 }
 
 // Quote returns a tcsh escaped version of s.

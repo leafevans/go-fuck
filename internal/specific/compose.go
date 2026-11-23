@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/leafevans/go-fuck/v2/internal/utils"
+	"github.com/leafevans/go-fuck/v3/internal/utils"
 )
 
 // composeFileNames are the Compose file names that docker compose searches, in

@@ -3,7 +3,7 @@ package rules
 import (
 	"strings"
 
-	"github.com/leafevans/go-fuck/v2/internal/types"
+	"github.com/leafevans/go-fuck/v3/internal/types"
 )
 
 // cmdExistingDirectory matches the existing item that mkdir reports.

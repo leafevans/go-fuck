@@ -4,7 +4,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/leafevans/go-fuck/v2/internal/types"
+	"github.com/leafevans/go-fuck/v3/internal/types"
 )
 
 // cmdPathNotFoundError is the error that cmd.exe prints for a missing path.

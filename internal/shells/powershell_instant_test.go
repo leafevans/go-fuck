@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/v2/internal/consts"
+	"github.com/leafevans/go-fuck/v3/internal/consts"
 )
 
 // TestPowershellInstantModeInitAlias checks the code that starts the logged

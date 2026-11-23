@@ -7,8 +7,8 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/leafevans/go-fuck/v2/internal/conf"
-	"github.com/leafevans/go-fuck/v2/internal/types"
+	"github.com/leafevans/go-fuck/v3/internal/conf"
+	"github.com/leafevans/go-fuck/v3/internal/types"
 )
 
 // GetAlias returns the alias name that invoked go-fuck.

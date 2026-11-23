@@ -3,7 +3,7 @@ package rules
 import (
 	"strings"
 
-	"github.com/leafevans/go-fuck/v2/internal/types"
+	"github.com/leafevans/go-fuck/v3/internal/types"
 )
 
 // cmdRmdirNotEmptyError is the error that cmd.exe prints for rmdir on a

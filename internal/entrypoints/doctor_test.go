@@ -9,8 +9,8 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	"github.com/leafevans/go-fuck/v2/internal/conf"
-	"github.com/leafevans/go-fuck/v2/internal/consts"
+	"github.com/leafevans/go-fuck/v3/internal/conf"
+	"github.com/leafevans/go-fuck/v3/internal/consts"
 )
 
 func TestPrintDoctorReportPlain(t *testing.T) {
@@ -74,7 +74,7 @@ func TestDoctorReportsShellIntegration(t *testing.T) {
 		"found in ~/.bashrc",
 		"config",
 		"history",
-		"instant",
+		"capture",
 	} {
 		if !strings.Contains(stdout, want) {
 			t.Fatalf("doctor output %q does not contain %q", stdout, want)
@@ -104,7 +104,7 @@ func TestDoctorJSON(t *testing.T) {
 		names[check.Name] = true
 	}
 	for _, want := range []string{
-		"version", "binary", "path", "shell", "alias", "config", "history", "fzf", "instant",
+		"version", "binary", "path", "shell", "alias", "config", "history", "fzf", "capture",
 	} {
 		if !names[want] {
 			t.Fatalf("the report has no %q check: %+v", want, report.Checks)

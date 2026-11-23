@@ -22,7 +22,7 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"github.com/leafevans/go-fuck/v2/internal/consts"
+	"github.com/leafevans/go-fuck/v3/internal/consts"
 )
 
 // Settings is the complete go-fuck configuration.
@@ -56,7 +56,12 @@ type Settings struct {
 	// Repeat re-runs go-fuck if the corrected command fails again.
 	Repeat bool `json:"repeat"`
 	// InstantMode enables the instant mode.
+	//
+	// Deprecated: use CaptureMode.
 	InstantMode bool `json:"instant_mode"`
+	// CaptureMode selects how command output is captured: auto, instant or
+	// rerun.
+	CaptureMode string `json:"capture_mode"`
 	// Fzf uses the fzf fuzzy finder for the confirmation prompt when fzf is
 	// available. It is ignored when the executable cannot be found.
 	Fzf bool `json:"fzf"`
@@ -82,7 +87,8 @@ type Settings struct {
 
 	// extra holds rule specific settings that are not part of the core
 	// configuration, for example "fixlinecmd".
-	extra map[string]string
+	extra               map[string]string
+	captureModeExplicit bool
 }
 
 // Default returns settings populated with the built-in defaults.
@@ -101,6 +107,7 @@ func Default() *Settings {
 		SlowCommands:               []string{"lein", "react-native", "gradle", "./gradlew", "vagrant"},
 		Repeat:                     false,
 		InstantMode:                false,
+		CaptureMode:                "auto",
 		Fzf:                        false,
 		NumCloseMatches:            3,
 		Env:                        map[string]string{"LC_ALL": "C", "LANG": "C", "GIT_TRACE": "1"},
@@ -135,9 +142,10 @@ func Set(s *Settings) {
 
 // Args lists the command line flags that influence settings.
 type Args struct {
-	Yes    bool
-	Debug  bool
-	Repeat bool
+	Yes         bool
+	Debug       bool
+	Repeat      bool
+	CaptureMode string
 }
 
 // String returns the value of a rule specific string setting, or def when the
@@ -159,6 +167,12 @@ func (s *Settings) SetExtra(key, value string) {
 		s.extra = map[string]string{}
 	}
 	s.extra[key] = value
+}
+
+// CaptureModeExplicit reports whether capture_mode came from configuration,
+// the environment or the command line instead of a legacy/default value.
+func (s *Settings) CaptureModeExplicit() bool {
+	return s.captureModeExplicit
 }
 
 // Alias returns the name of the alias the user is calling (normally "fuck").
@@ -221,6 +235,10 @@ func (s *Settings) normalize() {
 	defaults := Default()
 	s.WaitCommand = s.validSeconds("wait_command", s.WaitCommand, defaults.WaitCommand)
 	s.WaitSlowCommand = s.validSeconds("wait_slow_command", s.WaitSlowCommand, defaults.WaitSlowCommand)
+	if !validCaptureMode(s.CaptureMode) {
+		s.InvalidValues = append(s.InvalidValues, fmt.Sprintf("capture_mode %s", s.CaptureMode))
+		s.CaptureMode = defaults.CaptureMode
+	}
 	if s.HistoryLimit < 0 {
 		s.InvalidValues = append(s.InvalidValues, fmt.Sprintf("history_limit %d", s.HistoryLimit))
 		s.HistoryLimit = 0
@@ -229,6 +247,17 @@ func (s *Settings) normalize() {
 		s.InvalidValues = append(s.InvalidValues,
 			fmt.Sprintf("num_close_matches %d", s.NumCloseMatches))
 		s.NumCloseMatches = defaults.NumCloseMatches
+	}
+}
+
+// validCaptureMode reports whether mode is one of the supported capture
+// policies.
+func validCaptureMode(mode string) bool {
+	switch mode {
+	case "auto", "instant", "rerun":
+		return true
+	default:
+		return false
 	}
 }
 
@@ -258,6 +287,7 @@ type fileSchema struct {
 	SlowCommands               *[]string          `json:"slow_commands"`
 	Repeat                     *bool              `json:"repeat"`
 	InstantMode                *bool              `json:"instant_mode"`
+	CaptureMode                *string            `json:"capture_mode"`
 	Fzf                        *bool              `json:"fzf"`
 	StrictSettings             *bool              `json:"strict_settings"`
 	NumCloseMatches            *int               `json:"num_close_matches"`
@@ -283,6 +313,7 @@ var knownSettingKeys = map[string]bool{
 	"slow_commands":                 true,
 	"repeat":                        true,
 	"instant_mode":                  true,
+	"capture_mode":                  true,
 	"fzf":                           true,
 	"strict_settings":               true,
 	"num_close_matches":             true,
@@ -386,7 +417,7 @@ func (s *Settings) writeDefaultFile(path string) error {
 		"wait_slow_command":             s.WaitSlowCommand,
 		"slow_commands":                 s.SlowCommands,
 		"repeat":                        s.Repeat,
-		"instant_mode":                  s.InstantMode,
+		"capture_mode":                  s.CaptureMode,
 		"fzf":                           s.Fzf,
 		"num_close_matches":             s.NumCloseMatches,
 		"strict_settings":               s.StrictSettings,
@@ -445,6 +476,17 @@ func (s *Settings) applyFile(f *fileSchema) {
 	}
 	if f.InstantMode != nil {
 		s.InstantMode = *f.InstantMode
+		if f.CaptureMode == nil {
+			if *f.InstantMode {
+				s.CaptureMode = "auto"
+			} else {
+				s.CaptureMode = "rerun"
+			}
+		}
+	}
+	if f.CaptureMode != nil {
+		s.CaptureMode = *f.CaptureMode
+		s.captureModeExplicit = true
 	}
 	if f.Fzf != nil {
 		s.Fzf = *f.Fzf
@@ -493,6 +535,37 @@ func (s *Settings) loadEnv() {
 		s.intFromEnv(prefix, "NUM_CLOSE_MATCHES", &s.NumCloseMatches)
 		s.pathSliceFromEnv(prefix, "EXCLUDED_SEARCH_PATH_PREFIXES", &s.ExcludedSearchPathPrefixes)
 	}
+	if value, ok := firstEnvValue("CAPTURE_MODE"); ok {
+		s.CaptureMode = value
+		s.captureModeExplicit = true
+	} else if !s.captureModeExplicit && instantModeSetInEnv() {
+		if s.InstantMode {
+			s.CaptureMode = "auto"
+		} else {
+			s.CaptureMode = "rerun"
+		}
+	}
+}
+
+// firstEnvValue returns the highest-precedence value of a setting.
+func firstEnvValue(suffix string) (string, bool) {
+	for _, prefix := range envPrefixes {
+		if value, ok := envValue(prefix, suffix); ok {
+			return value, true
+		}
+	}
+	return "", false
+}
+
+// instantModeSetInEnv reports whether the deprecated instant-mode environment
+// variable was supplied.
+func instantModeSetInEnv() bool {
+	for _, prefix := range envPrefixes {
+		if _, ok := envValue(prefix, "INSTANT_MODE"); ok {
+			return true
+		}
+	}
+	return false
 }
 
 // envValue returns the value of the first set variable for the given suffix.
@@ -594,6 +667,10 @@ func (s *Settings) loadArgs(args *Args) {
 	}
 	if args.Repeat {
 		s.Repeat = true
+	}
+	if args.CaptureMode != "" {
+		s.CaptureMode = args.CaptureMode
+		s.captureModeExplicit = true
 	}
 }
 

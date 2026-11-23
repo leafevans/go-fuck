@@ -10,11 +10,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/v2/internal/conf"
-	"github.com/leafevans/go-fuck/v2/internal/consts"
-	"github.com/leafevans/go-fuck/v2/internal/instant"
-	"github.com/leafevans/go-fuck/v2/internal/logs"
-	"github.com/leafevans/go-fuck/v2/internal/types"
+	"github.com/leafevans/go-fuck/v3/internal/conf"
+	"github.com/leafevans/go-fuck/v3/internal/consts"
+	"github.com/leafevans/go-fuck/v3/internal/instant"
+	"github.com/leafevans/go-fuck/v3/internal/logs"
+	"github.com/leafevans/go-fuck/v3/internal/types"
 )
 
 // captureOutput replaces standard output and standard error while fn runs.
@@ -133,6 +133,9 @@ func TestMainAlias(t *testing.T) {
 	if !strings.Contains(stdout, "TF_ALIAS") || !strings.Contains(stdout, "go-fuck") {
 		t.Fatalf("alias output = %q", stdout)
 	}
+	if !strings.Contains(stdout, "GOFUCK_INSTANT_MODE=True") {
+		t.Fatalf("default auto alias did not initialize capture: %q", stdout)
+	}
 	if strings.Contains(stdout, "\x1b[") || strings.Contains(stdout, "go-fuck alias") {
 		t.Fatalf("alias output is not raw shell code: %q", stdout)
 	}
@@ -146,6 +149,22 @@ func TestMainAliasCustomName(t *testing.T) {
 	}
 	if !strings.Contains(stdout, "please") {
 		t.Fatalf("alias output = %q", stdout)
+	}
+	if !strings.Contains(stdout, "TF_ALIAS=please") {
+		t.Fatalf("custom alias name was not passed into the logged shell: %q", stdout)
+	}
+}
+
+func TestMainAliasCaptureModeRerun(t *testing.T) {
+	resetEntrypointsState(t)
+	code, stdout, stderr := runMain(t, "go-fuck", "--alias", "--capture-mode", "rerun")
+	if code != 0 || stderr != "" {
+		t.Fatalf("Main(--alias --capture-mode rerun) = %d, %q", code, stderr)
+	}
+	if !strings.Contains(stdout, "function fuck") ||
+		!strings.Contains(stdout, "TF_ALIAS_VERSION=4") ||
+		strings.Contains(stdout, "GOFUCK_INSTANT_MODE") {
+		t.Fatalf("rerun alias output = %q", stdout)
 	}
 }
 

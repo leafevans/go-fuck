@@ -3,18 +3,18 @@
 [![CI](https://github.com/leafevans/go-fuck/actions/workflows/ci.yml/badge.svg)](https://github.com/leafevans/go-fuck/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/leafevans/go-fuck/actions/workflows/codeql.yml/badge.svg)](https://github.com/leafevans/go-fuck/actions/workflows/codeql.yml)
 [![Website](https://img.shields.io/badge/website-leafevans.github.io%2Fgo--fuck-blue)](https://leafevans.github.io/go-fuck/)
-[![Go Reference](https://pkg.go.dev/badge/github.com/leafevans/go-fuck/v2.svg)](https://pkg.go.dev/github.com/leafevans/go-fuck/v2)
+[![Go Reference](https://pkg.go.dev/badge/github.com/leafevans/go-fuck/v3.svg)](https://pkg.go.dev/github.com/leafevans/go-fuck/v3)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 A blazingly fast reimplementation of [thefuck](https://github.com/nvbn/thefuck) in Go.
 
-**Project status:** go-fuck is stable as of **1.0.0**. The settings file and the `--json` output
-are covered by compatibility guarantees (see [UPGRADING.md](UPGRADING.md)); the instant mode
-remains opt-in.
+**Project status:** go-fuck is stable as of **3.0.0**. The settings file and the `--json` output
+are covered by compatibility guarantees (see [UPGRADING.md](UPGRADING.md)).
 
 `go-fuck` fixes the command you just typed and got wrong. Run the `fuck` alias after a failure and
-go-fuck replays the command to capture its error output, matches a rule against it and executes the
-corrected command once you confirm the suggestion.
+go-fuck reads the previous terminal output when capture is available, falls back to replaying the
+command, matches a rule against it and executes the corrected command once you confirm the
+suggestion.
 
 ![go-fuck correcting a failed git push](docs/example.gif)
 
@@ -38,7 +38,7 @@ $ fuck
 5. [Shell setup](#shell-setup)
 6. [First steps](#first-steps)
 7. [How it works](#how-it-works)
-8. [Instant mode](#instant-mode)
+8. [Terminal capture and instant mode](#terminal-capture-and-instant-mode)
 9. [Preview and machine readable output](#preview-and-machine-readable-output)
 10. [Settings](#settings)
 11. [Confirmation keys](#confirmation-keys)
@@ -74,10 +74,9 @@ The correction hot path and the shell history parser have Go benchmarks
 | Restoring a multi-line command from the bash alias history         | ~0.65 µs/op |
 | Restoring a command from the zsh history array                     | ~42 ns/op   |
 
-The rule engine adds roughly 0.2 ms; the wall clock time of a correction is
-dominated by deliberately re-running the failed command. An interpreter based
-implementation pays for interpreter and module import startup before the first
-rule runs, which a native binary does not need.
+The rule engine adds roughly 0.2 ms. With terminal capture active, wall-clock time is dominated by
+the native process startup and reading the terminal log; `capture_mode: "rerun"` keeps the older
+behavior of executing the failed command again.
 CI compares the allocated bytes and objects per operation of every benchmark with
 `benchmarks/baseline.txt` (`task bench-guard`); timing is not compared because it
 depends on the runner. To record an intentional allocation change, regenerate the
@@ -88,6 +87,10 @@ baseline with `go run ./tools/benchguard -bench benchmark.txt -baseline benchmar
 - Shell integration for **bash**, **zsh**, **fish**, **tcsh** and **PowerShell**.
 - Machine readable JSON output for editor plugins, scripts and AI agents with `--json`.
 - Interactive confirmation prompt with keyboard navigation, or skip it with `-y`/`--yes`.
+- Zero-rerun terminal capture by default for Bash, Zsh and PowerShell, with explicit `auto`,
+  `instant` and `rerun` policies.
+- `--explain` reports capture provenance, matching rules, explanations, side effects and execution
+  order without executing anything.
 - Re-runs go-fuck when the corrected command fails with `-r`/`--repeat`; `--force-command` fixes an
   arbitrary command instead of the previous one.
 - A single ember theme for the version banner, confirmation prompt, help text, setup messages and
@@ -155,10 +158,10 @@ targets x86_64; on other architectures use `go install` or the prebuilt binaries
 ### With `go install`
 
 ```bash
-go install github.com/leafevans/go-fuck/v2/cmd/go-fuck@latest
+go install github.com/leafevans/go-fuck/v3/cmd/go-fuck@latest
 ```
 
-The module path ends in `/v2` because the major version is part of the Go module path; use the
+The module path ends in `/v3` because the major version is part of the Go module path; use the
 command above, the module without the suffix only carries the old 1.x releases. The binary is
 installed into `$(go env GOPATH)/bin` (`%USERPROFILE%\go\bin` on Windows). Make sure that
 directory is on your `PATH`.
@@ -220,17 +223,20 @@ command that reloads it to stdout. Warnings and failures are written to stderr. 
 safe: when the line is already present go-fuck reports that the shell is already configured and
 leaves the file untouched.
 
-Pass `--enable-experimental-instant-mode` to configure [instant mode](#instant-mode)
-instead of the regular alias; shells without instant mode support warn and fall back to the regular
-alias.
+By default setup selects `capture_mode: auto` and configures
+[terminal capture](#terminal-capture-and-instant-mode) on supported shells. Use
+`--capture-mode=rerun` to keep the regular alias, or `--capture-mode=instant` to require terminal
+capture. The legacy `--enable-experimental-instant-mode` flag remains as a compatibility alias.
 
 bash, zsh, fish and tcsh are configured when their configuration file already exists. PowerShell is
 configured for every installed flavor: go-fuck asks `powershell.exe` and `pwsh` for their
 `$PROFILE` (the Documents folder can be redirected, for example to OneDrive) and creates the profile
 file when it is missing.
 
-Commented initialization lines do not count as an active setup. Upgrading an old instant-mode
-initialization preserves unrelated commands, comments, indentation and line endings.
+Commented initialization lines do not count as an active setup. Running setup on an existing
+initialization line migrates it in place while preserving comments and indentation. Upgrading an
+old instant-mode initialization preserves unrelated commands, comments, indentation and line
+endings.
 
 ### Manual setup
 
@@ -239,16 +245,16 @@ Add the line for your shell to its configuration file, then start a new shell or
 ```console
 # bash: ~/.bashrc (or ~/.bash_profile on macOS)
 # zsh:  ~/.zshrc
-eval "$(go-fuck --alias)"
+eval "$(go-fuck --alias --capture-mode=auto)"
 
 # fish: ~/.config/fish/config.fish
-go-fuck --alias | source
+go-fuck --alias --capture-mode=auto | source
 
 # tcsh: ~/.tcshrc
-eval `go-fuck --alias`
+eval `go-fuck --alias --capture-mode=auto`
 
 # PowerShell: $PROFILE
-iex "$(go-fuck --alias)"
+iex "$(go-fuck --alias --capture-mode=auto)"
 ```
 
 go-fuck detects the shell from `TF_SHELL` and otherwise from the process tree. If detection is
@@ -260,7 +266,7 @@ unreliable, for example when generating the alias from a setup script, set it ex
 Pass the name after `--alias`:
 
 ```bash
-eval "$(go-fuck --alias FUCK)"
+eval "$(go-fuck --alias FUCK --capture-mode=auto)"
 ```
 
 The name has to be a valid shell function name. Without an argument, the alias is named after the
@@ -278,7 +284,7 @@ go-fuck prints on standard output:
 | ----------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | `TF_SHELL`                    | the alias              | shell name (`bash`, `zsh`, `fish`, `tcsh`, `powershell`); go-fuck uses it instead of guessing from the process tree                      |
 | `TF_ALIAS`                    | the alias              | name of the alias function; used in messages and by the repeat mechanism                                                                 |
-| `TF_ALIAS_VERSION`            | the shell alias        | alias format version (currently 3); go-fuck warns when an older alias is used                                                            |
+| `TF_ALIAS_VERSION`            | the shell alias        | alias format version (currently 4); go-fuck warns when an older alias is used                                                            |
 | `TF_HISTORY`                  | the bash and zsh alias | the previous history entry, marked so a command typed over several lines stays one value                                                 |
 | `TF_SHELL_ALIASES`            | the bash and zsh alias | the shell aliases, expanded before the command is matched                                                                                |
 | `GOFUCK_ARGUMENT_PLACEHOLDER` | the alias              | separates go-fuck's own arguments from the arguments of the corrected command; the legacy `THEFUCK_ARGUMENT_PLACEHOLDER` is accepted too |
@@ -334,14 +340,16 @@ Common options:
 | `--doctor`                           | print a diagnostic report: detected shell, alias, settings file, history and optional integrations; `--doctor --json` prints it as JSON                                         |
 | `--list-rules`                       | print the names of the built-in rules and exit (useful for the `rules`, `exclude_rules` and `priority` settings); with `--json` one object per rule with its priority and flags |
 | `--no-rerun`                         | never re-run the original command to collect output; use supplied output or the instant log when available |
+| `--capture-mode MODE`                | choose `auto`, `instant` or `rerun` capture policy                                                                                                                              |
 | `--preview`                          | show suggestions without re-running the original command, prompting, or applying a fix; combine with `--json` for structured output |
+| `--explain`                          | show capture provenance, rules, side effects and execution order without executing the suggestion                                                                               |
 | `--json`                             | print suggestions as JSON without executing them; add `--no-rerun` to prevent re-running the original command |
 | `-d`, `--debug`                      | print debug information to stderr                                                                                                                                               |
 | `-v`, `--version`                    | print version/build information to stdout: a themed banner in a terminal, one line when piped; `--debug --version` adds the config path, executable path, build module, instant mode, fzf and alias state |
 | `-h`, `--help`                       | print the full option list to stdout                                                                                                                                            |
 | `-a`, `--alias[=ALIAS]`              | print the evaluable shell alias to stdout; optional `ALIAS` overrides `TF_ALIAS`                                                                                               |
 | `--setup`                            | write the alias to the detected shell's configuration file (bash, zsh, fish, tcsh, PowerShell)                                                                                  |
-| `--enable-experimental-instant-mode` | alias initialization flag: with `--alias` or `--setup`, configure the instant mode (bash/zsh on Linux and macOS, PowerShell on Windows)                                         |
+| `--enable-experimental-instant-mode` | deprecated alias for `--capture-mode=instant` when generating an alias or setup line                                                                                           |
 
 Normal information from the information commands is written to stdout. Warnings, errors, debug
 messages and correction-flow diagnostics are written to stderr. Human-readable output uses the same
@@ -384,7 +392,7 @@ the output remains exactly one rule name per line.
 editor plugins and scripts that generate settings files.
 
 The `fuck` shell function passes the information commands (`--list-rules`, `--doctor`,
-`--json`, `--alias`, `--help`, `--version`) through to go-fuck unchanged, so
+`--json`, `--explain`, `--alias`, `--help`, `--version`) through to go-fuck unchanged, so
 `fuck --list-rules` prints the rule list just like `go-fuck --list-rules`. Shell aliases generated by
 older releases evaluate go-fuck's standard output as the corrected command instead, which is why
 `fuck --list-rules` used to report that `adb_unknown_command` is not a command: the rule list was
@@ -396,8 +404,8 @@ If `fuck -v` reports an unexpected version, or reports PowerShell inside WSL, an
 probably earlier in `PATH`. The pre-v2 module — `go install github.com/leafevans/go-fuck/cmd/go-fuck@latest`
 without the `/v2` suffix — installs the old 0.x/1.x series into `$GOPATH/bin`, and that binary can shadow the
 release one. `go-fuck --debug --version` prints the executable path (`Exe`) and the module that built the
-binary (`Module`); the v2 releases report `github.com/leafevans/go-fuck/v2`. Remove or rename the old
-binary, or put the v2 installation earlier in `PATH`. Inside WSL use the Linux binary
+binary (`Module`); the v3 releases report `github.com/leafevans/go-fuck/v3`. Remove or rename the old
+binary, or put the v3 installation earlier in `PATH`. Inside WSL use the Linux binary
 (`~/.local/bin/go-fuck`) instead of a Windows executable picked up from the interop `PATH`, and run
 `hash -r` (bash) or `rehash` (zsh) in a shell that was already open before the change.
 
@@ -405,10 +413,9 @@ binary, or put the v2 installation earlier in `PATH`. Inside WSL use the Linux b
 
 1. You run a command and it fails. You type `fuck`.
 2. The shell function exports the shell name and history and calls `go-fuck`.
-3. go-fuck determines the command that failed, expands shell aliases and **re-runs the command**
-   with a short timeout (`wait_command`, three seconds by default; commands listed in
-   `slow_commands` get `wait_slow_command`, fifteen seconds by default) to capture its output.
-   Instant mode skips this step and reads the output from the terminal log instead.
+3. go-fuck determines the command that failed and expands shell aliases. With `capture_mode: auto`,
+   it first reads the matching output from the terminal log. If capture is unavailable, it re-runs
+   the command with the `wait_command` timeout.
 4. Every enabled rule is tried in priority order. A matching rule returns one or more corrected
    commands, which are sorted by priority and offered in the confirmation prompt.
 5. When you accept a suggestion, go-fuck applies the rule's side effect (if any), optionally writes
@@ -416,8 +423,8 @@ binary, or put the v2 installation earlier in `PATH`. Inside WSL use the Linux b
 6. The shell function evaluates that output, so the corrected command runs in your shell exactly as
    if you had typed it.
 
-The re-run is why the default mode works with any shell and any command without a terminal logger;
-the cost is running the failed command a second time, which is what instant mode avoids.
+`instant` never re-runs the command when capture is unavailable. `rerun` preserves the older
+behavior for shells or commands where terminal capture is undesirable.
 
 On Windows the command is re-run with the PowerShell flavor that started go-fuck, so PowerShell
 native commands and syntax produce their real error messages instead of an unrelated cmd.exe
@@ -426,34 +433,33 @@ does not report the shell through `GOFUCK_SHELL`, keep the cmd.exe behavior.
 The capture subprocess uses English PowerShell diagnostics so matching also works on localized
 Windows installations. This does not change the language of your interactive PowerShell session.
 
-## Instant mode
+## Terminal capture and instant mode
 
-Instant mode reads the output of the previous command from a terminal log instead
-of re-running the command. This is useful for slow, interactive or side effecting commands. It is
-implemented for **bash and zsh on Linux and macOS** and for **PowerShell on Windows**; other shells
-and platforms warn and fall back to the regular alias.
+Terminal capture reads the output of the previous command from a terminal log instead of re-running
+it. It is implemented for **bash and zsh on Linux and macOS** and for **PowerShell on Windows**;
+other shells fall back to `rerun`.
 
 ![instant mode reading the previous output from the terminal log](docs/example-instant-mode.gif)
 
-Enable it by passing the instant mode flag to the alias initialization in your shell configuration.
-On bash, zsh and Windows PowerShell `go-fuck --setup --enable-experimental-instant-mode` writes that
-line to your configuration file for you.
+`go-fuck --setup` enables `capture_mode: auto` for supported shells. The generated line records the
+selected mode explicitly:
 
 Linux and macOS:
 
 ```bash
 # ~/.bashrc (or ~/.zshrc for zsh)
-eval "$(go-fuck --alias --enable-experimental-instant-mode)"
+eval "$(go-fuck --alias --capture-mode=auto --enable-experimental-instant-mode)"
 ```
 
 Windows (Windows PowerShell 5.1 and PowerShell 7):
 
 ```powershell
 # $PROFILE
-iex "$(go-fuck --alias --enable-experimental-instant-mode)"
+iex "$(go-fuck --alias --capture-mode=auto --enable-experimental-instant-mode)"
 ```
 
-The flag name contains `experimental` for historical reasons.
+The `--enable-experimental-instant-mode` spelling remains for compatibility. Use
+`--capture-mode=rerun` to opt out of terminal capture while regenerating the alias.
 
 Restart the shell. The initialization replaces the terminal shell with a logged subshell: commands
 keep working as usual, but go-fuck reads their output from the terminal log, so `fuck` does not
@@ -495,10 +501,21 @@ Limitations:
   column short of the terminal width is treated as wrapped, so a line that happens to be exactly that
   wide and is followed by a newline can be merged with the next line.
 
-The logged shell exports `GOFUCK_INSTANT_MODE=true`, which enables the `instant_mode` setting
-automatically; there is no need to set it manually.
+The logged shell exports `GOFUCK_INSTANT_MODE=true` to indicate that terminal capture is active.
+The choice between automatic, instant-only and rerun-only behavior comes from `capture_mode`.
 
 ## Preview and machine readable output
+
+Use `--explain` to inspect the full non-executing plan:
+
+```console
+$ go-fuck --explain --capture-mode instant --force-command "git brnch"
+```
+
+It reports how the output was captured and lists every suggestion with its rule, explanation,
+optional side effect and final execution command. `--explain` does not re-run the failed command,
+perform side effects, update history or execute the correction. Combine it with `--json` for
+machine-readable capture provenance.
 
 Use `--preview` to see suggestions without applying them, even with `--yes` or `--repeat`.
 It does not re-run the original command or update shell history. It uses supplied output or a
@@ -563,14 +580,16 @@ suggestions equal to `command`.
 
 `output` is the captured standard output and standard error of the failed command; it is omitted
 when the output could not be captured. Output larger than 32 KiB is cut at a UTF-8 boundary and
-`output_truncated` is set to `true`. The example above omits the `output` field for brevity.
+`output_truncated` is set to `true`. The optional `capture_source` field is `provided`,
+`instant_log`, `rerun` or `none`. The example above omits the `output` and capture fields for
+brevity.
 
 In JSON mode go-fuck does not execute the corrected command, does not apply side effects and does
 not update the shell history; the caller decides what to do with the suggestions. The exit code is
 0 once the JSON was written, even when no rule matched and `suggestions` is empty.
 
 The JSON document is a stable machine readable contract. `schema_version` is `1` for the whole
-1.x and 2.x series; it is only incremented for a breaking layout change, while new optional fields may be
+1.x, 2.x and 3.x series; it is only incremented for a breaking layout change, while new optional fields may be
 added in minor releases. Consumers must ignore unknown fields and must not rely on the key order.
 The document is always written to stdout; diagnostics stay on stderr.
 
@@ -610,6 +629,7 @@ A minimal file that customizes a few values:
 {
     "rules": ["All rules enabled"],
     "exclude_rules": ["git_push"],
+    "capture_mode": "auto",
     "wait_command": 10,
     "require_confirmation": true,
     "priority": {
@@ -637,7 +657,8 @@ All fields:
 | `wait_slow_command`             | integer           | `15`                                                         | Seconds to wait for the output of commands listed in `slow_commands`.                                                                                                                         |
 | `slow_commands`                 | array of strings  | `["lein", "react-native", "gradle", "./gradlew", "vagrant"]` | Commands that are expected to be slow to re-run.                                                                                                                                              |
 | `repeat`                        | boolean           | `false`                                                      | If the corrected command fails, run go-fuck again.                                                                                                                                            |
-| `instant_mode`                  | boolean           | `false`                                                      | Inside the logged shell, read the previous output from the terminal log instead of re-running the command; the instant mode alias sets this automatically. See [Instant mode](#instant-mode). |
+| `capture_mode`                  | string            | `"auto"`                                                     | Capture policy: `auto` prefers the terminal log and falls back to rerun, `instant` never reruns, `rerun` skips terminal capture. See [Terminal capture](#terminal-capture-and-instant-mode).       |
+| `instant_mode`                  | boolean           | deprecated                                                   | Legacy compatibility key. Without `capture_mode`, `true` maps to `auto` and `false` maps to `rerun`.                                                                                           |
 | `num_close_matches`             | integer           | `3`                                                          | Maximum number of close matches suggested for misspelled commands.                                                                                                                            |
 | `env`                           | object of string  | `{"LC_ALL": "C", "LANG": "C", "GIT_TRACE": "1"}`             | Environment variables added when the failed command is re-run.                                                                                                                                |
 | `excluded_search_path_prefixes` | array of strings  | `[]`                                                         | `PATH` prefixes that are skipped when searching for executables.                                                                                                                              |
@@ -648,8 +669,9 @@ All fields:
 Every setting can be set with an environment variable. The modern prefix is `GOFUCK_`; the legacy
 `THEFUCK_` prefix from the original implementation is still recognized, so an existing thefuck
 configuration keeps working. For example, `GOFUCK_WAIT_COMMAND=10` and
-`THEFUCK_WAIT_COMMAND=10` do the same thing. If both prefixes are set for the same setting, the
-legacy `THEFUCK_*` variable is applied last and wins.
+`THEFUCK_WAIT_COMMAND=10` do the same thing. If both prefixes are set for the same legacy setting,
+the `THEFUCK_*` variable is applied last and wins. `GOFUCK_CAPTURE_MODE` takes precedence over the
+deprecated instant-mode variables.
 
 | Suffix                          | Type                                                                              | Example                                                                                              | Corresponding setting                                               |
 | ------------------------------- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
@@ -667,7 +689,8 @@ legacy `THEFUCK_*` variable is applied last and wins.
 | `WAIT_SLOW_COMMAND`             | integer seconds                                                                   | `GOFUCK_WAIT_SLOW_COMMAND=30`                                                                        | `wait_slow_command`                                                 |
 | `SLOW_COMMANDS`                 | colon separated list                                                              | `GOFUCK_SLOW_COMMANDS='lein:gradle'`                                                                 | `slow_commands`                                                     |
 | `REPEAT`                        | boolean                                                                           | `GOFUCK_REPEAT=true`                                                                                 | `repeat`                                                            |
-| `INSTANT_MODE`                  | boolean                                                                           | `GOFUCK_INSTANT_MODE=false`                                                                          | `instant_mode`                                                      |
+| `CAPTURE_MODE`                  | `auto`, `instant` or `rerun`                                                       | `GOFUCK_CAPTURE_MODE=auto`                                                                           | `capture_mode`                                                      |
+| `INSTANT_MODE`                  | boolean, deprecated                                                               | `GOFUCK_INSTANT_MODE=true`                                                                           | maps to `capture_mode` when no explicit mode is set                 |
 | `NUM_CLOSE_MATCHES`             | integer                                                                           | `GOFUCK_NUM_CLOSE_MATCHES=5`                                                                         | `num_close_matches`                                                 |
 | `EXCLUDED_SEARCH_PATH_PREFIXES` | list separated by the OS path list separator (`:` on Linux/macOS, `;` on Windows) | `GOFUCK_EXCLUDED_SEARCH_PATH_PREFIXES='/snap:/mnt'` (Linux/macOS), `'C:\\Tools;C:\\Other'` (Windows) | `excluded_search_path_prefixes`                                     |
 
@@ -1060,7 +1083,7 @@ go-fuck is a reimplementation, not a drop-in replacement for every thefuck featu
 - **Complete rule port plus extras.** All 169 rules of the reference implementation are ported,
   plus 82 go-fuck specific rules; the list in [Rules](#rules) is authoritative. Porting conventions
   are documented in [PORTING.md](PORTING.md).
-- **Instant mode covers Linux, macOS and Windows.** It reads the previous command output from a
+- **Terminal capture covers Linux, macOS and Windows.** It reads the previous command output from a
   terminal log instead of re-running the command: bash and zsh on Linux and macOS, PowerShell on
   Windows (ConPTY); other shells and platforms fall back to the regular alias.
 - **In-memory memoization instead of an on-disk cache.** Rule results are cached only for one

@@ -41,8 +41,8 @@ func SetExecutableName(raw string) {
 //
 // It is a variable so that release builds can override it at link time:
 //
-//	go build -ldflags "-X github.com/leafevans/go-fuck/v2/internal/consts.Version=v1.2.3"
-var Version = "2.36.0"
+//	go build -ldflags "-X github.com/leafevans/go-fuck/v3/internal/consts.Version=v1.2.3"
+var Version = "3.0.0"
 
 // Rule defaults.
 const (
@@ -110,8 +110,10 @@ const AliasVersionEnv = "TF_ALIAS_VERSION"
 // previous history entry as a single marked value, so multi-line commands are
 // restored correctly. Version 3 passes the informational commands (such as
 // --list-rules and --json) through to go-fuck instead of capturing their
-// output as a corrected command.
-const AliasVersion = "3"
+// output as a corrected command. Version 4 skips consecutive alias calls when
+// selecting the previous command and records the capture policy in generated
+// initialization lines.
+const AliasVersion = "4"
 
 // PowerShellVersionEnv carries the current session's version for information commands.
 const PowerShellVersionEnv = "GOFUCK_POWERSHELL_VERSION"
@@ -140,6 +142,9 @@ const (
 	// shell that the shell logger has to start. It is only used on Windows,
 	// where the logged shell is PowerShell.
 	ShellPathEnv = "GOFUCK_SHELL"
+
+	// CaptureModeEnv overrides the output capture policy.
+	CaptureModeEnv = "GOFUCK_CAPTURE_MODE"
 )
 
 // Key is a semantic key press returned by the platform key reader.

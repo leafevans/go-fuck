@@ -11,14 +11,14 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/leafevans/go-fuck/v2/internal/argumentparser"
-	"github.com/leafevans/go-fuck/v2/internal/conf"
-	"github.com/leafevans/go-fuck/v2/internal/consts"
-	"github.com/leafevans/go-fuck/v2/internal/instant"
-	"github.com/leafevans/go-fuck/v2/internal/logs"
-	"github.com/leafevans/go-fuck/v2/internal/rules"
-	"github.com/leafevans/go-fuck/v2/internal/shells"
-	"github.com/leafevans/go-fuck/v2/internal/utils"
+	"github.com/leafevans/go-fuck/v3/internal/argumentparser"
+	"github.com/leafevans/go-fuck/v3/internal/conf"
+	"github.com/leafevans/go-fuck/v3/internal/consts"
+	"github.com/leafevans/go-fuck/v3/internal/instant"
+	"github.com/leafevans/go-fuck/v3/internal/logs"
+	"github.com/leafevans/go-fuck/v3/internal/rules"
+	"github.com/leafevans/go-fuck/v3/internal/shells"
+	"github.com/leafevans/go-fuck/v3/internal/utils"
 )
 
 // doctorStatus is the result of a single doctor check.
@@ -144,6 +144,9 @@ func doctorChecks(report doctorReport, shell doctorShellState) []doctorCheck {
 	checks = append(checks, doctorPathCheck(report))
 
 	checks = append(checks, doctorShellCheck(shell))
+	if compatibility, ok := doctorShellBinaryCheck(shell); ok {
+		checks = append(checks, compatibility)
+	}
 	if wslCheck, ok := doctorWSLInteropCheck(); ok {
 		checks = append(checks, wslCheck)
 	}
@@ -165,7 +168,7 @@ func doctorChecks(report doctorReport, shell doctorShellState) []doctorCheck {
 	if runtime.GOOS != "windows" {
 		profiles = nil
 	}
-	checks = append(checks, doctorInstantCheck(profiles))
+	checks = append(checks, doctorCaptureCheck(profiles))
 	return checks
 }
 
@@ -186,6 +189,24 @@ func doctorShellCheck(shell doctorShellState) doctorCheck {
 	return doctorCheck{Name: "shell", Status: doctorOK, Message: message}
 }
 
+// doctorShellBinaryCheck reports a runtime and invoking shell that point at
+// different operating systems, which usually means PATH selected the wrong
+// binary across WSL or another shell integration boundary.
+func doctorShellBinaryCheck(shell doctorShellState) (doctorCheck, bool) {
+	if shell.Name == "" || shell.Name == "generic" {
+		return doctorCheck{}, false
+	}
+	if runtime.GOOS != "windows" && shell.Name == "powershell" {
+		return doctorCheck{
+			Name:    "runtime",
+			Status:  doctorWarn,
+			Message: "a non-Windows binary is running with PowerShell",
+			Hint:    "use the Windows go-fuck.exe from PowerShell",
+		}, true
+	}
+	return doctorCheck{}, false
+}
+
 // doctorAliasCheck reports whether the alias is configured.
 func doctorAliasCheck(shell doctorShellState, profiles []string) doctorCheck {
 	check := doctorCheck{Name: "alias"}
@@ -201,6 +222,13 @@ func doctorAliasCheck(shell doctorShellState, profiles []string) doctorCheck {
 		check.Message = "the " + shell.ConfigPath + " profile cannot be checked automatically"
 		check.Hint = "the profile must contain: " + consts.ExecutableName() + " --alias"
 	case shell.AliasFound:
+		if version := strings.TrimSpace(os.Getenv(consts.AliasVersionEnv)); version != "" &&
+			version != consts.AliasVersion {
+			check.Status = doctorWarn
+			check.Message = fmt.Sprintf("found an outdated alias (format %s, current %s)", version, consts.AliasVersion)
+			check.Hint = "run " + consts.ExecutableName() + " --setup or reload the alias"
+			return check
+		}
 		check.Status = doctorOK
 		check.Message = "found in " + shell.ConfigPath
 	default:
@@ -242,6 +270,13 @@ func doctorPowerShellAliasCheck(profiles []string) doctorCheck {
 	}
 	switch {
 	case len(found) > 0:
+		if version := strings.TrimSpace(os.Getenv(consts.AliasVersionEnv)); version != "" &&
+			version != consts.AliasVersion {
+			check.Status = doctorWarn
+			check.Message = fmt.Sprintf("found an outdated alias (format %s, current %s)", version, consts.AliasVersion)
+			check.Hint = "run " + consts.ExecutableName() + " --setup or reload the alias"
+			return check
+		}
 		check.Status = doctorOK
 		check.Message = "found in " + strings.Join(found, ", ")
 	case len(inspected) > 0:
@@ -358,50 +393,62 @@ func doctorFzfCheck() doctorCheck {
 	return check
 }
 
-// doctorInstantCheck reports the state of the instant mode and validates the
-// terminal log when a logged shell is active.
-func doctorInstantCheck(profiles []string) doctorCheck {
-	check := doctorCheck{Name: "instant"}
+// doctorCaptureCheck reports the active output capture policy and validates
+// the terminal log when a logged shell is active.
+func doctorCaptureCheck(profiles []string) doctorCheck {
+	check := doctorCheck{Name: "capture"}
+	mode := conf.Current().CaptureMode
 	if !instant.Supported() {
+		if mode == "instant" {
+			check.Status = doctorWarn
+			check.Message = "instant capture is not supported on this platform"
+			check.Hint = "use --capture-mode rerun"
+			return check
+		}
 		check.Status = doctorInfo
-		check.Message = "not supported on this platform"
+		check.Message = "rerun capture (instant capture is not supported on this platform)"
 		return check
 	}
 
 	logPath := instant.LogPath()
 	if logPath == "" {
+		if mode == "rerun" {
+			check.Status = doctorInfo
+			check.Message = "rerun mode (the failed command is executed again)"
+			return check
+		}
 		if path, problem := doctorInstantProfileProblem(profiles); problem {
 			check.Status = doctorWarn
-			check.Message = "the instant mode line is not the last prompt definition"
+			check.Message = "the capture initialization line is not the last prompt definition"
 			check.Hint = "move the instant mode line to the end of " + path
 			return check
 		}
 		check.Status = doctorInfo
-		check.Message = "available, not enabled (opt-in)"
-		check.Hint = "go-fuck --setup --enable-experimental-instant-mode"
+		check.Message = "capture mode is " + mode + "; no logged shell is active"
+		check.Hint = "restart the shell after running " + consts.ExecutableName() + " --setup"
 		return check
 	}
 
 	info, err := os.Stat(logPath)
 	if err != nil {
 		check.Status = doctorWarn
-		check.Message = "enabled, but the terminal log is not readable"
+		check.Message = "instant log is not readable"
 		check.Hint = "restart the shell after running go-fuck --setup"
 		return check
 	}
 	if info.Size() == 0 {
 		check.Status = doctorInfo
-		check.Message = "enabled (logged shell, no output yet)"
+		check.Message = "instant log is active (no output yet)"
 		return check
 	}
 	if !doctorLogHasMarker(logPath) {
 		check.Status = doctorWarn
-		check.Message = "enabled, but the terminal log has no prompt marker"
+		check.Message = "instant log is active, but has no prompt marker"
 		check.Hint = "restart the shell and keep the instant mode line as the last prompt definition"
 		return check
 	}
 	check.Status = doctorOK
-	check.Message = "enabled (logged shell)"
+	check.Message = "instant log is active"
 	return check
 }
 
