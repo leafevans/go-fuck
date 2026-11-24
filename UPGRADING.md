@@ -156,6 +156,34 @@ stays at version 1 and `capture_source` is an optional field.
 - Generated aliases use format version 4. Reload or regenerate the alias to skip consecutive alias
   calls when locating the previous real command.
 
+## Unreleased safety changes (version not assigned)
+
+This section describes changes on main, not an available release. The last published
+version is still 3.0.2. No settings keys or JSON fields have been removed.
+
+- History-rewriting rules `git_commit_reset` and `git_commit_amend`, and process-termination
+  rule `port_already_in_use`, are disabled by default. To retain a legacy rule, add its
+  name to your existing `rules` array; preserve other entries and the `DEFAULT_RULES`
+  token if present. Do not enable these rules unless you accept their risks.
+- `git_hook_bypass` requires a local hook failure diagnostic, not just a hook/tool
+  mention. Server-side hook rejection cannot be bypassed using local `--no-verify`.
+- Existing-branch corrections reuse the branch instead of deleting and recreating it.
+- Missing cp sources, incidental mkdir/rm arguments and SSH authentication failures
+  no longer trigger unrelated directory-creation, recursive-removal or sudo suggestions.
+- TCP owner lookup excludes clients, invalid PIDs and ambiguous multiple owners;
+  PID reuse between suggestion and execution remains possible even after opt-in.
+- `schema_version` remains 1. `side_effect` continues to mean an additional pre-run
+  callback, not a general guarantee that the suggested command is non-destructive.
+  Rule-list default flags and hook output requirements change; clients must not cache
+  these values as fixed across releases.
+
+Release gate: the version is intentionally unassigned. The published policy requires a
+major release for breaking documented behavior. Decide whether these safety corrections
+fall under bug fixes or require a major migration before changing version constants,
+module paths, tags or distribution manifests. Validate preview/explain/JSON behavior,
+cross-platform CI and Arch packaging before publishing; regenerate manifests only
+from the actual release assets and their checksums.
+
 ## Future releases
 
 - **Patch** releases contain bug fixes and documentation changes.

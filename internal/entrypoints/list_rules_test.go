@@ -75,6 +75,14 @@ func TestListRulesJSON(t *testing.T) {
 	}
 	for _, rule := range listed {
 		switch rule.Name {
+		case "git_commit_reset", "git_commit_amend", "port_already_in_use":
+			if rule.EnabledByDefault {
+				t.Fatalf("unsafe legacy default: %+v", rule)
+			}
+		case "git_hook_bypass":
+			if !rule.RequiresOutput {
+				t.Fatal("hook bypass must require diagnostics")
+			}
 		case "dry":
 			if rule.Priority != 900 || !rule.EnabledByDefault || !rule.RequiresOutput || rule.SideEffect {
 				t.Fatalf("unexpected metadata for dry: %+v", rule)
