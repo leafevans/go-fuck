@@ -25,6 +25,11 @@ func TestRuleEdgeCases(t *testing.T) {
 		// A rejected SSH key is not a missing sudo.
 		{"sudo", "git clone git@github.com:org/private.git",
 			"git@github.com: Permission denied (publickey)."},
+		// Only a hook failure is worth bypassing, and only a cause that history
+		// rewriting can fix is worth a reset or amend.
+		{"git_hook_bypass", "git push", "! [rejected]        main -> main (fetch first)"},
+		{"git_commit_reset", "git commit -m x", "husky - pre-commit hook exited with code 1 (error)"},
+		{"git_commit_amend", "git commit -m x", "Author identity unknown"},
 	}
 	for _, testCase := range notMatching {
 		rule := Get(testCase.rule)
