@@ -40,8 +40,22 @@ var sudoPatterns = []string{
 	"updatedb: can not open a temporary file",
 }
 
+// sudoAuthenticationPatterns list the permission errors of a rejected
+// authentication. sudo does not fix them: the command connects to a remote host
+// or repository and the key or password is not accepted.
+var sudoAuthenticationPatterns = []string{
+	"permission denied (publickey",
+	"permission denied (password",
+	"permission denied (keyboard-interactive",
+	"permission denied (gssapi",
+}
+
 // sudoMatch reports whether the command failed because it needs root
 // privileges.
+//
+// Deviation: the reference implementation treats every permission error as a
+// missing sudo, so a rejected SSH key suggested cloning a repository under
+// sudo. Authentication failures of remote access are excluded.
 func sudoMatch(command *types.Command) bool {
 	parts := command.ScriptParts()
 	if len(parts) > 0 && !utils.Contains(parts, "&&") && parts[0] == "sudo" {
@@ -49,6 +63,11 @@ func sudoMatch(command *types.Command) bool {
 	}
 
 	output := strings.ToLower(command.Output)
+	for _, pattern := range sudoAuthenticationPatterns {
+		if strings.Contains(output, pattern) {
+			return false
+		}
+	}
 	for _, pattern := range sudoPatterns {
 		if strings.Contains(output, pattern) {
 			return true

@@ -31,6 +31,10 @@ func TestRuleSudo(t *testing.T) {
 	t.Run("not match", func(t *testing.T) {
 		assertNotMatch(t, rule, "", "")
 		assertNotMatch(t, rule, "sudo ls", "Permission denied")
+		// A rejected SSH key is not a missing sudo.
+		assertNotMatch(t, rule, "git clone git@github.com:org/private.git",
+			"git@github.com: Permission denied (publickey).\nfatal: Could not read from remote repository.")
+		assertNotMatch(t, rule, "ssh -T git@github.com", "git@github.com: Permission denied (publickey).")
 	})
 
 	t.Run("new command", func(t *testing.T) {
