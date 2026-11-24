@@ -6,9 +6,10 @@ import (
 	"github.com/leafevans/go-fuck/v3/internal/utils"
 )
 
-// gitCommitAmendMatch reports whether a commit command was run.
+// gitCommitAmendMatch reports whether a commit command was run and rewriting the
+// previous commit can fix the failure.
 func gitCommitAmendMatch(command *types.Command) bool {
-	return utils.Contains(command.ScriptParts(), "commit")
+	return utils.Contains(command.ScriptParts(), "commit") && gitCommitRewritable(command)
 }
 
 // gitCommitAmendNewCommand amends the previous commit.

@@ -34,20 +34,18 @@ func TestJSONNoRerunLeavesOriginalUntouched(t *testing.T) {
 	}
 }
 
-func TestNoRerunStillMatchesRulesWithoutOutput(t *testing.T) {
+func TestNoRerunWithoutOutputReportsNoSuggestions(t *testing.T) {
 	resetEntrypointsState(t)
-	const command = "git commit"
-	code, stdout, stderr := runMain(t, "go-fuck", "--json", "--no-rerun", "--force-command", command)
+	// The rules that answer a failed commit read the failure output now, so a
+	// correction without it reports no suggestion instead of guessing.
+	code, stdout, stderr := runMain(t, "go-fuck", "--json", "--no-rerun", "--force-command", "git commit")
 	var result jsonResult
 	if err := json.Unmarshal([]byte(stdout), &result); err != nil || code != 0 {
 		t.Fatalf("got exit=%d stdout=%q stderr=%q error=%v", code, stdout, stderr, err)
 	}
-	for _, suggestion := range result.Suggestions {
-		if suggestion.Rule == "git_hook_bypass" {
-			return
-		}
+	if len(result.Suggestions) != 0 {
+		t.Fatalf("suggestions without output = %+v, want none", result.Suggestions)
 	}
-	t.Fatalf("missing output-independent suggestion in %s", stdout)
 }
 
 func TestCancelDoesNotReportMissingSuggestions(t *testing.T) {
@@ -55,9 +53,13 @@ func TestCancelDoesNotReportMissingSuggestions(t *testing.T) {
 	previous := ui.ReadKey
 	t.Cleanup(func() { ui.ReadKey = previous })
 	ui.ReadKey = func() (consts.Key, error) { return consts.KeyCtrlC, nil }
+	output := filepath.Join(t.TempDir(), "output")
+	if err := os.WriteFile(output, []byte("husky - pre-commit hook exited with code 1 (error)"), 0o600); err != nil {
+		t.Fatal(err)
+	}
 	var diagnostics bytes.Buffer
 	logs.SetOutput(&diagnostics)
-	code, stdout, _ := runMain(t, "go-fuck", "--no-rerun", "--force-command", "git commit")
+	code, stdout, _ := runMain(t, "go-fuck", "--no-rerun", "--force-command", "git commit", "--output-from", output)
 	if code != 1 || stdout != "" || !strings.Contains(diagnostics.String(), "git commit --no-verify") || strings.Contains(diagnostics.String(), "No suggestion") {
 		t.Fatalf("got exit=%d stdout=%q diagnostics=%q", code, stdout, diagnostics.String())
 	}

@@ -1,14 +1,52 @@
 package rules
 
 import (
+	"strings"
+
 	"github.com/leafevans/go-fuck/v3/internal/specific"
 	"github.com/leafevans/go-fuck/v3/internal/types"
 	"github.com/leafevans/go-fuck/v3/internal/utils"
 )
 
-// gitCommitResetMatch reports whether a commit command was run.
+// gitCommitRewriteBlockers list the commit failures that rewriting the previous
+// commit does not fix: a hook rejected the commit, git cannot identify the
+// author, a merge is unresolved, or nothing was staged, so no new commit exists
+// to replace.
+var gitCommitRewriteBlockers = []string{
+	"author identity unknown",
+	"unable to auto-detect email address",
+	"committer identity unknown",
+	"unmerged files",
+	"you have not concluded your merge",
+	"fix conflicts",
+	"nothing to commit",
+	"no changes added to commit",
+	"nothing added to commit",
+}
+
+// gitCommitRewritable reports whether rewriting the previous commit can fix a
+// failed commit.
+//
+// Deviation: the reference implementation offers the history rewrite for every
+// failed commit, including failures with a concrete cause such as a rejected
+// hook, a missing commit identity or unresolved merge conflicts.
+func gitCommitRewritable(command *types.Command) bool {
+	if gitHookFailure(command.Output) {
+		return false
+	}
+	output := strings.ToLower(command.Output)
+	for _, blocker := range gitCommitRewriteBlockers {
+		if strings.Contains(output, blocker) {
+			return false
+		}
+	}
+	return true
+}
+
+// gitCommitResetMatch reports whether a commit command was run and rewriting the
+// previous commit can fix the failure.
 func gitCommitResetMatch(command *types.Command) bool {
-	return utils.Contains(command.ScriptParts(), "commit")
+	return utils.Contains(command.ScriptParts(), "commit") && gitCommitRewritable(command)
 }
 
 // gitCommitResetNewCommand resets the last commit.
