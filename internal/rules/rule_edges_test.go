@@ -21,6 +21,10 @@ func TestRuleEdgeCases(t *testing.T) {
 		// A missing source file is not a missing destination directory.
 		{"cp_create_destination", "cp notes.txt notes-old.txt",
 			"cp: cannot stat 'notes.txt': No such file or directory"},
+		{"rm_dir", "grep -rn rm build", "grep: build: Is a directory"},
+		// A rejected SSH key is not a missing sudo.
+		{"sudo", "git clone git@github.com:org/private.git",
+			"git@github.com: Permission denied (publickey)."},
 	}
 	for _, testCase := range notMatching {
 		rule := Get(testCase.rule)

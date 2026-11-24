@@ -31,6 +31,8 @@ func TestRuleRmDir(t *testing.T) {
 		}{
 			{"rm foo", ""},
 			{"hdfs dfs -rm foo", ""},
+			// The word rm only appears in an argument of another command.
+			{"grep -rn rm build", "grep: build: Is a directory"},
 			{"./bin/hdfs dfs -rm foo", ""},
 			{"", ""},
 		} {

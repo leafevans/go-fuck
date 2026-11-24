@@ -11,8 +11,13 @@ import (
 var rmDirPattern = newRegexp(`\brm (.*)`)
 
 // rmDirMatch reports whether rm failed because the target is a directory.
+//
+// Deviation: the reference implementation matches any script that contains the
+// word rm, so "grep -rn rm build" failing with "Is a directory" was rewritten
+// into "grep -rn rm -rf build". The word has to be an actual invocation before
+// the recursive removal is suggested.
 func rmDirMatch(command *types.Command) bool {
-	return strings.Contains(command.Script, "rm") &&
+	return commandInvocation(command.Script, "rm") &&
 		strings.Contains(strings.ToLower(command.Output), "is a directory")
 }
 
