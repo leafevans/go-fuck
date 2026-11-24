@@ -663,6 +663,12 @@ Explicitly list either name in `rules` only if you want these history-rewriting 
 Their suggestions include a warning in the reason; known hook, identity and merge failures
 remain excluded even when you opt in.
 
+`port_already_in_use` is also disabled by default. A port conflict does not imply that
+its owner is safe to terminate. Explicitly enable it in `rules` only if you want
+termination suggestions; it requires `lsof` and a single valid TCP listener PID.
+Inspect the owner before accepting: PID lookup cannot eliminate process-exit or
+PID-reuse races between displaying a suggestion and executing it.
+
 Settings are stored in `settings.json` inside the go-fuck directory of the user configuration
 directory returned by Go's `os.UserConfigDir()`:
 

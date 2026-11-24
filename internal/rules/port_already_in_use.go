@@ -2,7 +2,7 @@ package rules
 
 import (
 	"os/exec"
-
+	"strconv"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v3/internal/shells"
@@ -32,24 +32,41 @@ func portAlreadyInUseParsePort(output string) string {
 // portAlreadyInUseUsedPort returns the port reported by the command output.
 var portAlreadyInUseUsedPort = utils.Memoize1(portAlreadyInUseParsePort)
 
-// portAlreadyInUseParsePID extracts the PID from the output of lsof.
+// portAlreadyInUseParsePID accepts a single positive TCP listener PID. Multiple
+// socket rows for the same process are harmless; different owners are ambiguous.
 func portAlreadyInUseParsePID(output string) string {
-	lines := strings.Split(output, newline)
-	if len(lines) <= 1 {
-		return ""
+	pid := ""
+	for _, line := range strings.Split(output, newline) {
+		fields := strings.Fields(line)
+		if len(fields) < 10 || fields[len(fields)-1] != "(LISTEN)" || fields[7] != "TCP" {
+			continue
+		}
+		candidate := fields[1]
+		n, err := strconv.ParseUint(candidate, 10, 31)
+		if err != nil || n == 0 {
+			return ""
+		}
+		if pid != "" && pid != candidate {
+			return ""
+		}
+		pid = candidate
 	}
-	fields := strings.Fields(lines[1])
-	if len(fields) <= 1 {
-		return ""
-	}
-	return fields[1]
+	return pid
 }
 
-// portAlreadyInUsePID returns the PID of the process that listens on the port.
-var portAlreadyInUsePID = utils.Memoize1(func(port string) string {
-	output, _ := exec.Command("lsof", "-i", ":"+port).Output()
+// portAlreadyInUsePID queries listeners, not connected clients or UDP sockets.
+// Do not cache PIDs: a process can exit between matching and suggestion creation.
+var portAlreadyInUsePID = func(port string) string {
+	n, err := strconv.ParseUint(port, 10, 16)
+	if err != nil || n == 0 {
+		return ""
+	}
+	output, err := exec.Command("lsof", "-nP", "-a", "-iTCP:"+port, "-sTCP:LISTEN").Output()
+	if err != nil {
+		return ""
+	}
 	return portAlreadyInUseParsePID(string(output))
-})
+}
 
 // portAlreadyInUseMatch reports whether the port of a failed bind is used by
 // another process.
@@ -62,6 +79,9 @@ func portAlreadyInUseMatch(command *types.Command) bool {
 func portAlreadyInUseNewCommand(command *types.Command) ([]string, error) {
 	port := portAlreadyInUseUsedPort(command.Output)
 	pid := portAlreadyInUsePID(port)
+	if pid == "" {
+		return nil, nil
+	}
 	return []string{shells.Current().And("kill "+pid, command.Script)}, nil
 }
 
@@ -69,7 +89,9 @@ func init() {
 	rule := types.NewRule("port_already_in_use",
 		portAlreadyInUseMatch,
 		portAlreadyInUseNewCommand)
-	// Python: enabled_by_default = bool(which('lsof')).
-	rule.DefaultProbe = func() bool { return utils.StartupAvailable("lsof") }
+	// Deviation: occupying a port does not establish consent to terminate its
+	// owner. Preserve the legacy correction only through explicit opt-in.
+	rule.EnabledByDefault = false
+	rule.Reason = "Terminate the TCP listener; it may belong to another application"
 	register(rule)
 }
