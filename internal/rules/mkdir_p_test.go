@@ -32,6 +32,8 @@ func TestRuleMkdirP(t *testing.T) {
 		}{
 			{"mkdir foo/bar/baz", ""},
 			{"mkdir foo/bar/baz", "foo bar baz"},
+			// The word mkdir only appears in an argument of another command.
+			{"grep -rn mkdir src", "grep: src: No such file or directory"},
 			{"hdfs dfs -mkdir foo/bar/baz", ""},
 			{"./bin/hdfs dfs -mkdir foo/bar/baz", ""},
 			{"", ""},
