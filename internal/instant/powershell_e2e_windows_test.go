@@ -44,7 +44,9 @@ func TestPowerShellInstantCorrection(t *testing.T) {
 		t.Run(filepath.Base(shell), func(t *testing.T) {
 			for _, tc := range []struct{ name, key string }{
 				{"accept without replay", "\r"},
-				{"cancel without execution", "\x03"},
+				// Use the UI cancel key, not Ctrl+C: ConPTY can deliver
+				// Ctrl+C as a console interrupt before raw input is ready.
+				{"cancel without execution", "q"},
 			} {
 				t.Run(tc.name, func(t *testing.T) { testPowerShellInstantCorrection(t, bin, shell, tc.key) })
 			}
@@ -132,7 +134,7 @@ func testPowerShellInstantCorrection(t *testing.T, bin, shell, key string) {
 		t.Fatalf("confirmation did not show the expected correction: %q", out)
 	}
 	send(key)
-	if key == "\x03" {
+	if key == "q" {
 		out = waitFor("Aborted", len(out))
 	}
 	waitFor(consts.UserCommandMark+prompt, len(out))
@@ -150,7 +152,7 @@ func testPowerShellInstantCorrection(t *testing.T, bin, shell, key string) {
 		t.Fatalf("original marker = %q (%v), want exactly one execution", data, err)
 	}
 	data, err := os.ReadFile("corrected.marker")
-	if key == "\x03" {
+	if key == "q" {
 		if !os.IsNotExist(err) {
 			t.Fatalf("cancel left a correction marker: %q (%v)", data, err)
 		}
