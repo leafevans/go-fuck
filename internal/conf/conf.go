@@ -177,7 +177,7 @@ func (s *Settings) CaptureModeExplicit() bool {
 
 // Alias returns the name of the alias the user is calling (normally "fuck").
 func Alias() string {
-	if alias := os.Getenv("TF_ALIAS"); alias != "" {
+	if alias := os.Getenv(consts.AliasEnv); alias != "" {
 		return alias
 	}
 	return "fuck"

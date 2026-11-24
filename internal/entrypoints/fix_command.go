@@ -44,6 +44,12 @@ func fixCommand(args *argumentparser.Args) int {
 	if strings.TrimSpace(types.FormatRawScript(rawCommand)) == "" {
 		return reportMissingCommand(args.JSON)
 	}
+	if hint := entryPointHint(rawCommand); hint != "" && !args.JSON {
+		// The words are not corrections: report the flag instead of running
+		// the word as a command, which would fail without an explanation.
+		logs.Failed(hint)
+		return 1
+	}
 
 	var command *types.Command
 	if args.OutputFrom != "" {
@@ -96,6 +102,27 @@ func fixCommand(args *argumentparser.Args) int {
 	}
 	selected.Run(command)
 	return 0
+}
+
+// entryPointHint explains a word that names an information command but was
+// passed as the command to fix, such as "go-fuck doctor" instead of
+// "go-fuck --doctor".
+//
+// The shell alias passes its arguments as the command to fix, so "fuck doctor"
+// stays a correction. Only a direct call outside the alias is answered with the
+// flag, because the words never name a shell command that go-fuck should run.
+func entryPointHint(rawCommand []string) string {
+	if os.Getenv(consts.AliasEnv) != "" || len(rawCommand) != 1 {
+		return ""
+	}
+	name := consts.ExecutableName()
+	switch strings.TrimSpace(rawCommand[0]) {
+	case "setup":
+		return name + " setup is not a shell command to fix: run " + name + " --setup to add the alias to your shell configuration."
+	case "doctor":
+		return name + " doctor is not a shell command to fix: run " + name + " --doctor to print the shell integration report."
+	}
+	return ""
 }
 
 // reportMissingCommand writes the empty-command result in JSON or text mode.

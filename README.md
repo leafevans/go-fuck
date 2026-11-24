@@ -408,6 +408,11 @@ For instant mode it validates the logged shell's terminal log and warns when the
 no longer the last prompt definition in the PowerShell profile. Warnings include the command that
 fixes them, and `--doctor --json` prints the same report as JSON.
 
+`setup` and `doctor` are options, not corrections: `go-fuck --setup` configures the alias and
+`go-fuck --doctor` prints the report. Typing `go-fuck setup` or `go-fuck doctor` runs go-fuck
+outside the alias, where these two words are rejected with the matching flag instead of being
+executed as a shell command and failing without an explanation.
+
 To list the rule names accepted by the `rules`, `exclude_rules` and `priority` settings, run:
 
 ```console

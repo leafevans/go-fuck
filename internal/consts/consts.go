@@ -102,6 +102,9 @@ const (
 // path.
 const ShellLoggerSocketEnv = "SHELL_LOGGER_SOCKET"
 
+// AliasEnv is exported by the shell alias and names the alias that was called.
+const AliasEnv = "TF_ALIAS"
+
 // AliasVersionEnv is exported by the bash and zsh alias. It lets go-fuck
 // recognize aliases that use the current format.
 const AliasVersionEnv = "TF_ALIAS_VERSION"

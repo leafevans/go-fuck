@@ -172,6 +172,10 @@ go-fuck --doctor
 重点检查当前 shell、alias 是否已写入正确配置文件、`go-fuck` 实际从哪个路径启动，以及历史记录
 是否可读。PowerShell 会检查 `powershell.exe` 和 `pwsh` 的 profile。
 
+`setup` 和 `doctor` 是选项，不是要纠正的命令：`go-fuck --setup` 写入 alias，
+`go-fuck --doctor` 打印诊断报告。直接输入 `go-fuck setup` 或 `go-fuck doctor` 时，
+go-fuck 会提示对应的选项，而不是把这两个词当作失败命令执行；通过 `fuck` 别名传入时仍按纠正命令处理。
+
 ### 提示 `Your shell alias is outdated`
 
 这表示当前终端里加载的 `fuck` 函数比已安装的二进制旧。基本纠错可能仍能工作，但多行命令和
