@@ -96,6 +96,12 @@ func portAlreadyInUseUseNoPID(t *testing.T) {
 func TestRulePortAlreadyInUse(t *testing.T) {
 	resetTestState(t)
 	rule := Get("port_already_in_use")
+	if rule.DefaultEnabled() || rule.DefaultProbe != nil {
+		t.Error("terminating a port owner must require explicit opt-in, even with lsof installed")
+	}
+	if rule.Reason == "" {
+		t.Error("termination suggestion must explain the risk")
+	}
 
 	t.Run("match", func(t *testing.T) {
 		portAlreadyInUseUsePID(t)
@@ -130,4 +136,31 @@ func TestRulePortAlreadyInUse(t *testing.T) {
 			t.Errorf("portAlreadyInUseParsePort returned %q, want an empty string", port)
 		}
 	})
+}
+
+func TestPortAlreadyInUseRejectsAmbiguousOwners(t *testing.T) {
+	for _, output := range []string{
+		"COMMAND PID USER FD TYPE DEVICE SIZE/OFF NODE NAME\nnode 18233 me 1u IPv4 1 0t0 TCP localhost:8080 (ESTABLISHED)\n",
+		"COMMAND PID USER FD TYPE DEVICE SIZE/OFF NODE NAME\nnode -1 me 1u IPv4 1 0t0 TCP *:8080 (LISTEN)\n",
+		"COMMAND PID USER FD TYPE DEVICE SIZE/OFF NODE NAME\nnode 0 me 1u IPv4 1 0t0 TCP *:8080 (LISTEN)\n",
+		portAlreadyInUseLsofStdout + "other 42 me 1u IPv4 1 0t0 TCP *:8080 (LISTEN)\n",
+	} {
+		if got := portAlreadyInUseParsePID(output); got != "" {
+			t.Errorf("PID = %q for ambiguous or invalid output %q", got, output)
+		}
+	}
+}
+func TestPortAlreadyInUseNoOwnerNoKill(t *testing.T) {
+	resetTestState(t)
+	portAlreadyInUseUseNoPID(t)
+	got, err := Get("port_already_in_use").GetNewCommand(testCommand("./app", portAlreadyInUseNodeOutput))
+	if err != nil || len(got) != 0 {
+		t.Fatalf("suggestions = %q, %v; want none", got, err)
+	}
+}
+
+func TestPortAlreadyInUseDuplicateListenerRows(t *testing.T) {
+	if got := portAlreadyInUseParsePID(portAlreadyInUseLsofStdout + portAlreadyInUseLsofStdout); got != "18233" {
+		t.Fatalf("same listener PID = %q, want 18233", got)
+	}
 }
