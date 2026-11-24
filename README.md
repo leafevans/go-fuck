@@ -657,6 +657,12 @@ The document is always written to stdout; diagnostics stay on stderr.
 
 ## Settings
 
+The legacy `git_commit_reset` and `git_commit_amend` rules are disabled by default:
+no generic commit failure proves that rewriting the previous commit is the right fix.
+Explicitly list either name in `rules` only if you want these history-rewriting suggestions.
+Their suggestions include a warning in the reason; known hook, identity and merge failures
+remain excluded even when you opt in.
+
 Settings are stored in `settings.json` inside the go-fuck directory of the user configuration
 directory returned by Go's `os.UserConfigDir()`:
 

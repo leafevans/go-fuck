@@ -8,6 +8,13 @@ func TestRuleGitCommitReset(t *testing.T) {
 	if rule == nil {
 		t.Fatal("git_commit_reset rule is not registered")
 	}
+	if rule.DefaultEnabled() {
+		t.Fatal("history rewrite must require explicit opt-in")
+	}
+	assertNotMatch(t, rule, "git log commit", "test output")
+	if rule.Reason == "" {
+		t.Fatal("history rewrite must explain its risk")
+	}
 	if rule.Priority != 1500 {
 		t.Errorf("git_commit_reset priority = %d, want 1500", rule.Priority)
 	}
