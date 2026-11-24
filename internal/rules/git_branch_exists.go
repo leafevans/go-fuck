@@ -18,7 +18,11 @@ func gitBranchExistsMatch(command *types.Command) bool {
 		strings.Contains(command.Output, "' already exists.")
 }
 
-// gitBranchExistsNewCommand suggests removing or reusing the existing branch.
+// gitBranchExistsNewCommand reuses the existing branch.
+//
+// Deviation: do not suggest deleting and recreating an existing branch, even
+// with -d: recreating at HEAD can move its tip and -D can discard unmerged work.
+// An existing branch is evidence for reuse, not consent to replace it.
 func gitBranchExistsNewCommand(command *types.Command) ([]string, error) {
 	branchMatch := gitBranchExistsBranch.FindStringSubmatch(command.Output)
 	if branchMatch == nil {
@@ -27,10 +31,6 @@ func gitBranchExistsNewCommand(command *types.Command) ([]string, error) {
 	branchName := strings.ReplaceAll(branchMatch[1], "'", backslash+"'")
 
 	templates := [][]string{
-		{"git branch -d {0}", "git branch {0}"},
-		{"git branch -d {0}", "git checkout -b {0}"},
-		{"git branch -D {0}", "git branch {0}"},
-		{"git branch -D {0}", "git checkout -b {0}"},
 		{"git checkout {0}"},
 	}
 	results := make([]string, 0, len(templates))

@@ -8,10 +8,6 @@ import (
 // gitBranchExistsExpected builds the commands the rule should return.
 func gitBranchExistsExpected(branchName string) []string {
 	templates := []string{
-		"git branch -d {0} && git branch {0}",
-		"git branch -d {0} && git checkout -b {0}",
-		"git branch -D {0} && git branch {0}",
-		"git branch -D {0} && git checkout -b {0}",
 		"git checkout {0}",
 	}
 	results := make([]string, len(templates))
