@@ -60,7 +60,18 @@ type coordinate struct {
 // packed returns the value CreatePseudoConsole and ResizePseudoConsole expect
 // for a COORD passed through a register.
 func (c coordinate) packed() uintptr {
-	return uintptr(uint32(uint16(c.X)) | uint32(uint16(c.Y))<<16)
+	// #nosec G115 -- signed console coordinates are packed as their two's-complement bit pattern.
+	return uintptr(uint32(c.X)&0xffff | (uint32(c.Y)&0xffff)<<16)
+}
+
+// hresultFailed reports whether a Windows HRESULT has its failure bit set.
+func hresultFailed(result uintptr) bool {
+	return result&0x80000000 != 0
+}
+
+// hresultHex returns the low 32 bits of an HRESULT for diagnostic output.
+func hresultHex(result uintptr) uint64 {
+	return uint64(result) & 0xffffffff
 }
 
 // conPTY is a pseudo console with a shell process attached to it.
@@ -97,7 +108,7 @@ func startConPTY(commandLine string, size coordinate) (*conPTY, error) {
 	process, err := createProcessAttachedToPseudoConsole(hpc, commandLine)
 	if err != nil {
 		closeHandles(ptyIn, cmdIn, cmdOut, ptyOut)
-		procClosePseudoConsole.Call(uintptr(hpc))
+		_, _, _ = procClosePseudoConsole.Call(uintptr(hpc))
 		return nil, err
 	}
 
@@ -122,8 +133,8 @@ func createPseudoConsole(size coordinate, input, output syscall.Handle) (syscall
 		0,
 		uintptr(unsafe.Pointer(&hpc)),
 	)
-	if int32(result) < 0 {
-		return 0, fmt.Errorf("CreatePseudoConsole failed: 0x%08x", uint32(result))
+	if hresultFailed(result) {
+		return 0, fmt.Errorf("CreatePseudoConsole failed: 0x%08x", hresultHex(result))
 	}
 	return hpc, nil
 }
@@ -217,8 +228,8 @@ func (c *conPTY) resize(size coordinate) error {
 		return fmt.Errorf("ResizePseudoConsole failed: the pseudo console is closed")
 	}
 	result, _, _ := procResizePseudoConsole.Call(uintptr(hpc), size.packed())
-	if int32(result) < 0 {
-		return fmt.Errorf("ResizePseudoConsole failed: 0x%08x", uint32(result))
+	if hresultFailed(result) {
+		return fmt.Errorf("ResizePseudoConsole failed: 0x%08x", hresultHex(result))
 	}
 	return nil
 }
@@ -233,7 +244,7 @@ func (c *conPTY) closeConsole() {
 		c.hpc = 0
 		c.mu.Unlock()
 		if hpc != 0 {
-			procClosePseudoConsole.Call(uintptr(hpc))
+			_, _, _ = procClosePseudoConsole.Call(uintptr(hpc))
 		}
 	})
 }

@@ -40,6 +40,19 @@ Incorrect or missing suggestions are not security issues; report them with the
 [bug report](https://github.com/leafevans/go-fuck/issues/new?template=bug_report.yml)
 template instead.
 
+## Automated checks
+
+The `Security` workflow runs on pull requests, pushes to `main` and once a week.
+`govulncheck` uses the package call graph to block reachable known
+vulnerabilities. A separate gosec gate runs on Linux and Windows for the
+audited integer-conversion rule G115.
+
+The complete gosec report runs weekly and on manual dispatch and is uploaded as
+an artifact. Command execution and file access are intentional parts of
+go-fuck, so G204/G304/G702/G703 findings are reviewed before any rule is
+promoted to a blocking gate. Suppressions use a line-specific reason and are
+limited to intentional behavior.
+
 ## How go-fuck handles data
 
 - The default mode re-runs the failed command to capture its output and merges

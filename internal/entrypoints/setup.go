@@ -10,6 +10,7 @@ import (
 
 	"github.com/leafevans/go-fuck/v3/internal/argumentparser"
 	"github.com/leafevans/go-fuck/v3/internal/conf"
+	"github.com/leafevans/go-fuck/v3/internal/consts"
 	"github.com/leafevans/go-fuck/v3/internal/logs"
 	"github.com/leafevans/go-fuck/v3/internal/shells"
 	"github.com/leafevans/go-fuck/v3/internal/system"
@@ -18,6 +19,10 @@ import (
 // errAmbiguousInitialization reports that more than one known alias line would
 // be changed, so setup cannot migrate the file safely.
 var errAmbiguousInitialization = errors.New("multiple go-fuck initialization lines found")
+
+// errPowerShellInitializationConflict reports that PowerShell profiles need
+// manual cleanup before setup can make a safe change.
+var errPowerShellInitializationConflict = errors.New("PowerShell initialization conflict")
 
 // powerShellProfileExecutables are the PowerShell flavors whose profile files
 // are configured, in display order.
@@ -177,47 +182,202 @@ func setupPowerShell(shell shells.Shell, configuration *shells.Configuration,
 		return 0
 	}
 
+	pairs, err := inspectPowerShellProfiles(paths, regularContent, instantContent,
+		rawRegularContent, rawInstantContent)
+	if err != nil {
+		if errors.Is(err, errPowerShellInitializationConflict) {
+			printPowerShellInitializationConflict(configuration)
+		}
+		return 1
+	}
+
 	configured := 0
 	alreadyConfigured := 0
-	for _, path := range paths {
-		existing, err := os.ReadFile(path)
-		if err != nil && !os.IsNotExist(err) {
-			printSetupFailure("can't read %s: %v", path, err)
-			return 1
-		}
-		if os.IsNotExist(err) {
-			if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-				printSetupFailure("can't create %s: %v", filepath.Dir(path), err)
+	for _, pair := range pairs {
+		if pair.initialized == nil {
+			if err := os.MkdirAll(filepath.Dir(pair.host), 0o755); err != nil {
+				printSetupFailure("can't create %s: %v", filepath.Dir(pair.host), err)
 				return 1
 			}
-			existing = nil
-		}
-		if hasConfigurationLine(existing, configuration.Content) {
-			printConfigured(shell.FriendlyName(), path, true)
-			alreadyConfigured++
-			continue
-		}
-		if changed, err := replaceInitializationLine(path, existing, configuration.Content,
-			regularContent, instantContent, rawRegularContent, rawInstantContent); err != nil {
-			printSetupFailure("can't update %s: %v", path, err)
-			return 1
-		} else if changed {
-			printConfigured(shell.FriendlyName(), path, false)
+			if err := appendConfigurationLine(pair.host, configuration.Content, nil); err != nil {
+				printSetupFailure("can't update %s: %v", pair.host, err)
+				return 1
+			}
+			printConfigured(shell.FriendlyName(), pair.host, false)
 			configured++
 			continue
 		}
-		if err := appendConfigurationLine(path, configuration.Content, existing); err != nil {
-			printSetupFailure("can't update %s: %v", path, err)
-			return 1
+		if hasConfigurationLine(pair.initialized.existing, configuration.Content) {
+			printConfigured(shell.FriendlyName(), pair.initialized.path, true)
+			alreadyConfigured++
+			continue
 		}
-		printConfigured(shell.FriendlyName(), path, false)
-		configured++
+		if changed, err := replaceInitializationLine(pair.initialized.path, pair.initialized.existing,
+			configuration.Content,
+			regularContent, instantContent, rawRegularContent, rawInstantContent); err != nil {
+			printSetupFailure("can't update %s: %v", pair.initialized.path, err)
+			return 1
+		} else if changed {
+			printConfigured(shell.FriendlyName(), pair.initialized.path, false)
+			configured++
+			continue
+		}
 	}
 
 	if configured > 0 || alreadyConfigured > 0 {
 		printReload(configuration.Reload)
 	}
 	return 0
+}
+
+// powerShellProfilePair describes the two current-user profiles PowerShell
+// loads for one host: the all-hosts profile and the current-host profile.
+type powerShellProfilePair struct {
+	host        string
+	initialized *powerShellProfileState
+}
+
+// powerShellProfileState is one profile file that contains an initialization.
+type powerShellProfileState struct {
+	path     string
+	existing []byte
+}
+
+// inspectPowerShellProfiles checks every all-hosts/current-host pair before
+// setup writes anything. It returns a conflict error for multiple recognized
+// initializations or a custom initialization that cannot be migrated safely.
+func inspectPowerShellProfiles(hostProfiles []string, candidates ...string) ([]powerShellProfilePair, error) {
+	pairs := make([]powerShellProfilePair, 0, len(hostProfiles))
+	conflict := false
+	seen := make(map[string]bool)
+	for _, host := range hostProfiles {
+		if seen[host] {
+			continue
+		}
+		seen[host] = true
+
+		pair := powerShellProfilePair{host: host}
+		initialized := []powerShellProfileState{}
+		multiple := []string{}
+		custom := []string{}
+		paths := []string{filepath.Join(filepath.Dir(host), "profile.ps1"), host}
+		for index, path := range paths {
+			if index == 1 && path == paths[0] {
+				continue
+			}
+			existing, err := os.ReadFile(path)
+			if err != nil {
+				if os.IsNotExist(err) {
+					continue
+				}
+				printSetupFailure("can't read %s: %v", path, err)
+				return nil, err
+			}
+			switch lineCount := countInitializationLines(existing, candidates...); {
+			case lineCount == 1:
+				initialized = append(initialized, powerShellProfileState{path: path, existing: existing})
+			case lineCount > 1:
+				multiple = append(multiple, path)
+			}
+			if hasCustomInitialization(existing, candidates...) {
+				custom = append(custom, path)
+			}
+		}
+
+		switch {
+		case len(multiple) > 0:
+			printSetupWarning("multiple go-fuck initializations found in %s; keep exactly one",
+				strings.Join(multiple, ", "))
+			conflict = true
+		case len(initialized) > 1:
+			printSetupWarning("multiple go-fuck initializations found in %s; keep exactly one",
+				strings.Join(profilePaths(initialized), ", "))
+			conflict = true
+		case len(custom) > 0:
+			printSetupWarning("custom go-fuck initialization found in %s; replace it with the direct initialization line",
+				strings.Join(custom, ", "))
+			conflict = true
+		case len(initialized) == 1:
+			pair.initialized = &initialized[0]
+		}
+		pairs = append(pairs, pair)
+	}
+	if conflict {
+		return nil, errPowerShellInitializationConflict
+	}
+	return pairs, nil
+}
+
+// profilePaths returns the paths of initialized profile states.
+func profilePaths(states []powerShellProfileState) []string {
+	paths := make([]string, len(states))
+	for index, state := range states {
+		paths[index] = state.path
+	}
+	return paths
+}
+
+// countInitializationLines counts known go-fuck initialization lines. A line
+// matching the current and a legacy spelling is counted once.
+func countInitializationLines(existing []byte, candidates ...string) int {
+	allCandidates := initializationCandidates(candidates...)
+	count := 0
+	for line := range strings.SplitSeq(string(existing), "\n") {
+		for _, candidate := range allCandidates {
+			if _, ok := configurationLineSuffix(line, candidate); ok {
+				count++
+				break
+			}
+		}
+	}
+	return count
+}
+
+// hasCustomInitialization reports whether a profile references go-fuck's alias
+// through code that setup does not know how to migrate safely. Comments and
+// recognized direct initialization lines are ignored.
+func hasCustomInitialization(existing []byte, candidates ...string) bool {
+	allCandidates := initializationCandidates(candidates...)
+	needle := consts.ExecutableName() + " --alias"
+	for line := range strings.SplitSeq(string(existing), "\n") {
+		trimmed := strings.TrimLeft(line, " \t\uFEFF")
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+			continue
+		}
+		known := false
+		for _, candidate := range allCandidates {
+			if _, ok := configurationLineSuffix(line, candidate); ok {
+				known = true
+				break
+			}
+		}
+		if !known && strings.Contains(line, needle) {
+			return true
+		}
+	}
+	return false
+}
+
+// initializationCandidates expands every known initialization spelling.
+func initializationCandidates(candidates ...string) []string {
+	allCandidates := make([]string, 0, len(candidates)*2)
+	for _, candidate := range candidates {
+		if candidate == "" {
+			continue
+		}
+		allCandidates = append(allCandidates, candidate)
+		if quoted, ok := strings.CutPrefix(candidate, `eval "`); ok && strings.HasSuffix(quoted, `"`) {
+			allCandidates = append(allCandidates, "eval "+strings.TrimSuffix(quoted, `"`))
+		}
+	}
+	return allCandidates
+}
+
+// printPowerShellInitializationConflict explains how to replace a custom or
+// duplicate initialization with one direct line.
+func printPowerShellInitializationConflict(configuration *shells.Configuration) {
+	printSetupWarning("setup made no changes; keep one initialization in your PowerShell profiles and reload it")
+	fmt.Fprintf(os.Stderr, "  %s\n", configuration.Content)
 }
 
 // resolveProfiles resolves configuration paths with lookup, keeps the first
@@ -324,16 +484,7 @@ func replaceInstantModeLine(path string, existing []byte, content string) (bool,
 // replaceInitializationLine replaces exactly one known initialization line
 // while preserving indentation and trailing comments.
 func replaceInitializationLine(path string, existing []byte, content string, candidates ...string) (bool, error) {
-	allCandidates := make([]string, 0, len(candidates)*2)
-	for _, candidate := range candidates {
-		if candidate == "" {
-			continue
-		}
-		allCandidates = append(allCandidates, candidate)
-		if quoted, ok := strings.CutPrefix(candidate, `eval "`); ok && strings.HasSuffix(quoted, `"`) {
-			allCandidates = append(allCandidates, "eval "+strings.TrimSuffix(quoted, `"`))
-		}
-	}
+	allCandidates := initializationCandidates(candidates...)
 	lines := strings.Split(string(existing), "\n")
 	matches := 0
 	for index, line := range lines {

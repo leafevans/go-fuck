@@ -34,6 +34,7 @@ go.work.sum
 /benchmark.txt
 /go-fuck
 /go-fuck.exe
+/gosec.json
 /dist/
 /bin/
 

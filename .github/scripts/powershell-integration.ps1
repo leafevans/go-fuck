@@ -56,6 +56,9 @@ try {
         $reply = fuck --json --no-rerun --output-from 'captured output' --force-command $command | Out-String | ConvertFrom-Json
         Assert 'alias preserves quoted command' ($reply.command -ceq $command) $reply.command
         Assert 'alias preserves spaced input path' ($reply.output -match 'not a git command') $reply.output
+        Assert 'alias declares the current format' ($env:TF_ALIAS_VERSION -eq '4') $env:TF_ALIAS_VERSION
+        $doctor = fuck --doctor --json | Out-String | ConvertFrom-Json
+        Assert 'doctor passes through the current alias' ($null -ne ($doctor.checks | Where-Object name -eq 'alias')) ($doctor.checks | ConvertTo-Json -Depth 4)
         Invoke-Expression ((& $Exe --alias f --capture-mode=rerun) -join "`n")
         Set-Content -LiteralPath 'history-probe.txt' -Value 'short-alias-result'
         $timestamp = [DateTime]::Now

@@ -33,7 +33,7 @@ func (counts *closeMatchCounts) quickRatioUpperBound(candidate string, wordLen, 
 	clear(counts.otherUsed)
 	matching := 0
 	for _, char := range candidate {
-		if uint32(char) < utf8.RuneSelf {
+		if char < utf8.RuneSelf {
 			if asciiUsed[char] < counts.ascii[char] {
 				asciiUsed[char]++
 				matching++
@@ -55,7 +55,7 @@ type closeMatchCounts struct {
 
 func (counts *closeMatchCounts) init(runes []rune) {
 	for _, char := range runes {
-		if uint32(char) < utf8.RuneSelf {
+		if char < utf8.RuneSelf {
 			counts.ascii[char]++
 		} else {
 			if counts.other == nil {

@@ -38,6 +38,9 @@ go test ./... -count=1
 | `task fmt`               | format all Go files with `gofmt -s -w`                                     |
 | `task fmt-check`         | fail when a Go file is not formatted                                       |
 | `task lint`              | run `golangci-lint` with `.golangci.yml`                                   |
+| `task vuln`              | run `govulncheck` against the package call graph                           |
+| `task gosec`             | run the audited G115 security-analysis gate                               |
+| `task gosec-audit`       | write a full gosec report to `gosec.json` for manual review                |
 | `task install`           | run `go install ./cmd/go-fuck`                                             |
 | `task clean`             | remove built binaries, coverage, benchmark and GoReleaser artifacts        |
 | `task packaging`         | regenerate Homebrew/Scoop manifests for `VERSION` from `CHECKSUMS`         |
@@ -99,6 +102,9 @@ go run ./tools/gen-rule-list
 - **Vetting.** `go vet ./...` must be clean.
 - **Linting.** `task lint` runs `golangci-lint` with the repository configuration; keep the
   build green.
+- **Security.** `task vuln` and `task gosec` are blocking CI checks. The versions are pinned in the
+  Taskfile so local and CI results use the same tools. `task gosec-audit` produces the non-blocking
+  full report used to audit intentional command execution and file access.
 - **Standard library only.** Do not add third-party module dependencies. `go.mod` intentionally has
   no `require` block. If something cannot be done with the standard library, open an issue first.
 - **Errors and output streams.** Return errors instead of panicking. Wrap errors with `%w` so callers
@@ -206,6 +212,7 @@ chore(ci): test on Go 1.27 and stable
 - [ ] `go vet ./...` is clean.
 - [ ] `task fmt-check` (or `gofmt -s -l .`) reports nothing.
 - [ ] `task lint` (or the CI lint job) is clean.
+- [ ] `task vuln` and `task gosec` are clean.
 - [ ] New behavior is covered by tests; ported rules include the Python test cases.
 - [ ] `task rules-list` was run when rules were added or renamed, and
       `task rules-list-check` passes.

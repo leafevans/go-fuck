@@ -83,6 +83,7 @@ func TestEncodePowerShellCommand(t *testing.T) {
 		"cd C:\\missing",
 		"git commit -m \"hello world\"",
 		"echo \u2713",
+		"echo \U0001f600",
 	}
 	for _, command := range commands {
 		encoded := encodePowerShellCommand(command)

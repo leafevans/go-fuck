@@ -242,6 +242,113 @@ func TestMainSetupPowerShell(t *testing.T) {
 	}
 }
 
+func TestMainSetupPowerShellUsesExistingAllHostsProfile(t *testing.T) {
+	configDir := resetEntrypointsState(t)
+	t.Setenv("TF_SHELL", "powershell")
+	dir := filepath.Join(configDir, "Documents", "PowerShell")
+	allHosts := filepath.Join(dir, "profile.ps1")
+	currentHost := filepath.Join(dir, "Microsoft.PowerShell_profile.ps1")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(allHosts, []byte("iex \"$(go-fuck --alias)\"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	stubPowerShellProfiles(t, []string{currentHost})
+
+	code, stdout, stderr := runMain(t, "go-fuck", "--setup")
+	if code != 0 {
+		t.Fatalf("Main(--setup) = %d, want 0; stderr = %s", code, stderr)
+	}
+	if !strings.Contains(stdout, allHosts) || strings.Contains(stdout, "now configured for "+currentHost) {
+		t.Fatalf("stdout = %q, want the existing all-hosts profile", stdout)
+	}
+	if _, err := os.Stat(currentHost); !os.IsNotExist(err) {
+		t.Fatalf("setup created the current-host profile: %v", err)
+	}
+	if got := strings.Count(readFile(t, allHosts), "go-fuck --alias"); got != 1 {
+		t.Fatalf("all-hosts profile contains %d alias lines, want 1", got)
+	}
+}
+
+func TestMainSetupPowerShellRejectsMultipleProfileInitializations(t *testing.T) {
+	configDir := resetEntrypointsState(t)
+	t.Setenv("TF_SHELL", "powershell")
+	dir := filepath.Join(configDir, "Documents", "PowerShell")
+	allHosts := filepath.Join(dir, "profile.ps1")
+	currentHost := filepath.Join(dir, "Microsoft.PowerShell_profile.ps1")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	content := "iex \"$(go-fuck --alias)\"\n"
+	for _, path := range []string{allHosts, currentHost} {
+		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	stubPowerShellProfiles(t, []string{currentHost})
+
+	code, _, stderr := runMain(t, "go-fuck", "--setup")
+	if code != 1 || !strings.Contains(stderr, "multiple go-fuck initializations") {
+		t.Fatalf("Main(--setup) = %d, stderr = %q, want a duplicate warning", code, stderr)
+	}
+	if got := readFile(t, allHosts); got != content {
+		t.Fatalf("all-hosts profile was modified: %q", got)
+	}
+	if got := readFile(t, currentHost); got != content {
+		t.Fatalf("current-host profile was modified: %q", got)
+	}
+}
+
+func TestMainSetupPowerShellRejectsDuplicateLinesInOneProfile(t *testing.T) {
+	configDir := resetEntrypointsState(t)
+	t.Setenv("TF_SHELL", "powershell")
+	currentHost := filepath.Join(configDir, "Documents", "PowerShell", "Microsoft.PowerShell_profile.ps1")
+	if err := os.MkdirAll(filepath.Dir(currentHost), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	content := "iex \"$(go-fuck --alias)\"\niex \"$(go-fuck --alias)\"\n"
+	if err := os.WriteFile(currentHost, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	stubPowerShellProfiles(t, []string{currentHost})
+
+	code, _, stderr := runMain(t, "go-fuck", "--setup")
+	if code != 1 || !strings.Contains(stderr, "multiple go-fuck initializations") {
+		t.Fatalf("Main(--setup) = %d, stderr = %q, want a duplicate warning", code, stderr)
+	}
+	if got := readFile(t, currentHost); got != content {
+		t.Fatalf("current-host profile was modified: %q", got)
+	}
+}
+
+func TestMainSetupPowerShellRejectsCustomInitialization(t *testing.T) {
+	configDir := resetEntrypointsState(t)
+	t.Setenv("TF_SHELL", "powershell")
+	dir := filepath.Join(configDir, "Documents", "PowerShell")
+	allHosts := filepath.Join(dir, "profile.ps1")
+	currentHost := filepath.Join(dir, "Microsoft.PowerShell_profile.ps1")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	custom := "$alias = Get-CachedInit -Name 'gofuck' -Generate { & go-fuck --alias }\n"
+	if err := os.WriteFile(allHosts, []byte(custom), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	stubPowerShellProfiles(t, []string{currentHost})
+
+	code, _, stderr := runMain(t, "go-fuck", "--setup")
+	if code != 1 || !strings.Contains(stderr, "custom go-fuck initialization") {
+		t.Fatalf("Main(--setup) = %d, stderr = %q, want a custom initialization warning", code, stderr)
+	}
+	if got := readFile(t, allHosts); got != custom {
+		t.Fatalf("custom profile was modified: %q", got)
+	}
+	if _, err := os.Stat(currentHost); !os.IsNotExist(err) {
+		t.Fatalf("setup created the current-host profile: %v", err)
+	}
+}
+
 func TestMainSetupInstantModeBash(t *testing.T) {
 	configDir := resetEntrypointsState(t)
 	t.Setenv("TF_SHELL", "bash")

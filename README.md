@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/leafevans/go-fuck/actions/workflows/ci.yml/badge.svg)](https://github.com/leafevans/go-fuck/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/leafevans/go-fuck/actions/workflows/codeql.yml/badge.svg)](https://github.com/leafevans/go-fuck/actions/workflows/codeql.yml)
+[![Security](https://github.com/leafevans/go-fuck/actions/workflows/security.yml/badge.svg)](https://github.com/leafevans/go-fuck/actions/workflows/security.yml)
 [![Website](https://img.shields.io/badge/website-leafevans.github.io%2Fgo--fuck-blue)](https://leafevans.github.io/go-fuck/)
 [![Go Reference](https://pkg.go.dev/badge/github.com/leafevans/go-fuck/v3.svg)](https://pkg.go.dev/github.com/leafevans/go-fuck/v3)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -257,6 +258,11 @@ configured for every installed flavor: go-fuck asks `powershell.exe` and `pwsh` 
 `$PROFILE` (the Documents folder can be redirected, for example to OneDrive) and creates the profile
 file when it is missing.
 
+For PowerShell, setup checks both the current-host `$PROFILE` and its all-hosts `profile.ps1`
+sibling before writing anything. If more than one initialization is active, or a profile generates
+the alias through a custom cache, setup reports the conflicting files, makes no changes and exits
+with status 1. Keep one direct initialization and run setup again.
+
 Commented initialization lines do not count as an active setup. Running setup on an existing
 initialization line migrates it in place while preserving comments and indentation. Upgrading an
 old instant-mode initialization preserves unrelated commands, comments, indentation and line
@@ -446,6 +452,10 @@ iex "$(go-fuck --alias)"
 
 The bare `--alias` follows the configured `capture_mode`; add `--capture-mode=rerun` if you want the
 reloaded function to skip terminal capture.
+
+Do not cache the output of `go-fuck --alias`. It depends on the current shell state and capture
+mode, so a cache keyed only by the executable timestamp can restore initialization generated for a
+different context. Evaluate the command directly in the profile instead.
 
 If `fuck -v` reports an unexpected version, or reports PowerShell inside WSL, another `go-fuck` binary is
 probably earlier in `PATH`. The pre-v2 module — `go install github.com/leafevans/go-fuck/cmd/go-fuck@latest`
@@ -1166,6 +1176,14 @@ go build ./...
 go test ./... -count=1
 go vet ./...
 task fmt-check
+```
+
+Security checks:
+
+```bash
+task vuln
+task gosec
+task gosec-audit   # writes the non-blocking full report to gosec.json
 ```
 
 Commits follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`,

@@ -4,6 +4,7 @@ package output
 
 import (
 	"encoding/base64"
+	"encoding/binary"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -97,7 +98,7 @@ func encodePowerShellCommand(command string) string {
 	units := utf16.Encode([]rune(command))
 	encoded := make([]byte, 0, len(units)*2)
 	for _, unit := range units {
-		encoded = append(encoded, byte(unit), byte(unit>>8))
+		encoded = binary.LittleEndian.AppendUint16(encoded, unit)
 	}
 	return base64.StdEncoding.EncodeToString(encoded)
 }

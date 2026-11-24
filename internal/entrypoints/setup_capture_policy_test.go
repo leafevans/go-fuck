@@ -49,7 +49,7 @@ func TestSetupPowerShellRejectsAmbiguousCaptureMigration(t *testing.T) {
 		t.Fatal(err)
 	}
 	code, _, stderr := runMain(t, "go-fuck", "--setup", "--capture-mode=rerun")
-	if code != 1 || !strings.Contains(stderr, "multiple go-fuck initialization lines") {
+	if code != 1 || !strings.Contains(stderr, "multiple go-fuck initializations") {
 		t.Fatalf("setup = %d, stderr=%q", code, stderr)
 	}
 	if got := readFile(t, profile); got != original {

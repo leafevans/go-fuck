@@ -10,6 +10,8 @@ vars:
   GO: go
   BINARY: go-fuck
   GOLANGCI_LINT: golangci-lint
+  GOVULNCHECK_VERSION: v1.10.0
+  GOSEC_VERSION: v2.30.0
   COVER_PROFILE: '{{.ROOT_DIR}}/coverage.out'
   VERSION: ""
   CHECKSUMS: dist/checksums.txt
@@ -91,6 +93,22 @@ tasks:
     desc: Run golangci-lint with the repository configuration
     cmds:
       - '{{.GOLANGCI_LINT}} run'
+
+  vuln:
+    desc: Check the build and reachable code for known Go vulnerabilities
+    cmds:
+      - '{{.GO}} run golang.org/x/vuln/cmd/govulncheck@{{.GOVULNCHECK_VERSION}} ./...'
+
+  gosec:
+    desc: Run the audited gosec rules that block pull requests
+    cmds:
+      - '{{.GO}} run github.com/securego/gosec/v2/cmd/gosec@{{.GOSEC_VERSION}} -quiet -include=G115 ./...'
+
+  gosec-audit:
+    desc: Generate a full gosec JSON report for manual review
+    cmds:
+      - cmd: '{{.GO}} run github.com/securego/gosec/v2/cmd/gosec@{{.GOSEC_VERSION}} -fmt=json -out=gosec.json ./...'
+        ignore_error: true
 
   install:
     desc: Install the go-fuck command with go install

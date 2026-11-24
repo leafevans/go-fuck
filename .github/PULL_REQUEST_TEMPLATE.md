@@ -14,6 +14,7 @@
 
 - [ ] `go test ./... -count=1` passes
 - [ ] `go vet ./...` passes
+- [ ] `task vuln` and `task gosec` pass
 - [ ] `gofmt -s -l .` is empty (`task fmt-check`)
 - [ ] `task rules-list-check` passes (the rule list in `README.md` is regenerated)
 - [ ] No third-party module dependencies were added

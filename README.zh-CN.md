@@ -43,6 +43,10 @@ go-fuck --setup
 setup 会检测当前 shell，将 alias 写入对应配置文件，并打印重新加载命令。完成后重新打开终端，或
 执行 setup 输出的 reload 命令。
 
+对于 PowerShell，setup 会在写入前同时检查 current-host `$PROFILE` 和同目录的 all-hosts
+`profile.ps1`。如果两个文件都初始化了 go-fuck，或某个 profile 通过自定义缓存生成 alias，
+setup 会列出冲突文件、保持所有文件不变并以状态码 1 退出。保留一个直接初始化后重新运行 setup。
+
 支持的 shell：
 
 - bash、zsh、fish、tcsh
@@ -192,6 +196,9 @@ iex "$(go-fuck --alias)"
 裸 `--alias` 会遵循当前配置的 `capture_mode`。需要跳过终端捕获时，可以在命令后加
 `--capture-mode=rerun`。
 
+不要缓存 `go-fuck --alias` 的输出。它依赖当前 shell 状态和 capture mode；只按可执行文件时间戳
+缓存，可能在升级或切换捕获模式后恢复错误上下文的初始化。应在 profile 中直接执行该命令。
+
 ### `fuck -v` 显示的版本不对
 
 通常是 `PATH` 中还有另一个更早安装的 `go-fuck`。运行：
@@ -283,7 +290,17 @@ go test ./... -count=1
 go vet ./...
 ```
 
-项目只使用 Go 标准库。便捷任务和完整检查流程见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+安全与漏洞检查：
+
+```bash
+task vuln
+task gosec
+task gosec-audit   # 将完整非阻塞报告写入 gosec.json
+```
+
+项目只使用 Go 标准库。安全工具版本固定，PR 会阻塞 `govulncheck` 和已审计的 G115 检查；
+完整 gosec 报告按周运行并保留为 artifact。便捷任务和完整检查流程见
+[CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 许可证
 

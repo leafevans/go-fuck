@@ -257,18 +257,33 @@ func doctorPowerShellUserProfiles(hostProfiles []string) []string {
 func doctorPowerShellAliasCheck(profiles []string) doctorCheck {
 	check := doctorCheck{Name: "alias"}
 	found := []string{}
+	custom := []string{}
 	inspected := []string{}
+	directLines := 0
 	for _, profile := range profiles {
 		content, err := doctorReadFile(expandHome(profile))
 		if err != nil {
 			continue
 		}
 		inspected = append(inspected, profile)
-		if strings.Contains(string(content), consts.ExecutableName()+" --alias") {
+		direct, hasCustom := powerShellInitializationCounts(content)
+		directLines += direct
+		if direct > 0 || hasCustom {
 			found = append(found, profile)
+		}
+		if hasCustom {
+			custom = append(custom, profile)
 		}
 	}
 	switch {
+	case directLines > 1:
+		check.Status = doctorWarn
+		check.Message = "multiple go-fuck initializations found in " + strings.Join(found, ", ")
+		check.Hint = "keep exactly one direct initialization in your PowerShell profiles"
+	case len(custom) > 0:
+		check.Status = doctorWarn
+		check.Message = "custom go-fuck initialization found in " + strings.Join(custom, ", ")
+		check.Hint = "replace it with one direct " + consts.ExecutableName() + " --alias initialization line"
 	case len(found) > 0:
 		if version := strings.TrimSpace(os.Getenv(consts.AliasVersionEnv)); version != "" &&
 			version != consts.AliasVersion {
@@ -293,6 +308,28 @@ func doctorPowerShellAliasCheck(profiles []string) doctorCheck {
 		check.Hint = "run " + consts.ExecutableName() + " --setup to create and configure it"
 	}
 	return check
+}
+
+// powerShellInitializationCounts counts direct initialization lines and
+// reports an unrecognized programmatic reference to go-fuck --alias.
+func powerShellInitializationCounts(content []byte) (int, bool) {
+	needle := consts.ExecutableName() + " --alias"
+	directPrefix := `iex "$(` + consts.ExecutableName() + " --alias"
+	direct := 0
+	custom := false
+	for line := range strings.SplitSeq(string(content), "\n") {
+		trimmed := strings.TrimLeft(line, " \t\uFEFF")
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+			continue
+		}
+		switch {
+		case strings.HasPrefix(trimmed, directPrefix):
+			direct++
+		case strings.Contains(line, needle):
+			custom = true
+		}
+	}
+	return direct, custom
 }
 
 // doctorSettingsCheck reports whether the settings file can be loaded.

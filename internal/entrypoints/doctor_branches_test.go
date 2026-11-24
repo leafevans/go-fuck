@@ -197,6 +197,39 @@ func TestDoctorPowerShellAliasCheck(t *testing.T) {
 		}
 	})
 
+	t.Run("multiple direct initializations", func(t *testing.T) {
+		dir := t.TempDir()
+		allHosts := filepath.Join(dir, "profile.ps1")
+		currentHost := filepath.Join(dir, "Microsoft.PowerShell_profile.ps1")
+		for _, path := range []string{allHosts, currentHost} {
+			if err := os.WriteFile(path, []byte("iex \"$(go-fuck --alias)\"\n"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}
+		check := doctorPowerShellAliasCheck([]string{allHosts, currentHost})
+		if check.Status != doctorWarn || !strings.Contains(check.Message, "multiple") {
+			t.Fatalf("check = %+v, want a duplicate initialization warning", check)
+		}
+		if !strings.Contains(check.Message, allHosts) || !strings.Contains(check.Message, currentHost) {
+			t.Fatalf("message = %q, want both profile paths", check.Message)
+		}
+	})
+
+	t.Run("custom cached initialization", func(t *testing.T) {
+		profile := filepath.Join(t.TempDir(), "profile.ps1")
+		custom := "$alias = Get-CachedInit -Name 'gofuck' -Generate { & go-fuck --alias }\n"
+		if err := os.WriteFile(profile, []byte(custom), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		check := doctorPowerShellAliasCheck([]string{profile})
+		if check.Status != doctorWarn || !strings.Contains(check.Message, "custom") {
+			t.Fatalf("check = %+v, want a custom initialization warning", check)
+		}
+		if !strings.Contains(check.Hint, "direct") {
+			t.Fatalf("hint = %q, want direct initialization guidance", check.Hint)
+		}
+	})
+
 	t.Run("no alias in the profiles", func(t *testing.T) {
 		profile := filepath.Join(t.TempDir(), "profile.ps1")
 		if err := os.WriteFile(profile, []byte("Set-Alias ll Get-ChildItem\n"), 0o644); err != nil {

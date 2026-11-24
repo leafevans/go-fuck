@@ -56,6 +56,7 @@ func AncestorNames() []string {
 	names := []string{}
 	entries := processSnapshot()
 	// os.Getppid takes another process snapshot on Windows.
+	// #nosec G115 -- Windows process IDs are unsigned 32-bit values returned by os.Getpid.
 	pid := entries[uint32(os.Getpid())].ParentProcessID
 	for depth := 0; depth < 10 && pid != 0; depth++ {
 		entry, ok := entries[pid]
