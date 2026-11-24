@@ -16,6 +16,11 @@ func TestRuleEdgeCases(t *testing.T) {
 		{"git_worktree_branch_used", "git status", ""},
 		{"grep_recursive", "grep", ""},
 		{"just_unknown_recipe", "just task", ""},
+		// A word that only appears in an argument of another command.
+		{"mkdir_p", "grep -rn mkdir src", "grep: src: No such file or directory"},
+		// A missing source file is not a missing destination directory.
+		{"cp_create_destination", "cp notes.txt notes-old.txt",
+			"cp: cannot stat 'notes.txt': No such file or directory"},
 	}
 	for _, testCase := range notMatching {
 		rule := Get(testCase.rule)

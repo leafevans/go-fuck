@@ -15,7 +15,8 @@ func TestRuleCpCreateDestination(t *testing.T) {
 			output string
 		}{
 			{"cp", "cp: directory foo does not exist\n"},
-			{"mv", "No such file or directory"},
+			{"cp a b/c", "cp: cannot create regular file 'b/c': No such file or directory"},
+			{"mv a b/c", "mv: cannot move 'a' to 'b/c': No such file or directory"},
 		} {
 			assertMatch(t, rule, testCase.script, testCase.output)
 		}
@@ -29,6 +30,10 @@ func TestRuleCpCreateDestination(t *testing.T) {
 			{"cp", ""},
 			{"mv", ""},
 			{"ls", "No such file or directory"},
+			// The source is missing, so the destination is not a directory to create.
+			{"cp notes.txt notes-old.txt", "cp: cannot stat 'notes.txt': No such file or directory"},
+			{"cp", "No such file or directory"},
+			{"mv", "No such file or directory"},
 		} {
 			assertNotMatch(t, rule, testCase.script, testCase.output)
 		}
