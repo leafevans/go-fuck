@@ -167,7 +167,9 @@ iex "$(go-fuck --alias --capture-mode=auto)"
 
 已有分支只建议复用，不再删除重建；绕过 Git 钩子需要本地失败诊断，不能绕过服务端钩子。
 JSON 布局不变；`side_effect` 仅表示额外执行回调，不表示建议命令本身无破坏性。
-版本尚未确定，详见 [升级说明](UPGRADING.md#unreleased-safety-changes-version-not-assigned)。
+按现有兼容性政策，这批默认行为调整计划随 4.0.0 发布，而不是作为 3.x 补丁。
+目前尚未发布，Go 模块仍为 `/v3`；需完成 `/v4` 迁移和打包验证后才会打标签。
+详见 [升级说明](UPGRADING.md#unreleased-safety-changes-version-not-assigned)。
 
 ## 常见问题
 

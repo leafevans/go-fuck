@@ -177,12 +177,17 @@ version is still 3.0.2. No settings keys or JSON fields have been removed.
   Rule-list default flags and hook output requirements change; clients must not cache
   these values as fixed across releases.
 
-Release gate: the version is intentionally unassigned. The published policy requires a
-major release for breaking documented behavior. Decide whether these safety corrections
-fall under bug fixes or require a major migration before changing version constants,
-module paths, tags or distribution manifests. Validate preview/explain/JSON behavior,
-cross-platform CI and Arch packaging before publishing; regenerate manifests only
-from the actual release assets and their checksums.
+Release decision: target **4.0.0**, not a 3.x patch or minor release. Disabling
+previously enabled documented rules changes default behavior, even though users can
+opt back in. Follow the existing major-version policy rather than introducing a
+retroactive safety exception. This section is a preparation notice, not a release.
+
+Before cutting 4.0.0, migrate the Go module and all imports to `/v4`, update version
+constants, build/linker configuration, installation examples and release notes together,
+and verify that the module-major guard passes. The current source remains `/v3` until
+that migration lands. Validate preview/explain/JSON behavior, cross-platform CI and
+Arch packaging before publishing; regenerate manifests only from actual release assets
+and their checksums. Do not tag the current `/v3` tree as v4.0.0.
 
 ## Future releases
 
