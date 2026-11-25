@@ -28,7 +28,7 @@ func gitHookFailure(output string) bool {
 // gitBypassableHookFailure requires a local hook name and a failure diagnostic
 // on the same line. Server-side hooks are not disabled by --no-verify.
 func gitBypassableHookFailure(output string) bool {
-	for _, line := range strings.Split(strings.ToLower(output), "\n") {
+	for line := range strings.SplitSeq(strings.ToLower(output), "\n") {
 		if strings.Contains(line, "remote:") || strings.Contains(line, "pre-receive") || strings.Contains(line, "update hook") {
 			continue
 		}
@@ -50,15 +50,20 @@ func gitBypassableHookFailure(output string) bool {
 // push or a missing commit identity. The output has to name the hook, and a
 // command that already passes --no-verify is left alone.
 func gitHookBypassMatch(command *types.Command) bool {
-	if strings.Contains(command.Script, "--no-verify") || !gitBypassableHookFailure(command.Output) {
+	if strings.Contains(command.Script, "--no-verify") {
 		return false
 	}
+	hooked := false
 	for _, hookedCommand := range gitHookBypassCommands {
 		if gitHasSubcommand(command.Script, hookedCommand) {
-			return true
+			hooked = true
+			break
 		}
 	}
-	return false
+	if !hooked {
+		return false
+	}
+	return gitBypassableHookFailure(command.Output)
 }
 
 // gitHookBypassNewCommand adds --no-verify to the hooked command.

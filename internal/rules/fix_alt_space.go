@@ -14,8 +14,10 @@ const fixAltSpaceAltSpace = "\u00a0"
 // fixAltSpaceMatch reports whether the command contains a non-breaking space
 // and a command was not found.
 func fixAltSpaceMatch(command *types.Command) bool {
-	return strings.Contains(strings.ToLower(command.Output), "command not found") &&
-		strings.Contains(command.Script, fixAltSpaceAltSpace)
+	// Check the script first: copying a long output to lower case is expensive
+	// and the rule only applies to a non-breaking space in the command.
+	return strings.Contains(command.Script, fixAltSpaceAltSpace) &&
+		strings.Contains(strings.ToLower(command.Output), "command not found")
 }
 
 // fixAltSpaceNewCommand replaces the non-breaking spaces with regular spaces.

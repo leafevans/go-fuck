@@ -1,6 +1,8 @@
 package rules
 
 import (
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/leafevans/go-fuck/v4/internal/conf"
@@ -72,5 +74,41 @@ func BenchmarkRuleMatchingWithoutOutput(b *testing.B) {
 		for _, rule := range registered {
 			rule.IsMatch(command)
 		}
+	}
+}
+
+// benchmarkLongOutput is a 4,000 line captured log that no rule matches. It
+// models the build logs where an unguarded full output scan is visible.
+func benchmarkLongOutput() string {
+	var builder strings.Builder
+	for index := 0; index < 4000; index++ {
+		builder.WriteString("INFO    resolved dependency ")
+		builder.WriteString(strconv.Itoa(index))
+		builder.WriteString(" from the lock file\n")
+	}
+	return builder.String()
+}
+
+// BenchmarkRuleMatchingLongOutput benchmarks the rule scan over a long capture.
+// The rules must skip the regular expressions whose literals are absent instead
+// of scanning every byte.
+func BenchmarkRuleMatchingLongOutput(b *testing.B) {
+	benchmarkRuleSetup(b)
+	for _, testCase := range []struct{ name, script string }{
+		{"build", "go build ./..."},
+		{"git", "git push"},
+	} {
+		b.Run(testCase.name, func(b *testing.B) {
+			command := types.NewCommand(testCase.script, benchmarkLongOutput())
+			registered := All()
+
+			b.ReportAllocs()
+			b.ResetTimer()
+			for b.Loop() {
+				for _, rule := range registered {
+					rule.IsMatch(command)
+				}
+			}
+		})
 	}
 }

@@ -18,6 +18,8 @@ BenchmarkGitOptionSpan/paths 0 0
 BenchmarkGitOptionSpan/plain 0 0
 BenchmarkReadHistoryFile 1459851 8
 BenchmarkRuleMatchingAllRules 5168 19
+BenchmarkRuleMatchingLongOutput/build 217400 17
+BenchmarkRuleMatchingLongOutput/git 431000 18
 BenchmarkRuleMatchingWithoutOutput 0 0
 BenchmarkSequenceRatio 336 3
 BenchmarkSortBySimilarity 42368 421

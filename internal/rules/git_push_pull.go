@@ -11,8 +11,10 @@ import (
 // gitPushPullMatch reports whether a push was rejected because the remote
 // contains work that is not integrated locally.
 func gitPushPullMatch(command *types.Command) bool {
-	return gitHasSubcommand(command.Script, "push") &&
-		strings.Contains(command.Output, "! [rejected]") &&
+	if !gitHasSubcommand(command.Script, "push") {
+		return false
+	}
+	return strings.Contains(command.Output, "! [rejected]") &&
 		strings.Contains(command.Output, "failed to push some refs to") &&
 		(strings.Contains(command.Output,
 			"Updates were rejected because the tip of your current branch is behind") ||

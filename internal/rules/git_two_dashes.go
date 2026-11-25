@@ -1,6 +1,8 @@
 package rules
 
 import (
+	"strings"
+
 	"github.com/leafevans/go-fuck/v4/internal/shells"
 	"github.com/leafevans/go-fuck/v4/internal/specific"
 	"github.com/leafevans/go-fuck/v4/internal/types"
@@ -10,6 +12,9 @@ import (
 var gitTwoDashesHint = newRegexp("(?m)^error: did you mean `(--[A-Za-z0-9][A-Za-z0-9-]*)` \\(with two dashes(?: \\?\\)|\\)\\?)\\r?$")
 
 func gitTwoDashesCorrection(command *types.Command) (start, end int, option string, ok bool) {
+	if !strings.Contains(command.Output, "with two dashes") {
+		return 0, 0, "", false
+	}
 	hint := gitTwoDashesHint.FindStringSubmatch(command.Output)
 	if hint == nil {
 		return 0, 0, "", false

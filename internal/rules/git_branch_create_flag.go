@@ -11,6 +11,9 @@ import (
 var gitBranchCreateFlagError = newRegexp("(?m)^error: unknown switch `([bc])'\r?$")
 
 func gitBranchCreateFlagCorrection(command *types.Command) (start, end int, replacement string, ok bool) {
+	if !strings.Contains(command.Output, "unknown switch `") {
+		return 0, 0, "", false
+	}
 	match := gitBranchCreateFlagError.FindStringSubmatch(command.Output)
 	if match == nil {
 		return 0, 0, "", false
