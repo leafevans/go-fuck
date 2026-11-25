@@ -218,9 +218,9 @@ jobs:
           } else {
             $scoopPath = $scoop.Source
           }
-          & $scoopPath bucket add go-fuck https://github.com/leafevans/go-fuck
-          if ($LASTEXITCODE -ne 0) { throw "adding the Scoop bucket failed" }
-          & $scoopPath install go-fuck
+          # Install the checked-out manifest, not the default branch bucket.
+          $manifest = (Resolve-Path -LiteralPath bucket/go-fuck.json).Path
+          & $scoopPath install $manifest
           if ($LASTEXITCODE -ne 0) { throw "installing with Scoop failed" }
           $prefix = (& $scoopPath prefix go-fuck | Out-String).Trim()
           $goFuck = Join-Path $prefix "go-fuck.exe"
