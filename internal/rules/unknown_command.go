@@ -1,6 +1,8 @@
 package rules
 
 import (
+	"strings"
+
 	"github.com/leafevans/go-fuck/v4/internal/types"
 	"github.com/leafevans/go-fuck/v4/internal/utils"
 )
@@ -13,9 +15,12 @@ var unknownCommandBrokenCommand = newRegexp(`([^:]*): Unknown command.*`)
 var unknownCommandSuggestion = newRegexp(`Did you mean ([^?]*)?`)
 
 // unknownCommandMatch reports whether the application printed a list of similar
-// commands.
+// commands. The literal checks keep long captured output away from the regular
+// expressions, which scan every byte.
 func unknownCommandMatch(command *types.Command) bool {
-	return unknownCommandBrokenCommand.MatchString(command.Output) &&
+	return strings.Contains(command.Output, ": Unknown command") &&
+		strings.Contains(command.Output, "Did you mean ") &&
+		unknownCommandBrokenCommand.MatchString(command.Output) &&
 		unknownCommandSuggestion.MatchString(command.Output)
 }
 

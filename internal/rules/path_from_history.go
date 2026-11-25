@@ -36,6 +36,13 @@ var pathFromHistoryExists = func(path string) bool {
 // pathFromHistoryDestination returns the argument that caused the error, or an
 // empty string when the output does not name one of the command arguments.
 func pathFromHistoryDestination(command *types.Command) string {
+	// Every pattern contains one of these literals; skip the regular
+	// expressions when a long capture contains none of them.
+	if !strings.Contains(command.Output, "No such file or directory") &&
+		!strings.Contains(command.Output, "no such file or directory: ") &&
+		!strings.Contains(command.Output, "can't cd to ") {
+		return ""
+	}
 	// Python's $ anchor matches at the end of the output or just before a
 	// trailing newline, so the trailing newline is removed before searching.
 	output := strings.TrimSuffix(command.Output, "\n")

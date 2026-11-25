@@ -23,7 +23,10 @@ var longFormHelpSuggestionInsensitive = newRegexp(`(?i)(?:Run|Try) '([^']+)'(?: 
 // a suggestion identical to the failed command, so the fallback is limited to
 // scripts that actually use "-h".
 func longFormHelpMatch(command *types.Command) bool {
-	if longFormHelpSuggestionInsensitive.MatchString(command.Output) {
+	// The suggestion always closes the quoted command with "' for", so a cheap
+	// literal check can skip the case insensitive scan of a long capture.
+	if strings.Contains(command.Output, "' ") &&
+		longFormHelpSuggestionInsensitive.MatchString(command.Output) {
 		return true
 	}
 	if !utils.Contains(command.ScriptParts(), "-h") {

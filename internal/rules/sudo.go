@@ -50,6 +50,21 @@ var sudoAuthenticationPatterns = []string{
 	"permission denied (gssapi",
 }
 
+// sudoOutputKeywords lists lower case literals that every pattern below
+// contains. They let the rule skip the pattern scan when a long capture cannot
+// name a privilege error.
+var sudoOutputKeywords = []string{
+	"root",
+	"sudo",
+	"privileg",
+	"perm",
+	"super",
+	"access",
+	"authentication",
+	"eacces",
+	"updatedb",
+}
+
 // sudoMatch reports whether the command failed because it needs root
 // privileges.
 //
@@ -63,6 +78,16 @@ func sudoMatch(command *types.Command) bool {
 	}
 
 	output := strings.ToLower(command.Output)
+	possible := false
+	for _, keyword := range sudoOutputKeywords {
+		if strings.Contains(output, keyword) {
+			possible = true
+			break
+		}
+	}
+	if !possible {
+		return false
+	}
 	for _, pattern := range sudoAuthenticationPatterns {
 		if strings.Contains(output, pattern) {
 			return false

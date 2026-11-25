@@ -10,6 +10,8 @@ func TestRuleLongFormHelp(t *testing.T) {
 	}
 
 	assertMatch(t, rule, "grep -h", "Try 'grep --help' for more information.")
+	assertMatch(t, rule, "grep -h", "TRY 'grep --help' FOR MORE INFORMATION.")
+	assertMatch(t, rule, "grep -h", "Try 'grep --help' For Details.")
 	assertMatch(t, rule, "grep -h", "usage: grep --help")
 	assertNotMatch(t, rule, "grep -E", "usage: grep --help")
 	assertNotMatch(t, rule, "cargo buidl", "usage: cargo [OPTIONS] --help\n")

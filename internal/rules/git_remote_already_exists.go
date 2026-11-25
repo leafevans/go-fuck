@@ -32,6 +32,9 @@ func gitRemoteAlreadyExistsNewCommand(command *types.Command) ([]string, error) 
 }
 
 func gitRemoteAlreadyExistsCorrection(command *types.Command) (string, bool) {
+	if !strings.Contains(command.Output, "already exists") {
+		return "", false
+	}
 	if !gitRemoteAlreadyExistsError.MatchString(command.Output) {
 		return "", false
 	}

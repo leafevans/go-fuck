@@ -21,6 +21,10 @@ var gitFlagAfterFilenameOptionPattern = newRegexp(
 // gitFlagAfterFilenameBadFlag returns the flag that git rejected, or an empty
 // string.
 func gitFlagAfterFilenameBadFlag(commandOutput string) string {
+	if !strings.Contains(commandOutput, "bad flag '") &&
+		!strings.Contains(commandOutput, "must come before non-option arguments") {
+		return ""
+	}
 	if match := gitFlagAfterFilenameFlagPattern.FindStringSubmatch(commandOutput); match != nil {
 		return match[1]
 	}

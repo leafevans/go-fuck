@@ -2,6 +2,7 @@ package rules
 
 import (
 	"os"
+	"strings"
 
 	"github.com/leafevans/go-fuck/v4/internal/shells"
 	"github.com/leafevans/go-fuck/v4/internal/specific"
@@ -24,6 +25,9 @@ var gitAddFileExists = func(path string) bool {
 // gitAddMissingFile returns the existing path that git failed to find, or an
 // empty string when there is none.
 func gitAddMissingFile(command *types.Command) string {
+	if !strings.Contains(command.Output, "pathspec '") {
+		return ""
+	}
 	match := gitAddPathspec.FindStringSubmatch(command.Output)
 	if match == nil || !gitAddFileExists(match[1]) {
 		return ""
@@ -34,8 +38,9 @@ func gitAddMissingFile(command *types.Command) string {
 // gitAddMatch reports whether git failed because of an unknown pathspec that
 // exists on disk.
 func gitAddMatch(command *types.Command) bool {
-	return gitAddPathspec.MatchString(command.Output) &&
-		gitAddMissingFile(command) != ""
+	// Checking the existing file already requires a pathspec match, so the
+	// output is parsed once.
+	return gitAddMissingFile(command) != ""
 }
 
 // gitAddNewCommand adds the missing file first.

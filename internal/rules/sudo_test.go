@@ -1,6 +1,28 @@
 package rules
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
+
+// TestSudoOutputKeywordsCoverPatterns keeps the fast output gate honest: every
+// pattern the rule checks must contain one of the keywords, otherwise a long
+// capture could skip a pattern that matches.
+func TestSudoOutputKeywordsCoverPatterns(t *testing.T) {
+	patterns := append(append([]string{}, sudoPatterns...), sudoAuthenticationPatterns...)
+	for _, pattern := range patterns {
+		covered := false
+		for _, keyword := range sudoOutputKeywords {
+			if strings.Contains(pattern, keyword) {
+				covered = true
+				break
+			}
+		}
+		if !covered {
+			t.Errorf("pattern %q is not covered by sudoOutputKeywords", pattern)
+		}
+	}
+}
 
 func TestRuleSudo(t *testing.T) {
 	resetTestState(t)
