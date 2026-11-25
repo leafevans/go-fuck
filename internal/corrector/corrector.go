@@ -24,14 +24,15 @@ func GetRules() []*types.Rule {
 
 // configuredRules returns the enabled rules ordered by effective priority.
 func configuredRules(settings *conf.Settings) []*types.Rule {
-	enabled := make([]*types.Rule, 0, rules.Count())
+	all := rules.All()
+	enabled := make([]*types.Rule, 0, len(all))
 	if len(settings.Priority) == 0 {
-		walkEnabledRules(settings, func(rule *types.Rule) {
+		walkEnabledRules(settings, all, func(rule *types.Rule) {
 			enabled = append(enabled, rule)
 		})
 		return enabled
 	}
-	walkEnabledRules(settings, func(rule *types.Rule) {
+	walkEnabledRules(settings, all, func(rule *types.Rule) {
 		if priority, overridden := settings.Priority[rule.Name]; overridden {
 			configured := *rule
 			configured.Priority = priority
@@ -46,9 +47,9 @@ func configuredRules(settings *conf.Settings) []*types.Rule {
 }
 
 // walkEnabledRules calls visit for each rule enabled by settings.
-func walkEnabledRules(settings *conf.Settings, visit func(*types.Rule)) {
+func walkEnabledRules(settings *conf.Settings, all []*types.Rule, visit func(*types.Rule)) {
 	if len(settings.ExcludeRules) == 0 && len(settings.Rules) == 1 && settings.Rules[0] == consts.AllEnabled {
-		for _, rule := range rules.All() {
+		for _, rule := range all {
 			if rule.DefaultEnabled() {
 				visit(rule)
 			}
@@ -60,7 +61,7 @@ func walkEnabledRules(settings *conf.Settings, visit func(*types.Rule)) {
 		excluded[name] = struct{}{}
 	}
 	defaults := slices.Contains(settings.Rules, consts.AllEnabled)
-	for _, rule := range rules.All() {
+	for _, rule := range all {
 		if _, skip := excluded[rule.Name]; skip {
 			logs.Debug("Ignoring excluded rule: %s", rule.Name)
 			continue
@@ -129,7 +130,7 @@ func GetCorrectedCommands(command *types.Command) []*types.CorrectedCommand {
 		}
 	}
 	if len(settings.Priority) == 0 {
-		walkEnabledRules(settings, collect)
+		walkEnabledRules(settings, rules.All(), collect)
 	} else {
 		for _, rule := range configuredRules(settings) {
 			collect(rule)

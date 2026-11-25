@@ -100,12 +100,7 @@ func FromScriptAndOutput(raw []string, commandOutput string) (*Command, error) {
 	if script == "" {
 		return nil, ErrEmptyCommand
 	}
-	return &Command{
-		Script:        shells.Current().FromShell(script),
-		Output:        commandOutput,
-		hasOutput:     true,
-		captureSource: capture.SourceProvided,
-	}, nil
+	return NewCommand(shells.Current().FromShell(script), commandOutput), nil
 }
 
 // FormatRawScript joins the raw command line parts into a single command.

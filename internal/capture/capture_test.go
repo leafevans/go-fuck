@@ -3,7 +3,6 @@ package capture
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -31,20 +30,13 @@ func captureLog(t *testing.T, command, commandOutput string) string {
 	return path
 }
 
-func portableEcho(text string) string {
-	if runtime.GOOS == "windows" {
-		return "echo " + text
-	}
-	return "echo " + text
-}
-
 func TestProvidedOutputOverridesAllSources(t *testing.T) {
 	resetCaptureState(t)
 	t.Setenv(consts.OutputLogEnv, captureLog(t, "echo log", "from-log"))
 	empty := ""
 	result := Capture(Request{
 		Script:     "echo log",
-		Expanded:   portableEcho("from-rerun"),
+		Expanded:   "echo from-rerun",
 		Provided:   &empty,
 		AllowRerun: true,
 		Mode:       ModeAuto,
@@ -59,7 +51,7 @@ func TestAutoPrefersInstantLog(t *testing.T) {
 	t.Setenv(consts.OutputLogEnv, captureLog(t, "echo log", "from-log"))
 	result := Capture(Request{
 		Script:     "echo log",
-		Expanded:   portableEcho("from-rerun"),
+		Expanded:   "echo from-rerun",
 		AllowRerun: true,
 		Mode:       ModeAuto,
 	})
@@ -72,12 +64,15 @@ func TestAutoFallsBackToRerun(t *testing.T) {
 	resetCaptureState(t)
 	result := Capture(Request{
 		Script:     "echo fallback",
-		Expanded:   portableEcho("from-rerun"),
+		Expanded:   "echo from-rerun",
 		AllowRerun: true,
 		Mode:       ModeAuto,
 	})
 	if !result.OK || result.Source != SourceRerun || !strings.Contains(result.Output, "from-rerun") {
 		t.Fatalf("Capture() = %+v, want rerun fallback", result)
+	}
+	if result.Duration <= 0 {
+		t.Fatalf("Capture() duration = %v, want elapsed rerun time", result.Duration)
 	}
 }
 
@@ -85,7 +80,7 @@ func TestInstantModeDoesNotRerun(t *testing.T) {
 	resetCaptureState(t)
 	result := Capture(Request{
 		Script:     "echo missing",
-		Expanded:   portableEcho("must-not-run"),
+		Expanded:   "echo must-not-run",
 		AllowRerun: true,
 		Mode:       ModeInstant,
 	})
@@ -99,7 +94,7 @@ func TestRerunModeIgnoresInstantLog(t *testing.T) {
 	t.Setenv(consts.OutputLogEnv, captureLog(t, "echo rerun", "from-log"))
 	result := Capture(Request{
 		Script:     "echo rerun",
-		Expanded:   portableEcho("from-rerun"),
+		Expanded:   "echo from-rerun",
 		AllowRerun: true,
 		Mode:       ModeRerun,
 	})

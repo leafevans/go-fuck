@@ -55,9 +55,8 @@ type Result struct {
 }
 
 // Capture applies the configured source policy.
-func Capture(request Request) Result {
+func Capture(request Request) (result Result) {
 	started := time.Now()
-	result := Result{Source: SourceNone}
 	defer func() {
 		result.Duration = time.Since(started)
 		logs.Debug("Capture mode=%s source=%s ok=%t took=%s",
@@ -65,19 +64,13 @@ func Capture(request Request) Result {
 	}()
 
 	if request.Provided != nil {
-		result.Output = *request.Provided
-		result.Source = SourceProvided
-		result.OK = true
-		return result
+		return Result{Output: *request.Provided, Source: SourceProvided, OK: true}
 	}
 
 	if request.Mode == ModeAuto || request.Mode == ModeInstant {
 		if logPath := instant.LogPath(); logPath != "" {
 			if logOutput, ok := instant.LastOutput(logPath, request.Script); ok {
-				result.Output = logOutput
-				result.Source = SourceInstantLog
-				result.OK = true
-				return result
+				return Result{Output: logOutput, Source: SourceInstantLog, OK: true}
 			}
 			logs.Debug("Command not found in the instant mode log")
 		} else {
@@ -85,14 +78,10 @@ func Capture(request Request) Result {
 		}
 	}
 
-	if request.Mode == ModeInstant || !request.AllowRerun {
-		return result
+	if request.Mode != ModeInstant && request.AllowRerun {
+		if commandOutput, ok := output.Rerun(request.Expanded); ok {
+			return Result{Output: commandOutput, Source: SourceRerun, OK: true}
+		}
 	}
-
-	if commandOutput, ok := output.Rerun(request.Expanded); ok {
-		result.Output = commandOutput
-		result.Source = SourceRerun
-		result.OK = true
-	}
-	return result
+	return Result{Source: SourceNone}
 }

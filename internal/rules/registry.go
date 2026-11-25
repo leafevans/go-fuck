@@ -28,60 +28,55 @@ var (
 )
 
 var (
-	registryMu sync.Mutex
-	registry   []*types.Rule
-	byName     = map[string]*types.Rule{}
-
-	allOnce  sync.Once
-	allRules []*types.Rule
+	registryMu   sync.Mutex
+	byName       = map[string]*types.Rule{}
+	orderedRules []*types.Rule
 )
 
-// register adds a rule to the registry. It is called from the init function of
-// each rule file.
+// register is used by the built-in rule initializers.
 func register(rule *types.Rule) {
+	if !addRule(rule) {
+		panic("go-fuck: duplicate rule " + rule.Name)
+	}
+}
+
+// addRule updates the name index and invalidates the ordered snapshot together.
+func addRule(rule *types.Rule) bool {
 	registryMu.Lock()
 	defer registryMu.Unlock()
 	if _, exists := byName[rule.Name]; exists {
-		panic("go-fuck: duplicate rule " + rule.Name)
+		return false
 	}
-	registry = append(registry, rule)
 	byName[rule.Name] = rule
+	orderedRules = nil
+	return true
 }
 
 // Count returns the number of registered rules.
 func Count() int {
 	registryMu.Lock()
 	defer registryMu.Unlock()
-	return len(registry)
+	return len(byName)
 }
 
-// All returns the registered rules ordered by priority and name.
-//
-// Rules are registered in file name order, which reproduces the stable sorting
-// of the original implementation: rules are tried in priority order and
-// alphabetically within the same priority.
-//
-// The list is computed once because the registry is immutable after the init
-// phase. The returned slice is shared and must not be modified by callers.
+// All returns a shared, read-only snapshot ordered by priority and name.
+// Later registrations do not change snapshots already returned to callers.
 func All() []*types.Rule {
-	allOnce.Do(func() {
-		registryMu.Lock()
-		all := make([]*types.Rule, len(registry))
-		copy(all, registry)
-		registryMu.Unlock()
-
-		// Sorting by priority and then by name is equivalent to the previous
-		// name sort followed by a stable priority sort, because the names are
-		// unique.
-		slices.SortFunc(all, func(left, right *types.Rule) int {
+	registryMu.Lock()
+	defer registryMu.Unlock()
+	if orderedRules == nil {
+		orderedRules = make([]*types.Rule, 0, len(byName))
+		for _, rule := range byName {
+			orderedRules = append(orderedRules, rule)
+		}
+		slices.SortFunc(orderedRules, func(left, right *types.Rule) int {
 			if order := cmp.Compare(left.Priority, right.Priority); order != 0 {
 				return order
 			}
 			return cmp.Compare(left.Name, right.Name)
 		})
-		allRules = all
-	})
-	return allRules
+	}
+	return orderedRules
 }
 
 // Get returns the rule with the given name.
