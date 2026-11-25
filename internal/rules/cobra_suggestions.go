@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"slices"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v4/internal/types"
@@ -75,26 +74,6 @@ func cobraUnknownCommandNewCommand(command *types.Command) ([]string, error) {
 	return utils.ReplaceArgumentsSorted(command.Script, broken, suggestions), nil
 }
 
-// cliSubcommandCorrections follows the diagnostic's command path before
-// replacing the failed subcommand. Unknown flags make the path ambiguous.
-func cliSubcommandCorrections(command *types.Command, apps []string, path []string, broken string, suggestions []string, options func(string) commandOption) []string {
-	words := simpleCommandWords(command.Script)
-	if len(words) < 2 || !slices.Contains(apps, words[0].text) {
-		return nil
-	}
-	index := 1
-	for _, part := range path {
-		index = subcommandIndex(words, index, options)
-		if index < 0 || words[index].text != part {
-			return nil
-		}
-		index++
-	}
-	index = subcommandIndex(words, index, options)
-	return replaceSubcommand(command.Script, words, index, broken, utils.SortBySimilarity(broken, suggestions)...)
-}
-
-var cliSubcommandName = newRegexp(`^[A-Za-z0-9][A-Za-z0-9_.+-]*$`)
 var cobraSubcommandDiagnostic = newRegexp(`^(?:Error: |error: )?unknown command "([^"]+)" for "([^"]+)"$`)
 
 // registerScopedCobraRule uses the reported parent path, rather than replacing
