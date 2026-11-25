@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/v3/internal/argumentparser"
-	"github.com/leafevans/go-fuck/v3/internal/shells"
+	"github.com/leafevans/go-fuck/v4/internal/argumentparser"
+	"github.com/leafevans/go-fuck/v4/internal/shells"
 
-	"github.com/leafevans/go-fuck/v3/internal/conf"
+	"github.com/leafevans/go-fuck/v4/internal/conf"
 )
 
 // readFile reads a file in tests.

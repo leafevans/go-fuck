@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/leafevans/go-fuck/v3/internal/consts"
+	"github.com/leafevans/go-fuck/v4/internal/consts"
 )
 
 func TestPowerShellInstantCorrection(t *testing.T) {

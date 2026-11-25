@@ -6,7 +6,7 @@ import "runtime/debug"
 // running binary.
 //
 // The module path identifies the release series: this source tree reports
-// "github.com/leafevans/go-fuck/v3", while binaries installed from the pre-v2
+// "github.com/leafevans/go-fuck/v4", while binaries installed from the pre-v2
 // module path "github.com/leafevans/go-fuck" belong to the old 0.x and 1.x
 // series. The version is "(devel)" for local builds and for release binaries
 // that were built outside a module version.

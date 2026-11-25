@@ -3,9 +3,9 @@ package rules
 import (
 	"strings"
 
-	"github.com/leafevans/go-fuck/v3/internal/shells"
-	"github.com/leafevans/go-fuck/v3/internal/types"
-	"github.com/leafevans/go-fuck/v3/internal/utils"
+	"github.com/leafevans/go-fuck/v4/internal/shells"
+	"github.com/leafevans/go-fuck/v4/internal/types"
+	"github.com/leafevans/go-fuck/v4/internal/utils"
 )
 
 // goMissingPackage matches the "go get" command that the Go toolchain prints

@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/v3/internal/conf"
-	"github.com/leafevans/go-fuck/v3/internal/consts"
-	"github.com/leafevans/go-fuck/v3/internal/instant"
+	"github.com/leafevans/go-fuck/v4/internal/conf"
+	"github.com/leafevans/go-fuck/v4/internal/consts"
+	"github.com/leafevans/go-fuck/v4/internal/instant"
 )
 
 func TestDoctorInstantCheck(t *testing.T) {

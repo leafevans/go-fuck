@@ -15,9 +15,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/leafevans/go-fuck/v3/internal/conf"
-	"github.com/leafevans/go-fuck/v3/internal/instant"
-	"github.com/leafevans/go-fuck/v3/internal/logs"
+	"github.com/leafevans/go-fuck/v4/internal/conf"
+	"github.com/leafevans/go-fuck/v4/internal/instant"
+	"github.com/leafevans/go-fuck/v4/internal/logs"
 )
 
 // GetOutput reads the instant log or, if allowed, re-runs the expanded command.

@@ -16,7 +16,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/leafevans/go-fuck/v3/internal/consts"
+	"github.com/leafevans/go-fuck/v4/internal/consts"
 )
 
 // Windows console mode flags.

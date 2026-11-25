@@ -1,8 +1,8 @@
 package rules
 
 import (
-	"github.com/leafevans/go-fuck/v3/internal/specific"
-	"github.com/leafevans/go-fuck/v3/internal/types"
+	"github.com/leafevans/go-fuck/v4/internal/specific"
+	"github.com/leafevans/go-fuck/v4/internal/types"
 )
 
 // gitCommitAmendMatch reports whether a commit command was run and rewriting the

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/v3/internal/logs"
+	"github.com/leafevans/go-fuck/v4/internal/logs"
 )
 
 // outputFromResult mirrors the part of the machine readable output used here.

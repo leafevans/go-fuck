@@ -3,7 +3,7 @@ package rules
 import (
 	"testing"
 
-	"github.com/leafevans/go-fuck/v3/internal/shells"
+	"github.com/leafevans/go-fuck/v4/internal/shells"
 )
 
 func TestRuleGitBranchCreateFlag(t *testing.T) {

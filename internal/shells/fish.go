@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/leafevans/go-fuck/v3/internal/conf"
-	"github.com/leafevans/go-fuck/v3/internal/consts"
-	"github.com/leafevans/go-fuck/v3/internal/logs"
+	"github.com/leafevans/go-fuck/v4/internal/conf"
+	"github.com/leafevans/go-fuck/v4/internal/consts"
+	"github.com/leafevans/go-fuck/v4/internal/logs"
 )
 
 // fishAliasTemplate defines the alias function for fish.

@@ -8,12 +8,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/leafevans/go-fuck/v3/internal/argumentparser"
-	"github.com/leafevans/go-fuck/v3/internal/conf"
-	"github.com/leafevans/go-fuck/v3/internal/consts"
-	"github.com/leafevans/go-fuck/v3/internal/logs"
-	"github.com/leafevans/go-fuck/v3/internal/shells"
-	"github.com/leafevans/go-fuck/v3/internal/system"
+	"github.com/leafevans/go-fuck/v4/internal/argumentparser"
+	"github.com/leafevans/go-fuck/v4/internal/conf"
+	"github.com/leafevans/go-fuck/v4/internal/consts"
+	"github.com/leafevans/go-fuck/v4/internal/logs"
+	"github.com/leafevans/go-fuck/v4/internal/shells"
+	"github.com/leafevans/go-fuck/v4/internal/system"
 )
 
 // errAmbiguousInitialization reports that more than one known alias line would

@@ -3,7 +3,7 @@ package rules
 import (
 	"strings"
 
-	"github.com/leafevans/go-fuck/v3/internal/types"
+	"github.com/leafevans/go-fuck/v4/internal/types"
 )
 
 // manNoSpaceMatch reports whether a man command without a space is used.

@@ -3,8 +3,8 @@ package rules
 import (
 	"strings"
 
-	"github.com/leafevans/go-fuck/v3/internal/types"
-	"github.com/leafevans/go-fuck/v3/internal/utils"
+	"github.com/leafevans/go-fuck/v4/internal/types"
+	"github.com/leafevans/go-fuck/v4/internal/utils"
 )
 
 // gitCloneMissingErrors lists the outputs that report an unknown command.

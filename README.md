@@ -4,7 +4,7 @@
 [![CodeQL](https://github.com/leafevans/go-fuck/actions/workflows/codeql.yml/badge.svg)](https://github.com/leafevans/go-fuck/actions/workflows/codeql.yml)
 [![Security](https://github.com/leafevans/go-fuck/actions/workflows/security.yml/badge.svg)](https://github.com/leafevans/go-fuck/actions/workflows/security.yml)
 [![Website](https://img.shields.io/badge/website-leafevans.github.io%2Fgo--fuck-blue)](https://leafevans.github.io/go-fuck/)
-[![Go Reference](https://pkg.go.dev/badge/github.com/leafevans/go-fuck/v3.svg)](https://pkg.go.dev/github.com/leafevans/go-fuck/v3)
+[![Go Reference](https://pkg.go.dev/badge/github.com/leafevans/go-fuck/v4.svg)](https://pkg.go.dev/github.com/leafevans/go-fuck/v4)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 [English](README.md) | [简体中文](README.zh-CN.md)
@@ -41,7 +41,7 @@ Choose the package manager for your platform:
 | Windows              | `scoop bucket add go-fuck https://github.com/leafevans/go-fuck`, then `scoop install go-fuck` |
 | macOS / Linux        | `brew tap leafevans/go-fuck https://github.com/leafevans/go-fuck`, then `brew trust leafevans/go-fuck` and `brew install go-fuck` |
 | Arch Linux           | `yay -S go-fuck` or `paru -S go-fuck`                         |
-| Any platform with Go | `go install github.com/leafevans/go-fuck/v3/cmd/go-fuck@latest` |
+| Any platform with Go | `go install github.com/leafevans/go-fuck/v4/cmd/go-fuck@latest` |
 
 Then configure the shell alias and follow the reload command printed by setup:
 
@@ -183,7 +183,7 @@ targets x86_64; on other architectures use `go install` or the prebuilt binaries
 ### With `go install`
 
 ```bash
-go install github.com/leafevans/go-fuck/v3/cmd/go-fuck@latest
+go install github.com/leafevans/go-fuck/v4/cmd/go-fuck@latest
 ```
 
 The module path ends in `/v3` because the major version is part of the Go module path; use the
@@ -466,7 +466,7 @@ If `fuck -v` reports an unexpected version, or reports PowerShell inside WSL, an
 probably earlier in `PATH`. The pre-v2 module — `go install github.com/leafevans/go-fuck/cmd/go-fuck@latest`
 without the `/v2` suffix — installs the old 0.x/1.x series into `$GOPATH/bin`, and that binary can shadow the
 release one. `go-fuck --debug --version` prints the executable path (`Exe`) and the module that built the
-binary (`Module`); the v3 releases report `github.com/leafevans/go-fuck/v3`. Remove or rename the old
+binary (`Module`); the v4 builds report `github.com/leafevans/go-fuck/v4`. Remove or rename the old
 binary, or put the v3 installation earlier in `PATH`. Inside WSL use the Linux binary
 (`~/.local/bin/go-fuck`) instead of a Windows executable picked up from the interop `PATH`, and run
 `hash -r` (bash) or `rehash` (zsh) in a shell that was already open before the change.
@@ -656,6 +656,10 @@ added in minor releases. Consumers must ignore unknown fields and must not rely 
 The document is always written to stdout; diagnostics stay on stderr.
 
 ## Settings
+
+Development note: this branch targets unreleased v4 (`4.0.0-dev`). Published channels
+still provide v3.0.2; `/v4@latest` will resolve only after a v4 tag is published.
+For now, build this checkout with `go build ./cmd/go-fuck`.
 
 The legacy `git_commit_reset` and `git_commit_amend` rules are disabled by default:
 no generic commit failure proves that rewriting the previous commit is the right fix.

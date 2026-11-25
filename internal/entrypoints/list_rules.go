@@ -8,11 +8,11 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/leafevans/go-fuck/v3/internal/argumentparser"
-	"github.com/leafevans/go-fuck/v3/internal/consts"
-	"github.com/leafevans/go-fuck/v3/internal/logs"
-	"github.com/leafevans/go-fuck/v3/internal/rules"
-	"github.com/leafevans/go-fuck/v3/internal/types"
+	"github.com/leafevans/go-fuck/v4/internal/argumentparser"
+	"github.com/leafevans/go-fuck/v4/internal/consts"
+	"github.com/leafevans/go-fuck/v4/internal/logs"
+	"github.com/leafevans/go-fuck/v4/internal/rules"
+	"github.com/leafevans/go-fuck/v4/internal/types"
 )
 
 // listRule is one rule of the machine readable rule list.

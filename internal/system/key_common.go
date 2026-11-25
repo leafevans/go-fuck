@@ -4,7 +4,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/leafevans/go-fuck/v3/internal/consts"
+	"github.com/leafevans/go-fuck/v4/internal/consts"
 )
 
 // keyReader abstracts the raw byte source of the terminal.

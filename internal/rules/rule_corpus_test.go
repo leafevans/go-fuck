@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/v3/internal/types"
+	"github.com/leafevans/go-fuck/v4/internal/types"
 )
 
 // ruleCorpusCase is a command line and the output it produced. The corpus is

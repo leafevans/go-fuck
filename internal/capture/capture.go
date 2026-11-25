@@ -5,9 +5,9 @@ package capture
 import (
 	"time"
 
-	"github.com/leafevans/go-fuck/v3/internal/instant"
-	"github.com/leafevans/go-fuck/v3/internal/logs"
-	"github.com/leafevans/go-fuck/v3/internal/output"
+	"github.com/leafevans/go-fuck/v4/internal/instant"
+	"github.com/leafevans/go-fuck/v4/internal/logs"
+	"github.com/leafevans/go-fuck/v4/internal/output"
 )
 
 // Mode controls which capture sources may be used.

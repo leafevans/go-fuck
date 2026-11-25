@@ -6,10 +6,10 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/leafevans/go-fuck/v3/internal/shells"
-	"github.com/leafevans/go-fuck/v3/internal/system"
-	"github.com/leafevans/go-fuck/v3/internal/types"
-	"github.com/leafevans/go-fuck/v3/internal/utils"
+	"github.com/leafevans/go-fuck/v4/internal/shells"
+	"github.com/leafevans/go-fuck/v4/internal/system"
+	"github.com/leafevans/go-fuck/v4/internal/types"
+	"github.com/leafevans/go-fuck/v4/internal/utils"
 )
 
 // pathFromHistoryPatterns matches the missing destination reported in the

@@ -4,9 +4,9 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/leafevans/go-fuck/v3/internal/shells"
-	"github.com/leafevans/go-fuck/v3/internal/types"
-	"github.com/leafevans/go-fuck/v3/internal/utils"
+	"github.com/leafevans/go-fuck/v4/internal/shells"
+	"github.com/leafevans/go-fuck/v4/internal/types"
+	"github.com/leafevans/go-fuck/v4/internal/utils"
 )
 
 // cpCreateDestinationMissingPathPattern matches the cp and mv messages that name

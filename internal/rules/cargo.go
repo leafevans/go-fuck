@@ -1,6 +1,6 @@
 package rules
 
-import "github.com/leafevans/go-fuck/v3/internal/types"
+import "github.com/leafevans/go-fuck/v4/internal/types"
 
 // cargoMatch reports whether cargo was called without a subcommand.
 func cargoMatch(command *types.Command) bool {

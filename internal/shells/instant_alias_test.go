@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/v3/internal/consts"
+	"github.com/leafevans/go-fuck/v4/internal/consts"
 )
 
 // isolateInstantMode clears the instant mode environment for one test.

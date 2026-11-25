@@ -3,7 +3,7 @@ package rules
 import (
 	"testing"
 
-	"github.com/leafevans/go-fuck/v3/internal/system"
+	"github.com/leafevans/go-fuck/v4/internal/system"
 )
 
 // yarnHelpOutput is the yarn output that points to the command documentation.

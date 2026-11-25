@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/v3/internal/consts"
+	"github.com/leafevans/go-fuck/v4/internal/consts"
 )
 
 // isolateConfig points the user config directory at a temporary directory.

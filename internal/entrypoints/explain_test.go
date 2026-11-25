@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/v3/internal/consts"
-	"github.com/leafevans/go-fuck/v3/internal/logs"
+	"github.com/leafevans/go-fuck/v4/internal/consts"
+	"github.com/leafevans/go-fuck/v4/internal/logs"
 )
 
 func instantLogFor(t *testing.T, command, commandOutput string) string {

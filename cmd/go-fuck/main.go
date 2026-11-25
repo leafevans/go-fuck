@@ -7,7 +7,7 @@ package main
 import (
 	"os"
 
-	"github.com/leafevans/go-fuck/v3/internal/entrypoints"
+	"github.com/leafevans/go-fuck/v4/internal/entrypoints"
 )
 
 func main() {

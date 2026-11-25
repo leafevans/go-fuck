@@ -7,8 +7,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/leafevans/go-fuck/v3/internal/logs"
-	"github.com/leafevans/go-fuck/v3/internal/types"
+	"github.com/leafevans/go-fuck/v4/internal/logs"
+	"github.com/leafevans/go-fuck/v4/internal/types"
 )
 
 // jsonOutputLimit is the maximum number of output bytes included in the JSON

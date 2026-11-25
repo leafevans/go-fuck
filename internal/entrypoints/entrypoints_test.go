@@ -10,11 +10,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/v3/internal/conf"
-	"github.com/leafevans/go-fuck/v3/internal/consts"
-	"github.com/leafevans/go-fuck/v3/internal/instant"
-	"github.com/leafevans/go-fuck/v3/internal/logs"
-	"github.com/leafevans/go-fuck/v3/internal/types"
+	"github.com/leafevans/go-fuck/v4/internal/conf"
+	"github.com/leafevans/go-fuck/v4/internal/consts"
+	"github.com/leafevans/go-fuck/v4/internal/instant"
+	"github.com/leafevans/go-fuck/v4/internal/logs"
+	"github.com/leafevans/go-fuck/v4/internal/types"
 )
 
 // captureOutput replaces standard output and standard error while fn runs.

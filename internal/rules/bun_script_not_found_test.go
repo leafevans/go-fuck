@@ -3,7 +3,7 @@ package rules
 import (
 	"testing"
 
-	"github.com/leafevans/go-fuck/v3/internal/specific"
+	"github.com/leafevans/go-fuck/v4/internal/specific"
 )
 
 // bunScriptNotFoundOutput returns the output of bun for a missing script.

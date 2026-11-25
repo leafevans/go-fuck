@@ -27,7 +27,7 @@ $ fuck
 | Windows | Scoop | `scoop bucket add go-fuck https://github.com/leafevans/go-fuck`<br>`scoop install go-fuck` |
 | macOS / Linux | Homebrew | `brew tap leafevans/go-fuck https://github.com/leafevans/go-fuck`<br>`brew trust leafevans/go-fuck`<br>`brew install go-fuck` |
 | Arch Linux | AUR | `yay -S go-fuck` 或 `paru -S go-fuck` |
-| 已安装 Go 1.27+ | `go install` | `go install github.com/leafevans/go-fuck/v3/cmd/go-fuck@latest` |
+| 已安装 Go 1.27+ | `go install` | `go install github.com/leafevans/go-fuck/v4/cmd/go-fuck@latest` |
 
 也可以从 [GitHub Releases](https://github.com/leafevans/go-fuck/releases) 下载预编译包。发布页同时
 提供 `checksums.txt`；安装前建议校验下载文件。预编译二进制没有运行时依赖。
@@ -168,7 +168,8 @@ iex "$(go-fuck --alias --capture-mode=auto)"
 已有分支只建议复用，不再删除重建；绕过 Git 钩子需要本地失败诊断，不能绕过服务端钩子。
 JSON 布局不变；`side_effect` 仅表示额外执行回调，不表示建议命令本身无破坏性。
 按现有兼容性政策，这批默认行为调整计划随 4.0.0 发布，而不是作为 3.x 补丁。
-目前尚未发布，Go 模块仍为 `/v3`；需完成 `/v4` 迁移和打包验证后才会打标签。
+目前尚未发布；开发源码已迁移到 `/v4`，版本为 `4.0.0-dev`。发布渠道仍提供 3.0.2，
+不能在 v4 标签发布前使用 `/v4@latest` 安装；需完成跨平台和打包验证后才会打标签。
 详见 [升级说明](UPGRADING.md#unreleased-safety-changes-version-not-assigned)。
 
 ## 常见问题
@@ -224,7 +225,7 @@ go-fuck --debug --version
 ```
 
 它会在调试输出中显示实际可执行文件路径和构建模块。v3 应显示
-`github.com/leafevans/go-fuck/v3`。在 WSL 中应优先使用 Linux 二进制，而不是从 Windows
+`github.com/leafevans/go-fuck/v4`。在 WSL 中应优先使用 Linux 二进制，而不是从 Windows
 interop `PATH` 中发现的 `.exe`。
 
 ### `git brnch` 没有建议 `git branch`

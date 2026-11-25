@@ -1,8 +1,8 @@
 package rules
 
 import (
-	"github.com/leafevans/go-fuck/v3/internal/shells"
-	"github.com/leafevans/go-fuck/v3/internal/types"
+	"github.com/leafevans/go-fuck/v4/internal/shells"
+	"github.com/leafevans/go-fuck/v4/internal/types"
 )
 
 // nixosCmdNotFoundRegexp matches the package installation hint printed by

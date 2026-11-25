@@ -3,9 +3,9 @@ package rules
 import (
 	"strings"
 
-	"github.com/leafevans/go-fuck/v3/internal/shells"
-	"github.com/leafevans/go-fuck/v3/internal/specific"
-	"github.com/leafevans/go-fuck/v3/internal/types"
+	"github.com/leafevans/go-fuck/v4/internal/shells"
+	"github.com/leafevans/go-fuck/v4/internal/specific"
+	"github.com/leafevans/go-fuck/v4/internal/types"
 )
 
 // pacmanPkgFile returns the packages that provide a command, using pkgfile.

@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/leafevans/go-fuck/v3/internal/conf"
+	"github.com/leafevans/go-fuck/v4/internal/conf"
 )
 
 // colorProfile describes how many colors the terminal can display.
