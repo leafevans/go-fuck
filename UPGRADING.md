@@ -156,10 +156,9 @@ stays at version 1 and `capture_source` is an optional field.
 - Generated aliases use format version 4. Reload or regenerate the alias to skip consecutive alias
   calls when locating the previous real command.
 
-## Unreleased safety changes (version not assigned)
+## Upgrading from 3.x to 4.0.0
 
-This section describes changes on main, not an available release. The last published
-version is still 3.0.2. No settings keys or JSON fields have been removed.
+Version 4 changes which corrections are suggested by default. No settings keys or JSON fields have been removed.
 
 - History-rewriting rules `git_commit_reset` and `git_commit_amend`, and process-termination
   rule `port_already_in_use`, are disabled by default. To retain a legacy rule, add its
@@ -176,18 +175,9 @@ version is still 3.0.2. No settings keys or JSON fields have been removed.
   callback, not a general guarantee that the suggested command is non-destructive.
   Rule-list default flags and hook output requirements change; clients must not cache
   these values as fixed across releases.
-
-Release decision: target **4.0.0**, not a 3.x patch or minor release. Disabling
-previously enabled documented rules changes default behavior, even though users can
-opt back in. Follow the existing major-version policy rather than introducing a
-retroactive safety exception. This section is a preparation notice, not a release.
-
-Before cutting 4.0.0, migrate the Go module and all imports to `/v4`, update version
-constants, build/linker configuration, installation examples and release notes together,
-and verify that the module-major guard passes. Development source now uses `/v4`
-with version `4.0.0-dev`; no v4 release is available yet. Validate preview/explain/JSON behavior, cross-platform CI and
-Arch packaging before publishing; regenerate manifests only from actual release assets
-and their checksums. Do not tag the current `/v3` tree as v4.0.0.
+For Go installations, use `go install github.com/leafevans/go-fuck/v4/cmd/go-fuck@v4.0.0`
+after the tag is published. The `/v3` path continues to select 3.x releases.
+For a checkout without a published tag, build with `go build ./cmd/go-fuck`.
 
 ## Future releases
 

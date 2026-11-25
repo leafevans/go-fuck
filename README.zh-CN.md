@@ -159,18 +159,16 @@ iex "$(go-fuck --alias --capture-mode=auto)"
 完整键名、默认值和环境变量映射见英文 README 的
 [Settings](README.md#settings) 章节。
 
-## 主线上的未发布安全调整
+## 4.0.0 的安全调整
 
-以下变更尚未发布：历史改写规则 `git_commit_reset`、`git_commit_amend` 和终止端口占用进程的
+历史改写规则 `git_commit_reset`、`git_commit_amend` 和终止端口占用进程的
 `port_already_in_use` 默认关闭。确需旧建议时，将规则名加入已有 `rules` 数组，保留其他条目
 及 `DEFAULT_RULES`。显式启用不代表无风险，确认前应检查目标提交或进程。
 
 已有分支只建议复用，不再删除重建；绕过 Git 钩子需要本地失败诊断，不能绕过服务端钩子。
 JSON 布局不变；`side_effect` 仅表示额外执行回调，不表示建议命令本身无破坏性。
-按现有兼容性政策，这批默认行为调整计划随 4.0.0 发布，而不是作为 3.x 补丁。
-目前尚未发布；开发源码已迁移到 `/v4`，版本为 `4.0.0-dev`。发布渠道仍提供 3.0.2，
-不能在 v4 标签发布前使用 `/v4@latest` 安装；需完成跨平台和打包验证后才会打标签。
-详见 [升级说明](UPGRADING.md#unreleased-safety-changes-version-not-assigned)。
+从源码构建 v4 可运行 `go build ./cmd/go-fuck`；`/v3` 模块路径仍选择旧主版本。
+详见 [升级说明](UPGRADING.md#upgrading-from-3x-to-400)。
 
 ## 常见问题
 
