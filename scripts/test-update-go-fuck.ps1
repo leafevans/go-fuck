@@ -7,6 +7,20 @@ $global:updaterCounts = @{}
 $env:PROCESSOR_ARCHITECTURE = "AMD64"
 $env:PROCESSOR_ARCHITEW6432 = if ($scenario -eq "arm64") { "ARM64" } else { $null }
 
+# Keep machine-local binaries out of the offline PATH resolution test.
+function Get-Command {
+    param([string]$Name, $CommandType, $ErrorAction)
+    if ($Name -eq "go-fuck.exe" -and $CommandType -eq "Application") {
+        if ($scenario -eq "path-shadowed") {
+            [pscustomobject]@{ Source = Join-Path $fixture "earlier/go-fuck.exe" }
+        } elseif ($scenario -eq "path-current") {
+            [pscustomobject]@{ Source = (Resolve-Path -LiteralPath (Join-Path $InstallDir "go-fuck.exe")).ProviderPath }
+        }
+        return
+    }
+    Microsoft.PowerShell.CoreGet-Command @PSBoundParameters
+}
+
 function Start-Sleep { param([int]$Seconds) }
 
 function Invoke-RestMethod {

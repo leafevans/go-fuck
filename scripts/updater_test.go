@@ -287,7 +287,8 @@ func TestPowerShellUpdater(t *testing.T) {
 				t.Skipf("PowerShell cannot start: %v\n%s", err, out)
 			}
 			cases := append([]updaterCase{}, updaterCases...)
-			cases = append(cases, updaterCase{name: "arm64"}, updaterCase{name: "wsl"}, updaterCase{name: "wsl-timeout"},
+			cases = append(cases, updaterCase{name: "path-shadowed"}, updaterCase{name: "path-current"}, updaterCase{name: "path-missing"},
+				updaterCase{name: "arm64"}, updaterCase{name: "wsl"}, updaterCase{name: "wsl-timeout"},
 				updaterCase{name: "wsl-fallback-checksum", wantErr: "checksum verification failed"},
 				updaterCase{name: "native-wsl"},
 				updaterCase{name: "native-wsl-failure", wantErr: "the WSL update failed"})
@@ -332,6 +333,12 @@ func TestPowerShellUpdater(t *testing.T) {
 					}
 					output, err := cmd.CombinedOutput()
 					f.check(t, tc, output, err, true)
+					if got, want := strings.Contains(string(output), "PATH still resolves go-fuck.exe"), tc.name == "path-shadowed"; got != want {
+						t.Errorf("PATH shadow warning = %v, want %v:\n%s", got, want, output)
+					}
+					if tc.name == "path-missing" && !strings.Contains(string(output), "is not on PATH") {
+						t.Errorf("missing PATH warning: %s", output)
+					}
 					if strings.Contains(tc.name, "wsl") {
 						data, err := os.ReadFile(filepath.Join(f.root, "wsl.log"))
 						if err != nil {
@@ -369,7 +376,7 @@ func TestShellUpdater(t *testing.T) {
 	}
 	cases := append([]updaterCase{}, updaterCases...)
 	cases = append(cases, updaterCase{name: "macos"}, updaterCase{name: "latest-fallback", version: "latest"},
-		updaterCase{name: "symlink-binary", wantErr: "regular go-fuck binary"})
+		updaterCase{name: "symlink-binary", wantErr: "regular go-fuck binary"}, updaterCase{name: "path-current"}, updaterCase{name: "path-shadowed"}, updaterCase{name: "path-missing"})
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			platform, arch := "linux", "amd64"
@@ -431,9 +438,22 @@ func TestShellUpdater(t *testing.T) {
 			ctx, cancel := context.WithTimeout(t.Context(), 20*time.Second)
 			defer cancel()
 			cmd := exec.CommandContext(ctx, "/bin/sh", updater, version, f.install)
-			cmd.Env = append(f.env(tc.name), "PATH="+bin)
+			path := bin
+			if tc.name == "path-shadowed" {
+				writeFixture(t, filepath.Join(bin, "go-fuck"), []byte("#!/bin/sh\necho unexpected-execution\nexit 99\n"), 0o755)
+			}
+			if tc.name == "path-current" || tc.name == "path-shadowed" {
+				path += string(os.PathListSeparator) + f.install
+			}
+			cmd.Env = append(f.env(tc.name), "PATH="+path)
 			output, err := cmd.CombinedOutput()
 			f.check(t, tc, output, err, false)
+			if strings.HasPrefix(tc.name, "path-") {
+				text := string(output)
+				if strings.Contains(text, "PATH still resolves") != (tc.name == "path-shadowed") || strings.Contains(text, "is not on PATH") != (tc.name == "path-missing") || strings.Contains(text, "unexpected-execution") {
+					t.Errorf("unexpected PATH diagnostics: %s", output)
+				}
+			}
 		})
 	}
 }
