@@ -48,11 +48,16 @@ func TestRulePdmUnknownCommandANSIAndScripts(t *testing.T) {
 	assertNewCommands(t, rule, "pdm instal", withScripts, []string{"pdm install", "pdm export"})
 }
 
-func TestScopedpdmCorrection(t *testing.T) {
+func TestScopedPDMCorrection(t *testing.T) {
 	resetTestState(t)
 	rule := Get("pdm_unknown_command")
 	output := strings.ReplaceAll(pdmUnknownCommandOutput(), "\n", "\r\n")
 	assertNewCommands(t, rule, "pdm instal --project instal", output, []string{"pdm install --project instal", "pdm export --project instal"})
+	color := "\x1b[31m"
+	coloredHeader := strings.ReplaceAll(output, "Did you mean", "Did "+color+"you\x1b[0m mean")
+	assertNewCommands(t, rule, "pdm instal", coloredHeader, []string{"pdm install", "pdm export"})
+	disconnected := strings.Replace(output, "Did you mean", "unrelated output\r\n  Did you mean", 1)
+	assertNotMatch(t, rule, "pdm instal", disconnected)
 	assertNotMatch(t, rule, "pdm run instal", output)
 	assertNotMatch(t, rule, "pdm instal --project instal; echo done", output)
 }
