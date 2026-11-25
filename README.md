@@ -820,8 +820,8 @@ separate choices. The fzf prompt also respects `no_colors` and `NO_COLOR`.
 
 The built-in rules are compiled into the binary, and declarative JSON rules can be loaded from the
 configuration directory (see [Creating custom rules](#creating-custom-rules)). Each rule decides
-whether it applies to a failed command and returns one or more corrected commands. There are 252
-built-in rules: 169 ported from the reference implementation plus 83 go-fuck specific rules for
+whether it applies to a failed command and returns one or more corrected commands. There are 255
+built-in rules: 169 ported from the reference implementation plus 86 go-fuck specific rules for
 failures that thefuck does not handle, including the GitHub and GitLab CLIs, kubectl/kind/kustomize,
 uv, cargo, Helm, pnpm, the npm, pnpm, yarn and uv lock file checks, the Go toolchain and go.sum,
 Node.js, bun, Deno, Docker Compose, just, Poetry, make, the go-task runner, minikube, Bundler,
@@ -829,6 +829,10 @@ Chocolatey, the .NET CLI, rustup toolchains, the Dart and Flutter command-line t
 project setup corrections, the PowerShell file operation and cmd.exe corrections, git switch and safe.directory corrections and divergent, clobbered or blocked
 git operations. For example, `git_branch_create_flag` switches between `git switch -c` and
 `git checkout -b` when Git rejects the other command's branch-creation flag.
+
+`gcloud_cli` and `bazel_missing_target` use explicit suggestions from the tools’ diagnostics.
+`mise_missing_version` is opt-in: it suggests installing only the exact tool versions named
+in the shim error, without changing project configuration or trust settings.
 
 The list below is generated from the compiled rules:
 
@@ -842,6 +846,7 @@ The list below is generated from the compiled rules:
 - `apt_upgrade`
 - `aws_cli`
 - `az_cli`
+- `bazel_missing_target`
 - `brew_cask_dependency`
 - `brew_install`
 - `brew_link`
@@ -897,6 +902,7 @@ The list below is generated from the compiled rules:
 - `fix_alt_space`
 - `fix_file`
 - `flutter_unknown_command`
+- `gcloud_cli`
 - `gem_unknown_command`
 - `gh_unknown_command`
 - `gh_unknown_flag`
@@ -1002,6 +1008,7 @@ The list below is generated from the compiled rules:
 - `man_no_space`
 - `mercurial`
 - `minikube_unknown_command`
+- `mise_missing_version`
 - `missing_space_before_subcommand`
 - `mkdir_p`
 - `mvn_no_command`

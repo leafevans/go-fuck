@@ -194,6 +194,7 @@ var expectedRuleNames = []string{
 // implementation. They are tested and documented like the ported rules, but
 // they are not part of the thefuck rule set.
 var expectedExtraRuleNames = []string{
+	"bazel_missing_target",
 	"bun_script_not_found",
 	"bundle_unknown_command",
 	"cargo_missing_bench_target",
@@ -216,6 +217,7 @@ var expectedExtraRuleNames = []string{
 	"dotnet_unknown_argument",
 	"dotnet_unknown_command",
 	"flutter_unknown_command",
+	"gcloud_cli",
 	"gh_unknown_command",
 	"gh_unknown_flag",
 	"git_amend_initial_commit",
@@ -250,6 +252,7 @@ var expectedExtraRuleNames = []string{
 	"kustomize_unknown_command",
 	"make_unknown_target",
 	"minikube_unknown_command",
+	"mise_missing_version",
 	"node_missing_module",
 	"node_script_not_found",
 	"npm_ci_lock_mismatch",
