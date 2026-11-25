@@ -18,7 +18,7 @@ function Get-Command {
         }
         return
     }
-    Microsoft.PowerShell.CoreGet-Command @PSBoundParameters
+    Microsoft.PowerShell.Core\Get-Command @PSBoundParameters
 }
 
 function Start-Sleep { param([int]$Seconds) }
