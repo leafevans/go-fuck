@@ -820,19 +820,23 @@ separate choices. The fzf prompt also respects `no_colors` and `NO_COLOR`.
 
 The built-in rules are compiled into the binary, and declarative JSON rules can be loaded from the
 configuration directory (see [Creating custom rules](#creating-custom-rules)). Each rule decides
-whether it applies to a failed command and returns one or more corrected commands. There are 255
-built-in rules: 169 ported from the reference implementation plus 86 go-fuck specific rules for
-failures that thefuck does not handle, including the GitHub and GitLab CLIs, kubectl/kind/kustomize,
-uv, cargo, Helm, pnpm, the npm, pnpm, yarn and uv lock file checks, the Go toolchain and go.sum,
-Node.js, bun, Deno, Docker Compose, just, Poetry, make, the go-task runner, minikube, Bundler,
-Chocolatey, the .NET CLI, rustup toolchains, the Dart and Flutter command-line tools, the uv and Cargo
-project setup corrections, the PowerShell file operation and cmd.exe corrections, git switch and safe.directory corrections and divergent, clobbered or blocked
+whether it applies to a failed command and returns one or more corrected commands. There are 258
+built-in rules: 169 ported from the reference implementation plus 89 go-fuck specific rules for
+failures that thefuck does not handle, including the GitHub, GitLab, DigitalOcean and fly.io CLIs,
+kubectl/kind/kustomize, pdm, uv, cargo, Helm, pnpm, the npm, pnpm, yarn and uv lock file checks,
+the Go toolchain and go.sum, Node.js, bun, Deno, Docker Compose, just, Poetry, make, the go-task
+runner, minikube, Bundler, Chocolatey, the .NET CLI, rustup toolchains, the Dart and Flutter
+command-line tools, the uv and Cargo project setup corrections, the PowerShell file operation and
+cmd.exe corrections, git switch and safe.directory corrections and divergent, clobbered or blocked
 git operations. For example, `git_branch_create_flag` switches between `git switch -c` and
 `git checkout -b` when Git rejects the other command's branch-creation flag.
 
 `gcloud_cli` and `bazel_missing_target` use explicit suggestions from the tools’ diagnostics.
-`mise_missing_version` is opt-in: it suggests installing only the exact tool versions named
-in the shim error, without changing project configuration or trust settings.
+`doctl_unknown_command` and `flyctl_unknown_command` follow the Cobra suggestion format those CLIs
+print. `pdm_unknown_command` corrects only pdm subcommands, never project script names, and keeps
+ANSI colored diagnostics parseable. `mise_missing_version` is opt-in: it suggests installing only
+the exact tool versions named in the shim error, without changing project configuration or trust
+settings.
 
 The list below is generated from the compiled rules:
 
@@ -895,6 +899,7 @@ The list below is generated from the compiled rules:
 - `docker_image_being_used_by_container`
 - `docker_login`
 - `docker_not_command`
+- `doctl_unknown_command`
 - `dotnet_unknown_argument`
 - `dotnet_unknown_command`
 - `dry`
@@ -902,6 +907,7 @@ The list below is generated from the compiled rules:
 - `fix_alt_space`
 - `fix_file`
 - `flutter_unknown_command`
+- `flyctl_unknown_command`
 - `gcloud_cli`
 - `gem_unknown_command`
 - `gh_unknown_command`
@@ -1030,6 +1036,7 @@ The list below is generated from the compiled rules:
 - `pacman_invalid_option`
 - `pacman_not_found`
 - `path_from_history`
+- `pdm_unknown_command`
 - `php_s`
 - `pip_install`
 - `pip_unknown_command`
