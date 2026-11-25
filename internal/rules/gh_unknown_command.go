@@ -1,5 +1,7 @@
 package rules
 
 func init() {
-	newCobraUnknownCommandRule("gh_unknown_command", "gh")
+	registerScopedCobraRule("gh_unknown_command", "gh", []string{"gh", "gh.exe"}, func(string) commandOption {
+		return unknownOption
+	})
 }
