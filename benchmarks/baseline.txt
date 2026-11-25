@@ -2,7 +2,7 @@
 BenchmarkGetCloseMatchesLarge 464 5
 BenchmarkGetCloseMatchesLowCutoff 218871 824
 BenchmarkGetCorrectedCommands 8263 47
-BenchmarkGetRules 2048 1
+BenchmarkGetRules 2305 1
 BenchmarkMarkedBashRawCommand 440 7
 BenchmarkMarkedZshRawCommand 16 1
 BenchmarkOrganizeCommands/10 536 4
