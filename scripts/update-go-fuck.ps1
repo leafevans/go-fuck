@@ -54,6 +54,18 @@ function Save-Download {
     }
 }
 
+function Confirm-ArchiveChecksum {
+    param([string]$Asset, [string]$Archive, [string]$Checksums)
+    $pattern = '^(\S+)\s+' + [regex]::Escape($Asset) + '$'
+    $lines = @(Select-String -LiteralPath $Checksums -Pattern $pattern)
+    if ($lines.Count -ne 1) { throw "expected exactly one SHA256 checksum for $Asset" }
+    $expected = $lines[0].Matches[0].Groups[1].Value
+    if ($expected -notmatch '^[0-9a-fA-F]{64}$') { throw "invalid SHA256 checksum for $Asset" }
+    $actual = (Get-FileHash -LiteralPath $Archive -Algorithm SHA256).Hash
+    if ($expected -ne $actual) { throw "checksum verification failed for $Asset" }
+    return $expected
+}
+
 # Resolve-LatestVersion finds the newest release tag. The GitHub API is
 # rate limited for unauthenticated requests, so fall back to the redirect of
 # the releases/latest page, which points at /releases/tag/vX.Y.Z.
@@ -123,13 +135,7 @@ try {
     Save-Download -Uri "$url/$asset" -OutFile (Join-Path $tmp $asset)
     Save-Download -Uri "$url/checksums.txt" -OutFile (Join-Path $tmp "checksums.txt") -TimeoutSec 20
 
-    $pattern = '^(\S+)\s+' + [regex]::Escape($asset) + '$'
-    $lines = @(Select-String -LiteralPath (Join-Path $tmp "checksums.txt") -Pattern $pattern)
-    if ($lines.Count -ne 1) { throw "expected exactly one SHA256 checksum for $asset" }
-    $expected = $lines[0].Matches[0].Groups[1].Value
-    if ($expected -notmatch '^[0-9a-fA-F]{64}$') { throw "invalid SHA256 checksum for $asset" }
-    $actual = (Get-FileHash -LiteralPath (Join-Path $tmp $asset) -Algorithm SHA256).Hash
-    if ($expected -ne $actual) { throw "checksum verification failed" }
+    $null = Confirm-ArchiveChecksum $asset (Join-Path $tmp $asset) (Join-Path $tmp "checksums.txt")
 
     Expand-Archive -LiteralPath (Join-Path $tmp $asset) -DestinationPath (Join-Path $tmp "bin") -Force
     $source = Join-Path $tmp "bin\go-fuck.exe"
@@ -169,6 +175,13 @@ try {
     Get-ChildItem -LiteralPath $InstallDir -Filter "go-fuck.exe.old.*" -File -ErrorAction SilentlyContinue |
         Remove-Item -Force -ErrorAction SilentlyContinue
     Write-Host "go-fuck $Version installed in $InstallDir"
+    $active = Get-Command go-fuck.exe -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    $installed = (Resolve-Path -LiteralPath $target).ProviderPath
+    if (-not $active) {
+        Write-Warning "go-fuck.exe is not on PATH. Add '$InstallDir' to PATH."
+    } elseif ($active.Source -ne $installed) {
+        Write-Warning "PATH still resolves go-fuck.exe to '$($active.Source)', not '$installed'. Update PATH or choose a different -InstallDir."
+    }
 }
 finally {
     if ($staged) { Remove-Item -LiteralPath $staged -Force -ErrorAction SilentlyContinue }
@@ -232,13 +245,7 @@ try {
     Save-Download -Uri "$url/$linuxAsset" -OutFile $linuxArchive
     Save-Download -Uri "$url/checksums.txt" -OutFile $checksums -TimeoutSec 20
 
-    $pattern = '^(\S+)\s+' + [regex]::Escape($linuxAsset) + '$'
-    $lines = @(Select-String -LiteralPath $checksums -Pattern $pattern)
-    if ($lines.Count -ne 1) { throw "expected exactly one SHA256 checksum for $linuxAsset" }
-    $expected = $lines[0].Matches[0].Groups[1].Value
-    if ($expected -notmatch '^[0-9a-fA-F]{64}$') { throw "invalid SHA256 checksum for $linuxAsset" }
-    $actual = (Get-FileHash -LiteralPath $linuxArchive -Algorithm SHA256).Hash
-    if ($expected -ine $actual) { throw "checksum verification failed for $linuxAsset" }
+    $expected = Confirm-ArchiveChecksum $linuxAsset $linuxArchive $checksums
 
     $archiveInWsl = (& wsl.exe @wslPrefix --exec wslpath -u $linuxArchive | Out-String).Trim()
     if ($LASTEXITCODE -ne 0 -or $archiveInWsl -notmatch '^/[^\r\n]+$') {
@@ -285,6 +292,12 @@ esac
 mv -f "$staged" "$install_dir/go-fuck"
 staged=
 echo "go-fuck $version installed in $install_dir"
+active=$(command -v go-fuck || :)
+if [ -z "$active" ]; then
+  printf 'update-go-fuck: go-fuck is not on PATH. Add %s to PATH.\n' "$install_dir" >&2
+elif ! [ "$active" -ef "$install_dir/go-fuck" ]; then
+  printf 'update-go-fuck: PATH still resolves go-fuck to %s, not %s/go-fuck.\n' "$active" "$install_dir" >&2
+fi
 '@
     $installScript = $installScript.Replace("`r", "").TrimStart([char]0xFEFF)
     try {

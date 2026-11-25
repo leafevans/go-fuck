@@ -140,3 +140,10 @@ install -m 755 "$tmp/go-fuck" "$staged" || fail "cannot stage the new binary"
 mv -f "$staged" "$install_dir/go-fuck" || fail "cannot replace the installed binary"
 staged=
 echo "go-fuck $version installed in $install_dir"
+
+active=$(command -v go-fuck || :)
+if [ -z "$active" ]; then
+  printf 'update-go-fuck: go-fuck is not on PATH. Add %s to PATH.\n' "$install_dir" >&2
+elif ! [ "$active" -ef "$install_dir/go-fuck" ]; then
+  printf 'update-go-fuck: PATH still resolves go-fuck to %s, not %s/go-fuck.\n' "$active" "$install_dir" >&2
+fi
