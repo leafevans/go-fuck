@@ -45,7 +45,12 @@ func expandGitAliases(command *types.Command) *types.Command {
 
 // expandGitAliasesForShell replaces a git alias in command using git trace output.
 func expandGitAliasesForShell(command *types.Command, shell shells.Shell) *types.Command {
-	if command.Output == "" || !strings.Contains(command.Output, "trace: alias expansion:") {
+	// The trace line always contains the "=>" separator. Checking that short,
+	// rare literal first keeps the longer scan out of ordinary output, and every
+	// git rule calls this function.
+	if command.Output == "" ||
+		!strings.Contains(command.Output, "=>") ||
+		!strings.Contains(command.Output, "trace: alias expansion:") {
 		return command
 	}
 	match := gitAliasExpansion.FindStringSubmatch(command.Output)

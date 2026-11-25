@@ -20,13 +20,15 @@ var pacmanNotFoundApps = []string{"pacman", "yay", "pikaur", "yaourt"}
 // package.
 func pacmanNotFoundMatch(command *types.Command) bool {
 	parts := command.ScriptParts()
-	if len(parts) == 0 || !strings.Contains(command.Output, "error: target not found:") {
+	if len(parts) == 0 {
 		return false
 	}
-	if utils.Contains(pacmanNotFoundApps, parts[0]) {
-		return true
+	manager := utils.Contains(pacmanNotFoundApps, parts[0]) ||
+		(len(parts) >= 2 && parts[0] == "sudo" && parts[1] == "pacman")
+	if !manager {
+		return false
 	}
-	return len(parts) >= 2 && parts[0] == "sudo" && parts[1] == "pacman"
+	return strings.Contains(command.Output, "error: target not found:")
 }
 
 // pacmanNotFoundNewCommand suggests the packages that provide the executable

@@ -296,15 +296,16 @@ func switchLangContainsKorean(script string) bool {
 // switchLangMatch reports whether the command was typed with the wrong keyboard
 // layout.
 func switchLangMatch(command *types.Command) bool {
-	if !strings.Contains(command.Output, "not found") {
+	// The script checks are cheap and reject almost every command, so they run
+	// before the output scan.
+	if switchLangContainsKorean(command.Script) {
+		return strings.Contains(command.Output, "not found")
+	}
+	layout := switchLangMatchedLayout(command.Script)
+	if layout == "" || switchLangSwitchCommand(command.Script, layout) == utils.GetAlias() {
 		return false
 	}
-	if switchLangContainsKorean(command.Script) {
-		return true
-	}
-
-	layout := switchLangMatchedLayout(command.Script)
-	return layout != "" && switchLangSwitchCommand(command.Script, layout) != utils.GetAlias()
+	return strings.Contains(command.Output, "not found")
 }
 
 // switchLangNewCommand converts the command to the target layout.
