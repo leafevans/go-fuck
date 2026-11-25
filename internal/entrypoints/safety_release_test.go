@@ -3,11 +3,12 @@ package entrypoints
 import (
 	"bytes"
 	json "encoding/json/v2"
-	"github.com/leafevans/go-fuck/v3/internal/logs"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/leafevans/go-fuck/v3/internal/logs"
 )
 
 func TestSafetyReleaseHookOutputModes(t *testing.T) {
