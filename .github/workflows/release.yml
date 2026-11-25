@@ -1,10 +1,13 @@
-# Publish a release with GoReleaser whenever a v* tag is pushed.
+# Publish a release with GoReleaser whenever a v* tag is pushed, or when the
+# workflow is dispatched on an existing tag ref (for example
+# "gh workflow run release.yml --ref v4.2.3").
 name: Release
 
 on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -35,3 +38,4 @@ jobs:
           args: release --clean --release-notes ${{ steps.notes.outputs.path }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GORELEASER_CURRENT_TAG: ${{ github.ref_name }}
