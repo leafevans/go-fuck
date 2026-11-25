@@ -1,6 +1,6 @@
 package rules
 
-import "github.com/leafevans/go-fuck/v3/internal/types"
+import "github.com/leafevans/go-fuck/v4/internal/types"
 
 // cdParentMatch reports whether cd was called without the space before "..".
 func cdParentMatch(command *types.Command) bool {

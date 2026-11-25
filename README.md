@@ -4,7 +4,7 @@
 [![CodeQL](https://github.com/leafevans/go-fuck/actions/workflows/codeql.yml/badge.svg)](https://github.com/leafevans/go-fuck/actions/workflows/codeql.yml)
 [![Security](https://github.com/leafevans/go-fuck/actions/workflows/security.yml/badge.svg)](https://github.com/leafevans/go-fuck/actions/workflows/security.yml)
 [![Website](https://img.shields.io/badge/website-leafevans.github.io%2Fgo--fuck-blue)](https://leafevans.github.io/go-fuck/)
-[![Go Reference](https://pkg.go.dev/badge/github.com/leafevans/go-fuck/v3.svg)](https://pkg.go.dev/github.com/leafevans/go-fuck/v3)
+[![Go Reference](https://pkg.go.dev/badge/github.com/leafevans/go-fuck/v4.svg)](https://pkg.go.dev/github.com/leafevans/go-fuck/v4)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 [English](README.md) | [简体中文](README.zh-CN.md)
@@ -36,12 +36,12 @@ $ fuck
 
 Choose the package manager for your platform:
 
-| Platform             | Recommended installation                                      |
-| -------------------- | ------------------------------------------------------------- |
-| Windows              | `scoop bucket add go-fuck https://github.com/leafevans/go-fuck`, then `scoop install go-fuck` |
+| Platform             | Recommended installation                                                                                                          |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Windows              | `scoop bucket add go-fuck https://github.com/leafevans/go-fuck`, then `scoop install go-fuck`                                     |
 | macOS / Linux        | `brew tap leafevans/go-fuck https://github.com/leafevans/go-fuck`, then `brew trust leafevans/go-fuck` and `brew install go-fuck` |
-| Arch Linux           | `yay -S go-fuck` or `paru -S go-fuck`                         |
-| Any platform with Go | `go install github.com/leafevans/go-fuck/v3/cmd/go-fuck@latest` |
+| Arch Linux           | `yay -S go-fuck` or `paru -S go-fuck`                                                                                             |
+| Any platform with Go | `go install github.com/leafevans/go-fuck/v4/cmd/go-fuck@latest`                                                                   |
 
 Then configure the shell alias and follow the reload command printed by setup:
 
@@ -90,14 +90,14 @@ After the alias is loaded, run a command that fails and type `fuck` to correct i
 The correction hot path and the shell history parser have Go benchmarks
 (`task bench`); they do not depend on the installed tools. Measured on an AMD Ryzen 7 7730U (16 logical CPUs) with Go 1.27:
 
-| Benchmark                                                          | Result      |
-| ------------------------------------------------------------------ | ----------- |
-| Full correction path (select rules, match them, order suggestions) | ~0.2 ms/op  |
-| Matching every rule against a captured output                      | ~0.18 ms/op |
-| Matching rules when the command output could not be captured       | ~1.4 µs/op  |
+| Benchmark                                                          | Result              |
+| ------------------------------------------------------------------ | ------------------- |
+| Full correction path (select rules, match them, order suggestions) | ~0.2 ms/op          |
+| Matching every rule against a captured output                      | ~0.18 ms/op         |
+| Matching rules when the command output could not be captured       | ~1.4 µs/op          |
 | Parsing a 20,000 line shell history file                           | ~0.7 ms/op (1.5 MB) |
-| Restoring a multi-line command from the bash alias history         | ~0.65 µs/op |
-| Restoring a command from the zsh history array                     | ~42 ns/op   |
+| Restoring a multi-line command from the bash alias history         | ~0.65 µs/op         |
+| Restoring a command from the zsh history array                     | ~42 ns/op           |
 
 The rule engine adds roughly 0.2 ms. With terminal capture active, wall-clock time is dominated by
 the native process startup and reading the terminal log; `capture_mode: "rerun"` keeps the older
@@ -183,7 +183,7 @@ targets x86_64; on other architectures use `go install` or the prebuilt binaries
 ### With `go install`
 
 ```bash
-go install github.com/leafevans/go-fuck/v3/cmd/go-fuck@latest
+go install github.com/leafevans/go-fuck/v4/cmd/go-fuck@latest
 ```
 
 The module path ends in `/v3` because the major version is part of the Go module path; use the
@@ -361,25 +361,25 @@ $ fuck
 
 Common options:
 
-| Option                               | Meaning                                                                                                                                                                         |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `-y`, `--yes`, `--yeah`, `--hard`    | execute the first suggestion without asking                                                                                                                                     |
-| `-r`, `--repeat`                     | re-run go-fuck if the corrected command fails                                                                                                                                   |
-| `--force-command CMD`                | fix `CMD` instead of the previous command                                                                                                                                       |
-| `--output-from FILE`                 | read the output of `--force-command` from `FILE` (or standard input with `-`) instead of re-running it                                                                          |
-| `--doctor`                           | print a diagnostic report: detected shell, alias, settings file, history and optional integrations; `--doctor --json` prints it as JSON                                         |
-| `--list-rules`                       | print the names of the built-in rules and exit (useful for the `rules`, `exclude_rules` and `priority` settings); with `--json` one object per rule with its priority and flags |
-| `--no-rerun`                         | never re-run the original command to collect output; use supplied output or the instant log when available |
-| `--capture-mode MODE`                | choose `auto`, `instant` or `rerun` capture policy                                                                                                                              |
-| `--preview`                          | show suggestions without re-running the original command, prompting, or applying a fix; combine with `--json` for structured output |
-| `--explain`                          | show capture provenance, rules, side effects and execution order without executing the suggestion                                                                               |
-| `--json`                             | print suggestions as JSON without executing them; add `--no-rerun` to prevent re-running the original command |
-| `-d`, `--debug`                      | print debug information to stderr                                                                                                                                               |
+| Option                               | Meaning                                                                                                                                                                                                   |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `-y`, `--yes`, `--yeah`, `--hard`    | execute the first suggestion without asking                                                                                                                                                               |
+| `-r`, `--repeat`                     | re-run go-fuck if the corrected command fails                                                                                                                                                             |
+| `--force-command CMD`                | fix `CMD` instead of the previous command                                                                                                                                                                 |
+| `--output-from FILE`                 | read the output of `--force-command` from `FILE` (or standard input with `-`) instead of re-running it                                                                                                    |
+| `--doctor`                           | print a diagnostic report: detected shell, alias, settings file, history and optional integrations; `--doctor --json` prints it as JSON                                                                   |
+| `--list-rules`                       | print the names of the built-in rules and exit (useful for the `rules`, `exclude_rules` and `priority` settings); with `--json` one object per rule with its priority and flags                           |
+| `--no-rerun`                         | never re-run the original command to collect output; use supplied output or the instant log when available                                                                                                |
+| `--capture-mode MODE`                | choose `auto`, `instant` or `rerun` capture policy                                                                                                                                                        |
+| `--preview`                          | show suggestions without re-running the original command, prompting, or applying a fix; combine with `--json` for structured output                                                                       |
+| `--explain`                          | show capture provenance, rules, side effects and execution order without executing the suggestion                                                                                                         |
+| `--json`                             | print suggestions as JSON without executing them; add `--no-rerun` to prevent re-running the original command                                                                                             |
+| `-d`, `--debug`                      | print debug information to stderr                                                                                                                                                                         |
 | `-v`, `--version`                    | print version/build information to stdout: a themed banner in a terminal, one line when piped; `--debug --version` adds the config path, executable path, build module, instant mode, fzf and alias state |
-| `-h`, `--help`                       | print the full option list to stdout                                                                                                                                            |
-| `-a`, `--alias[=ALIAS]`              | print the evaluable shell alias to stdout; optional `ALIAS` overrides `TF_ALIAS`                                                                                               |
-| `--setup`                            | write the alias to the detected shell's configuration file (bash, zsh, fish, tcsh, PowerShell)                                                                                  |
-| `--enable-experimental-instant-mode` | deprecated alias for `--capture-mode=instant` when generating an alias or setup line                                                                                           |
+| `-h`, `--help`                       | print the full option list to stdout                                                                                                                                                                      |
+| `-a`, `--alias[=ALIAS]`              | print the evaluable shell alias to stdout; optional `ALIAS` overrides `TF_ALIAS`                                                                                                                          |
+| `--setup`                            | write the alias to the detected shell's configuration file (bash, zsh, fish, tcsh, PowerShell)                                                                                                            |
+| `--enable-experimental-instant-mode` | deprecated alias for `--capture-mode=instant` when generating an alias or setup line                                                                                                                      |
 
 Normal information from the information commands is written to stdout. Warnings, errors, debug
 messages and correction-flow diagnostics are written to stderr. Human-readable output uses the same
@@ -466,7 +466,7 @@ If `fuck -v` reports an unexpected version, or reports PowerShell inside WSL, an
 probably earlier in `PATH`. The pre-v2 module — `go install github.com/leafevans/go-fuck/cmd/go-fuck@latest`
 without the `/v2` suffix — installs the old 0.x/1.x series into `$GOPATH/bin`, and that binary can shadow the
 release one. `go-fuck --debug --version` prints the executable path (`Exe`) and the module that built the
-binary (`Module`); the v3 releases report `github.com/leafevans/go-fuck/v3`. Remove or rename the old
+binary (`Module`); the v4 builds report `github.com/leafevans/go-fuck/v4`. Remove or rename the old
 binary, or put the v3 installation earlier in `PATH`. Inside WSL use the Linux binary
 (`~/.local/bin/go-fuck`) instead of a Windows executable picked up from the interop `PATH`, and run
 `hash -r` (bash) or `rehash` (zsh) in a shell that was already open before the change.
@@ -657,6 +657,10 @@ The document is always written to stdout; diagnostics stay on stderr.
 
 ## Settings
 
+Development note: this branch targets unreleased v4 (`4.0.0-dev`). Published channels
+still provide v3.0.2; `/v4@latest` will resolve only after a v4 tag is published.
+For now, build this checkout with `go build ./cmd/go-fuck`.
+
 The legacy `git_commit_reset` and `git_commit_amend` rules are disabled by default:
 no generic commit failure proves that rewriting the previous commit is the right fix.
 Explicitly list either name in `rules` only if you want these history-rewriting suggestions.
@@ -701,42 +705,42 @@ A minimal file that customizes a few values:
 
 ```json
 {
-    "rules": ["All rules enabled"],
-    "exclude_rules": ["git_push"],
-    "capture_mode": "auto",
-    "wait_command": 10,
-    "require_confirmation": true,
-    "priority": {
-        "cd_mkdir": 100
-    },
-    "settings": {}
+	"rules": ["All rules enabled"],
+	"exclude_rules": ["git_push"],
+	"capture_mode": "auto",
+	"wait_command": 10,
+	"require_confirmation": true,
+	"priority": {
+		"cd_mkdir": 100
+	},
+	"settings": {}
 }
 ```
 
 All fields:
 
-| Key                             | Type              | Default                                                      | Meaning                                                                                                                                                                                       |
-| ------------------------------- | ----------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `rules`                         | array of strings  | `["All rules enabled"]`                                      | Rules that are enabled. The sentinel value `"All rules enabled"` enables every rule that is enabled by default; list explicit rule names to enable exactly those rules.                       |
-| `exclude_rules`                 | array of strings  | `[]`                                                         | Rules that are never loaded, even when enabled.                                                                                                                                               |
-| `wait_command`                  | integer           | `3`                                                          | Seconds to wait for the output of the re-run command.                                                                                                                                         |
-| `require_confirmation`          | boolean           | `true`                                                       | Ask before executing a corrected command.                                                                                                                                                     |
-| `fzf`                           | boolean           | `false`                                                      | Use [fzf](https://github.com/junegunn/fzf) as the selection prompt when it is installed. Falls back to the built-in prompt automatically.                                                     |
-| `strict_settings`               | boolean           | `false`                                                      | Reject unknown top-level keys as an error instead of ignoring and warning about them.                                                                                                         |
-| `no_colors`                     | boolean           | `false`                                                      | Disable colored output.                                                                                                                                                                       |
-| `debug`                         | boolean           | `false`                                                      | Print debug information to stderr.                                                                                                                                                            |
-| `priority`                      | object of integer | `{}`                                                         | Per-rule priority overrides. Lower values are tried first; the built-in default is `1000`.                                                                                                    |
-| `history_limit`                 | integer           | `0`                                                          | Maximum number of shell history lines that are read. `0` means no limit.                                                                                                                      |
-| `alter_history`                 | boolean           | `true`                                                       | Write the corrected command back to the shell history.                                                                                                                                        |
-| `wait_slow_command`             | integer           | `15`                                                         | Seconds to wait for the output of commands listed in `slow_commands`.                                                                                                                         |
-| `slow_commands`                 | array of strings  | `["lein", "react-native", "gradle", "./gradlew", "vagrant"]` | Commands that are expected to be slow to re-run.                                                                                                                                              |
-| `repeat`                        | boolean           | `false`                                                      | If the corrected command fails, run go-fuck again.                                                                                                                                            |
-| `capture_mode`                  | string            | `"auto"`                                                     | Capture policy: `auto` prefers the terminal log and falls back to rerun, `instant` never reruns, `rerun` skips terminal capture. See [Terminal capture](#terminal-capture-and-instant-mode).       |
-| `instant_mode`                  | boolean           | deprecated                                                   | Legacy compatibility key. Without `capture_mode`, `true` maps to `auto` and `false` maps to `rerun`.                                                                                           |
-| `num_close_matches`             | integer           | `3`                                                          | Maximum number of close matches suggested for misspelled commands.                                                                                                                            |
-| `env`                           | object of string  | `{"LC_ALL": "C", "LANG": "C", "GIT_TRACE": "1"}`             | Environment variables added when the failed command is re-run.                                                                                                                                |
-| `excluded_search_path_prefixes` | array of strings  | `[]`                                                         | `PATH` prefixes that are skipped when searching for executables.                                                                                                                              |
-| `settings`                      | object            | `{} in the default file`                                     | Rule-specific string settings, read by rules with `conf.Current().String(key, default)`.                                                                                                      |
+| Key                             | Type              | Default                                                      | Meaning                                                                                                                                                                                      |
+| ------------------------------- | ----------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rules`                         | array of strings  | `["All rules enabled"]`                                      | Rules that are enabled. The sentinel value `"All rules enabled"` enables every rule that is enabled by default; list explicit rule names to enable exactly those rules.                      |
+| `exclude_rules`                 | array of strings  | `[]`                                                         | Rules that are never loaded, even when enabled.                                                                                                                                              |
+| `wait_command`                  | integer           | `3`                                                          | Seconds to wait for the output of the re-run command.                                                                                                                                        |
+| `require_confirmation`          | boolean           | `true`                                                       | Ask before executing a corrected command.                                                                                                                                                    |
+| `fzf`                           | boolean           | `false`                                                      | Use [fzf](https://github.com/junegunn/fzf) as the selection prompt when it is installed. Falls back to the built-in prompt automatically.                                                    |
+| `strict_settings`               | boolean           | `false`                                                      | Reject unknown top-level keys as an error instead of ignoring and warning about them.                                                                                                        |
+| `no_colors`                     | boolean           | `false`                                                      | Disable colored output.                                                                                                                                                                      |
+| `debug`                         | boolean           | `false`                                                      | Print debug information to stderr.                                                                                                                                                           |
+| `priority`                      | object of integer | `{}`                                                         | Per-rule priority overrides. Lower values are tried first; the built-in default is `1000`.                                                                                                   |
+| `history_limit`                 | integer           | `0`                                                          | Maximum number of shell history lines that are read. `0` means no limit.                                                                                                                     |
+| `alter_history`                 | boolean           | `true`                                                       | Write the corrected command back to the shell history.                                                                                                                                       |
+| `wait_slow_command`             | integer           | `15`                                                         | Seconds to wait for the output of commands listed in `slow_commands`.                                                                                                                        |
+| `slow_commands`                 | array of strings  | `["lein", "react-native", "gradle", "./gradlew", "vagrant"]` | Commands that are expected to be slow to re-run.                                                                                                                                             |
+| `repeat`                        | boolean           | `false`                                                      | If the corrected command fails, run go-fuck again.                                                                                                                                           |
+| `capture_mode`                  | string            | `"auto"`                                                     | Capture policy: `auto` prefers the terminal log and falls back to rerun, `instant` never reruns, `rerun` skips terminal capture. See [Terminal capture](#terminal-capture-and-instant-mode). |
+| `instant_mode`                  | boolean           | deprecated                                                   | Legacy compatibility key. Without `capture_mode`, `true` maps to `auto` and `false` maps to `rerun`.                                                                                         |
+| `num_close_matches`             | integer           | `3`                                                          | Maximum number of close matches suggested for misspelled commands.                                                                                                                           |
+| `env`                           | object of string  | `{"LC_ALL": "C", "LANG": "C", "GIT_TRACE": "1"}`             | Environment variables added when the failed command is re-run.                                                                                                                               |
+| `excluded_search_path_prefixes` | array of strings  | `[]`                                                         | `PATH` prefixes that are skipped when searching for executables.                                                                                                                             |
+| `settings`                      | object            | `{} in the default file`                                     | Rule-specific string settings, read by rules with `conf.Current().String(key, default)`.                                                                                                     |
 
 ### Environment variables
 
@@ -763,7 +767,7 @@ deprecated instant-mode variables.
 | `WAIT_SLOW_COMMAND`             | integer seconds                                                                   | `GOFUCK_WAIT_SLOW_COMMAND=30`                                                                        | `wait_slow_command`                                                 |
 | `SLOW_COMMANDS`                 | colon separated list                                                              | `GOFUCK_SLOW_COMMANDS='lein:gradle'`                                                                 | `slow_commands`                                                     |
 | `REPEAT`                        | boolean                                                                           | `GOFUCK_REPEAT=true`                                                                                 | `repeat`                                                            |
-| `CAPTURE_MODE`                  | `auto`, `instant` or `rerun`                                                       | `GOFUCK_CAPTURE_MODE=auto`                                                                           | `capture_mode`                                                      |
+| `CAPTURE_MODE`                  | `auto`, `instant` or `rerun`                                                      | `GOFUCK_CAPTURE_MODE=auto`                                                                           | `capture_mode`                                                      |
 | `INSTANT_MODE`                  | boolean, deprecated                                                               | `GOFUCK_INSTANT_MODE=true`                                                                           | maps to `capture_mode` when no explicit mode is set                 |
 | `NUM_CLOSE_MATCHES`             | integer                                                                           | `GOFUCK_NUM_CLOSE_MATCHES=5`                                                                         | `num_close_matches`                                                 |
 | `EXCLUDED_SEARCH_PATH_PREFIXES` | list separated by the OS path list separator (`:` on Linux/macOS, `;` on Windows) | `GOFUCK_EXCLUDED_SEARCH_PATH_PREFIXES='/snap:/mnt'` (Linux/macOS), `'C:\\Tools;C:\\Other'` (Windows) | `excluded_search_path_prefixes`                                     |
@@ -799,7 +803,7 @@ Enable it once in `settings.json`:
 
 ```json
 {
-    "fzf": true
+	"fzf": true
 }
 ```
 
@@ -1112,14 +1116,14 @@ Each file contains one rule:
 
 ```json
 {
-    "name": "git_remote_typo",
-    "enabled": true,
-    "priority": 900,
-    "match": {
-        "script": "^git remote add (\\w+)$",
-        "output": "No such remote '([^']+)'"
-    },
-    "commands": ["git remote remove {1}"]
+	"name": "git_remote_typo",
+	"enabled": true,
+	"priority": 900,
+	"match": {
+		"script": "^git remote add (\\w+)$",
+		"output": "No such remote '([^']+)'"
+	},
+	"commands": ["git remote remove {1}"]
 }
 ```
 
@@ -1174,14 +1178,14 @@ go-fuck is a reimplementation, not a drop-in replacement for every thefuck featu
 
 ## Documentation
 
-| Document                                     | Purpose                                                                 |
-| -------------------------------------------- | ----------------------------------------------------------------------- |
-| [README.zh-CN.md](README.zh-CN.md)           | Simplified Chinese quick start and common workflows                     |
-| [UPGRADING.md](UPGRADING.md)                 | Compatibility promises and migration notes                             |
-| [CONTRIBUTING.md](CONTRIBUTING.md)           | Development setup, tests and pull request requirements                  |
-| [PORTING.md](PORTING.md)                     | Rule interface and conventions for porting rules from thefuck           |
-| [packaging/README.md](packaging/README.md)   | Homebrew, Scoop, AUR, release and local updater workflows               |
-| [SECURITY.md](SECURITY.md)                   | Vulnerability reporting and data handling                               |
+| Document                                   | Purpose                                                       |
+| ------------------------------------------ | ------------------------------------------------------------- |
+| [README.zh-CN.md](README.zh-CN.md)         | Simplified Chinese quick start and common workflows           |
+| [UPGRADING.md](UPGRADING.md)               | Compatibility promises and migration notes                    |
+| [CONTRIBUTING.md](CONTRIBUTING.md)         | Development setup, tests and pull request requirements        |
+| [PORTING.md](PORTING.md)                   | Rule interface and conventions for porting rules from thefuck |
+| [packaging/README.md](packaging/README.md) | Homebrew, Scoop, AUR, release and local updater workflows     |
+| [SECURITY.md](SECURITY.md)                 | Vulnerability reporting and data handling                     |
 
 ## Contributing
 

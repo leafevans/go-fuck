@@ -3,8 +3,8 @@ package rules
 import (
 	"strings"
 
-	"github.com/leafevans/go-fuck/v3/internal/specific"
-	"github.com/leafevans/go-fuck/v3/internal/types"
+	"github.com/leafevans/go-fuck/v4/internal/specific"
+	"github.com/leafevans/go-fuck/v4/internal/types"
 )
 
 // pythonCommandMatch reports whether a python script was executed directly but

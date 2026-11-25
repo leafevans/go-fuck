@@ -3,8 +3,8 @@ package rules
 import (
 	"strings"
 
-	"github.com/leafevans/go-fuck/v3/internal/specific"
-	"github.com/leafevans/go-fuck/v3/internal/types"
+	"github.com/leafevans/go-fuck/v4/internal/specific"
+	"github.com/leafevans/go-fuck/v4/internal/types"
 )
 
 // fixAltSpaceAltSpace is the non-breaking space that is typed instead of a

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/v3/internal/shells"
+	"github.com/leafevans/go-fuck/v4/internal/shells"
 )
 
 func TestRuleCommandEditsAcrossShells(t *testing.T) {

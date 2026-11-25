@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/v3/internal/utils"
+	"github.com/leafevans/go-fuck/v4/internal/utils"
 )
 
 const dnfNoSuchCommandHelpText = `usage: dnf [options] COMMAND

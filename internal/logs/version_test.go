@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/v3/internal/conf"
+	"github.com/leafevans/go-fuck/v4/internal/conf"
 )
 
 // bannerInfo returns the fixture used by the banner tests.
@@ -20,7 +20,7 @@ func bannerInfo() VersionInfo {
 		Fzf:         true,
 		Alias:       "fuck",
 		Executable:  "/usr/local/bin/go-fuck",
-		Module:      "github.com/leafevans/go-fuck/v3",
+		Module:      "github.com/leafevans/go-fuck/v4",
 	}
 }
 
@@ -34,7 +34,7 @@ func TestRenderBanner(t *testing.T) {
 			t.Fatalf("banner does not contain %q:%s%s", want, newline, banner)
 		}
 	}
-	for _, unwanted := range []string{"/tmp/go-fuck/settings.json", "Instant", "fzf", "Alias", "/usr/local/bin/go-fuck", "github.com/leafevans/go-fuck/v3"} {
+	for _, unwanted := range []string{"/tmp/go-fuck/settings.json", "Instant", "fzf", "Alias", "/usr/local/bin/go-fuck", "github.com/leafevans/go-fuck/v4"} {
 		if strings.Contains(banner, unwanted) {
 			t.Fatalf("compact banner should not contain %q:%s%s", unwanted, newline, banner)
 		}
@@ -49,7 +49,7 @@ func TestRenderVerboseBanner(t *testing.T) {
 	conf.Reset()
 
 	banner := renderBanner(bannerInfo(), true)
-	for _, want := range []string{"/tmp/go-fuck/settings.json", "Instant", "available", "fzf", "installed", "Alias", "fuck", "Exe", "/usr/local/bin/go-fuck", "Module", "github.com/leafevans/go-fuck/v3"} {
+	for _, want := range []string{"/tmp/go-fuck/settings.json", "Instant", "available", "fzf", "installed", "Alias", "fuck", "Exe", "/usr/local/bin/go-fuck", "Module", "github.com/leafevans/go-fuck/v4"} {
 		if !strings.Contains(banner, want) {
 			t.Fatalf("verbose banner does not contain %q:%s%s", want, newline, banner)
 		}

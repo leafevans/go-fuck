@@ -3,13 +3,13 @@
 This directory (together with `Formula/` and `bucket/`) makes the repository a
 multi-channel distribution for go-fuck.
 
-| Channel                | File                                                         | Install                                                                                                                   |
-| ---------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| Homebrew (macOS/Linux) | `Formula/go-fuck.rb`                                         | `brew tap leafevans/go-fuck https://github.com/leafevans/go-fuck && brew trust leafevans/go-fuck && brew install go-fuck` |
-| Scoop (Windows)        | `bucket/go-fuck.json`                                        | `scoop bucket add go-fuck https://github.com/leafevans/go-fuck` then `scoop install go-fuck`                              |
-| AUR (Arch Linux)       | `packaging/aur/`                                             | `yay -S go-fuck`, or clone `https://aur.archlinux.org/go-fuck.git` and run `makepkg -si`                                  |
-| Prebuilt binaries      | GitHub releases                                              | download and put `go-fuck` on `PATH`                                                                                      |
-| Go toolchain           | `go install github.com/leafevans/go-fuck/v3/cmd/go-fuck@latest` |                                                                                                                           |
+| Channel                | File                                                            | Install                                                                                                                   |
+| ---------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Homebrew (macOS/Linux) | `Formula/go-fuck.rb`                                            | `brew tap leafevans/go-fuck https://github.com/leafevans/go-fuck && brew trust leafevans/go-fuck && brew install go-fuck` |
+| Scoop (Windows)        | `bucket/go-fuck.json`                                           | `scoop bucket add go-fuck https://github.com/leafevans/go-fuck` then `scoop install go-fuck`                              |
+| AUR (Arch Linux)       | `packaging/aur/`                                                | `yay -S go-fuck`, or clone `https://aur.archlinux.org/go-fuck.git` and run `makepkg -si`                                  |
+| Prebuilt binaries      | GitHub releases                                                 | download and put `go-fuck` on `PATH`                                                                                      |
+| Go toolchain           | `go install github.com/leafevans/go-fuck/v4/cmd/go-fuck@latest` |                                                                                                                           |
 
 ## Homebrew
 
@@ -77,23 +77,27 @@ and verify both the package and CLI versions.
 To update the package for a release:
 
 1. Download the tag archive:
-    ```bash
-    curl -L -o go-fuck-X.Y.Z.tar.gz https://github.com/leafevans/go-fuck/archive/refs/tags/vX.Y.Z.tar.gz
-    ```
+
+   ```bash
+   curl -L -o go-fuck-X.Y.Z.tar.gz https://github.com/leafevans/go-fuck/archive/refs/tags/vX.Y.Z.tar.gz
+   ```
 2. Regenerate the package files. `tools/update-packaging` rewrites
    `PKGBUILD` and `.SRCINFO` when `-aur-source` is passed: it sets `pkgver`,
    resets `pkgrel` to 1 and computes the checksum of the archive.
-    ```bash
-    go run ./tools/update-packaging -version X.Y.Z \
-      -checksums checksums.txt -aur-source go-fuck-X.Y.Z.tar.gz
-    ```
-    A packaging-only change (no new version) is not generated; bump `pkgrel`
-    manually in both files instead.
+
+   ```bash
+   go run ./tools/update-packaging -version X.Y.Z \
+     -checksums checksums.txt -aur-source go-fuck-X.Y.Z.tar.gz
+   ```
+
+   A packaging-only change (no new version) is not generated; bump `pkgrel`
+   manually in both files instead.
 3. Publish the two files to the AUR with `scripts/push-aur.sh` (see
    [Publishing to the AUR](#publishing-to-the-aur)):
-    ```bash
-    bash scripts/push-aur.sh --version X.Y.Z
-    ```
+
+   ```bash
+   bash scripts/push-aur.sh --version X.Y.Z
+   ```
 
 ### Publishing to the AUR
 
@@ -203,35 +207,39 @@ When publishing a new release `vX.Y.Z`:
 1. Push the tag and wait for the Release workflow to finish.
 2. Download `checksums.txt` and the tag archive from the release, then
    regenerate the manifests and the AUR package:
-    ```bash
-    go run ./tools/update-packaging -version X.Y.Z \
-      -checksums checksums.txt -aur-source go-fuck-X.Y.Z.tar.gz
-    ```
-    The tool checks that the checksums are for the requested version and that
-    all six release assets are present, then rewrites the Homebrew formula, the
-    Scoop manifest and (with `-aur-source`) the AUR `PKGBUILD` and
-    `.SRCINFO` with a fresh `pkgrel=1`, in one step. Review the diff and
-    commit it (also possible through `task packaging VERSION=X.Y.Z
+
+   ```bash
+   go run ./tools/update-packaging -version X.Y.Z \
+     -checksums checksums.txt -aur-source go-fuck-X.Y.Z.tar.gz
+   ```
+
+   The tool checks that the checksums are for the requested version and that
+   all six release assets are present, then rewrites the Homebrew formula, the
+   Scoop manifest and (with `-aur-source`) the AUR `PKGBUILD` and
+   `.SRCINFO` with a fresh `pkgrel=1`, in one step. Review the diff and
+   commit it (also possible through `task packaging VERSION=X.Y.Z
 CHECKSUMS=checksums.txt AUR_SOURCE=go-fuck-X.Y.Z.tar.gz`). The whole download
-    and regeneration step is wrapped by
-    `scripts/update-manifests.ps1 -Version X.Y.Z`; pass `-Commit` to commit the
-    regenerated files. `-PushAur` publishes the AUR package in the same step
-    through Git Bash or WSL, `-AurDryRun` only prints its publish plan, and
-    `-AurAddress IP` passes an explicit address when the DNS-over-HTTPS
-    lookup is blocked.
+   and regeneration step is wrapped by
+   `scripts/update-manifests.ps1 -Version X.Y.Z`; pass `-Commit` to commit the
+   regenerated files. `-PushAur` publishes the AUR package in the same step
+   through Git Bash or WSL, `-AurDryRun` only prints its publish plan, and
+   `-AurAddress IP` passes an explicit address when the DNS-over-HTTPS
+   lookup is blocked.
 3. Publish the regenerated `PKGBUILD` and `.SRCINFO` to the AUR:
-    ```bash
-    bash scripts/push-aur.sh --version X.Y.Z
-    ```
-    The script skips the push when the AUR already carries the same files, so
-    it is safe to rerun. Add `--direct-ip` when SSH to `aur.archlinux.org` is
-    blocked, or `--address IP` when the DNS-over-HTTPS endpoint is blocked too
-    (see [Publishing to the AUR](#publishing-to-the-aur)). This step is also
-    run by `scripts/update-manifests.ps1 ... -PushAur`.
+
+   ```bash
+   bash scripts/push-aur.sh --version X.Y.Z
+   ```
+
+   The script skips the push when the AUR already carries the same files, so
+   it is safe to rerun. Add `--direct-ip` when SSH to `aur.archlinux.org` is
+   blocked, or `--address IP` when the DNS-over-HTTPS endpoint is blocked too
+   (see [Publishing to the AUR](#publishing-to-the-aur)). This step is also
+   run by `scripts/update-manifests.ps1 ... -PushAur`.
 4. Run the **AUR verification** workflow with the published `X.Y.Z-pkgrel`.
 5. Run `go run ./tools/gen-rule-list -check` and the full test suite before
    tagging the follow-up commit.
-6. Check that `go install github.com/leafevans/go-fuck/v3/cmd/go-fuck@latest`
+6. Check that `go install github.com/leafevans/go-fuck/v4/cmd/go-fuck@latest`
    resolves the new tag; the major version is part of the Go module path.
 
 The version and checksums are intentionally committed as plain text so that the

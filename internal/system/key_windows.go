@@ -2,7 +2,7 @@
 
 package system
 
-import "github.com/leafevans/go-fuck/v3/internal/consts"
+import "github.com/leafevans/go-fuck/v4/internal/consts"
 
 // GetKey waits for and returns the next key press.
 func GetKey() (consts.Key, error) {

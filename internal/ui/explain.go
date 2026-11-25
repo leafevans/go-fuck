@@ -3,9 +3,9 @@ package ui
 import (
 	"time"
 
-	"github.com/leafevans/go-fuck/v3/internal/capture"
-	"github.com/leafevans/go-fuck/v3/internal/logs"
-	"github.com/leafevans/go-fuck/v3/internal/types"
+	"github.com/leafevans/go-fuck/v4/internal/capture"
+	"github.com/leafevans/go-fuck/v4/internal/logs"
+	"github.com/leafevans/go-fuck/v4/internal/types"
 )
 
 // ExplainCommands renders the capture and execution plan without applying it.

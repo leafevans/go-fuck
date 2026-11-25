@@ -1,6 +1,6 @@
 package rules
 
-import "github.com/leafevans/go-fuck/v3/internal/types"
+import "github.com/leafevans/go-fuck/v4/internal/types"
 
 // slLsMatch reports whether sl was typed instead of ls.
 func slLsMatch(command *types.Command) bool {

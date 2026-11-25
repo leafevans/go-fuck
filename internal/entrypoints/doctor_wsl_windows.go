@@ -5,7 +5,7 @@ package entrypoints
 import (
 	"strings"
 
-	"github.com/leafevans/go-fuck/v3/internal/system"
+	"github.com/leafevans/go-fuck/v4/internal/system"
 )
 
 // doctorAncestorNames returns the names of the process ancestors. It is a

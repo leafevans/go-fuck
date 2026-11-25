@@ -22,12 +22,12 @@ $ fuck
 
 ## 快速安装
 
-| 平台 | 推荐方式 | 命令 |
-| --- | --- | --- |
-| Windows | Scoop | `scoop bucket add go-fuck https://github.com/leafevans/go-fuck`<br>`scoop install go-fuck` |
-| macOS / Linux | Homebrew | `brew tap leafevans/go-fuck https://github.com/leafevans/go-fuck`<br>`brew trust leafevans/go-fuck`<br>`brew install go-fuck` |
-| Arch Linux | AUR | `yay -S go-fuck` 或 `paru -S go-fuck` |
-| 已安装 Go 1.27+ | `go install` | `go install github.com/leafevans/go-fuck/v3/cmd/go-fuck@latest` |
+| 平台            | 推荐方式     | 命令                                                                                                                          |
+| --------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| Windows         | Scoop        | `scoop bucket add go-fuck https://github.com/leafevans/go-fuck`<br>`scoop install go-fuck`                                    |
+| macOS / Linux   | Homebrew     | `brew tap leafevans/go-fuck https://github.com/leafevans/go-fuck`<br>`brew trust leafevans/go-fuck`<br>`brew install go-fuck` |
+| Arch Linux      | AUR          | `yay -S go-fuck` 或 `paru -S go-fuck`                                                                                         |
+| 已安装 Go 1.27+ | `go install` | `go install github.com/leafevans/go-fuck/v4/cmd/go-fuck@latest`                                                               |
 
 也可以从 [GitHub Releases](https://github.com/leafevans/go-fuck/releases) 下载预编译包。发布页同时
 提供 `checksums.txt`；安装前建议校验下载文件。预编译二进制没有运行时依赖。
@@ -71,18 +71,18 @@ fuck
 
 使用方向键选择建议，按 Enter 执行，按 Ctrl+C 或 `q` 取消。常用选项：
 
-| 选项 | 作用 |
-| --- | --- |
-| `fuck -y` | 直接执行第一条建议，不再确认 |
-| `fuck -r` | 修正后的命令仍失败时再次调用 go-fuck |
-| `fuck --explain` | 显示捕获来源、命中的规则、副作用和执行计划，不执行修正 |
-| `fuck --preview` | 只预览建议，不执行原命令、不应用修正、不写 shell 历史 |
-| `fuck --json` | 输出结构化 JSON，适合编辑器、脚本和 AI 工具调用 |
-| `fuck --doctor` | 检查 shell、alias、设置文件、历史记录和可选集成 |
+| 选项                | 作用                                                       |
+| ------------------- | ---------------------------------------------------------- |
+| `fuck -y`           | 直接执行第一条建议，不再确认                               |
+| `fuck -r`           | 修正后的命令仍失败时再次调用 go-fuck                       |
+| `fuck --explain`    | 显示捕获来源、命中的规则、副作用和执行计划，不执行修正     |
+| `fuck --preview`    | 只预览建议，不执行原命令、不应用修正、不写 shell 历史      |
+| `fuck --json`       | 输出结构化 JSON，适合编辑器、脚本和 AI 工具调用            |
+| `fuck --doctor`     | 检查 shell、alias、设置文件、历史记录和可选集成            |
 | `fuck --list-rules` | 列出可用于 `rules`、`exclude_rules` 和 `priority` 的规则名 |
-| `fuck -v` | 显示版本和构建信息 |
-| `fuck -h` | 显示完整帮助 |
-| `fuck -a` | 输出可由 shell 直接求值的 alias 定义 |
+| `fuck -v`           | 显示版本和构建信息                                         |
+| `fuck -h`           | 显示完整帮助                                               |
+| `fuck -a`           | 输出可由 shell 直接求值的 alias 定义                       |
 
 `--json`、`--list-rules --json` 和 `--doctor --json` 都是机器可读输出，不会附加颜色或装饰。
 检查某条命令而不重新执行它：
@@ -102,11 +102,11 @@ cat failed-output.log | go-fuck --json --force-command "git push" --output-from 
 
 `settings.json` 中的 `capture_mode` 控制输出采集方式：
 
-| 模式 | 行为 |
-| --- | --- |
-| `auto` | 优先读取终端日志；不可用时重新执行命令 |
-| `instant` | 只读取终端日志，绝不自动重新执行命令 |
-| `rerun` | 不读取终端日志，重新执行上一条失败命令 |
+| 模式      | 行为                                   |
+| --------- | -------------------------------------- |
+| `auto`    | 优先读取终端日志；不可用时重新执行命令 |
+| `instant` | 只读取终端日志，绝不自动重新执行命令   |
+| `rerun`   | 不读取终端日志，重新执行上一条失败命令 |
 
 常用初始化方式：
 
@@ -133,23 +133,23 @@ iex "$(go-fuck --alias --capture-mode=auto)"
 
 设置文件由首次运行自动创建：
 
-| 平台 | 路径 |
-| --- | --- |
+| 平台        | 路径                                                                          |
+| ----------- | ----------------------------------------------------------------------------- |
 | Linux / BSD | `~/.config/go-fuck/settings.json` 或 `$XDG_CONFIG_HOME/go-fuck/settings.json` |
-| macOS | `~/Library/Application Support/go-fuck/settings.json` |
-| Windows | `%AppData%\go-fuck\settings.json` |
+| macOS       | `~/Library/Application Support/go-fuck/settings.json`                         |
+| Windows     | `%AppData%\go-fuck\settings.json`                                             |
 
 最小示例：
 
 ```json
 {
-    "capture_mode": "auto",
-    "require_confirmation": true,
-    "wait_command": 10,
-    "exclude_rules": ["git_push"],
-    "priority": {
-        "cd_mkdir": 100
-    }
+	"capture_mode": "auto",
+	"require_confirmation": true,
+	"wait_command": 10,
+	"exclude_rules": ["git_push"],
+	"priority": {
+		"cd_mkdir": 100
+	}
 }
 ```
 
@@ -168,7 +168,8 @@ iex "$(go-fuck --alias --capture-mode=auto)"
 已有分支只建议复用，不再删除重建；绕过 Git 钩子需要本地失败诊断，不能绕过服务端钩子。
 JSON 布局不变；`side_effect` 仅表示额外执行回调，不表示建议命令本身无破坏性。
 按现有兼容性政策，这批默认行为调整计划随 4.0.0 发布，而不是作为 3.x 补丁。
-目前尚未发布，Go 模块仍为 `/v3`；需完成 `/v4` 迁移和打包验证后才会打标签。
+目前尚未发布；开发源码已迁移到 `/v4`，版本为 `4.0.0-dev`。发布渠道仍提供 3.0.2，
+不能在 v4 标签发布前使用 `/v4@latest` 安装；需完成跨平台和打包验证后才会打标签。
 详见 [升级说明](UPGRADING.md#unreleased-safety-changes-version-not-assigned)。
 
 ## 常见问题
@@ -224,7 +225,7 @@ go-fuck --debug --version
 ```
 
 它会在调试输出中显示实际可执行文件路径和构建模块。v3 应显示
-`github.com/leafevans/go-fuck/v3`。在 WSL 中应优先使用 Linux 二进制，而不是从 Windows
+`github.com/leafevans/go-fuck/v4`。在 WSL 中应优先使用 Linux 二进制，而不是从 Windows
 interop `PATH` 中发现的 `.exe`。
 
 ### `git brnch` 没有建议 `git branch`
@@ -243,24 +244,24 @@ go-fuck --json --no-rerun --force-command "git brnch"
 
 无需重新编译的方式是在配置目录的 `rules/` 下放置 JSON 文件：
 
-| 平台 | 目录 |
-| --- | --- |
-| Linux / BSD | `~/.config/go-fuck/rules` |
-| macOS | `~/Library/Application Support/go-fuck/rules` |
-| Windows | `%AppData%\go-fuck\rules` |
+| 平台        | 目录                                          |
+| ----------- | --------------------------------------------- |
+| Linux / BSD | `~/.config/go-fuck/rules`                     |
+| macOS       | `~/Library/Application Support/go-fuck/rules` |
+| Windows     | `%AppData%\go-fuck\rules`                     |
 
 示例：
 
 ```json
 {
-    "name": "git_remote_typo",
-    "enabled": true,
-    "priority": 900,
-    "match": {
-        "script": "^git remote add (\\w+)$",
-        "output": "No such remote '([^']+)'"
-    },
-    "commands": ["git remote remove {1}"]
+	"name": "git_remote_typo",
+	"enabled": true,
+	"priority": 900,
+	"match": {
+		"script": "^git remote add (\\w+)$",
+		"output": "No such remote '([^']+)'"
+	},
+	"commands": ["git remote remove {1}"]
 }
 ```
 
@@ -282,14 +283,14 @@ go-fuck --json --no-rerun --force-command "git brnch"
 
 ## 文档与安全
 
-| 文档 | 内容 |
-| --- | --- |
-| [README.md](README.md) | 完整英文文档、全部设置和自动生成的规则列表 |
-| [UPGRADING.md](UPGRADING.md) | 兼容性承诺和版本迁移 |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | 开发、测试和提交流程 |
-| [PORTING.md](PORTING.md) | 从 thefuck 移植内置规则 |
-| [packaging/README.md](packaging/README.md) | Homebrew、Scoop、AUR 和发布流程 |
-| [SECURITY.md](SECURITY.md) | 漏洞报告范围和数据处理说明 |
+| 文档                                       | 内容                                       |
+| ------------------------------------------ | ------------------------------------------ |
+| [README.md](README.md)                     | 完整英文文档、全部设置和自动生成的规则列表 |
+| [UPGRADING.md](UPGRADING.md)               | 兼容性承诺和版本迁移                       |
+| [CONTRIBUTING.md](CONTRIBUTING.md)         | 开发、测试和提交流程                       |
+| [PORTING.md](PORTING.md)                   | 从 thefuck 移植内置规则                    |
+| [packaging/README.md](packaging/README.md) | Homebrew、Scoop、AUR 和发布流程            |
+| [SECURITY.md](SECURITY.md)                 | 漏洞报告范围和数据处理说明                 |
 
 发现安全问题请不要创建公开 issue，使用
 [GitHub 私有漏洞报告](https://github.com/leafevans/go-fuck/security/advisories/new)。

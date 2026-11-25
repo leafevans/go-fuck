@@ -14,11 +14,11 @@ keeping display labels separate from executable scripts.
 
 Measurements on Windows amd64 with Go 1.27.4, before and after the shared set:
 
-| Workload | Bytes/op before | Bytes/op after | Allocations/op before | Allocations/op after |
-| --- | ---: | ---: | ---: | ---: |
-| Organize 1,000 distinct scripts | 70,992 | 62,800 | 7 | 6 |
-| Prepare 1,000 fzf candidates | 177,424 | 125,648 | 1,012 | 12 |
-| Organize 4,000 candidates with shared scripts and distinct side effects | 283,968 | 575,530 | 19 | 49 |
+| Workload                                                                | Bytes/op before | Bytes/op after | Allocations/op before | Allocations/op after |
+| ----------------------------------------------------------------------- | --------------: | -------------: | --------------------: | -------------------: |
+| Organize 1,000 distinct scripts                                         |          70,992 |         62,800 |                     7 |                    6 |
+| Prepare 1,000 fzf candidates                                            |         177,424 |        125,648 |                 1,012 |                   12 |
+| Organize 4,000 candidates with shared scripts and distinct side effects |         283,968 |        575,530 |                    19 |                   49 |
 
 The last workload includes duplicates and three distinct side effects per script,
 counting the absence of a side effect. Its median time over three runs dropped

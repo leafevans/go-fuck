@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/leafevans/go-fuck/v3/internal/types"
+	"github.com/leafevans/go-fuck/v4/internal/types"
 )
 
 // TestRuleSuggestionsAreShellSyntax checks that every suggestion can be parsed

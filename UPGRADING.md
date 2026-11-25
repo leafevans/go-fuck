@@ -184,8 +184,8 @@ retroactive safety exception. This section is a preparation notice, not a releas
 
 Before cutting 4.0.0, migrate the Go module and all imports to `/v4`, update version
 constants, build/linker configuration, installation examples and release notes together,
-and verify that the module-major guard passes. The current source remains `/v3` until
-that migration lands. Validate preview/explain/JSON behavior, cross-platform CI and
+and verify that the module-major guard passes. Development source now uses `/v4`
+with version `4.0.0-dev`; no v4 release is available yet. Validate preview/explain/JSON behavior, cross-platform CI and
 Arch packaging before publishing; regenerate manifests only from actual release assets
 and their checksums. Do not tag the current `/v3` tree as v4.0.0.
 

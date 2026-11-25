@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leafevans/go-fuck/v3/internal/rules"
-	"github.com/leafevans/go-fuck/v3/internal/types"
+	"github.com/leafevans/go-fuck/v4/internal/rules"
+	"github.com/leafevans/go-fuck/v4/internal/types"
 )
 
 func TestPrintTextRulesTerminalLayout(t *testing.T) {
