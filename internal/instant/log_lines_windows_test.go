@@ -263,3 +263,195 @@ func TestLogLinesIgnoresAlternateScreenContent(t *testing.T) {
 		}
 	}
 }
+
+// TestLogLinesHandlesTruncatedSizeRecord checks that a size record cut off at
+// the end of the log does not corrupt the rendering.
+func TestLogLinesHandlesTruncatedSizeRecord(t *testing.T) {
+	lines := logLines(conPTYSizeRecord + " 100 40")
+	if len(lines) != 0 {
+		t.Fatalf("logLines() = %q, want no lines", lines)
+	}
+}
+
+// TestLogLinesExpandsTabs checks that a tab advances to the next tab stop.
+func TestLogLinesExpandsTabs(t *testing.T) {
+	lines := logLines(sizeRecord(80, 30) + "a\tb\r\n")
+	if len(lines) == 0 || lines[0] != "a       b" {
+		t.Fatalf("logLines() = %q, want the tab expanded line", lines)
+	}
+}
+
+// TestTerminalResizeIgnoresInvalidSizes checks that a size record with a zero
+// dimension leaves the viewport unchanged.
+func TestTerminalResizeIgnoresInvalidSizes(t *testing.T) {
+	terminal := newTerminal(10, 3)
+	terminal.resize(0, 3)
+	terminal.resize(10, 0)
+	if terminal.columns != 10 {
+		t.Fatalf("columns = %d, want 10", terminal.columns)
+	}
+	if len(terminal.screen) != 3 {
+		t.Fatalf("rows = %d, want 3", len(terminal.screen))
+	}
+}
+
+// TestTerminalResizeGrowsRows checks that the viewport gains empty rows.
+func TestTerminalResizeGrowsRows(t *testing.T) {
+	terminal := newTerminal(10, 2)
+	terminal.resize(10, 5)
+	if len(terminal.screen) != 5 || len(terminal.wrapped) != 5 {
+		t.Fatalf("rows = %d/%d, want 5", len(terminal.screen), len(terminal.wrapped))
+	}
+}
+
+// TestTerminalResizeClampsCursor checks that the cursor stays inside the
+// viewport after the viewport shrank.
+func TestTerminalResizeClampsCursor(t *testing.T) {
+	terminal := newTerminal(10, 3)
+	terminal.cursorX = 9
+	terminal.cursorY = 2
+	terminal.resize(5, 2)
+	if terminal.cursorX != 4 || terminal.cursorY != 1 {
+		t.Fatalf("cursor = (%d,%d), want (4,1)", terminal.cursorX, terminal.cursorY)
+	}
+}
+
+// TestTerminalPutSkipsZeroWidth checks that a zero width character occupies no
+// cell.
+func TestTerminalPutSkipsZeroWidth(t *testing.T) {
+	terminal := newTerminal(4, 2)
+	terminal.put('\u200d')
+	if terminal.cursorX != 0 {
+		t.Fatalf("cursorX = %d, want 0", terminal.cursorX)
+	}
+	if got := lineText(terminal.screen[0]); got != "" {
+		t.Fatalf("lineText() = %q, want empty", got)
+	}
+}
+
+// TestTerminalBlankCellIgnoresOutOfRange checks that columns outside the line
+// are ignored instead of panicking.
+func TestTerminalBlankCellIgnoresOutOfRange(t *testing.T) {
+	line := screenLine{'a'}
+	blankCell(line, -1)
+	blankCell(line, 1)
+	if got := string(line); got != "a" {
+		t.Fatalf("line = %q, want unchanged", got)
+	}
+}
+
+// TestTerminalBlankCellRepairsWideCharacter checks that blanking the first
+// column of a wide character clears its continuation cell as well.
+func TestTerminalBlankCellRepairsWideCharacter(t *testing.T) {
+	line := screenLine{'中', continuationCell, 'b'}
+	blankCell(line, 0)
+	if line[0] != ' ' || line[1] != ' ' || line[2] != 'b' {
+		t.Fatalf("line = %q, want the wide character cleared", string(line))
+	}
+}
+
+// TestTerminalScrollOnEmptyScreen checks that a terminal without rows is not
+// scrolled.
+func TestTerminalScrollOnEmptyScreen(t *testing.T) {
+	terminal := &terminal{columns: 4}
+	terminal.scroll()
+	if len(terminal.history) != 0 {
+		t.Fatalf("history = %q, want empty", terminal.history)
+	}
+}
+
+// TestTerminalEnterAlternateScreenIsIdempotent checks that a second activation
+// keeps the saved main screen.
+func TestTerminalEnterAlternateScreenIsIdempotent(t *testing.T) {
+	terminal := newTerminal(6, 2)
+	terminal.put('a')
+	terminal.enterAlternateScreen()
+	saved := terminal.alternate
+	terminal.enterAlternateScreen()
+	if terminal.alternate != saved {
+		t.Fatal("enterAlternateScreen() replaced the saved screen")
+	}
+}
+
+// TestTerminalLeaveAlternateScreenWithoutAlternate checks that a deactivation
+// without an active alternate screen does nothing.
+func TestTerminalLeaveAlternateScreenWithoutAlternate(t *testing.T) {
+	terminal := newTerminal(6, 2)
+	terminal.put('a')
+	terminal.leaveAlternateScreen()
+	if got := lineText(terminal.screen[0]); got != "a" {
+		t.Fatalf("lineText() = %q, want a", got)
+	}
+}
+
+// TestTerminalLeaveAlternateScreenDropsAlternateScrollback checks that lines
+// which the full screen program scrolled into the scrollback are dropped again.
+func TestTerminalLeaveAlternateScreenDropsAlternateScrollback(t *testing.T) {
+	terminal := newTerminal(10, 2)
+	terminal.enterAlternateScreen()
+	terminal.scrollUp(1)
+	terminal.leaveAlternateScreen()
+	if len(terminal.history) != 0 || len(terminal.historyWrapped) != 0 {
+		t.Fatalf("history = %q/%v, want empty", terminal.history, terminal.historyWrapped)
+	}
+}
+
+// TestTerminalLeaveAlternateScreenResizesSavedScreen checks that the restored
+// screen follows the current viewport size.
+func TestTerminalLeaveAlternateScreenResizesSavedScreen(t *testing.T) {
+	shrunk := newTerminal(10, 2)
+	shrunk.enterAlternateScreen()
+	shrunk.screen = shrunk.screen[:1]
+	shrunk.wrapped = shrunk.wrapped[:1]
+	shrunk.leaveAlternateScreen()
+	if len(shrunk.screen) != 1 || len(shrunk.wrapped) != 1 {
+		t.Fatalf("rows = %d/%d, want 1", len(shrunk.screen), len(shrunk.wrapped))
+	}
+
+	grown := newTerminal(10, 2)
+	grown.enterAlternateScreen()
+	grown.screen = make([]screenLine, 4)
+	grown.wrapped = make([]bool, 4)
+	grown.leaveAlternateScreen()
+	if len(grown.screen) != 4 || len(grown.wrapped) != 4 {
+		t.Fatalf("rows = %d/%d, want 4", len(grown.screen), len(grown.wrapped))
+	}
+}
+
+// TestTerminalDeleteCharactersGuards checks the bounds checks of DCH.
+func TestTerminalDeleteCharactersGuards(t *testing.T) {
+	terminal := newTerminal(10, 2)
+	terminal.screen[0] = screenLine{'a', 'b'}
+	terminal.cursorY = 5
+	terminal.deleteCharacters(1)
+	terminal.cursorY = 0
+	terminal.cursorX = 2
+	terminal.deleteCharacters(1)
+	if got := string(terminal.screen[0]); got != "ab" {
+		t.Fatalf("line = %q, want unchanged", got)
+	}
+}
+
+// TestTerminalInsertCharactersGuards checks the bounds checks of ICH.
+func TestTerminalInsertCharactersGuards(t *testing.T) {
+	terminal := newTerminal(10, 2)
+	terminal.screen[0] = screenLine{'a'}
+	terminal.cursorY = -1
+	terminal.insertCharacters(1)
+	terminal.cursorY = 0
+	terminal.cursorX = 1
+	terminal.insertCharacters(1)
+	terminal.cursorX = 0
+	terminal.insertCharacters(0)
+	if got := string(terminal.screen[0]); got != "a" {
+		t.Fatalf("line = %q, want unchanged", got)
+	}
+}
+
+// TestClampHandlesInvertedRange checks that clamp() falls back to the minimum
+// when the maximum is below it.
+func TestClampHandlesInvertedRange(t *testing.T) {
+	if got := clamp(15, 10, 5); got != 10 {
+		t.Fatalf("clamp(15, 10, 5) = %d, want 10", got)
+	}
+}
