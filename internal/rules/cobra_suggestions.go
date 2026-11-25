@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v4/internal/types"
@@ -72,6 +73,77 @@ func cobraUnknownCommandNewCommand(command *types.Command) ([]string, error) {
 		return nil, nil
 	}
 	return utils.ReplaceArgumentsSorted(command.Script, broken, suggestions), nil
+}
+
+// cliSubcommandCorrections follows the diagnostic's command path before
+// replacing the failed subcommand. Unknown flags make the path ambiguous.
+func cliSubcommandCorrections(command *types.Command, apps []string, path []string, broken string, suggestions []string, options func(string) commandOption) []string {
+	words := simpleCommandWords(command.Script)
+	if len(words) < 2 || !slices.Contains(apps, words[0].text) {
+		return nil
+	}
+	index := 1
+	for _, part := range path {
+		index = subcommandIndex(words, index, options)
+		if index < 0 || words[index].text != part {
+			return nil
+		}
+		index++
+	}
+	index = subcommandIndex(words, index, options)
+	return replaceSubcommand(command.Script, words, index, broken, utils.SortBySimilarity(broken, suggestions)...)
+}
+
+var cliSubcommandName = newRegexp(`^[A-Za-z0-9][A-Za-z0-9_.+-]*$`)
+var cobraSubcommandDiagnostic = newRegexp(`^(?:Error: |error: )?unknown command "([^"]+)" for "([^"]+)"$`)
+
+// registerScopedCobraRule uses the reported parent path, rather than replacing
+// another occurrence of the typo elsewhere in the invocation.
+func registerScopedCobraRule(name, root string, apps []string, options func(string) commandOption) {
+	correct := func(command *types.Command) []string {
+		if !strings.Contains(command.Output, "Did you mean") || !strings.Contains(command.Output, "unknown command") {
+			return nil
+		}
+		var path []string
+		var broken string
+		var suggestions []string
+		inSuggestions := false
+		for line := range strings.SplitSeq(command.Output, "\n") {
+			line = strings.TrimSuffix(line, "\r")
+			if match := cobraSubcommandDiagnostic.FindStringSubmatch(line); match != nil {
+				if broken != "" {
+					return nil
+				}
+				path = strings.Fields(match[2])
+				if len(path) == 0 || path[0] != root {
+					return nil
+				}
+				broken = match[1]
+				continue
+			}
+			if broken == "" || strings.TrimSpace(line) == "" {
+				continue
+			}
+			if !inSuggestions {
+				if line != "Did you mean this?" && line != "Did you mean one of these?" {
+					break
+				}
+				inSuggestions = true
+				continue
+			}
+			hint := strings.TrimSpace(line)
+			if !strings.HasPrefix(line, "\t") || !cliSubcommandName.MatchString(hint) {
+				break
+			}
+			suggestions = append(suggestions, hint)
+		}
+		if len(suggestions) == 0 || !cliSubcommandName.MatchString(broken) {
+			return nil
+		}
+		return cliSubcommandCorrections(command, apps, path[1:], broken, suggestions, options)
+	}
+	register(types.NewRule(name, func(command *types.Command) bool { return len(correct(command)) != 0 },
+		func(command *types.Command) ([]string, error) { return correct(command), nil }))
 }
 
 // newCobraUnknownCommandRule registers the standard unknown command rule of a

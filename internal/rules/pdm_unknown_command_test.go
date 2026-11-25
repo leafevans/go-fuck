@@ -1,6 +1,9 @@
 package rules
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 // pdmUnknownCommandOutput follows src/pdm/cli/utils.py (format_similar_command)
 // and the argparse error() call in src/pdm/core.py for an unknown subcommand.
@@ -43,4 +46,13 @@ func TestRulePdmUnknownCommandANSIAndScripts(t *testing.T) {
 		"  Or one of these script commands?\n  - install-all\n"
 	assertMatch(t, rule, "pdm instal", withScripts)
 	assertNewCommands(t, rule, "pdm instal", withScripts, []string{"pdm install", "pdm export"})
+}
+
+func TestScopedpdmCorrection(t *testing.T) {
+	resetTestState(t)
+	rule := Get("pdm_unknown_command")
+	output := strings.ReplaceAll(pdmUnknownCommandOutput(), "\n", "\r\n")
+	assertNewCommands(t, rule, "pdm instal --project instal", output, []string{"pdm install --project instal", "pdm export --project instal"})
+	assertNotMatch(t, rule, "pdm run instal", output)
+	assertNotMatch(t, rule, "pdm instal --project instal; echo done", output)
 }
