@@ -89,7 +89,7 @@ go run ./tools/gen-rule-list
 | `bucket/`            | Scoop manifest (`go-fuck.json`)                                     |
 | `benchmarks/`        | allocation baseline (`baseline.txt`) and candidate benchmark notes  |
 | `docs/`              | demo GIFs referenced by `README.md`                                 |
-| `release-notes/`     | per-version release notes validated by CI                           |
+| `release-notes/`     | per-release notes named after the published tag                     |
 | `.github/workflows/` | CI and release workflows                                            |
 | `PORTING.md`         | how the rules are ported from thefuck                               |
 | `README.md`          | user documentation; the rule list is generated                      |
