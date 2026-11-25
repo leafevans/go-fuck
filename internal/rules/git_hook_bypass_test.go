@@ -37,6 +37,11 @@ func TestRuleGitHookBypass(t *testing.T) {
 	assertNotMatch(t, rule, "git push", "! [rejected]        main -> main (fetch first)\nfatal: failed to push some refs to 'origin'")
 	assertNotMatch(t, rule, "git commit -m x", "Author identity unknown")
 	assertNotMatch(t, rule, "git commit -m x", "")
+	// Mentioning a hook or tool is not evidence that a bypassable hook failed.
+	assertNotMatch(t, rule, "git push", "fatal: repository hook-demo not found")
+	assertNotMatch(t, rule, "git push", "remote: pre-receive hook declined")
+	assertNotMatch(t, rule, "git commit", "husky installed successfully")
+	assertNotMatch(t, rule, "git push", "error: failed to push branch lint-staged")
 	// The flag is already there.
 	assertNotMatch(t, rule, "git commit --no-verify -m x", hookOutput)
 	assertNotMatch(t, rule, "git log commit", "")
