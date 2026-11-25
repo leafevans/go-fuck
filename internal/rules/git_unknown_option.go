@@ -1,6 +1,8 @@
 package rules
 
 import (
+	"strings"
+
 	"github.com/leafevans/go-fuck/v4/internal/shells"
 	"github.com/leafevans/go-fuck/v4/internal/specific"
 	"github.com/leafevans/go-fuck/v4/internal/types"
@@ -18,6 +20,9 @@ var gitUsageOption = newRegexp(`(?m)^\s+(?:-[A-Za-z],\s+)?--(?:\[no-\])?([A-Za-z
 // gitUnknownOptionBroken returns the long option git rejected, or an empty
 // string when the output does not name one.
 func gitUnknownOptionBroken(commandOutput string) string {
+	if !strings.Contains(commandOutput, "unknown option \x60") {
+		return ""
+	}
 	if match := gitUnknownOption.FindStringSubmatch(commandOutput); match != nil {
 		return match[1]
 	}

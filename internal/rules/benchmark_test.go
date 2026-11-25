@@ -112,3 +112,35 @@ func BenchmarkRuleMatchingLongOutput(b *testing.B) {
 		})
 	}
 }
+
+// benchmarkExecutables returns a synthetic executable list for the prefix scan
+// of the missing space rule.
+func benchmarkExecutables(count int) []string {
+	names := make([]string, count)
+	for index := range names {
+		names[index] = "program" + strconv.Itoa(index)
+	}
+	return names
+}
+
+// BenchmarkMissingSpaceExecutable benchmarks the prefix scan of the missing
+// space rule. The prefix check runs before the rune count, so names that are not
+// prefixes cost one comparison.
+func BenchmarkMissingSpaceExecutable(b *testing.B) {
+	original := missingSpaceGetAllExecutables
+	names := benchmarkExecutables(5000)
+	missingSpaceGetAllExecutables = func() []string { return names }
+	b.Cleanup(func() { missingSpaceGetAllExecutables = original })
+	for _, testCase := range []struct{ name, scriptPart string }{
+		{"no-match", "unknowncommand"},
+		{"match", "program1234postfix"},
+	} {
+		b.Run(testCase.name, func(b *testing.B) {
+			b.ReportAllocs()
+			b.ResetTimer()
+			for b.Loop() {
+				_ = missingSpaceExecutable(testCase.scriptPart)
+			}
+		})
+	}
+}

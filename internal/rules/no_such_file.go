@@ -19,10 +19,9 @@ var noSuchFilePatterns = []*lazyRegexp{
 // noSuchFileMatch reports whether mv or cp failed because the destination
 // directory is missing.
 func noSuchFileMatch(command *types.Command) bool {
-	// Every pattern names one of these two messages; checking them as plain
-	// literals keeps a long capture away from four full scans.
-	if !strings.Contains(command.Output, "No such file or directory") &&
-		!strings.Contains(command.Output, "Not a directory") {
+	// Every pattern contains this word; one literal check keeps a long capture
+	// away from four full scans.
+	if !strings.Contains(command.Output, "directory") {
 		return false
 	}
 	for _, pattern := range noSuchFilePatterns {

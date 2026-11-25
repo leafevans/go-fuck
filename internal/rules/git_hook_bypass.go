@@ -28,7 +28,20 @@ func gitHookFailure(output string) bool {
 // gitBypassableHookFailure requires a local hook name and a failure diagnostic
 // on the same line. Server-side hooks are not disabled by --no-verify.
 func gitBypassableHookFailure(output string) bool {
-	for line := range strings.SplitSeq(strings.ToLower(output), "\n") {
+	lower := strings.ToLower(output)
+	// Every local hook line contains one of these markers. Skip the per-line
+	// scan for output that cannot name a hook.
+	hooked := false
+	for _, marker := range []string{"commit", "push", "applypatch", "husky", "lint-staged"} {
+		if strings.Contains(lower, marker) {
+			hooked = true
+			break
+		}
+	}
+	if !hooked {
+		return false
+	}
+	for line := range strings.SplitSeq(lower, "\n") {
 		if strings.Contains(line, "remote:") || strings.Contains(line, "pre-receive") || strings.Contains(line, "update hook") {
 			continue
 		}

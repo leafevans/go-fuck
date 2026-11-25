@@ -20,12 +20,16 @@ var (
 // similar executable does.
 func noCommandMatch(command *types.Command) bool {
 	parts := command.ScriptParts()
-	if len(parts) == 0 || noCommandWhich(parts[0]) != "" {
+	if len(parts) == 0 {
 		return false
 	}
-
+	// The output check is cheap; the executable lookup touches the file system,
+	// so it only runs for output that names a missing command.
 	if !strings.Contains(command.Output, "not found") &&
 		!strings.Contains(command.Output, "is not recognized as") {
+		return false
+	}
+	if noCommandWhich(parts[0]) != "" {
 		return false
 	}
 	return len(utils.GetCloseMatches(parts[0], noCommandGetAllExecutables(), 0, 0.6)) > 0

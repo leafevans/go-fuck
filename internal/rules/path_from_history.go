@@ -37,10 +37,9 @@ var pathFromHistoryExists = func(path string) bool {
 // empty string when the output does not name one of the command arguments.
 func pathFromHistoryDestination(command *types.Command) string {
 	// Every pattern contains one of these literals; skip the regular
-	// expressions when a long capture contains none of them.
-	if !strings.Contains(command.Output, "No such file or directory") &&
-		!strings.Contains(command.Output, "no such file or directory: ") &&
-		!strings.Contains(command.Output, "can't cd to ") {
+	// expressions when a long capture contains neither.
+	if !strings.Contains(command.Output, "file or directory") &&
+		!strings.Contains(command.Output, "cd to") {
 		return ""
 	}
 	// Python's $ anchor matches at the end of the output or just before a

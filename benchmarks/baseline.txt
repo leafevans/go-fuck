@@ -5,6 +5,8 @@ BenchmarkGetCorrectedCommands 8263 47
 BenchmarkGetRules 2305 1
 BenchmarkMarkedBashRawCommand 440 7
 BenchmarkMarkedZshRawCommand 16 1
+BenchmarkMissingSpaceExecutable/match 0 0
+BenchmarkMissingSpaceExecutable/no-match 0 0
 BenchmarkOrganizeCommands/10 536 4
 BenchmarkOrganizeCommands/100 4392 4
 BenchmarkOrganizeCommands/1000 62801 6

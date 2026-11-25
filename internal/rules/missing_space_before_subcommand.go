@@ -16,7 +16,9 @@ var missingSpaceGetAllExecutables = utils.GetAllExecutables
 // starts with, or an empty string when there is none.
 func missingSpaceExecutable(scriptPart string) string {
 	for _, executable := range missingSpaceGetAllExecutables() {
-		if utf8.RuneCountInString(executable) > 1 && strings.HasPrefix(scriptPart, executable) {
+		// The prefix check fails immediately for almost every executable, so it
+		// runs before the rune count.
+		if strings.HasPrefix(scriptPart, executable) && utf8.RuneCountInString(executable) > 1 {
 			return executable
 		}
 	}
