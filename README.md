@@ -657,9 +657,8 @@ The document is always written to stdout; diagnostics stay on stderr.
 
 ## Settings
 
-Development note: this branch targets unreleased v4 (`4.0.0-dev`). Published channels
-still provide v3.0.2; `/v4@latest` will resolve only after a v4 tag is published.
-For now, build this checkout with `go build ./cmd/go-fuck`.
+To build v4 from a source checkout, run `go build ./cmd/go-fuck`. The `/v3` Go
+module path continues to select the previous major series.
 
 The legacy `git_commit_reset` and `git_commit_amend` rules are disabled by default:
 no generic commit failure proves that rewriting the previous commit is the right fix.
