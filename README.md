@@ -498,8 +498,8 @@ Windows installations. This does not change the language of your interactive Pow
 ## Terminal capture and instant mode
 
 Terminal capture reads the output of the previous command from a terminal log instead of re-running
-it. It is implemented for **bash and zsh on Linux and macOS** and for **PowerShell on Windows**;
-other shells fall back to `rerun`.
+it. It is implemented for **bash, zsh, and fish on Linux and macOS** and for **PowerShell on
+Windows**; other shells fall back to `rerun`.
 
 ![instant mode reading the previous output from the terminal log](docs/example-instant-mode.gif)
 
@@ -511,6 +511,11 @@ Linux and macOS:
 ```bash
 # ~/.bashrc (or ~/.zshrc for zsh)
 eval "$(go-fuck --alias --capture-mode=auto --enable-experimental-instant-mode)"
+```
+
+```fish
+# ~/.config/fish/config.fish
+go-fuck --alias --capture-mode=auto --enable-experimental-instant-mode | source
 ```
 
 Windows (Windows PowerShell 5.1 and PowerShell 7):
@@ -533,7 +538,8 @@ On Windows the logged shell runs on a pseudo console (ConPTY), which requires Wi
 terminal.
 
 The mode is covered by end-to-end tests: an interactive bash runs on a pseudo terminal on Linux and
-macOS, and Windows PowerShell runs on a pseudo console on Windows; the tests feed a command, check
+macOS, and Windows PowerShell runs on a pseudo console on Windows; the fish alias and its log
+rendering are covered by the shell integration checks and terminal log fixtures; the tests feed a command, check
 the terminal log and read the output back. Commands typed over several lines (a PowerShell block or
 backtick continuation, PSReadLine's Shift+Enter input or a pasted command) are treated as one history
 entry, and output rows that the terminal wrapped are joined again before the rules see them. When
@@ -548,6 +554,10 @@ Limitations:
   working, because the marker is re-added after the prompt functions run. A prompt definition added
   after the instant mode line can still hide the marker; on Windows the instant mode line has to be
   the last prompt definition in the profile.
+- In fish the marker is printed by a ```fish_prompt``` event handler. Prompt functions of frameworks keep
+  working, but another prompt event handler defined after the go-fuck line that prints before the
+  marker can still hide it. fish reads ```config.fish``` for non-interactive shells too, so the
+  generated initialization only replaces interactive shells.
 - Full screen programs such as `vim` or `tmux` use the alternate screen, whose content is not
   part of the log; the previous screen is restored when they exit. If the terminal is closed while
   such a program is still running, the end of the log may be missing.
@@ -556,9 +566,11 @@ Limitations:
 - The log keeps the newest 1 MiB of terminal output, including when a single write exceeds that
   limit. ANSI colors, window titles and hyperlinks are removed while keeping their visible text.
   Command lookup preserves argument order and checks word boundaries to avoid reusing output from a
-  different invocation. The renderer is simpler than the reference
-  implementation's pyte emulation: ANSI stripping and carriage return overwrites on Linux and macOS,
-  a small screen model for the ConPTY stream on Windows, so full screen programs can still differ.
+  different invocation. The echoed command line is replayed with carriage returns, backspaces and
+  cursor moves so fish's syntax highlighted redraw is understood. The renderer is simpler than the
+  reference implementation's pyte emulation: ANSI stripping and carriage return overwrites on Linux
+  and macOS, a small screen model for the ConPTY stream on Windows, so full screen programs can
+  still differ.
 - Long output rows are joined again because the console wrapped them. On Windows a row that is one
   column short of the terminal width is treated as wrapped, so a line that happens to be exactly that
   wide and is followed by a newline can be merged with the next line.
@@ -1175,8 +1187,8 @@ go-fuck is a reimplementation, not a drop-in replacement for every thefuck featu
   plus 83 go-fuck specific rules; the list in [Rules](#rules) is authoritative. Porting conventions
   are documented in [PORTING.md](PORTING.md).
 - **Terminal capture covers Linux, macOS and Windows.** It reads the previous command output from a
-  terminal log instead of re-running the command: bash and zsh on Linux and macOS, PowerShell on
-  Windows (ConPTY); other shells and platforms fall back to the regular alias.
+  terminal log instead of re-running the command: bash, zsh, and fish on Linux and macOS, PowerShell
+  on Windows (ConPTY); other shells and platforms fall back to the regular alias.
 - **In-memory memoization instead of an on-disk cache.** Rule results are cached only for one
   invocation, while thefuck's `@cache` persisted values between runs.
 - **Compiled rules with declarative JSON extensions.** There is no Python rule API or third-party

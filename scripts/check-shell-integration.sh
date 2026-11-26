@@ -89,6 +89,17 @@ check_instant_alias() {
       env TF_SHELL=zsh "$bin" --alias --enable-experimental-instant-mode >"$work/instant-zsh"
       zsh -n "$work/instant-zsh" || fail "zsh cannot parse the instant mode initialization"
       ;;
+    fish)
+      env TF_SHELL=fish "$bin" --alias --enable-experimental-instant-mode >"$work/instant-fish"
+      fish --no-config -n "$work/instant-fish" ||
+        fail "fish cannot parse the instant mode initialization"
+      grep -qF 'status --is-interactive' "$work/instant-fish" ||
+        fail "the fish instant mode initialization is not guarded for non-interactive shells"
+      grep -qF -- '--shell-logger' "$work/instant-fish" ||
+        fail "the fish instant mode initialization does not start the shell logger"
+      grep -qF '< /dev/tty' "$work/instant-fish" ||
+        fail "the fish instant mode initialization does not read the terminal"
+      ;;
   esac
 }
 
@@ -128,6 +139,20 @@ check_marked_alias() {
       zsh -f -c 'PROMPT="$1"; eval "$(cat "$2")"; type fuck >/dev/null' _ "$prompt" "$work/marked-zsh" ||
         fail "zsh cannot evaluate the marked alias with a powerlevel-like prompt"
       ;;
+    fish)
+      env GOFUCK_INSTANT_MODE=True TF_SHELL=fish "$bin" --alias --enable-experimental-instant-mode >"$work/marked-fish"
+      grep -qF 'function __gofuck_mark_prompt --on-event fish_prompt' "$work/marked-fish" ||
+        fail "the fish marked alias does not define the prompt event"
+      fish --no-config -n "$work/marked-fish" || fail "fish cannot parse the marked alias"
+      marker="$(printf '\342\200\213')"
+      emitted="$(fish --no-config -c 'source $argv[1]; emit fish_prompt' "$work/marked-fish" | tr -d '\r')"
+      case "$emitted" in
+        *"$marker"*) ;;
+        *) fail "the fish prompt event does not print the marker" ;;
+      esac
+      fish --no-config -c 'source $argv[1]; functions -q fuck; functions -q __gofuck_mark_prompt' "$work/marked-fish" ||
+        fail "fish cannot evaluate the marked alias"
+      ;;
   esac
 }
 
@@ -157,8 +182,10 @@ check_alias fish
 check_alias tcsh
 check_instant_alias bash
 check_instant_alias zsh
+check_instant_alias fish
 check_marked_alias bash
 check_marked_alias zsh
+check_marked_alias fish
 check_setup bash .bashrc
 check_setup zsh .zshrc
 check_setup fish .config/fish/config.fish

@@ -690,7 +690,7 @@ func TestCreateConfiguration(t *testing.T) {
 
 func TestShellInstantModeAliasesDoNotStartALogger(t *testing.T) {
 	t.Setenv("GOFUCK_INSTANT_MODE", "")
-	for _, shell := range []Shell{NewFish(), NewTcsh(), NewGeneric()} {
+	for _, shell := range []Shell{NewTcsh(), NewGeneric()} {
 		alias := shell.InstantModeAlias("fuck")
 		if !strings.Contains(alias, "fuck") {
 			t.Fatalf("%s.InstantModeAlias() = %q", shell.Name(), alias)

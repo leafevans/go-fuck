@@ -7,7 +7,7 @@ import (
 )
 
 func TestHowToConfigureInstantContent(t *testing.T) {
-	for _, shell := range []Shell{NewBash(), NewZsh()} {
+	for _, shell := range []Shell{NewBash(), NewZsh(), NewFish()} {
 		configuration := shell.HowToConfigure()
 		if configuration == nil {
 			t.Fatalf("%s HowToConfigure() = nil", shell.Name())
@@ -22,11 +22,17 @@ func TestHowToConfigureInstantContent(t *testing.T) {
 				t.Fatalf("zsh InstantContent = %q, want the quoted eval form", configuration.InstantContent)
 			}
 		}
+		if shell.Name() == "fish" {
+			want := "go-fuck --alias --enable-experimental-instant-mode | source"
+			if !strings.Contains(configuration.InstantContent, want) {
+				t.Fatalf("fish InstantContent = %q, want the pipe to source form", configuration.InstantContent)
+			}
+		}
 	}
 }
 
 func TestHowToConfigureWithoutInstantMode(t *testing.T) {
-	for _, shell := range []Shell{NewFish(), NewTcsh()} {
+	for _, shell := range []Shell{NewTcsh()} {
 		configuration := shell.HowToConfigure()
 		if configuration == nil {
 			t.Fatalf("%s HowToConfigure() = nil", shell.Name())

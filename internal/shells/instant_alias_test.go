@@ -83,3 +83,52 @@ func TestInstantModeLogPathIsUnique(t *testing.T) {
 		t.Fatal("every instant mode session must use a fresh log path")
 	}
 }
+
+func TestFishInstantModeInitAlias(t *testing.T) {
+	isolateInstantMode(t)
+	alias := NewFish().InstantModeAlias("fuck")
+	for _, want := range []string{
+		"if status --is-interactive",
+		"--shell-logger",
+		"GOFUCK_INSTANT_MODE",
+		"GOFUCK_OUTPUT_LOG",
+		"set -gx TF_SHELL fish",
+		"status fish-path",
+		"< /dev/tty",
+		"rm -f",
+		"exit",
+	} {
+		if !strings.Contains(alias, want) {
+			t.Fatalf("fish instant mode alias does not contain %q: %q", want, alias)
+		}
+	}
+	if strings.Contains(alias, "function fuck") {
+		t.Fatalf("initialization code should not define the alias: %q", alias)
+	}
+	if strings.Contains(alias, consts.UserCommandMark) {
+		t.Fatalf("generated alias must not embed the raw marker characters: %q", alias)
+	}
+}
+
+func TestFishInstantModeMarkedAlias(t *testing.T) {
+	isolateInstantMode(t)
+	t.Setenv(consts.InstantModeEnv, "true")
+	alias := NewFish().InstantModeAlias("fuck")
+	if strings.Contains(alias, consts.UserCommandMark) {
+		t.Fatalf("generated alias must not embed the raw marker characters: %q", alias)
+	}
+	for _, want := range []string{
+		"function __gofuck_mark_prompt --on-event fish_prompt",
+		"printf '\\\\u200b",
+		"function fuck",
+	} {
+		if !strings.Contains(alias, want) {
+			t.Fatalf("fish marked alias does not contain %q: %q", want, alias)
+		}
+	}
+	for _, initOnly := range []string{"--shell-logger /", "status fish-path", "GOFUCK_OUTPUT_LOG"} {
+		if strings.Contains(alias, initOnly) {
+			t.Fatalf("the marked alias must not start another logged shell (%q): %q", initOnly, alias)
+		}
+	}
+}
