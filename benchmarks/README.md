@@ -28,3 +28,32 @@ The extra index is allocated only when a script has more than one side effect.
 
 Times depend on the host and load. CI guards allocated bytes and object counts
 using `baseline.txt`, measured on Linux with the toolchain from `go.mod`.
+
+## Rule matching on long captured output
+
+`internal/rules` benchmarks the rule scan for a short capture
+(`BenchmarkRuleMatchingAllRules`) and for a 4,000 line capture
+(`BenchmarkRuleMatchingLongOutput` with `build` and `git` sub-benchmarks).
+The long benchmark exists because several rules inspect every captured byte: a
+rule that scans a 200 KB capture without a cheap literal check shows up there,
+while it is invisible with a normal failure message.
+`BenchmarkMissingSpaceExecutable` covers the executable prefix scan of the
+missing space rule on a synthetic 5,000 name list.
+
+Run them with:
+
+```sh
+go test ./internal/rules -run '^$' -bench 'BenchmarkRuleMatchingLongOutput|BenchmarkMissingSpaceExecutable' -benchmem
+```
+
+Measurements on Windows amd64 with Go 1.27.4, medians of three runs, before and
+after the two rule scan pull requests:
+
+| Workload                                | v4.2.2                                   | after #20                               | after #23 (v4.2.4)                      |
+| --------------------------------------- | ---------------------------------------: | --------------------------------------: | --------------------------------------: |
+| `BenchmarkRuleMatchingLongOutput/build` | 19.82 ms/op, 430,940 B/op, 20 allocs/op | 1.82 ms/op, 217,300 B/op, 17 allocs/op | 1.64 ms/op, 217,100 B/op, 15 allocs/op |
+| `BenchmarkRuleMatchingLongOutput/git`   | 37.12 ms/op, 710,622 B/op, 23 allocs/op | 5.06 ms/op, 430,800 B/op, 18 allocs/op | 2.94 ms/op, 430,600 B/op, 16 allocs/op |
+
+The remaining allocated bytes are the rules that still lower case the capture
+(`sudo` and `git_hook_bypass`). Times depend on the host; `baseline.txt`
+guards allocated bytes and allocations, not time.
