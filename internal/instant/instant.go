@@ -17,6 +17,7 @@ import (
 	"os"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -111,23 +112,133 @@ func hasCommandSuffix(line, command string) bool {
 	return !unicode.IsLetter(last) && !unicode.IsDigit(last) && !strings.ContainsRune("_./\\-", last)
 }
 
-// sanitizeEcho applies backspace edits before stripping controls. Removing a
-// backspace alone would join a stale typed character to the echoed command.
+// sanitizeEcho renders the echoed command of a terminal log line.
+//
+// The line is replayed like a terminal row: carriage returns move the cursor to
+// the start of the row, backspaces move it left and selective escapes move it
+// right or erase the rest of the row. Shells such as fish redraw the typed
+// command with cursor movements after every keystroke, so the raw log line has
+// the typed text several times; replaying the row gives the text the user
+// actually sees, which is what the command echo is matched against.
 func sanitizeEcho(line string) string {
-	if strings.ContainsRune(line, '\b') {
-		runes := make([]rune, 0, len(line))
-		for _, character := range line {
-			if character == '\b' {
-				if len(runes) > 0 {
-					runes = runes[:len(runes)-1]
-				}
-			} else {
-				runes = append(runes, character)
+	cells := make([]rune, 0, len(line))
+	cursor := 0
+	for index := 0; index < len(line); {
+		character := line[index]
+		switch {
+		case character == 0x1b:
+			index = applyEchoEscape(line, index, &cells, &cursor)
+		case character == '\r':
+			cursor = 0
+			index++
+		case character == '\t':
+			cursor = (cursor/8 + 1) * 8
+			index++
+		case character == '\b':
+			if cursor > 0 {
+				cursor--
 			}
+			index++
+		case character < 0x20 || character == 0x7f:
+			index++
+		default:
+			character, size := utf8.DecodeRuneInString(line[index:])
+			if character == utf8.RuneError && size == 1 {
+				index++
+				continue
+			}
+			putEchoRune(&cells, &cursor, character)
+			index += size
 		}
-		line = string(runes)
 	}
-	return sanitize(line)
+	return sanitize(string(cells))
+}
+
+// putEchoRune writes character at the echo cursor, padding the row with spaces
+// when the cursor is beyond its current content.
+func putEchoRune(cells *[]rune, cursor *int, character rune) {
+	for len(*cells) <= *cursor {
+		*cells = append(*cells, ' ')
+	}
+	(*cells)[*cursor] = character
+	*cursor++
+}
+
+// eraseEchoRow truncates the echoed row at the cursor.
+func eraseEchoRow(cells *[]rune, cursor int) {
+	if cursor < len(*cells) {
+		*cells = (*cells)[:cursor]
+	}
+}
+
+// applyEchoEscape applies one escape sequence to the echoed row and returns the
+// index after it. Sequences that only change colors or terminal modes are
+// ignored.
+func applyEchoEscape(line string, index int, cells *[]rune, cursor *int) int {
+	index++ // skip ESC
+	if index >= len(line) {
+		return index
+	}
+	switch line[index] {
+	case '[':
+		return applyEchoCSI(line, index+1, cells, cursor)
+	case ']':
+		// Operating system command such as the window title, terminated by BEL
+		// or ST.
+		index++
+		for index < len(line) {
+			if line[index] == 7 {
+				return index + 1
+			}
+			if line[index] == 0x1b && index+1 < len(line) && line[index+1] == '\\' {
+				return index + 2
+			}
+			index++
+		}
+		return index
+	case '(', ')', '*', '+', '#', '%':
+		// Character set selection: one following byte.
+		return index + 2
+	default:
+		return index + 1
+	}
+}
+
+// applyEchoCSI applies one control sequence introduced by ESC [ and returns the
+// index after it.
+func applyEchoCSI(line string, index int, cells *[]rune, cursor *int) int {
+	start := index
+	for index < len(line) {
+		character := line[index]
+		if character >= 0x40 && character <= 0x7e {
+			parameter := line[start:index]
+			parameter = strings.TrimLeft(parameter, "?<>!")
+			count := 1
+			if first, _, found := strings.Cut(parameter, ";"); found {
+				parameter = first
+			}
+			if parameter != "" {
+				if value, err := strconv.Atoi(parameter); err == nil && value > 0 {
+					count = value
+				}
+			}
+			switch character {
+			case 'C':
+				*cursor += count
+			case 'D':
+				*cursor = max(0, *cursor-count)
+			case 'G':
+				*cursor = max(0, count-1)
+			case 'K':
+				if len(parameter) == 0 || parameter == "0" {
+					eraseEchoRow(cells, *cursor)
+				}
+			}
+			return index + 1
+		}
+		index++
+	}
+	return index
 }
 
 // multilineEchoIndex returns the index of the last prompt block line that

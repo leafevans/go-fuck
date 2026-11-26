@@ -339,3 +339,32 @@ func makeReadOnly(t *testing.T, path string) {
 	}
 	t.Cleanup(func() { _ = os.Chmod(path, 0o644) })
 }
+
+func TestMainFishInstantModeAlias(t *testing.T) {
+	resetEntrypointsState(t)
+	t.Setenv("TF_SHELL", "fish")
+
+	code, stdout, _ := runMain(t, "go-fuck", "--alias", "--enable-experimental-instant-mode")
+	if code != 0 {
+		t.Fatalf("Main() = %d, want 0", code)
+	}
+	for _, want := range []string{"status --is-interactive", "--shell-logger", "GOFUCK_OUTPUT_LOG", "status fish-path", "< /dev/tty"} {
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("fish instant mode initializer does not contain %q: %q", want, stdout)
+		}
+	}
+	if strings.Contains(stdout, "function fuck") {
+		t.Fatalf("instant mode initialization should not define the alias: %q", stdout)
+	}
+
+	t.Setenv(consts.InstantModeEnv, "true")
+	code, stdout, _ = runMain(t, "go-fuck", "--alias", "--enable-experimental-instant-mode")
+	if code != 0 {
+		t.Fatalf("Main() = %d, want 0", code)
+	}
+	for _, want := range []string{"function __gofuck_mark_prompt --on-event fish_prompt", "function fuck"} {
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("fish marked alias does not contain %q: %q", want, stdout)
+		}
+	}
+}

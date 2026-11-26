@@ -61,11 +61,39 @@ func (f *Fish) AppAlias(aliasName string) string {
 		fishAliasGuard(aliasName, consts.ExecutableName()), consts.AliasVersion)
 }
 
-// InstantModeAlias falls back to the regular alias because instant mode is not
-// supported.
+// fishInstantModeMarkHook prints the instant mode log marker before every
+// prompt. The marker is emitted with printf escapes instead of raw zero width
+// characters, and the carriage return resets the terminal column.
+const fishInstantModeMarkHook = "function __gofuck_mark_prompt --on-event fish_prompt\n" +
+	"    printf '\\\\u200b\\\\u200b\\\\u200b\\\\u200b\\\\u200b\\\\u200b\\\\u200b\\\\u200b\\\\u200b\\\\u200b\\\\r'\n" +
+	"end"
+
+// InstantModeAlias returns the alias of the instant mode.
+//
+// In a normal shell it returns the code that replaces the shell with the logged
+// shell. Inside the logged shell it returns the regular alias together with the
+// prompt event that adds the log marker.
 func (f *Fish) InstantModeAlias(aliasName string) string {
-	logs.Warn("Instant mode not supported by go-fuck")
-	return f.AppAlias(aliasName)
+	if instantModeEnabled() {
+		return fishInstantModeMarkHook + "\n" + f.AppAlias(aliasName)
+	}
+	logPath := f.Quote(instantModeLogPath())
+	// fish reads config.fish for non-interactive shells too, so the
+	// initialization only replaces an interactive shell. The logged shell reads
+	// the terminal explicitly because the initialization line may come from a
+	// pipe.
+	return fmt.Sprintf("if status --is-interactive\n"+
+		"    set -gx %[1]s True\n"+
+		"    set -gx TF_SHELL fish\n"+
+		"    set -gx TF_ALIAS %[2]s\n"+
+		"    set -gx %[3]s %[4]s\n"+
+		"    set -gx SHELL (status fish-path)\n"+
+		"    %[5]s --shell-logger %[4]s < /dev/tty\n"+
+		"    rm -f %[4]s\n"+
+		"    exit\n"+
+		"end",
+		consts.InstantModeEnv, f.Quote(aliasName), consts.OutputLogEnv, logPath,
+		consts.ExecutableName())
 }
 
 // Quote returns a fish escaped version of s.
@@ -249,8 +277,10 @@ func (f *Fish) PutToHistory(command string) error {
 
 // HowToConfigure describes how to configure the alias for fish.
 func (f *Fish) HowToConfigure() *Configuration {
-	return createConfiguration(consts.ExecutableName()+" --alias | source",
+	configuration := createConfiguration(consts.ExecutableName()+" --alias | source",
 		"~/.config/fish/config.fish", "fish")
+	configuration.InstantContent = consts.ExecutableName() + " --alias --enable-experimental-instant-mode | source"
+	return configuration
 }
 
 // fishHistoryFile returns the fish history file path.

@@ -370,12 +370,9 @@ func TestMainSetupInstantModeBash(t *testing.T) {
 
 func TestMainSetupInstantModeUnsupportedShell(t *testing.T) {
 	configDir := resetEntrypointsState(t)
-	t.Setenv("TF_SHELL", "fish")
-	configPath := filepath.Join(configDir, ".config", "fish", "config.fish")
-	if err := os.MkdirAll(filepath.Dir(configPath), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(configPath, []byte("set -g EXISTING 1\n"), 0o644); err != nil {
+	t.Setenv("TF_SHELL", "tcsh")
+	configPath := filepath.Join(configDir, ".tcshrc")
+	if err := os.WriteFile(configPath, []byte("setenv EXISTING 1\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -393,8 +390,30 @@ func TestMainSetupInstantModeUnsupportedShell(t *testing.T) {
 	if strings.Contains(content, "--enable-experimental-instant-mode") {
 		t.Fatalf("unsupported shell was configured with instant mode: %q", content)
 	}
-	if !strings.Contains(content, "go-fuck --alias --capture-mode=rerun | source") {
-		t.Fatalf("regular fish alias was not configured: %q", content)
+	if !strings.Contains(content, "go-fuck --alias --capture-mode=rerun") {
+		t.Fatalf("regular tcsh alias was not configured: %q", content)
+	}
+}
+
+func TestMainSetupInstantModeFish(t *testing.T) {
+	configDir := resetEntrypointsState(t)
+	t.Setenv("TF_SHELL", "fish")
+	configPath := filepath.Join(configDir, ".config", "fish", "config.fish")
+	if err := os.MkdirAll(filepath.Dir(configPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(configPath, []byte("set -g EXISTING 1\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	code, _, stderr := runMain(t, "go-fuck", "--setup", "--enable-experimental-instant-mode")
+	if code != 0 {
+		t.Fatalf("Main(--setup --enable-experimental-instant-mode) = %d, want 0; stderr = %s", code, stderr)
+	}
+	content := readFile(t, configPath)
+	if !strings.Contains(content, "--capture-mode=instant") ||
+		!strings.Contains(content, "--enable-experimental-instant-mode | source") {
+		t.Fatalf("fish configuration does not enable instant mode: %q", content)
 	}
 }
 
