@@ -455,3 +455,72 @@ func TestClampHandlesInvertedRange(t *testing.T) {
 		t.Fatalf("clamp(15, 10, 5) = %d, want 10", got)
 	}
 }
+
+// TestTerminalPutASCIIAppends checks the common output path, which appends a
+// run of printable ASCII at the end of the current row.
+func TestTerminalPutASCIIAppends(t *testing.T) {
+	terminal := newTerminal(5, 2)
+	terminal.putASCII("ab")
+	terminal.putASCII("cd")
+	if got := string(terminal.screen[0]); got != "abcd" {
+		t.Fatalf("line = %q, want abcd", got)
+	}
+	if terminal.cursorX != 4 {
+		t.Fatalf("cursorX = %d, want 4", terminal.cursorX)
+	}
+}
+
+// TestTerminalPutASCIIWraps checks that a run stops at the terminal width and
+// wraps to the next row.
+func TestTerminalPutASCIIWraps(t *testing.T) {
+	terminal := newTerminal(3, 2)
+	terminal.putASCII("abcd")
+	if got := string(terminal.screen[0]); got != "abc" {
+		t.Fatalf("first row = %q, want abc", got)
+	}
+	if !terminal.wrapped[0] {
+		t.Fatal("first row was not marked as wrapped")
+	}
+	if got := string(terminal.screen[1]); got != "d" {
+		t.Fatalf("second row = %q, want d", got)
+	}
+}
+
+// TestTerminalPutASCIIOverwrites checks that writing left of the row end falls
+// back to put and overwrites the existing cells.
+func TestTerminalPutASCIIOverwrites(t *testing.T) {
+	terminal := newTerminal(5, 2)
+	terminal.putASCII("abcde")
+	terminal.cursorX = 0
+	terminal.putASCII("xy")
+	if got := string(terminal.screen[0]); got != "xycde" {
+		t.Fatalf("line = %q, want xycde", got)
+	}
+}
+
+// TestTerminalPutASCIICursorGap checks that a gap left by cursor movement is
+// padded with spaces.
+func TestTerminalPutASCIICursorGap(t *testing.T) {
+	terminal := newTerminal(5, 2)
+	terminal.cursorX = 2
+	terminal.putASCII("a")
+	if got := string(terminal.screen[0]); got != "  a" {
+		t.Fatalf("line = %q, want two spaces and a", got)
+	}
+}
+
+// TestCellWidthFastPath checks the ASCII fast path and the wide and combining
+// fallbacks of cellWidth.
+func TestCellWidthFastPath(t *testing.T) {
+	cases := map[string]int{
+		"abc":       3,
+		"a中😀":       5,
+		"a\u0301bc": 3,
+		"":          0,
+	}
+	for text, want := range cases {
+		if got := cellWidth(text); got != want {
+			t.Fatalf("cellWidth(%q) = %d, want %d", text, got, want)
+		}
+	}
+}
