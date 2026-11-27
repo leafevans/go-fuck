@@ -18,6 +18,25 @@ import (
 // the instant mode prompt marker, feeds a command through it and reads the
 // output back from the terminal log.
 func TestRunLoggedFishShell(t *testing.T) {
+	logPath := loggedFish(t, "echo fish-instant-output\nexit\n")
+	assertFishOutput(t, logPath, "echo fish-instant-output", "fish-instant-output")
+}
+
+func TestRunLoggedFishLatestOutput(t *testing.T) {
+	logPath := loggedFish(t, "set sample first-value\necho $sample\nset sample second-value\necho $sample\nexit\n")
+	assertFishOutput(t, logPath, "echo $sample", "second-value")
+}
+
+func assertFishOutput(t *testing.T, logPath, command, want string) {
+	t.Helper()
+	got, ok := LastOutput(logPath, command)
+	if !ok || got != want {
+		t.Fatalf("LastOutput(%q) = %q, %t; want %q, true", command, got, ok, want)
+	}
+}
+
+func loggedFish(t *testing.T, commands string) string {
+	t.Helper()
 	fish, err := exec.LookPath("fish")
 	if err != nil {
 		t.Skipf("fish is not available: %v", err)
@@ -27,7 +46,8 @@ func TestRunLoggedFishShell(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(dir, "fish"), 0o755); err != nil {
 		t.Fatalf("create the fish config directory: %v", err)
 	}
-	config := "function __gofuck_mark_prompt --on-event fish_prompt\n" +
+	config := "function fish_prompt; printf 'fish> '; end\n" +
+		"function __gofuck_mark_prompt --on-event fish_prompt\n" +
 		"    printf '%s\\r' '" + consts.UserCommandMark + "'\n" +
 		"end\n"
 	if err := os.WriteFile(filepath.Join(dir, "fish", "config.fish"), []byte(config), 0o644); err != nil {
@@ -49,17 +69,17 @@ func TestRunLoggedFishShell(t *testing.T) {
 
 	// fish reads its configuration from XDG_CONFIG_HOME/fish/config.fish.
 	t.Setenv("XDG_CONFIG_HOME", dir)
+	t.Setenv("XDG_DATA_HOME", dir)
 	t.Setenv("HOME", dir)
-	t.Setenv("TERM", "dumb")
+	t.Setenv("TERM", "xterm")
 
-	input := strings.NewReader("echo fish-instant-output\nexit\n")
 	type result struct {
 		code int
 		err  error
 	}
 	finished := make(chan result, 1)
 	go func() {
-		code, err := runLoggedShell(wrapper, input, io.Discard, NewRingWriter(logFile))
+		code, err := runLoggedShell(wrapper, strings.NewReader(commands), io.Discard, NewRingWriter(logFile))
 		finished <- result{code: code, err: err}
 	}()
 
@@ -72,19 +92,9 @@ func TestRunLoggedFishShell(t *testing.T) {
 			t.Fatalf("runLoggedShell() exit code = %d, want 0", outcome.code)
 		}
 	case <-time.After(20 * time.Second):
-		t.Fatal("runLoggedShell() did not finish in time")
+		data, _ := os.ReadFile(logPath)
+		t.Fatalf("runLoggedShell() did not finish in time; log: %q", data)
 	}
 
-	data, err := os.ReadFile(logPath)
-	if err != nil {
-		t.Fatalf("read log: %v", err)
-	}
-	if !strings.Contains(string(data), "fish-instant-output") {
-		t.Fatalf("terminal log does not contain the command output: %q", string(data))
-	}
-
-	output, ok := LastOutput(logPath, "echo fish-instant-output")
-	if !ok || !strings.Contains(output, "fish-instant-output") {
-		t.Fatalf("LastOutput() = %q, %t, want fish-instant-output, true", output, ok)
-	}
+	return logPath
 }
