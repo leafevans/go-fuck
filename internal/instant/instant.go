@@ -80,9 +80,13 @@ func (c logCall) echoIndex(script string, parts []string) int {
 		return -1
 	}
 	const maxPromptLines = 16
-	lines := append([]string{c.prompt}, c.lines[:min(len(c.lines), maxPromptLines-1)]...)
+	var rows [maxPromptLines]string
+	rows[0] = c.prompt
+	lines := rows[:1+copy(rows[1:], c.lines)]
 	for index, line := range lines {
-		cleaned := strings.TrimSpace(sanitizeEcho(line))
+		// Keep the untrimmed echo for the multiline and wrap checks.
+		lines[index] = sanitizeEcho(line)
+		cleaned := strings.TrimSpace(lines[index])
 		if hasCommandSuffix(cleaned, trimmed) {
 			return index
 		}
@@ -121,6 +125,13 @@ func hasCommandSuffix(line, command string) bool {
 // the typed text several times; replaying the row gives the text the user
 // actually sees, which is what the command echo is matched against.
 func sanitizeEcho(line string) string {
+	// ConPTY has already rendered most rows. Plain UTF-8 needs no cursor
+	// replay or control stripping, but still carries the prompt marker.
+	if strings.IndexFunc(line, func(r rune) bool {
+		return r < 0x20 || r == 0x7f || r == utf8.RuneError
+	}) < 0 {
+		return strings.ReplaceAll(line, consts.UserCommandMark, "")
+	}
 	cells := make([]rune, 0, len(line))
 	cursor := 0
 	for index := 0; index < len(line); {
@@ -272,7 +283,7 @@ func multilineEchoIndex(lines []string, command string) int {
 		for _, part := range parts {
 			found := -1
 			for ; index < last; index++ {
-				if strings.Contains(sanitizeEcho(lines[index]), part) {
+				if strings.Contains(lines[index], part) {
 					found = index
 					index++
 					break
@@ -309,7 +320,7 @@ func wrappedEchoIndex(lines []string, command string) int {
 		if index >= instantMaxEchoLines {
 			break
 		}
-		joined.WriteString(sanitizeEcho(line))
+		joined.WriteString(line)
 		ends = append(ends, joined.Len())
 	}
 	text := joined.String()

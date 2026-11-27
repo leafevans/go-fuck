@@ -17,8 +17,17 @@ import (
 // shell. Every case consumes the same bytes, with file I/O included only in
 // the LastOutput cases.
 func BenchmarkConPTY(b *testing.B) {
+	benchmarkConPTY(b, 512)
+}
+
+func BenchmarkConPTYSize(b *testing.B) {
+	for _, calls := range []int{64, 2048} {
+		b.Run(fmt.Sprint(calls), func(b *testing.B) { benchmarkConPTY(b, calls) })
+	}
+}
+
+func benchmarkConPTY(b *testing.B, calls int) {
 	const (
-		calls      = 512
 		diagnostic = "error: 无法加载 module; check the import path"
 		advice     = "hint: verify the project configuration and try again"
 	)
