@@ -57,3 +57,30 @@ after the two rule scan pull requests:
 The remaining allocated bytes are the rules that still lower case the capture
 (`sudo` and `git_hook_bypass`). Times depend on the host; `baseline.txt`
 guards allocated bytes and allocations, not time.
+
+## Windows ConPTY log processing
+
+From the repository root on Windows, run:
+
+```powershell
+go test ./internal/instant -run '^$' -bench '^BenchmarkConPTY$' -benchmem -cpu=1 -count=3
+```
+
+All three cases replay the same deterministic 114,232-byte synthetic log with
+512 commands, prompt redraws, cursor movement, color escapes, and Unicode
+output. No running shell or ConPTY session is needed. `Render` measures only
+in-memory rendering; both `LastOutput` cases include opening and reading a
+local temporary log, rendering, and command matching. The hit finds the newest
+completed command; the miss searches the whole log for an absent command.
+Log and fixture creation are outside the timed loops.
+
+Medians of three runs on Windows amd64 with Go 1.27.4 and an AMD Ryzen 7 7730U:
+
+| Sub-benchmark | ns/op | B/op | allocs/op |
+| --- | ---: | ---: | ---: |
+| `Render` | 2,790,121 | 1,195,713 | 19,492 |
+| `LastOutputHit` | 3,751,406 | 1,671,835 | 20,598 |
+| `LastOutputMiss` | 10,656,182 | 3,870,139 | 61,527 |
+
+These figures are a Windows reference, not part of the Linux CI allocation
+baseline in `baseline.txt`.
