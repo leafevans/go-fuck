@@ -252,6 +252,8 @@ jobs:
         run: go build -trimpath -o "$RUNNER_TEMP/go-fuck" ./cmd/go-fuck
       - name: Check the shell integration
         run: bash scripts/check-shell-integration.sh "$RUNNER_TEMP/go-fuck"
+      - name: Check fish terminal capture
+        run: go test ./internal/instant -run '^TestRunLoggedFish' -count=1 -v
       - name: Check the quote round trips
         run: go test ./internal/shells -run 'TestQuoteRoundTrip' -count=1 -v
       - name: Check the tcsh alias behavior
