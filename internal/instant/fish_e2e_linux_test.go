@@ -34,21 +34,30 @@ func TestRunLoggedFishCancelledInput(t *testing.T) {
 	defer output.Close()
 	// Send Ctrl-C only after fish echoes the unfinished input. Sending it at
 	// startup can flush input before the shell has initialized the terminal.
-	steps := []struct{ waitFor, send string }{
-		{consts.UserCommandMark, "echo cancelled-input"},
-		{"cancelled-input", "\x03"},
-		{"^C", "echo completed-output\nexit\n"},
+	steps := []struct {
+		waitFor []string
+		send    string
+	}{
+		{[]string{"fish> "}, "echo cancelled-input"},
+		{[]string{"cancelled-input"}, "\x03"},
+		// Older fish displays ^C; newer fish clears the input in place.
+		{[]string{"^C", "\x1b[K"}, "echo completed-output\nexit\n"},
 	}
 	var seen bytes.Buffer
 	step := 0
 	observe := fishOutputWriter(func(data []byte) (int, error) {
 		seen.Write(data)
 		for step < len(steps) {
-			index := bytes.Index(seen.Bytes(), []byte(steps[step].waitFor))
-			if index < 0 {
+			end := -1
+			for _, marker := range steps[step].waitFor {
+				if index := bytes.Index(seen.Bytes(), []byte(marker)); index >= 0 && (end < 0 || index+len(marker) < end) {
+					end = index + len(marker)
+				}
+			}
+			if end < 0 {
 				break
 			}
-			seen.Next(index + len(steps[step].waitFor))
+			seen.Next(end)
 			if _, err := io.WriteString(output, steps[step].send); err != nil {
 				return 0, err
 			}
