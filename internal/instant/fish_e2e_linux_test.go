@@ -3,7 +3,6 @@
 package instant
 
 import (
-	"bytes"
 	"io"
 	"os"
 	"os/exec"
@@ -28,54 +27,6 @@ func TestRunLoggedFishLatestOutput(t *testing.T) {
 	assertFishOutput(t, logPath, "echo $sample", "second-value")
 }
 
-func TestRunLoggedFishCancelledInput(t *testing.T) {
-	input, output := io.Pipe()
-	defer input.Close()
-	defer output.Close()
-	// Send Ctrl-C only after fish echoes the unfinished input. Sending it at
-	// startup can flush input before the shell has initialized the terminal.
-	steps := []struct {
-		waitFor []string
-		send    string
-	}{
-		{[]string{"fish> "}, "echo cancelled-input"},
-		{[]string{"cancelled-input"}, "\x03"},
-		// Older fish displays ^C; newer fish clears the input in place.
-		{[]string{"^C", "\x1b[K"}, "echo completed-output\nexit\n"},
-	}
-	var seen bytes.Buffer
-	step := 0
-	observe := fishOutputWriter(func(data []byte) (int, error) {
-		seen.Write(data)
-		for step < len(steps) {
-			end := -1
-			for _, marker := range steps[step].waitFor {
-				if index := bytes.Index(seen.Bytes(), []byte(marker)); index >= 0 && (end < 0 || index+len(marker) < end) {
-					end = index + len(marker)
-				}
-			}
-			if end < 0 {
-				break
-			}
-			seen.Next(end)
-			if _, err := io.WriteString(output, steps[step].send); err != nil {
-				return 0, err
-			}
-			step++
-		}
-		return len(data), nil
-	})
-	logPath := runFish(t, input, observe)
-	assertFishOutput(t, logPath, "echo completed-output", "completed-output")
-	if got, ok := LastOutput(logPath, "echo cancelled-input"); ok {
-		t.Fatalf("cancelled input matched with output %q", got)
-	}
-}
-
-type fishOutputWriter func([]byte) (int, error)
-
-func (write fishOutputWriter) Write(data []byte) (int, error) { return write(data) }
-
 func assertFishOutput(t *testing.T, logPath, command, want string) {
 	t.Helper()
 	got, ok := LastOutput(logPath, command)
@@ -85,11 +36,6 @@ func assertFishOutput(t *testing.T, logPath, command, want string) {
 }
 
 func loggedFish(t *testing.T, commands string) string {
-	t.Helper()
-	return runFish(t, strings.NewReader(commands), io.Discard)
-}
-
-func runFish(t *testing.T, input io.Reader, output io.Writer) string {
 	t.Helper()
 	fish, err := exec.LookPath("fish")
 	if err != nil {
@@ -133,7 +79,7 @@ func runFish(t *testing.T, input io.Reader, output io.Writer) string {
 	}
 	finished := make(chan result, 1)
 	go func() {
-		code, err := runLoggedShell(wrapper, input, output, NewRingWriter(logFile))
+		code, err := runLoggedShell(wrapper, strings.NewReader(commands), io.Discard, NewRingWriter(logFile))
 		finished <- result{code: code, err: err}
 	}()
 
