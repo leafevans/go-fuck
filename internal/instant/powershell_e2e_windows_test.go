@@ -137,7 +137,25 @@ func testPowerShellInstantCorrection(t *testing.T, bin, shell, key string) {
 	if key == "q" {
 		out = waitFor("Aborted", len(out))
 	}
+	out = waitFor(consts.UserCommandMark+prompt, len(out))
+	// Query the actual logged output for two invocations with identical input.
+	send("$sample = 'first'; Write-Output $sample\r")
+	out = waitFor(consts.UserCommandMark+prompt, len(out))
+	send("Write-Output $sample\r")
+	out = waitFor(consts.UserCommandMark+prompt, len(out))
+	send("$sample = 'second'\r")
+	out = waitFor(consts.UserCommandMark+prompt, len(out))
+	send("Write-Output $sample\r")
+	out = waitFor(consts.UserCommandMark+prompt, len(out))
+	if got, ok := LastOutput(logPath, "Write-Output $sample"); !ok || got != "second" {
+		t.Fatalf("latest output = %q, %t; want second", got, ok)
+	}
+	send("go-fuck --capture-mode=instant --force-command 'Add-Content absent.marker replay'\r")
+	out = waitFor("No suggestion without the original command output", len(out))
 	waitFor(consts.UserCommandMark+prompt, len(out))
+	if _, err := os.Stat("absent.marker"); !os.IsNotExist(err) {
+		t.Fatalf("instant miss unexpectedly ran the original: %v", err)
+	}
 	send("exit 0\r")
 	select {
 	case err := <-finished:
