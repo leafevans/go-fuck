@@ -72,6 +72,15 @@ func logLines(data string) []string {
 			index++
 		case character < 0x20 || character == 0x7f:
 			index++
+		case character < 0x7f:
+			// A run of printable ASCII takes the bulk path instead of the
+			// generic rune handling.
+			end := index + 1
+			for end < len(data) && data[end] >= 0x20 && data[end] < 0x7f {
+				end++
+			}
+			terminal.putASCII(data[index:end])
+			index = end
 		default:
 			character, size := utf8.DecodeRuneInString(data[index:])
 			if character == utf8.RuneError && size == 1 {
@@ -193,6 +202,11 @@ var wideRanges = [][2]rune{
 
 // runeWidth returns the number of terminal columns that character occupies.
 func runeWidth(character rune) int {
+	// Terminal output is mostly printable ASCII, so it takes the fast path
+	// without the Unicode category and wide range lookups.
+	if character >= 0x20 && character < 0x7f {
+		return 1
+	}
 	// The zero width space (0x200B) is part of the user command mark that the
 	// log reader looks for, so it keeps its own cell instead of being dropped.
 	if character < 0x20 || character == 0x200C || character == 0x200D ||
@@ -236,6 +250,28 @@ func (t *terminal) put(character rune) {
 	}
 	t.screen[t.cursorY] = line
 	t.cursorX += width
+}
+
+// putASCII writes a run of printable ASCII characters at the cursor.
+//
+// Appending at the end of a row is the common case for command output; rows that
+// are overwritten or redrawn fall back to put so cursor movements keep the wide
+// character bookkeeping.
+func (t *terminal) putASCII(data string) {
+	for index := 0; index < len(data); index++ {
+		if t.cursorX >= t.columns {
+			t.wrapped[t.cursorY] = true
+			t.cursorX = 0
+			t.lineFeed()
+		}
+		line := t.screen[t.cursorY]
+		if t.cursorX == len(line) {
+			t.screen[t.cursorY] = append(line, rune(data[index]))
+			t.cursorX++
+			continue
+		}
+		t.put(rune(data[index]))
+	}
 }
 
 // ensureCells grows line to at least length cells.
@@ -330,8 +366,15 @@ func (t *terminal) lines() []string {
 // cellWidth returns the number of terminal columns that text occupies.
 func cellWidth(text string) int {
 	width := 0
-	for _, character := range text {
+	for index := 0; index < len(text); {
+		if character := text[index]; character >= 0x20 && character < 0x7f {
+			width++
+			index++
+			continue
+		}
+		character, size := utf8.DecodeRuneInString(text[index:])
 		width += runeWidth(character)
+		index += size
 	}
 	return width
 }
