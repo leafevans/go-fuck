@@ -88,6 +88,19 @@ func TestCommandSuffixBoundaries(t *testing.T) {
 	}
 }
 
+func TestSanitizeEchoPlainAndRedrawn(t *testing.T) {
+	for _, tc := range []struct{ input, want string }{
+		{consts.UserCommandMark + "PS> echo 世界  ", "PS> echo 世界  "},
+		{"PS> echo stale\rPS> echo fresh\x1b[K", "PS> echo fresh"},
+		{"PS> echo \xffok", "PS> echo ok"},
+		{"PS> echo \ufffd", "PS> echo \ufffd"},
+	} {
+		if got := sanitizeEcho(tc.input); got != tc.want {
+			t.Errorf("sanitizeEcho(%q) = %q, want %q", tc.input, got, tc.want)
+		}
+	}
+}
+
 func TestSanitizeEchoBackspaceEdits(t *testing.T) {
 	for _, tc := range []struct{ input, want string }{
 		{"$ g\bgit brnch", "$ git brnch"},

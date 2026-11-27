@@ -84,3 +84,23 @@ Medians of three runs on Windows amd64 with Go 1.27.4 and an AMD Ryzen 7 7730U:
 
 These figures are a Windows reference, not part of the Linux CI allocation
 baseline in `baseline.txt`.
+
+### Echo matching on a log miss
+
+The CPU profile of the original 512-command miss attributed about 67% of
+samples to echo matching and 28% to ConPTY rendering. Matching now sanitizes
+each candidate row once and skips terminal replay for plain UTF-8 rows.
+
+On the same Windows host, three interleaved before/after runs at `-cpu=1`
+and `-benchtime=350ms` gave these medians for the 512-command fixture:
+
+| Sub-benchmark | Before | After | B/op before → after | allocs/op before → after |
+| --- | ---: | ---: | ---: | ---: |
+| Render | 2.62 ms | 2.67 ms | 1,195,713 → 1,195,713 | 19,492 → 19,492 |
+| LastOutputHit | 3.25 ms | 3.22 ms | 1,671,837 → 1,671,063 | 20,599 → 20,577 |
+| LastOutputMiss | 8.49 ms | 3.77 ms | 3,870,141 → 1,973,141 | 61,527 → 24,650 |
+
+Run `-bench '^BenchmarkConPTY(Size)?$'` to include the 64- and 2,048-command
+fixtures. In separate three-run sets, median misses fell from 1.32 to 0.77 ms
+and from 35.24 to 15.13 ms respectively. These are synthetic measurements,
+not end-to-end shell latency.
