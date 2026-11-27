@@ -27,6 +27,41 @@ func TestRunLoggedFishLatestOutput(t *testing.T) {
 	assertFishOutput(t, logPath, "echo $sample", "second-value")
 }
 
+func TestRunLoggedFishCancelledInput(t *testing.T) {
+	input, send := io.Pipe()
+	defer input.Close()
+	defer send.Close()
+	// Wait for the editor to start, then send Ctrl-C without submitting the
+	// first line. Do not wait for a particular repaint or a fresh prompt:
+	// newer fish versions can clear the input in place.
+	var terminal fishPromptInput
+	terminal.send = send
+	logPath := runFish(t, input, &terminal)
+	assertFishOutput(t, logPath, "echo after-interrupt", "after-interrupt")
+	if got, ok := LastOutput(logPath, "echo cancelled-input"); ok {
+		t.Fatalf("cancelled input matched with output %q", got)
+	}
+}
+
+type fishPromptInput struct {
+	send    *io.PipeWriter
+	seen    string
+	started bool
+}
+
+func (p *fishPromptInput) Write(data []byte) (int, error) {
+	if !p.started {
+		p.seen += string(data)
+		if strings.Contains(p.seen, "fish> ") {
+			p.started = true
+			if _, err := io.WriteString(p.send, "echo cancelled-input\x03echo after-interrupt\nexit\n"); err != nil {
+				return 0, err
+			}
+		}
+	}
+	return len(data), nil
+}
+
 func assertFishOutput(t *testing.T, logPath, command, want string) {
 	t.Helper()
 	got, ok := LastOutput(logPath, command)
@@ -36,6 +71,11 @@ func assertFishOutput(t *testing.T, logPath, command, want string) {
 }
 
 func loggedFish(t *testing.T, commands string) string {
+	t.Helper()
+	return runFish(t, strings.NewReader(commands), io.Discard)
+}
+
+func runFish(t *testing.T, input io.Reader, output io.Writer) string {
 	t.Helper()
 	fish, err := exec.LookPath("fish")
 	if err != nil {
@@ -79,7 +119,7 @@ func loggedFish(t *testing.T, commands string) string {
 	}
 	finished := make(chan result, 1)
 	go func() {
-		code, err := runLoggedShell(wrapper, strings.NewReader(commands), io.Discard, NewRingWriter(logFile))
+		code, err := runLoggedShell(wrapper, input, output, NewRingWriter(logFile))
 		finished <- result{code: code, err: err}
 	}()
 
