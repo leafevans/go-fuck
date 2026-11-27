@@ -225,22 +225,116 @@ CHECKSUMS=checksums.txt AUR_SOURCE=go-fuck-X.Y.Z.tar.gz`). The whole download
    through Git Bash or WSL, `-AurDryRun` only prints its publish plan, and
    `-AurAddress IP` passes an explicit address when the DNS-over-HTTPS
    lookup is blocked.
-3. Publish the regenerated `PKGBUILD` and `.SRCINFO` to the AUR:
-
-   ```bash
-   bash scripts/push-aur.sh --version X.Y.Z
-   ```
-
-   The script skips the push when the AUR already carries the same files, so
-   it is safe to rerun. Add `--direct-ip` when SSH to `aur.archlinux.org` is
-   blocked, or `--address IP` when the DNS-over-HTTPS endpoint is blocked too
-   (see [Publishing to the AUR](#publishing-to-the-aur)). This step is also
-   run by `scripts/update-manifests.ps1 ... -PushAur`.
-4. Run the **AUR verification** workflow with the published `X.Y.Z-pkgrel`.
-5. Run `go run ./tools/gen-rule-list -check` and the full test suite before
-   tagging the follow-up commit.
-6. Check that `go install github.com/leafevans/go-fuck/v4/cmd/go-fuck@latest`
-   resolves the new tag; the major version is part of the Go module path.
+3. Build and smoke-test the pending AUR recipe, publish it, then verify the
+   published recipe and the public RPC version. See the independently
+   retryable steps below.
+4. Run `go run ./tools/gen-rule-list -check` and the full test suite on the
+   follow-up commit. The existing release tag does not move.
+5. Verify the tagged Go install and, for a new latest stable release, `@latest`.
 
 The version and checksums are intentionally committed as plain text so that the
 release process stays reviewable in the repository history.
+
+## Retryable release verification
+
+Replace `X.Y.Z` with the release version and `X.Y.Z-1` with the full AUR
+package version (use the actual `pkgrel` for a packaging-only update). Retry
+only the failed step; do not recreate the GitHub tag or regenerate manifests
+just to rerun a check.
+
+### Push the AUR recipe
+
+From the repository root with the reviewed recipe files for this release and
+an authorized AUR SSH key, preview the plan first:
+
+```bash
+bash scripts/push-aur.sh --version X.Y.Z --dry-run
+```
+
+The dry run checks the local version fields but does not test SSH or publish.
+When ready to publish, run `bash scripts/push-aur.sh --version X.Y.Z` on its own
+(no need to rerun `update-manifests.ps1`). Retry that same command after fixing
+an SSH or network failure; if both files already match the remote, the script
+exits successfully without pushing. See [Publishing to the AUR](#publishing-to-the-aur)
+for key and connection options. Do not retry an old recipe over a newer release.
+
+### Build and install with makepkg
+
+Dispatch the [AUR verification workflow](../.github/workflows/aur-verify.yml)
+with `version=X.Y.Z-1`. Use `source=repository` on the branch containing the
+updated recipe before publishing; use `source=published` to build the public AUR
+Git checkout after publishing. For example, from the GitHub repository checkout:
+
+```bash
+gh workflow run aur-verify.yml --ref RECIPE_BRANCH -f source=repository -f version=X.Y.Z-1
+gh workflow run aur-verify.yml -f source=published -f version=X.Y.Z-1
+```
+
+Check the workflow result, not just the dispatch. It compares `.SRCINFO`,
+builds and installs the package, and checks that `pacman -Q go-fuck` reports
+`go-fuck X.Y.Z-1` and `/usr/bin/go-fuck --version` starts with
+`go-fuck X.Y.Z using Go `. If the build fails, use the job log to distinguish
+a recipe/checksum error from a dependency or network failure, then dispatch
+again with the same `source` and package version on the intended ref.
+
+To reproduce locally, start in a fresh directory with both recipe files from
+`packaging/aur/` or a fresh HTTPS clone of the published AUR repository. Use a
+disposable Arch Linux x86_64 environment with `base-devel`; run as a normal
+user with permission to install packages via `sudo`:
+
+```bash
+(
+  set -euo pipefail
+  makepkg --printsrcinfo | diff -u .SRCINFO -
+  makepkg --syncdeps --install --clean
+  test "$(pacman -Q go-fuck)" = "go-fuck X.Y.Z-1"
+  [[ $(/usr/bin/go-fuck --version) == "go-fuck X.Y.Z using Go "* ]]
+)
+```
+
+### Check the AUR RPC version
+
+After publishing, use this read-only HTTPS check (requires `curl` and `jq`):
+
+```bash
+(
+  set -o pipefail
+  curl -fsS --get https://aur.archlinux.org/rpc/ \
+    --data-urlencode v=5 --data-urlencode type=info --data-urlencode "arg[]=go-fuck" |
+    jq -e --arg expected X.Y.Z-1 \
+      '.resultcount == 1 and .results[0].Name == "go-fuck" and .results[0].Version == $expected'
+)
+```
+
+Expect `true` and exit status zero. If AUR Git is current but RPC still shows
+an older version, wait a few minutes for indexing and retry just the RPC
+check. RPC confirms public metadata, not that the recipe builds.
+
+### Check Go install
+
+Use a Go toolchain supported by the tag. Run this Bash check on Linux or macOS
+with a fresh `GOBIN` so an older binary on `PATH` cannot pass. It checks both the
+embedded module version and the CLI output:
+
+```bash
+(
+  set -euo pipefail
+  pkg=github.com/leafevans/go-fuck/v4/cmd/go-fuck
+  want=vX.Y.Z
+  ref="$want"  # change to latest for the separate @latest check
+  bin=$(mktemp -d)
+  trap 'rm -rf -- "$bin"' EXIT
+  GOBIN=$(cd "$bin" && pwd -P)
+  export GOBIN
+  go install "$pkg@$ref"
+  go version -m "$GOBIN/go-fuck" | awk -v want="$want" \
+    '$1 == "mod" && $2 == "github.com/leafevans/go-fuck/v4" && $3 == want { ok = 1 } END { exit !ok }'
+  [[ $("$GOBIN/go-fuck" --version) == "go-fuck X.Y.Z using Go "* ]]
+)
+```
+
+Once the pinned tag passes, repeat with `ref=latest` (leave `want` unchanged)
+if the tag should be the latest version on the `/v4` module path. If the pinned
+install works but `@latest` still resolves an older version, check your
+`GOPROXY` and retry only `@latest` after the proxy has refreshed. Neither check
+depends on AUR publication.
