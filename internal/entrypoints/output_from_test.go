@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/leafevans/go-fuck/v4/internal/consts"
 	"github.com/leafevans/go-fuck/v4/internal/logs"
 )
 
@@ -123,6 +124,36 @@ func TestFixCommandOutputFromStdin(t *testing.T) {
 		t.Fatalf("Main() = %d, want 0; stderr = %q", code, stderr)
 	}
 	assertOutputFromSuggestion(t, stdout)
+}
+
+func TestFixCommandOutputFromEmptyFile(t *testing.T) {
+	for _, mode := range []string{"auto", "rerun"} {
+		t.Run(mode, func(t *testing.T) {
+			resetEntrypointsState(t)
+			t.Chdir(t.TempDir())
+			const script = "echo replayed > replay.marker"
+			if err := os.WriteFile("empty.log", nil, 0o600); err != nil {
+				t.Fatal(err)
+			}
+			log := consts.UserCommandMark + "$ " + script + "\nfrom-log\n" + consts.UserCommandMark + "$ "
+			logPath := filepath.Join(t.TempDir(), "instant.log")
+			if err := os.WriteFile(logPath, []byte(log), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			t.Setenv(consts.OutputLogEnv, logPath)
+			code, stdout, stderr := runMain(t, "go-fuck", "--json", "--capture-mode="+mode, "--force-command", script, "--output-from", "empty.log")
+			var result struct {
+				Source string `json:"capture_source"`
+				Output string `json:"output"`
+			}
+			if err := json.Unmarshal([]byte(stdout), &result); err != nil || code != 0 || result.Source != "provided" || result.Output != "" {
+				t.Fatalf("Main() = (%d, %q, %q), JSON error: %v; want empty provided output", code, stdout, stderr, err)
+			}
+			if _, err := os.Stat("replay.marker"); !os.IsNotExist(err) {
+				t.Fatalf("replay marker should not exist: %v", err)
+			}
+		})
+	}
 }
 
 func TestFixCommandOutputFromMissingFile(t *testing.T) {
