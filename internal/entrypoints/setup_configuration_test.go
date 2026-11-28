@@ -90,8 +90,8 @@ func TestHasConfigurationLine(t *testing.T) {
 }
 
 func TestReplaceInstantModeLinePreservesBOMAndInlineComment(t *testing.T) {
-	content := `eval "$(go-fuck --alias --enable-experimental-instant-mode)"`
-	legacy := `eval $(go-fuck --alias --enable-experimental-instant-mode)`
+	content := `eval "$(go-fuck --alias --capture-mode=instant --enable-experimental-instant-mode)"`
+	legacy := `eval $(go-fuck --alias --capture-mode=instant --enable-experimental-instant-mode)`
 	prefix := "\uFEFF\t"
 	suffix := "  # keep this comment\r\n"
 	original := prefix + legacy + suffix

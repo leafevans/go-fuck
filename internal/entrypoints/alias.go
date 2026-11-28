@@ -24,15 +24,17 @@ func printAlias(args *argumentparser.Args) int {
 	if args.EnableExperimentalInstantMode {
 		mode = "instant"
 	}
-	if mode == "auto" && instant.Supported() && shells.Current().HowToConfigure() != nil &&
-		shells.Current().HowToConfigure().InstantContent != "" {
-		mode = "instant"
+	shell := shells.Current()
+	if mode == "auto" && instant.Supported() {
+		if configuration := shell.HowToConfigure(); configuration != nil && configuration.InstantContent != "" {
+			mode = "instant"
+		}
 	}
 	if mode == "instant" {
-		fmt.Fprintln(os.Stdout, shells.Current().InstantModeAlias(args.Alias))
+		fmt.Fprintln(os.Stdout, shell.InstantModeAlias(args.Alias))
 		return 0
 	}
 
-	fmt.Fprintln(os.Stdout, shells.Current().AppAlias(args.Alias))
+	fmt.Fprintln(os.Stdout, shell.AppAlias(args.Alias))
 	return 0
 }

@@ -473,12 +473,7 @@ func configurationLineSuffix(line, content string) (string, bool) {
 // replaceInstantModeLine upgrades the legacy unquoted eval initialization.
 // Unrelated commands, comments, indentation and line endings are preserved.
 func replaceInstantModeLine(path string, existing []byte, content string) (bool, error) {
-	quoted, ok := strings.CutPrefix(content, `eval "`)
-	legacy := ""
-	if ok && strings.HasSuffix(quoted, `"`) {
-		legacy = "eval " + strings.TrimSuffix(quoted, `"`)
-	}
-	return replaceInitializationLine(path, existing, content, legacy)
+	return replaceInitializationLine(path, existing, content, content)
 }
 
 // replaceInitializationLine replaces exactly one known initialization line

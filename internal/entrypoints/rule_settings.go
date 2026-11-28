@@ -105,12 +105,7 @@ func conflictingRuleSettings(settings *conf.Settings) []string {
 		}
 		add("rules " + strconv.Quote(name) + " also appears in exclude_rules")
 	}
-	priorities := make([]string, 0, len(settings.Priority))
 	for name := range settings.Priority {
-		priorities = append(priorities, name)
-	}
-	sort.Strings(priorities)
-	for _, name := range priorities {
 		name = strings.TrimSpace(name)
 		rule := rules.Get(name)
 		if rule == nil {
