@@ -39,6 +39,6 @@ func init() {
 	rule := types.NewRule("choco_install",
 		utils.ForApp([]string{"choco", "cinst"}, 0, chocoInstallMatch),
 		chocoInstallNewCommand)
-	rule.DefaultProbe = startupTools.ChocoAvailable
+	rule.DefaultProbe = startupTools.Probe("choco", "cinst")
 	register(rule)
 }

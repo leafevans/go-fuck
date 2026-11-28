@@ -25,6 +25,6 @@ func init() {
 	rule := types.NewRule("apt_upgrade",
 		specific.SudoSupportMatch(utils.ForApp([]string{"apt"}, 0, aptUpgradeMatch)),
 		specific.SudoSupportNew(aptUpgradeNewCommand))
-	rule.DefaultProbe = startupTools.AptAvailable
+	rule.DefaultProbe = startupTools.Probe("apt-get")
 	register(rule)
 }

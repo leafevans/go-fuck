@@ -26,6 +26,6 @@ func init() {
 	rule := types.NewRule("apt_get_search",
 		utils.ForApp([]string{"apt-get"}, 0, aptGetSearchMatch),
 		aptGetSearchNewCommand)
-	rule.DefaultProbe = startupTools.AptAvailable
+	rule.DefaultProbe = startupTools.Probe("apt-get")
 	register(rule)
 }

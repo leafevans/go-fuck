@@ -29,6 +29,6 @@ func init() {
 	rule := types.NewRule("npm_ci_missing_lockfile",
 		utils.ForApp([]string{"npm"}, 0, npmCIMissingLockfileMatch),
 		npmCIMissingLockfileNewCommand)
-	rule.DefaultProbe = startupTools.NpmAvailable
+	rule.DefaultProbe = startupTools.Probe("npm")
 	register(rule)
 }

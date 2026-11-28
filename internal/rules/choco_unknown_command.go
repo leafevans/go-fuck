@@ -92,6 +92,6 @@ func init() {
 		utils.ForApp([]string{"choco"}, 0, chocoUnknownCommandMatch),
 		chocoUnknownCommandNewCommand,
 	)
-	rule.DefaultProbe = startupTools.ChocoAvailable
+	rule.DefaultProbe = startupTools.Probe("choco", "cinst")
 	register(rule)
 }

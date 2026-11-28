@@ -45,6 +45,6 @@ func init() {
 	rule := types.NewRule("brew_cask_dependency",
 		utils.ForApp([]string{"brew"}, 0, brewCaskDependencyMatch),
 		brewCaskDependencyNewCommand)
-	rule.DefaultProbe = startupTools.BrewAvailable
+	rule.DefaultProbe = startupTools.Probe("brew")
 	register(rule)
 }

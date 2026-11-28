@@ -41,6 +41,6 @@ func init() {
 	rule := types.NewRule("brew_install",
 		utils.ForApp([]string{"brew"}, 2, brewInstallMatch),
 		brewInstallNewCommand)
-	rule.DefaultProbe = startupTools.BrewAvailable
+	rule.DefaultProbe = startupTools.Probe("brew")
 	register(rule)
 }

@@ -93,6 +93,6 @@ func init() {
 		specific.SudoSupportMatch(utils.ForApp(
 			[]string{"apt", "apt-get", "apt-cache"}, 0, aptInvalidOperationMatch)),
 		specific.SudoSupportNew(aptInvalidOperationNewCommand))
-	rule.DefaultProbe = startupTools.AptAvailable
+	rule.DefaultProbe = startupTools.Probe("apt-get")
 	register(rule)
 }

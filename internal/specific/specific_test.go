@@ -183,13 +183,13 @@ func TestAvailabilityHelpers(t *testing.T) {
 		available   func() bool
 		executables [][]string
 	}{
-		{name: "apt", available: available.AptAvailable, executables: [][]string{{"apt-get"}}},
-		{name: "brew", available: available.BrewAvailable, executables: [][]string{{"brew"}}},
-		{name: "dnf", available: available.DnfAvailable, executables: [][]string{{"dnf"}}},
-		{name: "yum", available: available.YumAvailable, executables: [][]string{{"yum"}}},
-		{name: "nix", available: available.NixAvailable, executables: [][]string{{"nix"}}},
-		{name: "npm", available: available.NpmAvailable, executables: [][]string{{"npm"}}},
-		{name: "choco", available: available.ChocoAvailable, executables: [][]string{{"choco"}, {"cinst"}}},
+		{name: "apt", available: available.Probe("apt-get"), executables: [][]string{{"apt-get"}}},
+		{name: "brew", available: available.Probe("brew"), executables: [][]string{{"brew"}}},
+		{name: "dnf", available: available.Probe("dnf"), executables: [][]string{{"dnf"}}},
+		{name: "yum", available: available.Probe("yum"), executables: [][]string{{"yum"}}},
+		{name: "nix", available: available.Probe("nix"), executables: [][]string{{"nix"}}},
+		{name: "npm", available: available.Probe("npm"), executables: [][]string{{"npm"}}},
+		{name: "choco", available: available.Probe("choco", "cinst"), executables: [][]string{{"choco"}, {"cinst"}}},
 	}
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
