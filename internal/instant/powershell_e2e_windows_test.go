@@ -5,6 +5,7 @@ package instant
 import (
 	"context"
 	"io"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -89,18 +90,34 @@ func testPowerShellInstantCorrection(t *testing.T, bin, shell, key string) {
 	const prompt = "e2e-ps> "
 	setup := "Set-PSReadLineOption -HistorySaveStyle SaveNothing; function prompt { '" + prompt + "' }; Invoke-Expression ((go-fuck --alias --capture-mode=instant) -join [Environment]::NewLine)"
 	commandLine := quoteWindowsCommandLineArg(shell) + " -NoLogo -NoProfile -NoExit -Command " + syscall.EscapeArg(setup)
-	input, keys := io.Pipe()
+	input, keys := net.Pipe()
 	defer keys.Close()
 	defer input.Close()
 	transcript := &powerShellTranscript{changed: make(chan struct{}, 1)}
-	finished := make(chan error, 1)
+	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+	defer cancel()
+	// Bound the key writes as well as the waits for output. An io.Pipe can
+	// leave a test stuck sending keys after ConPTY stops reading input.
+	deadline, _ := ctx.Deadline()
+	if err := keys.SetWriteDeadline(deadline); err != nil {
+		t.Fatal(err)
+	}
+	finished := make(chan shellExit, 1)
 	go func() {
-		_, err := runLoggedShell(commandLine, input, io.Discard, io.MultiWriter(NewRingWriter(logFile), transcript))
-		finished <- err
+		code, err := runLoggedShellContext(ctx, commandLine, input, io.Discard, io.MultiWriter(NewRingWriter(logFile), transcript), false)
+		finished <- shellExit{code, err}
 		close(finished)
 	}()
-	timer := time.NewTimer(20 * time.Second)
-	defer timer.Stop()
+	defer func() {
+		cancel()
+		_ = keys.Close()
+		_ = input.Close()
+		select {
+		case <-finished:
+		case <-time.After(10 * time.Second):
+			t.Error("session cleanup did not complete")
+		}
+	}()
 	waitFor := func(text string, start int) string {
 		t.Helper()
 		for {
@@ -109,9 +126,9 @@ func testPowerShellInstantCorrection(t *testing.T, bin, shell, key string) {
 				return out[:start+end+len(text)]
 			}
 			select {
-			case err := <-finished:
-				t.Fatalf("PowerShell exited (%v) waiting for %q; transcript: %q", err, text, out)
-			case <-timer.C:
+			case result := <-finished:
+				t.Fatalf("PowerShell exited (%d, %v) waiting for %q; transcript: %q", result.code, result.err, text, out)
+			case <-ctx.Done():
 				t.Fatalf("timed out waiting for %q; transcript: %q", text, out)
 			case <-transcript.changed:
 			}
@@ -158,11 +175,11 @@ func testPowerShellInstantCorrection(t *testing.T, bin, shell, key string) {
 	}
 	send("exit 0\r")
 	select {
-	case err := <-finished:
-		if err != nil {
-			t.Fatal(err)
+	case result := <-finished:
+		if result.err != nil || result.code != 0 {
+			t.Fatalf("PowerShell exit = %d, %v, want 0 and no error", result.code, result.err)
 		}
-	case <-timer.C:
+	case <-ctx.Done():
 		t.Fatalf("PowerShell did not exit; transcript: %q", transcript.text())
 	}
 
