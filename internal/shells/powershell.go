@@ -92,7 +92,7 @@ if ($__gofuck_interactive) {
     Remove-Item Env:GOFUCK_OUTPUT_LOG -ErrorAction SilentlyContinue;
     Remove-Item Env:GOFUCK_SHELL -ErrorAction SilentlyContinue;
 };
-iex "$(%[1]s --alias)"`
+iex "$(%[1]s --alias --capture-mode=rerun)"`
 
 // powershellInstantMarkedTemplate defines the alias inside the logged shell.
 //
