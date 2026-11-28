@@ -41,6 +41,6 @@ func init() {
 	rule := types.NewRule("npm_peer_dependency_conflict",
 		utils.ForApp([]string{"npm"}, 0, npmPeerDependencyConflictMatch),
 		npmPeerDependencyConflictNewCommand)
-	rule.DefaultProbe = startupTools.NpmAvailable
+	rule.DefaultProbe = startupTools.Probe("npm")
 	register(rule)
 }

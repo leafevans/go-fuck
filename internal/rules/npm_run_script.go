@@ -50,6 +50,6 @@ func init() {
 	rule := types.NewRule("npm_run_script",
 		utils.ForApp([]string{"npm"}, 0, npmRunScriptMatch),
 		npmRunScriptNewCommand)
-	rule.DefaultProbe = startupTools.NpmAvailable
+	rule.DefaultProbe = startupTools.Probe("npm")
 	register(rule)
 }

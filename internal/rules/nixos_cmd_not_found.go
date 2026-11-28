@@ -26,6 +26,6 @@ func nixosCmdNotFoundNewCommand(command *types.Command) ([]string, error) {
 
 func init() {
 	rule := types.NewRule("nixos_cmd_not_found", nixosCmdNotFoundMatch, nixosCmdNotFoundNewCommand)
-	rule.DefaultProbe = startupTools.NixAvailable
+	rule.DefaultProbe = startupTools.Probe("nix")
 	register(rule)
 }

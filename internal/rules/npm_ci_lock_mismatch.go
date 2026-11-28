@@ -29,6 +29,6 @@ func init() {
 	rule := types.NewRule("npm_ci_lock_mismatch",
 		utils.ForApp([]string{"npm"}, 0, npmCILockMismatchMatch),
 		npmCILockMismatchNewCommand)
-	rule.DefaultProbe = startupTools.NpmAvailable
+	rule.DefaultProbe = startupTools.Probe("npm")
 	register(rule)
 }

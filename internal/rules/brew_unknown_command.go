@@ -148,6 +148,6 @@ func brewUnknownCommandNewCommand(command *types.Command) ([]string, error) {
 
 func init() {
 	rule := types.NewRule("brew_unknown_command", brewUnknownCommandMatch, brewUnknownCommandNewCommand)
-	rule.DefaultProbe = startupTools.BrewAvailable
+	rule.DefaultProbe = startupTools.Probe("brew")
 	register(rule)
 }

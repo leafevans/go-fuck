@@ -104,7 +104,7 @@ func aptGetNewCommand(command *types.Command) ([]string, error) {
 func init() {
 	rule := types.NewRule("apt_get", aptGetMatch, aptGetNewCommand)
 	rule.DefaultProbe = sync.OnceValue(func() bool {
-		return startupTools.AptAvailable() && aptGetHandlerPath() != ""
+		return utils.StartupAvailable("apt-get") && aptGetHandlerPath() != ""
 	})
 	register(rule)
 }
