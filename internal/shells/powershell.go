@@ -70,19 +70,28 @@ const powershellAliasTemplate = `function %[1]s {
 // The profile line evaluates the output with iex "$(...)", which joins the
 // output lines with spaces, so every statement ends with a semicolon and the
 // code is also valid as a single line.
-const powershellInstantInitTemplate = `$env:GOFUCK_INSTANT_MODE = "True";
-$env:GOFUCK_OUTPUT_LOG = %[2]s;
-$env:GOFUCK_SHELL = (Get-Process -Id $PID).Path;
-$env:TF_ALIAS = %[3]s;
-& %[1]s --shell-logger %[2]s;
-$code = $LASTEXITCODE;
-if (Test-Path -LiteralPath %[2]s) {
-    Remove-Item -LiteralPath %[2]s -ErrorAction SilentlyContinue;
-    exit $code;
+const powershellInstantInitTemplate = `$__gofuck_interactive = -not ([Console]::IsInputRedirected -or [Console]::IsOutputRedirected);
+foreach ($__gofuck_arg in [Environment]::GetCommandLineArgs()) {
+    if ($__gofuck_arg -match '^-(c|com|command|e|ec|enc|encodedcommand|f|fi|file|noni|noninteractive)$') {
+        $__gofuck_interactive = $false;
+        break;
+    };
 };
-Remove-Item Env:GOFUCK_INSTANT_MODE -ErrorAction SilentlyContinue;
-Remove-Item Env:GOFUCK_OUTPUT_LOG -ErrorAction SilentlyContinue;
-Remove-Item Env:GOFUCK_SHELL -ErrorAction SilentlyContinue;
+if ($__gofuck_interactive) {
+    $env:GOFUCK_INSTANT_MODE = "True";
+    $env:GOFUCK_OUTPUT_LOG = %[2]s;
+    $env:GOFUCK_SHELL = (Get-Process -Id $PID).Path;
+    $env:TF_ALIAS = %[3]s;
+    & %[1]s --shell-logger %[2]s;
+    $code = $LASTEXITCODE;
+    if (Test-Path -LiteralPath %[2]s) {
+        Remove-Item -LiteralPath %[2]s -ErrorAction SilentlyContinue;
+        exit $code;
+    };
+    Remove-Item Env:GOFUCK_INSTANT_MODE -ErrorAction SilentlyContinue;
+    Remove-Item Env:GOFUCK_OUTPUT_LOG -ErrorAction SilentlyContinue;
+    Remove-Item Env:GOFUCK_SHELL -ErrorAction SilentlyContinue;
+};
 iex "$(%[1]s --alias)"`
 
 // powershellInstantMarkedTemplate defines the alias inside the logged shell.

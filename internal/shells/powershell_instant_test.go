@@ -17,7 +17,12 @@ func TestPowershellInstantModeInitAlias(t *testing.T) {
 	isolateInstantMode(t)
 
 	alias := NewPowershell().InstantModeAlias("fuck")
-	for _, want := range []string{"GOFUCK_INSTANT_MODE", "GOFUCK_OUTPUT_LOG", "GOFUCK_SHELL", "--shell-logger", "Remove-Item", "exit"} {
+	for _, want := range []string{
+		"GOFUCK_INSTANT_MODE", "GOFUCK_OUTPUT_LOG", "GOFUCK_SHELL", "--shell-logger", "Remove-Item", "exit",
+		// A non-interactive host such as an installer script loads the profile
+		// too; starting the logged shell there would hang it.
+		"[Console]::IsInputRedirected", "[Console]::IsOutputRedirected", "GetCommandLineArgs",
+	} {
 		if !strings.Contains(alias, want) {
 			t.Fatalf("instant mode init alias does not contain %q: %q", want, alias)
 		}

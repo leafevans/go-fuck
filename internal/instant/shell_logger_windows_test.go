@@ -34,6 +34,22 @@ func TestTerminalStdinDetection(t *testing.T) {
 	}
 }
 
+// TestRunShellLoggerRejectsPipedInput checks that a non-interactive host does
+// not start the logged shell, and that the failure happens before the log file
+// exists so the profile falls back to the regular alias.
+func TestRunShellLoggerRejectsPipedInput(t *testing.T) {
+	if !Supported() {
+		t.Skip("ConPTY is not available")
+	}
+	logPath := filepath.Join(t.TempDir(), "instant.log")
+	if _, err := runShellLogger(logPath, strings.NewReader(""), io.Discard); err == nil {
+		t.Fatal("runShellLogger() error = nil, want the non-terminal error")
+	}
+	if _, err := os.Stat(logPath); !os.IsNotExist(err) {
+		t.Fatalf("log file exists after a refused start: %v", err)
+	}
+}
+
 // TestRunLoggedShellStopsWhenTerminalCloses checks that a closing terminal ends
 // the logged shell instead of leaving the logger waiting forever.
 func TestRunLoggedShellStopsWhenTerminalCloses(t *testing.T) {
