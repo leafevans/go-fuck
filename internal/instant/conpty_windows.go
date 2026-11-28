@@ -31,6 +31,7 @@ var (
 	procResizePseudoConsole               = kernel32DLL.NewProc("ResizePseudoConsole")
 	procClosePseudoConsole                = kernel32DLL.NewProc("ClosePseudoConsole")
 	procInitializeProcThreadAttributeList = kernel32DLL.NewProc("InitializeProcThreadAttributeList")
+	procDeleteProcThreadAttributeList     = kernel32DLL.NewProc("DeleteProcThreadAttributeList")
 	procUpdateProcThreadAttribute         = kernel32DLL.NewProc("UpdateProcThreadAttribute")
 )
 
@@ -41,6 +42,7 @@ func conPTYAvailable() bool {
 		procResizePseudoConsole,
 		procClosePseudoConsole,
 		procInitializeProcThreadAttributeList,
+		procDeleteProcThreadAttributeList,
 		procUpdateProcThreadAttribute,
 	}
 	for _, procedure := range procedures {
@@ -76,14 +78,11 @@ func hresultHex(result uintptr) uint64 {
 
 // conPTY is a pseudo console with a shell process attached to it.
 type conPTY struct {
-	hpc           syscall.Handle
-	ptyIn, ptyOut syscall.Handle
-	in, out       syscall.Handle
-	process       syscall.ProcessInformation
-	closeOnce     sync.Once
-	// mu guards hpc: the wait goroutine closes the pseudo console while the
-	// resize watcher may still be running.
-	mu sync.Mutex
+	in, out syscall.Handle
+	process syscall.Handle
+	// mu protects the pseudoconsole handle through the entire resize call.
+	mu  sync.Mutex
+	hpc syscall.Handle
 }
 
 // startConPTY starts commandLine on a new pseudo console.
@@ -106,20 +105,16 @@ func startConPTY(commandLine string, size coordinate) (*conPTY, error) {
 	}
 
 	process, err := createProcessAttachedToPseudoConsole(hpc, commandLine)
+	// ConPTY owns its copies now. Keeping these pipe ends would hide EOF
+	// until the host closed its copies, even after ConPTY had disconnected.
+	closeHandles(ptyIn, ptyOut)
 	if err != nil {
-		closeHandles(ptyIn, cmdIn, cmdOut, ptyOut)
+		closeHandles(cmdIn, cmdOut)
 		_, _, _ = procClosePseudoConsole.Call(uintptr(hpc))
 		return nil, err
 	}
-
-	return &conPTY{
-		hpc:     hpc,
-		ptyIn:   ptyIn,
-		ptyOut:  ptyOut,
-		in:      cmdIn,
-		out:     cmdOut,
-		process: process,
-	}, nil
+	closeHandles(process.Thread)
+	return &conPTY{hpc: hpc, in: cmdIn, out: cmdOut, process: process.Process}, nil
 }
 
 // createPseudoConsole creates a pseudo console that reads its input from input
@@ -171,6 +166,13 @@ func createProcessAttachedToPseudoConsole(hpc syscall.Handle, commandLine string
 		return process, fmt.Errorf("InitializeProcThreadAttributeList failed: %w", callErr)
 	}
 
+	// The initialized list owns native resources even when updating it or
+	// creating the process fails. Keep its backing storage alive through deletion.
+	defer func() {
+		_, _, _ = procDeleteProcThreadAttributeList.Call(uintptr(unsafe.Pointer(&attributes[0])))
+		runtime.KeepAlive(attributes)
+	}()
+
 	if result, _, callErr := procUpdateProcThreadAttribute.Call(
 		uintptr(unsafe.Pointer(&attributes[0])),
 		0,
@@ -208,22 +210,24 @@ func createProcessAttachedToPseudoConsole(hpc syscall.Handle, commandLine string
 }
 
 // wait blocks until the attached process exits and returns its exit code.
-func (c *conPTY) wait() int {
-	if _, err := syscall.WaitForSingleObject(c.process.Process, waitInfinite); err != nil {
-		return 1
+func (c *conPTY) wait() shellExit {
+	if _, err := syscall.WaitForSingleObject(c.process, waitInfinite); err != nil {
+		return shellExit{1, fmt.Errorf("wait for the logged shell: %w", err)}
 	}
 	var code uint32
-	if err := syscall.GetExitCodeProcess(c.process.Process, &code); err != nil {
-		return 1
+	if err := syscall.GetExitCodeProcess(c.process, &code); err != nil {
+		return shellExit{1, fmt.Errorf("get the logged shell exit code: %w", err)}
 	}
-	return int(code)
+	return shellExit{code: int(code)}
 }
 
 // resize resizes the pseudo console.
 func (c *conPTY) resize(size coordinate) error {
 	c.mu.Lock()
+	defer c.mu.Unlock()
+	// Hold the lifetime lock through the native call: closeConsole must not
+	// invalidate the handle while ResizePseudoConsole is using it.
 	hpc := c.hpc
-	c.mu.Unlock()
 	if hpc == 0 {
 		return fmt.Errorf("ResizePseudoConsole failed: the pseudo console is closed")
 	}
@@ -234,38 +238,15 @@ func (c *conPTY) resize(size coordinate) error {
 	return nil
 }
 
-// closeConsole closes the pseudo console. Closing it terminates the attached
-// process and ends the output stream, so it is safe to call from the goroutine
-// that waits for the shell.
+// closeConsole shuts down the pseudoconsole. The session coordinator calls
+// it while the output loop drains any final frame (unless the read end has
+// already been closed).
 func (c *conPTY) closeConsole() {
-	c.closeOnce.Do(func() {
-		c.mu.Lock()
-		hpc := c.hpc
-		c.hpc = 0
-		c.mu.Unlock()
-		if hpc != 0 {
-			_, _, _ = procClosePseudoConsole.Call(uintptr(hpc))
-		}
-	})
-}
-
-// endOutput closes the pseudo console side handles of the pipes.
-//
-// It is called after the shell exits: closing the write end of the output pipe
-// unblocks the read loop, which still receives the remaining buffered output
-// before the pipe reports end of file.
-func (c *conPTY) endOutput() {
-	c.closeConsole()
-	closeHandles(c.ptyIn, c.ptyOut)
-	c.ptyIn, c.ptyOut = 0, 0
-}
-
-// close releases all handles of the pseudo console.
-func (c *conPTY) close() {
-	c.closeConsole()
-	closeHandles(c.ptyIn, c.ptyOut, c.in, c.out, c.process.Process, c.process.Thread)
-	c.ptyIn, c.ptyOut, c.in, c.out = 0, 0, 0, 0
-	c.process.Process, c.process.Thread = 0, 0
+	c.mu.Lock()
+	hpc := c.hpc
+	c.hpc = 0
+	c.mu.Unlock()
+	_, _, _ = procClosePseudoConsole.Call(uintptr(hpc))
 }
 
 // closeHandles closes the given handles, ignoring invalid ones.

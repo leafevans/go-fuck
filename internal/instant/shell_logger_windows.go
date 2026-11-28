@@ -3,6 +3,7 @@
 package instant
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -81,7 +82,7 @@ func runShellLogger(logPath string, stdin io.Reader, stdout io.Writer) (int, err
 	}
 	defer logFile.Close()
 
-	return runLoggedShell(commandLine, stdin, stdout, NewRingWriter(logFile))
+	return runLoggedShellContext(context.Background(), commandLine, stdin, stdout, NewRingWriter(logFile), true)
 }
 
 // shellCommandLine returns the command line of the shell started by the
@@ -131,13 +132,6 @@ func quoteWindowsCommandLineArg(argument string) string {
 	return string('"') + argument + string('"')
 }
 
-// runLoggedShell starts commandLine on a pseudo console and mirrors its
-// terminal input and output. It is separated from RunShellLogger so that tests
-// can supply the input and output streams.
-func runLoggedShell(commandLine string, stdin io.Reader, stdout io.Writer, logWriter io.Writer) (int, error) {
-	return runLoggedShellFromTerminal(commandLine, stdin, stdout, logWriter, terminalStdin(stdin))
-}
-
 // terminalStdin reports whether stdin is an interactive console. Only a console
 // reaches end of file when its terminal closes; a pipe or file reaches it for
 // other reasons and must not end the logged shell.
@@ -150,94 +144,121 @@ func terminalStdin(stdin io.Reader) bool {
 	return ok
 }
 
-// runLoggedShellFromTerminal is runLoggedShell with the terminal detection
-// supplied by the caller, so that tests can exercise the terminal close path.
-func runLoggedShellFromTerminal(commandLine string, stdin io.Reader, stdout io.Writer, logWriter io.Writer, terminal bool) (int, error) {
+// runLoggedShellContext owns the ConPTY session and its child process. It
+// borrows the caller's streams. Input EOF ends a console session, but need
+// not end a session supplied with a pipe or file.
+func runLoggedShellContext(ctx context.Context, commandLine string, stdin io.Reader, stdout io.Writer, logWriter io.Writer, closeOnInputEnd bool) (int, error) {
+	ctx, stop := context.WithCancelCause(ctx)
+	defer stop(nil)
+	if err := ctx.Err(); err != nil {
+		return 1, err
+	}
 	restore := makeRawConsole(stdin, stdout)
 	defer restore()
 
 	size := consoleSize(stdout)
+	// Validate the initial record before starting a child that needs draining.
+	if err := writeLogSize(logWriter, size); err != nil {
+		return 1, err
+	}
 	pty, err := startConPTY(commandLine, size)
 	if err != nil {
 		return 1, err
 	}
-	defer pty.close()
+	defer closeHandles(pty.process)
 
-	// The output loop and the resize watcher write the log from different
-	// goroutines, so the writes are serialized.
+	// Output and resize records can be written from different goroutines.
 	sink := &logSink{writer: logWriter}
-	writeLogSize(sink, size)
+	output := io.MultiWriter(stdout, sink)
 
-	exitCodes := make(chan int, 1)
+	// Transfer the write end to an os.File. A caller-owned Reader can outlive
+	// this session if its Read blocks. A late write then sees a closed file,
+	// never a reused raw handle.
+	inputFile := os.NewFile(uintptr(pty.in), "conpty-input")
+	defer inputFile.Close()
+	inputDone := make(chan struct{})
 	go func() {
-		code := pty.wait()
-		// Closing the pseudo console pipes ends the output stream of the
-		// output loop below; the process itself has already exited.
-		pty.endOutput()
-		exitCodes <- code
+		defer close(inputDone)
+		_, _ = io.Copy(inputFile, stdin)
 	}()
-
-	stdinDone := make(chan struct{})
-	go func() {
-		defer close(stdinDone)
-		_, _ = io.Copy(pipeWriter{handle: pty.in}, stdin)
-	}()
-
-	sessionDone := make(chan struct{})
-	defer close(sessionDone)
-	process := pty.process.Process
-	if terminal {
-		// The terminal that hosted the logged shell closed, so nobody can type
-		// into it any more. Closing the pseudo console terminates the shell;
-		// waiting for it to exit on its own would leave an orphaned logger
-		// holding the executable.
-		go func() {
-			select {
-			case <-stdinDone:
-				pty.closeConsole()
-				// Closing the pseudo console is not guaranteed to unblock the
-				// process wait on every Windows version, so the shell is also
-				// terminated explicitly.
-				if process != 0 {
-					_ = syscall.TerminateProcess(process, 1)
-				}
-			case <-sessionDone:
-			}
-		}()
+	var terminalDone <-chan struct{}
+	if closeOnInputEnd {
+		terminalDone = inputDone
 	}
 
-	stopResize := make(chan struct{})
-	defer close(stopResize)
-	go watchConsoleSize(pty, stdout, stopResize, sink)
+	stopResize, resizeDone := make(chan struct{}), make(chan struct{})
+	go func() {
+		defer close(resizeDone)
+		if err := watchConsoleSize(pty, stdout, stopResize, sink); err != nil {
+			stop(err)
+		}
+	}()
+
+	finished := make(chan shellExit, 1)
+	go func() {
+		exit := waitLoggedShell(ctx, pty, terminalDone)
+		// ClosePseudoConsole may block while emitting final output on older
+		// Windows. Keep reading until the pipe actually closes: newer Windows
+		// can return from ClosePseudoConsole before the final frame arrives.
+		pty.closeConsole()
+		finished <- exit
+	}()
 
 	buffer := make([]byte, 4096)
 	for {
 		var count uint32
-		err := syscall.ReadFile(pty.out, buffer, &count, nil)
-		if count > 0 {
-			if _, writeErr := stdout.Write(buffer[:count]); writeErr != nil {
-				pty.closeConsole()
-				break
-			}
-			if _, logErr := sink.Write(buffer[:count]); logErr != nil {
-				pty.closeConsole()
-				break
+		readErr := syscall.ReadFile(pty.out, buffer, &count, nil)
+		if count > 0 && ctx.Err() == nil {
+			if _, err := output.Write(buffer[:count]); err != nil {
+				stop(err)
 			}
 		}
-		if err != nil || count == 0 {
+		// After a writer failure, keep reading and discard the output. If
+		// reading itself failed, close our read end before waiting for ConPTY.
+		if readErr != nil || count == 0 {
+			closeHandles(pty.out)
+			if readErr != nil && readErr != syscall.ERROR_BROKEN_PIPE && readErr != syscall.ERROR_HANDLE_EOF {
+				stop(readErr)
+			}
 			break
 		}
 	}
+	exit := <-finished
+	close(stopResize)
+	<-resizeDone
+	if err := context.Cause(ctx); err != nil {
+		return exit.code, err
+	}
+	return exit.code, exit.err
+}
 
-	return <-exitCodes, nil
+type shellExit struct {
+	code int
+	err  error
+}
+
+// waitLoggedShell preserves the exit status if the shell exits on its own.
+// For shutdown, terminate only our child, then wait for it before releasing
+// its handles. TerminateProcess can fail if the process has already exited.
+func waitLoggedShell(ctx context.Context, pty *conPTY, terminalDone <-chan struct{}) shellExit {
+	waited := make(chan shellExit, 1)
+	go func() { waited <- pty.wait() }()
+	select {
+	case exit := <-waited:
+		return exit
+	case <-ctx.Done():
+	case <-terminalDone:
+	}
+	_ = syscall.TerminateProcess(pty.process, 1)
+	return <-waited
 }
 
 // watchConsoleSize polls the terminal size and resizes the pseudo console when
 // the terminal window is resized. Windows does not signal a resize to console
 // applications, so the size has to be polled.
-func watchConsoleSize(pty *conPTY, stdout io.Writer, stop <-chan struct{}, sink io.Writer) {
+func watchConsoleSize(pty *conPTY, stdout io.Writer, stop <-chan struct{}, sink io.Writer) error {
 	if _, ok := stdout.(*os.File); !ok {
-		return
+		return nil
 	}
 	current := consoleSize(stdout)
 	ticker := time.NewTicker(250 * time.Millisecond)
@@ -245,7 +266,7 @@ func watchConsoleSize(pty *conPTY, stdout io.Writer, stop <-chan struct{}, sink 
 	for {
 		select {
 		case <-stop:
-			return
+			return nil
 		case <-ticker.C:
 			size := consoleSize(stdout)
 			if size == current {
@@ -253,7 +274,9 @@ func watchConsoleSize(pty *conPTY, stdout io.Writer, stop <-chan struct{}, sink 
 			}
 			if err := pty.resize(size); err == nil {
 				current = size
-				writeLogSize(sink, size)
+				if err := writeLogSize(sink, size); err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -275,8 +298,13 @@ func (s *logSink) Write(p []byte) (int, error) {
 // writeLogSize records the terminal size in the log. The ConPTY stream encodes
 // line breaks and redraws with absolute cursor positions, so the log reader
 // needs the terminal size to render it.
-func writeLogSize(writer io.Writer, size coordinate) {
-	_, _ = fmt.Fprintf(writer, "%s %d %d\n", conPTYSizeRecord, size.X, size.Y)
+func writeLogSize(writer io.Writer, size coordinate) error {
+	record := fmt.Sprintf("%s %d %d\n", conPTYSizeRecord, size.X, size.Y)
+	n, err := io.WriteString(writer, record)
+	if err == nil && n != len(record) {
+		return io.ErrShortWrite
+	}
+	return err
 }
 
 // consoleSize returns the size of the terminal that displays stdout.
@@ -366,25 +394,4 @@ func consoleMode(handle syscall.Handle) (uint32, bool) {
 func setConsoleMode(handle syscall.Handle, mode uint32) bool {
 	result, _, _ := procSetConsoleMode.Call(uintptr(handle), uintptr(mode))
 	return result != 0
-}
-
-// pipeWriter writes to the input pipe of the pseudo console.
-type pipeWriter struct {
-	handle syscall.Handle
-}
-
-// Write sends p to the pseudo console input pipe.
-func (w pipeWriter) Write(p []byte) (int, error) {
-	written := 0
-	for written < len(p) {
-		var count uint32
-		if err := syscall.WriteFile(w.handle, p[written:], &count, nil); err != nil {
-			return written, err
-		}
-		if count == 0 {
-			return written, io.ErrShortWrite
-		}
-		written += int(count)
-	}
-	return written, nil
 }
