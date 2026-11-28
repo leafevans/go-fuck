@@ -105,6 +105,21 @@ func TestConflictingRuleSettings(t *testing.T) {
 	}
 }
 
+func TestPriorityConflictsSortedAndDeduplicated(t *testing.T) {
+	settings := conf.Default()
+	settings.Rules = []string{"git_add"}
+	settings.Priority = map[string]int{"git_push": 1, " git_push ": 2, "git_commit_add": 3, "unknown": 4}
+	want := []string{
+		`priority "git_commit_add" is ignored because the rule is not enabled`,
+		`priority "git_push" is ignored because the rule is not enabled`,
+	}
+	for i := 0; i < 20; i++ {
+		if got := conflictingRuleSettings(settings); !reflect.DeepEqual(got, want) {
+			t.Fatalf("got %q, want %q", got, want)
+		}
+	}
+}
+
 func TestWarnConflictingRuleSettings(t *testing.T) {
 	settings := conf.Default()
 	settings.ExcludeRules = []string{"git_push"}
