@@ -16,17 +16,25 @@ import (
 )
 
 func TestCommandCaptureMetadata(t *testing.T) {
-	provided := NewCommand("git branch", "output")
-	if provided.CaptureSource() != capture.SourceProvided || !provided.HasOutput() {
-		t.Fatalf("NewCommand() capture = %q, %t", provided.CaptureSource(), provided.HasOutput())
-	}
-	missing := NewCommandWithoutOutput("git branch")
-	if missing.CaptureSource() != capture.SourceNone || missing.HasOutput() {
-		t.Fatalf("NewCommandWithoutOutput() capture = %q, %t",
-			missing.CaptureSource(), missing.HasOutput())
-	}
-	if updated := provided.WithScript("git status"); updated.CaptureSource() != capture.SourceProvided {
-		t.Fatalf("WithScript() lost capture metadata: %q", updated.CaptureSource())
+	for _, tc := range []struct {
+		name      string
+		command   *Command
+		source    capture.Source
+		available bool
+	}{
+		{"zero", &Command{}, capture.SourceNone, false},
+		{"unavailable", NewCommandWithoutOutput("git branch"), capture.SourceNone, false},
+		{"provided empty", NewCommand("git branch", ""), capture.SourceProvided, true},
+		{"instant log", &Command{captureSource: capture.SourceInstantLog}, capture.SourceInstantLog, true},
+		{"rerun", &Command{captureSource: capture.SourceRerun}, capture.SourceRerun, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			for _, command := range []*Command{tc.command, tc.command.WithScript("git status"), tc.command.WithOutput("replacement")} {
+				if command.CaptureSource() != tc.source || command.HasOutput() != tc.available {
+					t.Fatalf("capture = (%q, %t), want (%q, %t)", command.CaptureSource(), command.HasOutput(), tc.source, tc.available)
+				}
+			}
+		})
 	}
 }
 
