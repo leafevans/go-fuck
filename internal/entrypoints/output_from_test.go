@@ -152,12 +152,13 @@ func TestOutputFromRequiresForceCommand(t *testing.T) {
 	}
 }
 
-// TestFixCommandOutputFromWindowsText checks that a byte order mark and CRLF
-// line endings in the supplied output are normalized like captured output.
+// TestFixCommandOutputFromWindowsText checks that supplied output loses its
+// byte order mark and carriage returns before reaching the rules and JSON.
 func TestFixCommandOutputFromWindowsText(t *testing.T) {
 	resetEntrypointsState(t)
 	path := filepath.Join(t.TempDir(), "failed.log")
-	content := "\uFEFFcat: testdata: Is a directory\r\n"
+	const want = "cat: testdata: Is a directory\n"
+	content := "\uFEFFcat: testdata: Is a\r directory\r\n"
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -167,4 +168,8 @@ func TestFixCommandOutputFromWindowsText(t *testing.T) {
 		t.Fatalf("Main() = %d, want 0; stderr = %q", code, stderr)
 	}
 	assertOutputFromSuggestion(t, stdout)
+	var result outputFromResult
+	if err := json.Unmarshal([]byte(stdout), &result); err != nil || result.Output != want {
+		t.Fatalf("output = %q, want %q; JSON error: %v", result.Output, want, err)
+	}
 }

@@ -135,10 +135,8 @@ func reportMissingCommand(json bool) int {
 // readCommandOutput returns the output of the failed command from a file, or
 // from standard input when the file is "-".
 //
-// The text is normalized like captured output: a UTF-8 byte order mark is
-// dropped and CRLF line endings become LF, because the rules are written
-// against LF and a stray carriage return breaks expressions anchored to the
-// end of a line.
+// Strip the UTF-8 byte order mark and carriage returns so rules can match
+// the text consistently across platforms.
 func readCommandOutput(path string) (string, error) {
 	var output []byte
 	var err error
@@ -151,9 +149,7 @@ func readCommandOutput(path string) (string, error) {
 		return "", err
 	}
 	text := strings.TrimPrefix(string(output), "\uFEFF")
-	text = strings.ReplaceAll(text, "\r\n", "\n")
-	text = strings.ReplaceAll(text, "\r", "")
-	return text, nil
+	return strings.ReplaceAll(text, "\r", ""), nil
 }
 
 // warnUnknownSettings reports top level settings file keys that go-fuck

@@ -62,12 +62,17 @@ func TestAutoPrefersInstantLog(t *testing.T) {
 
 func TestAutoFallsBackToRerun(t *testing.T) {
 	resetCaptureState(t)
-	result := Capture(Request{
-		Script:     "echo fallback",
-		Expanded:   "echo from-rerun",
-		AllowRerun: true,
-		Mode:       ModeAuto,
-	})
+	t.Setenv(consts.OutputLogEnv, filepath.Join(t.TempDir(), "missing.log"))
+	request := Request{
+		Script:   "echo fallback",
+		Expanded: "echo from-rerun",
+		Mode:     ModeAuto,
+	}
+	if result := Capture(request); result.OK || result.Source != SourceNone || result.Output != "" {
+		t.Fatalf("Capture() with reruns disabled = %+v, want unavailable output", result)
+	}
+	request.AllowRerun = true
+	result := Capture(request)
 	if !result.OK || result.Source != SourceRerun || !strings.Contains(result.Output, "from-rerun") {
 		t.Fatalf("Capture() = %+v, want rerun fallback", result)
 	}

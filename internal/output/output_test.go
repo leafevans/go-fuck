@@ -16,14 +16,6 @@ func resetOutputState(t *testing.T) {
 	t.Cleanup(conf.Reset)
 }
 
-// echoCommand returns a portable command that prints the given text.
-func echoCommand(text string) string {
-	if runtime.GOOS == "windows" {
-		return "echo " + text
-	}
-	return "echo " + text
-}
-
 // slowCommand returns a portable command that runs longer than one second.
 func slowCommand() string {
 	if runtime.GOOS == "windows" {
@@ -32,22 +24,22 @@ func slowCommand() string {
 	return "sleep 5"
 }
 
-func TestGetOutput(t *testing.T) {
+func TestRerun(t *testing.T) {
 	resetOutputState(t)
 	// The whole test suite runs packages in parallel; a generous wait keeps a
 	// loaded machine from turning the healthy echo into a timeout.
 	conf.Current().WaitCommand = 15
-	command := echoCommand("hello")
-	output, ok := GetOutput(command, command, true)
+	command := "echo hello"
+	output, ok := Rerun(command)
 	if !ok {
-		t.Fatal("GetOutput() did not report an output")
+		t.Fatal("Rerun() did not report an output")
 	}
 	if !strings.Contains(output, "hello") {
-		t.Fatalf("GetOutput() = %q, want it to contain hello", output)
+		t.Fatalf("Rerun() = %q, want it to contain hello", output)
 	}
 }
 
-func TestGetOutputMergesConfiguredEnvironment(t *testing.T) {
+func TestRerunMergesConfiguredEnvironment(t *testing.T) {
 	resetOutputState(t)
 	conf.Current().WaitCommand = 15
 	conf.Current().Env = map[string]string{"GOFUCK_TEST_ENV": "value"}
@@ -60,53 +52,30 @@ func TestGetOutputMergesConfiguredEnvironment(t *testing.T) {
 	} else {
 		command = "echo $GOFUCK_TEST_ENV"
 	}
-	output, ok := GetOutput(command, command, true)
+	output, ok := Rerun(command)
 	if !ok {
-		t.Fatal("GetOutput() did not report an output")
+		t.Fatal("Rerun() did not report an output")
 	}
 	if !strings.Contains(output, "value") {
-		t.Fatalf("GetOutput() = %q, the configured environment was not merged", output)
+		t.Fatalf("Rerun() = %q, the configured environment was not merged", output)
 	}
 }
 
-func TestGetOutputTimeout(t *testing.T) {
+func TestRerunTimeout(t *testing.T) {
 	resetOutputState(t)
 	conf.Current().WaitCommand = 1
 	command := slowCommand()
 
 	started := time.Now()
-	output, ok := GetOutput(command, command, true)
+	output, ok := Rerun(command)
 	elapsed := time.Since(started)
 
 	if ok {
-		t.Fatalf("GetOutput() reported an output for a timed out command: %q", output)
+		t.Fatalf("Rerun() reported an output for a timed out command: %q", output)
 	}
 	// The bound is generous on purpose: the whole test suite runs packages in
 	// parallel, so a loaded machine can delay the kill by a few seconds.
 	if elapsed > 20*time.Second {
-		t.Fatalf("GetOutput() took %s, the command was not killed on timeout", elapsed)
-	}
-}
-
-// TestNormalizeOutput guards that the captured output is normalized to LF,
-// because Windows tools print CRLF and the rules anchor expressions to the end
-// of a line.
-func TestNormalizeOutput(t *testing.T) {
-	testCases := []struct {
-		name string
-		in   string
-		want string
-	}{
-		{"empty", "", ""},
-		{"unix", "a\nb\n", "a\nb\n"},
-		{"crlf", "a\r\nb\r\n", "a\nb\n"},
-		{"lone carriage return", "progress 10%\rprogress 20%\ndone\r\n", "progress 10%progress 20%\ndone\n"},
-	}
-	for _, testCase := range testCases {
-		t.Run(testCase.name, func(t *testing.T) {
-			if got := normalizeOutput(testCase.in); got != testCase.want {
-				t.Fatalf("normalizeOutput(%q) = %q, want %q", testCase.in, got, testCase.want)
-			}
-		})
+		t.Fatalf("Rerun() took %s, the command was not killed on timeout", elapsed)
 	}
 }

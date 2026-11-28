@@ -1,9 +1,5 @@
-// Package output obtains the output of a command that failed.
-//
-// Like the original implementation, go-fuck re-runs the failed command with a
-// short timeout to capture its output. In the instant mode the output is read
-// from the terminal log written by the shell logger instead, so
-// the command is not executed a second time.
+// Package output re-runs failed commands with a timeout to capture their output.
+// The capture package decides whether a command may be re-run.
 package output
 
 import (
@@ -16,57 +12,19 @@ import (
 	"time"
 
 	"github.com/leafevans/go-fuck/v4/internal/conf"
-	"github.com/leafevans/go-fuck/v4/internal/instant"
 	"github.com/leafevans/go-fuck/v4/internal/logs"
 )
-
-// GetOutput reads the instant log or, if allowed, re-runs the expanded command.
-//
-// The second return value reports whether the output could be obtained; it is
-// false when output is unavailable, including when re-running is disabled.
-func GetOutput(script, expanded string, allowRerun bool) (string, bool) {
-	mode := conf.Current().CaptureMode
-	if mode == "auto" || mode == "instant" {
-		if logPath := instant.LogPath(); logPath != "" {
-			if logOutput, ok := instant.LastOutput(logPath, script); ok {
-				logs.Debug("Read output from the instant mode log: %s", logOutput)
-				return logOutput, true
-			}
-			logs.Debug("Command not found in the instant mode log")
-		} else {
-			logs.Debug("No instant mode log path is set")
-		}
-	}
-	if mode == "instant" || !allowRerun {
-		return "", false
-	}
-	commandOutput, ok := Rerun(expanded)
-	if !ok {
-		return "", false
-	}
-	return normalizeOutput(commandOutput), true
-}
-
-// normalizeOutput removes the carriage returns from the captured output.
-//
-// Tools on Windows print CRLF line endings while the rules are written against
-// LF, and a stray carriage return breaks expressions that are anchored to the
-// end of a line. The instant mode log is already sanitized the same way.
-func normalizeOutput(commandOutput string) string {
-	commandOutput = strings.ReplaceAll(commandOutput, "\r\n", "\n")
-	return strings.ReplaceAll(commandOutput, "\r", "")
-}
 
 // Rerun runs the command and captures its output.
 func Rerun(expanded string) (string, bool) {
 	settings := conf.Current()
 
-	parts := strings.Fields(expanded)
-	isSlow := len(parts) > 0 && slices.Contains(settings.SlowCommands, parts[0])
-
 	timeout := settings.WaitCommand
-	if isSlow {
-		timeout = settings.WaitSlowCommand
+	for name := range strings.FieldsSeq(expanded) {
+		if slices.Contains(settings.SlowCommands, name) {
+			timeout = settings.WaitSlowCommand
+		}
+		break // Only the first field is the command name.
 	}
 
 	stopTimer := logs.DebugTime("Call: " + expanded)
@@ -114,29 +72,30 @@ func Rerun(expanded string) (string, bool) {
 	}
 }
 
-// mergedEnv merges the configured environment over the current environment.
+// mergedEnv overlays settings on the inherited environment, keeping the
+// spelling of existing names even when Windows matches them case-insensitively.
 func mergedEnv(overrides map[string]string) []string {
-	environment := map[string]string{}
-	keys := map[string]string{}
-	for _, entry := range os.Environ() {
-		if key, value, found := strings.Cut(entry, "="); found {
-			environment[key] = value
-			keys[envKey(key)] = key
+	environment := os.Environ()
+	if len(overrides) == 0 {
+		return environment
+	}
+	indices := make(map[string]int, len(environment))
+	for i, entry := range environment {
+		if key, _, ok := strings.Cut(entry, "="); ok && key != "" {
+			indices[envKey(key)] = i
 		}
 	}
 	for key, value := range overrides {
-		if existing, ok := keys[envKey(key)]; ok {
-			environment[existing] = value
-			continue
+		normalized := envKey(key)
+		if i, ok := indices[normalized]; ok {
+			name, _, _ := strings.Cut(environment[i], "=")
+			environment[i] = name + "=" + value
+		} else {
+			indices[normalized] = len(environment)
+			environment = append(environment, key+"="+value)
 		}
-		environment[key] = value
-		keys[envKey(key)] = key
 	}
-	merged := make([]string, 0, len(environment))
-	for key, value := range environment {
-		merged = append(merged, key+"="+value)
-	}
-	return merged
+	return environment
 }
 
 // envKey normalizes an environment variable name for the platform. Windows
