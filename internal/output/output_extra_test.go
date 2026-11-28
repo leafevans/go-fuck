@@ -25,23 +25,23 @@ func envValue(environment []string, key string) (string, int) {
 	return value, count
 }
 
-func TestGetOutputCapturesStderr(t *testing.T) {
+func TestRerunCapturesStderr(t *testing.T) {
 	resetOutputState(t)
 	// A generous timeout keeps the test reliable while other packages run in
 	// parallel and the machine is under load.
 	conf.Current().WaitCommand = 60
 	command := "echo stderr-marker 1>&2"
 
-	result, ok := GetOutput(command, command, true)
+	result, ok := Rerun(command)
 	if !ok {
-		t.Fatal("GetOutput() did not report an output")
+		t.Fatal("Rerun() did not report an output")
 	}
 	if !strings.Contains(result, "stderr-marker") {
-		t.Fatalf("GetOutput() = %q, want it to contain the stderr output", result)
+		t.Fatalf("Rerun() = %q, want it to contain the stderr output", result)
 	}
 }
 
-func TestGetOutputUsesWaitSlowCommand(t *testing.T) {
+func TestRerunUsesWaitSlowCommand(t *testing.T) {
 	resetOutputState(t)
 	command := slowCommand()
 
@@ -54,33 +54,33 @@ func TestGetOutputUsesWaitSlowCommand(t *testing.T) {
 	settings.SlowCommands = []string{strings.Fields(command)[0]}
 
 	started := time.Now()
-	result, ok := GetOutput(command, command, true)
+	result, ok := Rerun(command)
 	elapsed := time.Since(started)
 
 	if ok {
-		t.Fatalf("GetOutput() = %q for a timed out slow command", result)
+		t.Fatalf("Rerun() = %q for a timed out slow command", result)
 	}
-	// The bound is generous on purpose, see TestGetOutputTimeout.
+	// The bound is generous on purpose, see TestRerunTimeout.
 	if elapsed > 20*time.Second {
-		t.Fatalf("GetOutput() took %s, the slow command timeout was not applied", elapsed)
+		t.Fatalf("Rerun() took %s, the slow command timeout was not applied", elapsed)
 	}
 }
 
-func TestGetOutputIgnoresWaitSlowCommandForFastCommands(t *testing.T) {
+func TestRerunIgnoresWaitSlowCommandForFastCommands(t *testing.T) {
 	resetOutputState(t)
-	command := echoCommand("fast")
+	command := "echo fast"
 
 	settings := conf.Current()
 	settings.WaitCommand = 60
 	settings.WaitSlowCommand = 1
 	settings.SlowCommands = []string{"definitely-not-this-command"}
 
-	result, ok := GetOutput(command, command, true)
+	result, ok := Rerun(command)
 	if !ok {
-		t.Fatal("GetOutput() did not report an output for a fast command")
+		t.Fatal("Rerun() did not report an output for a fast command")
 	}
 	if !strings.Contains(result, "fast") {
-		t.Fatalf("GetOutput() = %q, want it to contain fast", result)
+		t.Fatalf("Rerun() = %q, want it to contain fast", result)
 	}
 }
 
@@ -92,10 +92,12 @@ func TestKillTreeWithoutStartedProcess(t *testing.T) {
 func TestMergedEnvOverridesExistingVariables(t *testing.T) {
 	t.Setenv("GOFUCK_MERGE_TEST", "old")
 	t.Setenv("GOFUCK_MERGE_KEPT", "kept")
+	t.Setenv("GOFUCK_MERGE_EMPTY", "old")
 
 	environment := mergedEnv(map[string]string{
-		"GOFUCK_MERGE_TEST": "new",
-		"GOFUCK_MERGE_NEW":  "added",
+		"GOFUCK_MERGE_TEST":  "new",
+		"GOFUCK_MERGE_NEW":   "added=with-equals",
+		"GOFUCK_MERGE_EMPTY": "",
 	})
 
 	value, count := envValue(environment, "GOFUCK_MERGE_TEST")
@@ -103,12 +105,16 @@ func TestMergedEnvOverridesExistingVariables(t *testing.T) {
 		t.Fatalf("mergedEnv() GOFUCK_MERGE_TEST = %q (count %d), want new (count 1)", value, count)
 	}
 	value, count = envValue(environment, "GOFUCK_MERGE_NEW")
-	if value != "added" || count != 1 {
-		t.Fatalf("mergedEnv() GOFUCK_MERGE_NEW = %q (count %d), want added (count 1)", value, count)
+	if value != "added=with-equals" || count != 1 {
+		t.Fatalf("mergedEnv() GOFUCK_MERGE_NEW = %q (count %d), want added=with-equals (count 1)", value, count)
 	}
 	value, _ = envValue(environment, "GOFUCK_MERGE_KEPT")
 	if value != "kept" {
 		t.Fatalf("mergedEnv() GOFUCK_MERGE_KEPT = %q, want kept", value)
+	}
+
+	if value, count := envValue(environment, "GOFUCK_MERGE_EMPTY"); value != "" || count != 1 {
+		t.Fatalf("mergedEnv() GOFUCK_MERGE_EMPTY = %q (count %d), want one empty value", value, count)
 	}
 
 	environment = mergedEnv(nil)
