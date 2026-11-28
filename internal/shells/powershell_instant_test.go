@@ -22,6 +22,9 @@ func TestPowershellInstantModeInitAlias(t *testing.T) {
 		// A non-interactive host such as an installer script loads the profile
 		// too; starting the logged shell there would hang it.
 		"[Console]::IsInputRedirected", "[Console]::IsOutputRedirected", "GetCommandLineArgs",
+		// The fallback has to force rerun mode, otherwise the stored capture
+		// mode returns this initialization code again and recurses forever.
+		"--capture-mode=rerun",
 	} {
 		if !strings.Contains(alias, want) {
 			t.Fatalf("instant mode init alias does not contain %q: %q", want, alias)
