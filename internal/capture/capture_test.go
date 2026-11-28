@@ -30,22 +30,6 @@ func captureLog(t *testing.T, command, commandOutput string) string {
 	return path
 }
 
-func TestProvidedOutputOverridesAllSources(t *testing.T) {
-	resetCaptureState(t)
-	t.Setenv(consts.OutputLogEnv, captureLog(t, "echo log", "from-log"))
-	empty := ""
-	result := Capture(Request{
-		Script:     "echo log",
-		Expanded:   "echo from-rerun",
-		Provided:   &empty,
-		AllowRerun: true,
-		Mode:       ModeAuto,
-	})
-	if !result.OK || result.Source != SourceProvided || result.Output != "" {
-		t.Fatalf("Capture() = %+v, want an empty provided output", result)
-	}
-}
-
 func TestAutoPrefersInstantLog(t *testing.T) {
 	resetCaptureState(t)
 	t.Setenv(consts.OutputLogEnv, captureLog(t, "echo log", "from-log"))

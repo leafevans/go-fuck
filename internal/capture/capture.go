@@ -37,9 +37,6 @@ type Request struct {
 	Script string
 	// Expanded is the alias-expanded command used for re-running.
 	Expanded string
-	// Provided is non-nil when the caller supplied the output. A non-nil empty
-	// string is a valid captured output that printed nothing.
-	Provided *string
 	// AllowRerun permits the rerun fallback.
 	AllowRerun bool
 	// Mode selects the capture policy.
@@ -54,7 +51,7 @@ type Result struct {
 	Duration time.Duration
 }
 
-// Capture applies the configured source policy.
+// Capture reads the instant log or reruns the command according to the policy.
 func Capture(request Request) (result Result) {
 	started := time.Now()
 	defer func() {
@@ -62,10 +59,6 @@ func Capture(request Request) (result Result) {
 		logs.Debug("Capture mode=%s source=%s ok=%t took=%s",
 			request.Mode, result.Source, result.OK, result.Duration)
 	}()
-
-	if request.Provided != nil {
-		return Result{Output: *request.Provided, Source: SourceProvided, OK: true}
-	}
 
 	if request.Mode == ModeAuto || request.Mode == ModeInstant {
 		if logPath := instant.LogPath(); logPath != "" {
