@@ -175,3 +175,88 @@ func TestLastOutputUnreadableLog(t *testing.T) {
 		t.Fatalf("LastOutput(directory) = %q, %t, want no output", got, ok)
 	}
 }
+
+func TestFieldSuffixMatchesFields(t *testing.T) {
+	for _, line := range []string{"", "PS> git push", "PS> git\tpush  ", "git\u2003push", "gitpush", "push", "你 git push", "git\xffpush", "\n git \r\n push\u00a0"} {
+		for _, parts := range [][]string{nil, {"git", "push"}, {"push"}, {"PS>", "git", "push"}, {"gitpush"}, {"git\xffpush"}} {
+			fields := strings.Fields(line)
+			want := len(parts) > 0 && len(fields) >= len(parts)
+			if want {
+				for i, p := range parts {
+					if fields[len(fields)-len(parts)+i] != p {
+						want = false
+						break
+					}
+				}
+			}
+			if got := hasFieldSuffix(line, parts); got != want {
+				t.Errorf("line=%q parts=%q got=%t want=%t", line, parts, got, want)
+			}
+		}
+	}
+}
+
+func TestLastOutputMatchesUnicodeFieldSpacing(t *testing.T) {
+	log := prompt("$ git\u2003status\u00a0--short") + "\r\n M example.txt\r\n" + prompt("$ ")
+	if got, ok := LastOutput(writeLog(t, log), "git status --short"); !ok || got != " M example.txt" {
+		t.Fatalf("LastOutput() = %q, %t; want %q, true", got, ok, " M example.txt")
+	}
+}
+
+func TestMultilineEchoPromptLimit(t *testing.T) {
+	lines := make([]string, 17)
+	lines[0], lines[15] = "alpha", "beta"
+	if got := multilineEchoIndex(lines, "alpha\nbeta"); got != 15 {
+		t.Fatalf("last row inside prompt: echo index %d, want 15", got)
+	}
+	lines[15], lines[16] = "", "beta"
+	if got := multilineEchoIndex(lines, "alpha\nbeta"); got != -1 {
+		t.Fatalf("row outside prompt: echo index %d, want -1", got)
+	}
+	if got := multilineEchoIndex(lines, "\nalpha\n"); got != -1 {
+		t.Fatalf("one nonempty command line: echo index %d, want -1", got)
+	}
+}
+
+func TestMultilineEchoGreedyMatchesRestartSearch(t *testing.T) {
+	// Exhaust all four-row blocks, including overlapping parts and blanks.
+	choices := []string{"", "alpha", "beta", "alpha beta"}
+	for mask := 0; mask < 256; mask++ {
+		lines := make([]string, 4)
+		value := mask
+		for i := range lines {
+			lines[i] = choices[value%4]
+			value /= 4
+		}
+		for _, command := range []string{"alpha\nbeta", "alpha\nalpha", "beta\nalpha\nbeta", "\nalpha\n\nbeta\n"} {
+			var parts []string
+			for _, part := range strings.Split(command, "\n") {
+				if part = strings.TrimSpace(part); part != "" {
+					parts = append(parts, part)
+				}
+			}
+			want := -1
+			for start := range lines {
+				index, matched, last := start, 0, -1
+				for _, part := range parts {
+					for index < len(lines) && !strings.Contains(lines[index], part) {
+						index++
+					}
+					if index == len(lines) {
+						break
+					}
+					matched++
+					last = index
+					index++
+				}
+				if matched == len(parts) {
+					want = last
+					break
+				}
+			}
+			if got := multilineEchoIndex(lines, command); got != want {
+				t.Fatalf("lines=%q command=%q got=%d want=%d", lines, command, got, want)
+			}
+		}
+	}
+}

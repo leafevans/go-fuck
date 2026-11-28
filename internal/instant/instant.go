@@ -68,6 +68,9 @@ type logCall struct {
 	lines  []string
 }
 
+// Limit command echo searches to the beginning of the prompt block.
+const maxPromptLines = 16
+
 // echoIndex returns the index of the prompt block line that contains the
 // echoed invocation of script, or -1 when this call is a different command.
 //
@@ -79,7 +82,6 @@ func (c logCall) echoIndex(script string, parts []string) int {
 	if trimmed == "" {
 		return -1
 	}
-	const maxPromptLines = 16
 	var rows [maxPromptLines]string
 	rows[0] = c.prompt
 	lines := rows[:1+copy(rows[1:], c.lines)]
@@ -92,8 +94,7 @@ func (c logCall) echoIndex(script string, parts []string) int {
 		}
 		// Shell redraws may change argument spacing, but argument order and
 		// complete words must still match the end of the echoed invocation.
-		fields := strings.Fields(cleaned)
-		if len(parts) > 0 && len(fields) >= len(parts) && slices.Equal(fields[len(fields)-len(parts):], parts) {
+		if hasFieldSuffix(cleaned, parts) {
 			return index
 		}
 	}
@@ -101,6 +102,26 @@ func (c logCall) echoIndex(script string, parts []string) int {
 		return index
 	}
 	return wrappedEchoIndex(lines, trimmed)
+}
+
+// hasFieldSuffix compares the trailing fields without splitting the row.
+// parts comes from strings.Fields, so each part is nonempty and uses the
+// same Unicode whitespace boundaries.
+func hasFieldSuffix(line string, parts []string) bool {
+	for _, part := range slices.Backward(parts) {
+		prefix, ok := strings.CutSuffix(strings.TrimRightFunc(line, unicode.IsSpace), part)
+		if !ok {
+			return false
+		}
+		if prefix != "" {
+			last, _ := utf8.DecodeLastRuneInString(prefix)
+			if !unicode.IsSpace(last) {
+				return false
+			}
+		}
+		line = prefix
+	}
+	return len(parts) > 0
 }
 
 // hasCommandSuffix reports whether line ends with command at a token boundary.
@@ -260,46 +281,31 @@ func applyEchoCSI(line string, index int, cells *[]rune, cursor *int) int {
 // empty command line has to appear in order, which keeps output lines from
 // being mistaken for the echo.
 func multilineEchoIndex(lines []string, command string) int {
-	commandLines := strings.Split(command, "\n")
-	if len(commandLines) < 2 {
+	if !strings.Contains(command, "\n") {
 		return -1
 	}
-	parts := make([]string, 0, len(commandLines))
-	for _, line := range commandLines {
-		line = strings.TrimSpace(line)
-		if line != "" {
-			parts = append(parts, line)
+	lines = lines[:min(maxPromptLines, len(lines))]
+	// The earliest match for each part leaves the most room for later parts.
+	// Restarting from a later row cannot find a match that this pass misses.
+	index, matched := 0, 0
+	for part := range strings.SplitSeq(command, "\n") {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
 		}
+		for index < len(lines) && !strings.Contains(lines[index], part) {
+			index++
+		}
+		if index == len(lines) {
+			return -1
+		}
+		matched++
+		index++
 	}
-	if len(parts) < 2 {
+	if matched < 2 {
 		return -1
 	}
-	const maxPromptLines = 16
-	last := min(maxPromptLines, len(lines))
-	for start := range last {
-		index := start
-		matched := 0
-		lastMatch := -1
-		for _, part := range parts {
-			found := -1
-			for ; index < last; index++ {
-				if strings.Contains(lines[index], part) {
-					found = index
-					index++
-					break
-				}
-			}
-			if found < 0 {
-				break
-			}
-			matched++
-			lastMatch = found
-		}
-		if matched == len(parts) {
-			return lastMatch
-		}
-	}
-	return -1
+	return index - 1
 }
 
 // instantMaxEchoLines bounds the number of prompt block lines that are joined
