@@ -167,7 +167,9 @@ func testPowerShellInstantCorrection(t *testing.T, bin, shell, key string) {
 	if got, ok := LastOutput(logPath, "Write-Output $sample"); !ok || got != "second" {
 		t.Fatalf("latest output = %q, %t; want second", got, ok)
 	}
-	send("go-fuck --capture-mode=instant --force-command 'Add-Content absent.marker replay'\r")
+	// Keep the target command out of the invocation's own terminal echo.
+	// ConPTY can still be catching up on the final PSReadLine redraw.
+	send("go-fuck --capture-mode=instant --force-command ('Add-Con' + 'tent absent.marker replay')\r")
 	out = waitFor("No suggestion without the original command output", len(out))
 	waitFor(consts.UserCommandMark+prompt, len(out))
 	if _, err := os.Stat("absent.marker"); !os.IsNotExist(err) {
