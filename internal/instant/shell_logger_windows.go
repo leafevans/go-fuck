@@ -56,8 +56,19 @@ func Supported() bool {
 // RunShellLogger runs PowerShell under a pseudo console and copies everything
 // it prints into logPath. It returns the exit code of the shell.
 func RunShellLogger(logPath string) (int, error) {
+	return runShellLogger(logPath, os.Stdin, os.Stdout)
+}
+
+// runShellLogger is RunShellLogger with the terminal streams supplied by the
+// caller. It refuses to start the logged shell when stdin is not a console:
+// non-interactive hosts such as an installer script can load the PowerShell
+// profile, and replacing such a process with a logged shell would hang it.
+func runShellLogger(logPath string, stdin io.Reader, stdout io.Writer) (int, error) {
 	if !Supported() {
 		return 1, ErrUnsupported
+	}
+	if !terminalStdin(stdin) {
+		return 1, errors.New("instant mode needs an interactive terminal")
 	}
 	commandLine, err := shellCommandLine()
 	if err != nil {
@@ -70,7 +81,7 @@ func RunShellLogger(logPath string) (int, error) {
 	}
 	defer logFile.Close()
 
-	return runLoggedShell(commandLine, os.Stdin, os.Stdout, NewRingWriter(logFile))
+	return runLoggedShell(commandLine, stdin, stdout, NewRingWriter(logFile))
 }
 
 // shellCommandLine returns the command line of the shell started by the
@@ -174,6 +185,7 @@ func runLoggedShellFromTerminal(commandLine string, stdin io.Reader, stdout io.W
 
 	sessionDone := make(chan struct{})
 	defer close(sessionDone)
+	process := pty.process.Process
 	if terminal {
 		// The terminal that hosted the logged shell closed, so nobody can type
 		// into it any more. Closing the pseudo console terminates the shell;
@@ -183,6 +195,12 @@ func runLoggedShellFromTerminal(commandLine string, stdin io.Reader, stdout io.W
 			select {
 			case <-stdinDone:
 				pty.closeConsole()
+				// Closing the pseudo console is not guaranteed to unblock the
+				// process wait on every Windows version, so the shell is also
+				// terminated explicitly.
+				if process != 0 {
+					_ = syscall.TerminateProcess(process, 1)
+				}
 			case <-sessionDone:
 			}
 		}()
