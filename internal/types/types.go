@@ -46,7 +46,6 @@ type Command struct {
 	// command. It is only meaningful when HasOutput reports true.
 	Output string
 
-	hasOutput      bool
 	captureSource  capture.Source
 	captureElapsed time.Duration
 
@@ -57,7 +56,7 @@ type Command struct {
 // NewCommand returns a command with a known output.
 func NewCommand(script, output string) *Command {
 	return &Command{
-		Script: script, Output: output, hasOutput: true,
+		Script: script, Output: output,
 		captureSource: capture.SourceProvided,
 	}
 }
@@ -86,7 +85,6 @@ func FromRawScript(raw []string, allowRerun bool) (*Command, error) {
 	return &Command{
 		Script:         expanded,
 		Output:         result.Output,
-		hasOutput:      result.OK,
 		captureSource:  result.Source,
 		captureElapsed: result.Duration,
 	}, nil
@@ -110,7 +108,7 @@ func FormatRawScript(raw []string) string {
 
 // HasOutput reports whether the command output was captured.
 func (c *Command) HasOutput() bool {
-	return c.hasOutput
+	return c.CaptureSource() != capture.SourceNone
 }
 
 // CaptureSource reports how the command output was obtained.
@@ -141,7 +139,7 @@ func (c *Command) ScriptParts() []string {
 // Update returns a copy of the command with the script and output replaced.
 func (c *Command) Update(script, commandOutput string) *Command {
 	return &Command{
-		Script: script, Output: commandOutput, hasOutput: c.hasOutput,
+		Script: script, Output: commandOutput,
 		captureSource: c.captureSource, captureElapsed: c.captureElapsed,
 	}
 }
