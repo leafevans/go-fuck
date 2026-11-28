@@ -124,6 +124,24 @@ func quoteWindowsCommandLineArg(argument string) string {
 // terminal input and output. It is separated from RunShellLogger so that tests
 // can supply the input and output streams.
 func runLoggedShell(commandLine string, stdin io.Reader, stdout io.Writer, logWriter io.Writer) (int, error) {
+	return runLoggedShellFromTerminal(commandLine, stdin, stdout, logWriter, terminalStdin(stdin))
+}
+
+// terminalStdin reports whether stdin is an interactive console. Only a console
+// reaches end of file when its terminal closes; a pipe or file reaches it for
+// other reasons and must not end the logged shell.
+func terminalStdin(stdin io.Reader) bool {
+	file, ok := stdin.(*os.File)
+	if !ok {
+		return false
+	}
+	_, ok = consoleMode(syscall.Handle(file.Fd()))
+	return ok
+}
+
+// runLoggedShellFromTerminal is runLoggedShell with the terminal detection
+// supplied by the caller, so that tests can exercise the terminal close path.
+func runLoggedShellFromTerminal(commandLine string, stdin io.Reader, stdout io.Writer, logWriter io.Writer, terminal bool) (int, error) {
 	restore := makeRawConsole(stdin, stdout)
 	defer restore()
 
@@ -148,9 +166,27 @@ func runLoggedShell(commandLine string, stdin io.Reader, stdout io.Writer, logWr
 		exitCodes <- code
 	}()
 
+	stdinDone := make(chan struct{})
 	go func() {
+		defer close(stdinDone)
 		_, _ = io.Copy(pipeWriter{handle: pty.in}, stdin)
 	}()
+
+	sessionDone := make(chan struct{})
+	defer close(sessionDone)
+	if terminal {
+		// The terminal that hosted the logged shell closed, so nobody can type
+		// into it any more. Closing the pseudo console terminates the shell;
+		// waiting for it to exit on its own would leave an orphaned logger
+		// holding the executable.
+		go func() {
+			select {
+			case <-stdinDone:
+				pty.closeConsole()
+			case <-sessionDone:
+			}
+		}()
+	}
 
 	stopResize := make(chan struct{})
 	defer close(stopResize)

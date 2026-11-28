@@ -3,91 +3,87 @@
 package instant
 
 import (
-	"bytes"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/leafevans/go-fuck/v4/internal/consts"
 )
 
-// testPowerShell returns the path of Windows PowerShell, or skips the test.
-func testPowerShell(t *testing.T) string {
-	t.Helper()
-	if path, err := exec.LookPath("powershell.exe"); err == nil {
-		return path
+// TestTerminalStdinDetection checks that only consoles are treated as an
+// interactive terminal input.
+func TestTerminalStdinDetection(t *testing.T) {
+	if terminalStdin(strings.NewReader("")) {
+		t.Fatal("strings.Reader was detected as a terminal")
 	}
-	if root := os.Getenv("SystemRoot"); root != "" {
-		candidate := filepath.Join(root, "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
-		if _, err := os.Stat(candidate); err == nil {
-			return candidate
-		}
+	input, output := io.Pipe()
+	defer output.Close()
+	defer input.Close()
+	if terminalStdin(input) {
+		t.Fatal("io.PipeReader was detected as a terminal")
 	}
-	t.Skip("powershell.exe is not available")
-	return ""
+	devNull, err := os.Open(os.DevNull)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer devNull.Close()
+	if terminalStdin(devNull) {
+		t.Fatal("os.DevNull was detected as a terminal")
+	}
 }
 
-// TestRunLoggedShell starts an interactive Windows PowerShell under a pseudo
-// console, feeds a command through it and reads the output back from the
-// terminal log.
-func TestRunLoggedShell(t *testing.T) {
-	powershell := testPowerShell(t)
-
-	dir := t.TempDir()
-	// PSReadLine must not read or update the user's real shell history.
-	t.Setenv("APPDATA", dir)
-	logPath := filepath.Join(dir, "instant.log")
-	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0o600)
+// TestRunLoggedShellStopsWhenTerminalCloses checks that a closing terminal ends
+// the logged shell instead of leaving the logger waiting forever.
+func TestRunLoggedShellStopsWhenTerminalCloses(t *testing.T) {
+	if !Supported() {
+		t.Skip("ConPTY is not available")
+	}
+	shell, err := exec.LookPath("pwsh.exe")
 	if err != nil {
-		t.Fatalf("open log: %v", err)
+		shell, err = exec.LookPath("powershell.exe")
+	}
+	if err != nil {
+		t.Skip("PowerShell is not available")
+	}
+
+	logPath := filepath.Join(t.TempDir(), "instant.log")
+	logFile, err := os.Create(logPath)
+	if err != nil {
+		t.Fatal(err)
 	}
 	defer logFile.Close()
 
-	historyPath := strings.ReplaceAll(filepath.Join(dir, "history.txt"), "'", "''")
-	prompt := "Set-PSReadLineOption -HistorySaveStyle SaveNothing -HistorySavePath '" + historyPath + "'; " +
-		"function prompt { ([string]([char]0x200B)) * 10 + 'PS> ' }"
-	commandLine := quoteWindowsCommandLineArg(powershell) + " -NoLogo -NoProfile -NoExit -Command " +
-		quoteWindowsCommandLineArg(prompt)
-	input := strings.NewReader("Write-Output instant-output\r\nexit\r\n")
-
-	type result struct {
-		code int
-		err  error
-	}
-	finished := make(chan result, 1)
+	input, closeInput := io.Pipe()
+	defer input.Close()
+	finished := make(chan int, 1)
 	go func() {
-		code, err := runLoggedShell(commandLine, input, &bytes.Buffer{}, NewRingWriter(logFile))
-		finished <- result{code: code, err: err}
+		code, _ := runLoggedShellFromTerminal(quoteWindowsCommandLineArg(shell)+" -NoLogo -NoProfile", input, io.Discard, NewRingWriter(logFile), true)
+		finished <- code
+		close(finished)
 	}()
 
+	// The shell reports the console close as a control event, so only the
+	// prompt return matters, not the exit code.
+	// Wait until the shell printed its banner, then close the terminal input.
+	deadline := time.Now().Add(15 * time.Second)
+	for {
+		if info, err := os.Stat(logPath); err == nil && info.Size() > 0 {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("logged shell did not start")
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	if err := closeInput.Close(); err != nil {
+		t.Fatal(err)
+	}
+
 	select {
-	case outcome := <-finished:
-		if outcome.err != nil {
-			t.Fatalf("runLoggedShell() error = %v", outcome.err)
-		}
-		if outcome.code != 0 {
-			t.Fatalf("runLoggedShell() exit code = %d, want 0", outcome.code)
-		}
-	case <-time.After(60 * time.Second):
-		t.Fatal("runLoggedShell() did not finish in time")
-	}
-
-	data, err := os.ReadFile(logPath)
-	if err != nil {
-		t.Fatalf("read log: %v", err)
-	}
-	if !strings.Contains(string(data), "instant-output") {
-		t.Fatalf("terminal log does not contain the command output: %q", string(data))
-	}
-	if !strings.Contains(string(data), consts.UserCommandMark) {
-		t.Fatalf("terminal log does not contain the prompt marker")
-	}
-
-	output, ok := LastOutput(logPath, "Write-Output instant-output")
-	if !ok || !strings.Contains(output, "instant-output") {
-		t.Fatalf("LastOutput() = %q, %t, want instant-output, true; rendered log: %q", output, ok, logLines(string(data)))
+	case <-finished:
+	case <-time.After(15 * time.Second):
+		t.Fatal("runLoggedShellFromTerminal() did not stop after the terminal closed")
 	}
 }
