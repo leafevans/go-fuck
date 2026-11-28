@@ -50,12 +50,12 @@ func logOutput() string {
 
 func TestReadActions(t *testing.T) {
 	resetUIState(t)
-	setKeys(t, "\n", "\r", "x", "y", consts.KeyUp, "k", consts.KeyDown, "j", consts.KeyCtrlC, "q")
+	setKeys(t, "\n", "\r", "x", "y", consts.KeyUp, consts.KeyCtrlN, "k", "e", consts.KeyDown, consts.KeyCtrlP, "j", "n", consts.KeyCtrlC, "q")
 
 	want := []consts.Action{
 		consts.ActionSelect, consts.ActionSelect,
-		consts.ActionPrevious, consts.ActionPrevious,
-		consts.ActionNext, consts.ActionNext,
+		consts.ActionPrevious, consts.ActionPrevious, consts.ActionPrevious, consts.ActionPrevious,
+		consts.ActionNext, consts.ActionNext, consts.ActionNext, consts.ActionNext,
 		consts.ActionAbort, consts.ActionAbort,
 	}
 	next := ReadActions()

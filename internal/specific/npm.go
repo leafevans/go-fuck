@@ -4,15 +4,11 @@ import (
 	json "encoding/json/v2"
 	"os"
 	"os/exec"
-	"regexp"
 	"sort"
 	"strings"
 
 	"github.com/leafevans/go-fuck/v4/internal/utils"
 )
-
-// npmScriptLine matches the indented script lines of "npm run-script" output.
-var npmScriptLine = regexp.MustCompile("^  [^ ]+")
 
 // PackageScripts returns the script names of the package.json file in the
 // current working directory, sorted by name.
@@ -85,12 +81,15 @@ func parseNpmScripts(output string) []string {
 		if !listing {
 			continue
 		}
-		if npmScriptLine.MatchString(line) {
-			scripts = append(scripts, strings.Fields(line)[0])
-			continue
-		}
 		if trimmed == "" || strings.HasPrefix(line, "    ") {
 			// A blank line or the description under a script name.
+			continue
+		}
+		if len(line) > 2 && strings.HasPrefix(line, "  ") && line[2] != ' ' {
+			for name := range strings.FieldsSeq(trimmed) {
+				scripts = append(scripts, name)
+				break
+			}
 			continue
 		}
 		// Any other non-indented line ends the listing.

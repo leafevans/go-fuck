@@ -30,6 +30,7 @@ func TestParseNpmScripts(t *testing.T) {
 	}{
 		{"npm 6", npm6ScriptOutput, []string{"build", "test"}},
 		{"npm 7 and newer", npm11ScriptOutput, []string{"test", "build"}},
+		{"whitespace-only row", npm6ScriptOutput + "  \t\r\n  lint\tmetadata\r\n    not-a-script\r\n", []string{"build", "test", "lint"}},
 		{"empty", "", nil},
 		{"unrelated", "added 3 packages\n", nil},
 		{"footer ends the listing", npm6ScriptOutput + "npm notice done\n  not-a-script\n", []string{"build", "test"}},

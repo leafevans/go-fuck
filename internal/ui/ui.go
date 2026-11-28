@@ -10,7 +10,7 @@ import (
 )
 
 // newline is the line separator.
-var newline = string(rune(10))
+const newline = "\n"
 
 // ReadKey returns the next key press. It is replaceable in tests.
 var ReadKey = system.GetKey
@@ -24,14 +24,14 @@ func ReadActions() func() consts.Action {
 			if err != nil {
 				return consts.ActionAbort
 			}
-			switch {
-			case key == consts.KeyUp || key == consts.KeyCtrlN || key == "k" || key == "e":
+			switch key {
+			case consts.KeyUp, consts.KeyCtrlN, "k", "e":
 				return consts.ActionPrevious
-			case key == consts.KeyDown || key == consts.KeyCtrlP || key == "j" || key == "n":
+			case consts.KeyDown, consts.KeyCtrlP, "j", "n":
 				return consts.ActionNext
-			case key == consts.KeyCtrlC || key == "q":
+			case consts.KeyCtrlC, "q":
 				return consts.ActionAbort
-			case string(key) == newline || string(key) == string(rune(13)):
+			case "\n", "\r":
 				return consts.ActionSelect
 			}
 		}
